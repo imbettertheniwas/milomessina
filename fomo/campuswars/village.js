@@ -245,7 +245,7 @@ function startVillage(){
   });
   canvas.addEventListener('pointerleave',()=>pointerHover.clear());
   canvas.addEventListener('pointercancel',e=>{endTouch(e);drag=null;});canvas.addEventListener('lostpointercapture',e=>{touchPoints.delete(e.pointerId);pinchDistance=touchPoints.size>1?touchDistance():0;drag=null;});
-  canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas&&!document.fullscreenElement)return;e.preventDefault();zoomView(Math.exp(e.deltaY*.001));},{passive:false});
+  canvas.addEventListener('wheel',e=>{e.preventDefault();zoomView(Math.exp(e.deltaY*.001));},{passive:false});
   function handleViewKey(event){
     if(event.ctrlKey||event.metaKey||event.altKey||event.isComposing)return;
     if(!['KeyW','KeyA','KeyS','KeyD','Equal','Minus','NumpadAdd','NumpadSubtract','Escape','Home','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code))return;
@@ -268,6 +268,15 @@ function startVillage(){
     wake();
   }
   canvas.addEventListener('keydown',handleViewKey);
+  // The village fills the page: normal flight should also work before the canvas
+  // has focus, and after pressing a view control such as Reset or Zoom.
+  document.addEventListener('keydown',event=>{
+    if(!ready||!visible||document.hidden||streetMode||event.defaultPrevented||event.target===canvas)return;
+    if(event.ctrlKey||event.metaKey||event.altKey||event.isComposing)return;
+    if(!['KeyW','KeyA','KeyS','KeyD','Equal','Minus','NumpadAdd','NumpadSubtract'].includes(event.code))return;
+    if(document.getElementById('about-dialog').open||event.target?.closest?.('input,textarea,select,[contenteditable],dialog,#village-drawer'))return;
+    canvas.focus({preventScroll:true});handleViewKey(event);
+  });
   addEventListener('keyup',event=>flightKeys.delete(event.code));
   for(const control of [streetControls,streetButton])control.addEventListener('keydown',event=>{if(streetMode)handleViewKey(event);});
   function releasePointer(){flightKeys.clear();pointerHover.clear();drag=null;touchPoints.clear();pinchDistance=0;}

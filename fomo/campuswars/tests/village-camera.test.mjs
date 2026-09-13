@@ -105,6 +105,35 @@ test('the join link appears only on the closing invitation',()=>{
 function position(view){return new THREE.Vector3(view.target[0]+Math.sin(view.theta)*Math.cos(view.phi)*view.radius,view.target[1]+Math.sin(view.phi)*view.radius,view.target[2]+Math.cos(view.theta)*Math.cos(view.phi)*view.radius);}
 const viewKey=code=>({code,preventDefault(){}});
 function flightHarness(){const h=cameraHarness(true);h.show(true);h.step(.1);h.fire('intro-skip:click');h.step(.1);return h;}
+test('normal-mode flight works without a canvas click and after using view controls',()=>{
+  const h=cameraHarness(true);h.show(true);const start=h.step(.1);
+  h.fire('document:keydown',viewKey('KeyW'));const moved=h.step(1);
+  assert(moved.distanceTo(start)>10);assert.equal(h.element('village-intro').hidden,true);
+  h.fire('window:keyup',viewKey('KeyW'));
+  h.element('village-overview').focus();h.reset();const reset=h.step(.1);
+  h.fire('document:keydown',{...viewKey('KeyD'),target:h.element('village-overview')});
+  assert(h.step(1).distanceTo(reset)>10);h.fire('window:keyup',viewKey('KeyD'));
+  const beforeZoom=h.step(.1);h.element('village-zoom-out').focus();
+  h.fire('document:keydown',{...viewKey('Minus'),target:h.element('village-zoom-out')});
+  assert(h.step(.1).y>beforeZoom.y);
+});
+test('normal-mode page shortcuts ignore typing, dialogs, street mode and already-handled events',()=>{
+  const h=flightHarness(),start=h.step(.1);
+  for(const event of [
+    {...viewKey('KeyW'),target:{closest:()=>({})}},
+    {...viewKey('KeyW'),defaultPrevented:true},
+    {...viewKey('KeyW'),metaKey:true},
+    {...viewKey('KeyW'),target:h.element('canvas')},
+  ])h.fire('document:keydown',{...event,preventDefault(){assert.fail('shortcut was consumed');}});
+  h.element('about-dialog').open=true;h.fire('document:keydown',viewKey('KeyW'));h.element('about-dialog').open=false;
+  assert(h.step(1).distanceTo(start)<1e-9);
+  h.fire('village-street:click');const street=h.step(.1);h.fire('document:keydown',viewKey('KeyW'));
+  assert(h.step(1).distanceTo(street)<1e-9);
+});
+test('scrolling the normal village zooms even when a toolbar button has focus',()=>{
+  const h=flightHarness(),start=h.step(.1);h.element('village-overview').focus();
+  h.fire('canvas:wheel',{deltaY:-180,preventDefault(){}});assert(h.step(.1).y<start.y);
+});
 test('WASD translates the viewpoint in camera-relative directions without changing its angle or height',()=>{
   for(const code of ['KeyW','KeyA','KeyS','KeyD']){
     const h=flightHarness(),start=h.step(.1),rotation=h.camera().quaternion.clone();
