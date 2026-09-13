@@ -1,6 +1,7 @@
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=79';
 import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=77';
 import {createCampusKit} from './village-campus-kit.js?v=77';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=77';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=79';
 import {dressNeighborhood} from './village-places.js?v=77';
 
 export function createDistricts(T,extension=0,streets=1){
@@ -119,10 +120,9 @@ export function createDistricts(T,extension=0,streets=1){
   function makeChunk(cx,cz){
     const p=new T.Group();p.position.set(cx*BLOCK,0,cz*BLOCK);root.add(p);
     const kind=districtKind(cx,cz,streets),specs=districtSpecs(cx,cz,streets);p.userData.specs=specs;
-    for(const spec of specs)kit.building(p,spec,cx*BLOCK,cz*BLOCK);
-    landscape(p,kind,cx,cz);
-    fillDetails(p,kind,cx,cz);
-    dressNeighborhood(T,kit,p,kind,cx,cz);
+    for(const spec of specs){const building=kit.building(p,spec,cx*BLOCK,cz*BLOCK);if(isCampusHill(cx,cz))building.position.y=CAMPUS_HILL_HEIGHT;}
+    if(isCampusHill(cx,cz))createCampusHill(T,kit,p);
+    else {landscape(p,kind,cx,cz);fillDetails(p,kind,cx,cz);dressNeighborhood(T,kit,p,kind,cx,cz);}
     const activity=createCampusPeople(T,kit,kind,cx,cz,streets);p.add(activity.root);
     if(extension){
       if(cz>0)p.position.z+=extension;

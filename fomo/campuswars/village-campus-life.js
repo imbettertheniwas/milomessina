@@ -1,3 +1,4 @@
+import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=79';
 import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=77';
 import {gaitPhase,humanPose,speechGesture,smooth} from './village-human-motion.js?v=77';
 import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=77';
@@ -8,6 +9,21 @@ import {placePeople} from './village-place-life.js?v=77';
 export function campusPeople(kind,cx,cz,streets=1){
   const core=kind==='greek',seed=hash(cx,cz,'people')*53,people=[];
   const add=(action,x,z,angle=0,extra={})=>people.push({action,x,z,angle,phase:hash(cx,cz,people.length,'phase')*40,...appearance(`${cx},${cz}`,people.length),...extra});
+  if(isCampusHill(cx,cz)){
+    for(let i=0;i<24;i++){
+      const x=i%2?2.6:-2.6;
+      add('journey',x,39,0,{points:[[x,39,1],[x,-6,4],[x,39,1]],offset:i*4.9,speed:.75+hash(i,'class')*.3,purpose:'walking to class'});
+    }
+    for(let i=0;i<4;i++)add('journey',10,38,0,{points:[...campusRamp.map(([x,z])=>[x,z,1]),...campusRamp.slice(0,-1).reverse().map(([x,z])=>[x,z,1])],offset:i*26,speed:.8,purpose:'quad hillside walk'});
+    for(const [gx,gz] of [[-9,-3],[10,1],[-12,8]])for(let seat=0;seat<4;seat++){const a=seat*Math.PI/2;add('talk',gx+Math.sin(a),gz+Math.cos(a),a+Math.PI,{seat,groupSize:4,groupPhase:hash(gx,gz)*30});}
+    for(const side of [-1,1])for(const z of [3,11])for(const dz of [-.45,.45])add('study',side*13,z+dz,side<0?Math.PI/2:-Math.PI/2);
+    for(let i=0;i<6;i++)add('lawn',-14+i*.8,-1,.8);
+    for(const spec of districtSpecs(cx,cz,streets)){
+      const a=spec.rotation,d=spec.depth/2+.36;
+      for(let i=0;i<2;i++)add('doorway',spec.x+Math.sin(a)*d,spec.z-cz*100+Math.cos(a)*d,a,{offset:hash(spec.seed,i)*24,speed:.65});
+    }
+    return people;
+  }
   if(placePeople(kind,add))return people;
   const spine=kind==='library'||kind==='athletics'||kind==='commons';
   for(let i=0;i<(core?30:spine?24:10);i++){
@@ -37,7 +53,7 @@ export function campusPeople(kind,cx,cz,streets=1){
     for(let i=0;i<2;i++)add('doorway',x,z,a,{offset:hash(cx,cz,spec.seed,i)*24,speed:.65});
   }
   if(core){
-    if(cx===0&&cz===0)for(let i=0;i<6;i++)add('journey',7,-105,0,{points:[[7,-105,6],[7,-41,0],[30.8,-41,0],[30.8,-15,0],[38,-15,10],[30.8,-15,0],[30.8,-41,0],[7,-41,0],[7,-105,8]],offset:i*31,speed:.95,purpose:'class to campus coffee',carry:'coffee',pickupIndex:4,dayOnly:true});
+    if(cx===0&&cz===0)for(let i=0;i<6;i++)add('journey',7,-105,0,{points:[[2.6,-105,6],[2.6,-61,0],[7,-59,0],[7,-41,0],[30.8,-41,0],[30.8,-15,0],[38,-15,10],[30.8,-15,0],[30.8,-41,0],[7,-41,0],[7,-59,0],[2.6,-61,0],[2.6,-105,8]],offset:i*31,speed:.95,purpose:'class to campus coffee',carry:'coffee',pickupIndex:6,dayOnly:true});
     add('dogwalk',30.8,0,0,{offset:43,speed:.8,routeStart:-32});
     add('skate',-7.15,0,0,{offset:14,speed:1.7,routeStart:-37});
     add('skate',7.15,0,0,{offset:81,speed:1.6,routeStart:-37});
@@ -102,7 +118,7 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
   function animate(time){
     people.forEach((p,i)=>{
       const s=campusPose(p,time,night),rig=humanPose(p,s,time),h=p.height,cos=Math.cos(s.angle),sin=Math.sin(s.angle);
-      const ground=p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045);
+      const ground=campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));
       const local=([x,y,z])=>[s.x+(x*cos+z*sin)*h,y*h+ground+(s.hidden?-20:0),s.z+(-x*sin+z*cos)*h];
       const part=(mesh,index,point,x,y,z,yaw=0,pitch=0)=>pose(mesh,index,...local(point),x*h,y*h,z*h,s.angle+yaw,pitch);
       part(body,i*11,rig.chest,.40,.52,.25,rig.twist,rig.lean);
