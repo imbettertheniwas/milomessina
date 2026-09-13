@@ -241,10 +241,15 @@ does nothing on an iPhone.
 ## Who a spend was for
 
 Who paid and who a spend was *for* are two different questions, and the form
-asks them separately. **who paid** is one of the four interns — they are the
-ones owed money back. **who it was for** is a row of toggles underneath, and
-it includes **Arya**, because a good deal of what gets bought is bought for
-him.
+asks them separately. Both rows list the same five names — the four interns
+and **Arya**. Most lines are an intern's card, and those are the ones owed
+money back, but Arya fronts spends too and they belong on the ledger the same
+way. **who it was for** is a row of toggles underneath, because a good deal
+of what gets bought is bought for Arya.
+
+The clock is the one place the roster is shorter: **on the clock**, the hours
+table and the GitHub panel are the four interns only. Arya is not on a
+timesheet.
 
 Whoever is paying starts ticked, since the usual case is buying your own along
 with everyone else's. Untick yourself and the line reads as bought purely for

@@ -205,12 +205,18 @@ var INVOICE_TAB = 'invoice';
    empty `shared` — which the page treats as "no split recorded". */
 var INVOICE_COLS = ['id', 'logged', 'date', 'who', 'what', 'category',
                     'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared'];
+/* The interns. Only these names go on the clock or come back off it — the
+   shift tab is a timesheet, and Arya does not have one. */
 var INVOICE_PEOPLE = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
 
-/* Who a line can be *for*. Arya reimburses the ledger rather than being paid
-   out of it, so he is never in INVOICE_PEOPLE — but plenty of what the
-   interns buy is bought for him, and `shared` has to be able to say so. */
-var INVOICE_SHARERS = INVOICE_PEOPLE.concat(['Arya']);
+/* Everyone a line can name — as the person who fronted it, or as somebody it
+   was bought for. Arya reimburses the ledger rather than being paid out of it,
+   so most lines are an intern's card; but Arya fronts spends too, and plenty
+   of what the interns buy is bought for Arya, so `shared` has to be able to
+   say so. Kept apart from INVOICE_PEOPLE, which is the timesheet roster.
+   Mirrors PAYERS/SHARERS in invoice/index.html — change both together. */
+var INVOICE_PAYERS = INVOICE_PEOPLE.concat(['Arya']);
+var INVOICE_SHARERS = INVOICE_PAYERS;
 var INVOICE_CATS = ['lunch', 'coffee', 'ai', 'software', 'travel', 'supplies', 'other'];
 
 /* Every action answers with the whole ledger, so the page never has to
@@ -363,7 +369,7 @@ function invoiceClean(b) {
       return INVOICE_SHARERS.indexOf(n) > -1 && all.indexOf(n) === i;
     });
 
-  if (INVOICE_PEOPLE.indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
+  if (INVOICE_PAYERS.indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
   if (!what) return { error: 'that line needs a description' };
   if (!(amount > 0) || amount > 100000) return { error: 'that amount does not look right' };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'that date does not look right' };

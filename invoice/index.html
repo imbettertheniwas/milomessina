@@ -650,16 +650,18 @@ td.tnum.run{color:var(--good)}
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxDR-3zqJEQgFEY0a-f7RR_Kze-NPXF3_7mTM2txaZ1IL-z25syVX95AH8taHEYx7Ba1g/exec';
 var PASSCODE = 'monkey';
 
+/* The interns. This is the roster for the things that are only ever theirs:
+   shifts on the clock, hours on the timesheet, commits counted on GitHub. */
 var PEOPLE = ["Milo","Bijan","Jesse","Luchi"];
 
-/* Who a spend can be *for*, as opposed to who paid for it.
-
-   Arya runs the bootcamp and reimburses it, so he is never who paid — but a
-   good deal of what gets bought is bought for him, and a coffee run that
-   covered him should say so rather than reading as one intern drinking two
-   coffees. Anyone here can be on the receiving end of a line; only PEOPLE
-   can front one. */
-var SHARERS = PEOPLE.concat(["Arya"]);
+/* Everyone a line can be attached to — as the person who fronted it, or as
+   somebody it was bought for. Arya runs the bootcamp and reimburses it, so
+   most lines are somebody else's card; but Arya does front spends too, and
+   plenty of what gets bought is bought for Arya, so a coffee run that covered
+   them should say so rather than reading as one intern drinking two coffees.
+   Kept apart from PEOPLE because Arya is not on the clock or the timesheet. */
+var PAYERS = PEOPLE.concat(["Arya"]);
+var SHARERS = PAYERS;
 var CATS = [
   {id:"lunch",    label:"lunch & food",  v:"--s1"},
   {id:"coffee",   label:"coffee",        v:"--s2"},
@@ -685,10 +687,15 @@ function niceDate(iso){
   var m = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"][Number(p[1])-1] || "";
   return m + " " + Number(p[2]);
 }
-function clockNow(){
-  var d = new Date();
-  return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+/* Wall-clock times read the way anybody here would say them out loud —
+   "9:15am", "4:05pm" — rather than as 24-hour time. Durations are a
+   different thing and stay with hm(): "7h 20m" is not a time of day. */
+function hhmm12(d){
+  var h = d.getHours(), m = d.getMinutes(), ap = h < 12 ? "am" : "pm";
+  h = h % 12; if (!h) h = 12;
+  return h + ":" + String(m).padStart(2,"0") + ap;
 }
+function clockNow(){ return hhmm12(new Date()); }
 function safeUrl(u){ u = String(u||"").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
 
 /* ---------- splitting a line between the people it was for ----------
@@ -933,7 +940,7 @@ function fail(err){
 
 /* ---------- build the controls ---------- */
 var whoBox = document.getElementById("who");
-PEOPLE.forEach(function(p){
+PAYERS.forEach(function(p){
   var b = document.createElement("button");
   b.type = "button"; b.className = "chip"; b.textContent = p;
   b.setAttribute("aria-pressed","false");
@@ -948,7 +955,7 @@ PEOPLE.forEach(function(p){
 });
 try {
   var saved = localStorage.getItem("fomo.who");
-  if (saved && PEOPLE.indexOf(saved) > -1) {
+  if (saved && PAYERS.indexOf(saved) > -1) {
     picked = saved;
     Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed", String(c.textContent === saved)); });
   }
@@ -1006,7 +1013,7 @@ resetSplit();
 
 var fCat = document.getElementById("f-cat"), tCat = document.getElementById("t-cat"), tWho = document.getElementById("t-who");
 CATS.forEach(function(c){ fCat.appendChild(new Option(c.label, c.id)); tCat.appendChild(new Option(c.label, c.id)); });
-PEOPLE.forEach(function(p){ tWho.appendChild(new Option(p, p)); });
+PAYERS.forEach(function(p){ tWho.appendChild(new Option(p, p)); });
 /* `max` is today's date, which stops a spend being logged into next week —
    but it was worked out once, when the page loaded. A phone does not
    reload a tab for days, so by the morning the ceiling was yesterday and
@@ -1157,7 +1164,7 @@ function subApi(action, p){
 function subLocal(action, p){
   return new Promise(function(resolve, reject){
     if (action === "subadd") {
-      if (PEOPLE.indexOf(p.who) === -1) return reject(new Error("that name is not on the bootcamp"));
+      if (PAYERS.indexOf(p.who) === -1) return reject(new Error("that name is not on the bootcamp"));
       subs.push({
         id:newId(), who:p.who, what:p.what, category:p.category,
         amount:Math.round((Number(p.amount)||0) * 100) / 100,
@@ -1610,7 +1617,7 @@ function render(){
   renderSubs();
   var list = visible();
   var total = 0, owed = 0, paid = 0, byCat = {}, byPerson = {};
-  PEOPLE.forEach(function(p){ byPerson[p] = {owed:0, paid:0, total:0}; });
+  PAYERS.forEach(function(p){ byPerson[p] = {owed:0, paid:0, total:0}; });
   list.forEach(function(r){
     var a = Number(r.amount) || 0;
     total += a;
@@ -1639,10 +1646,10 @@ function render(){
   document.getElementById("k-cat-sub").textContent = catRank.length
     ? cat(catRank[0].id).label + " — " + Math.round(catRank[0].v / total * 100) + "% of spend" : "by category";
 
-  var pMax = Math.max.apply(null, PEOPLE.map(function(p){ return byPerson[p].total; }).concat([1]));
+  var pMax = Math.max.apply(null, PAYERS.map(function(p){ return byPerson[p].total; }).concat([1]));
   var pBox = document.getElementById("by-person");
   pBox.innerHTML = "";
-  PEOPLE.forEach(function(p){
+  PAYERS.forEach(function(p){
     var d = byPerson[p];
     var row = document.createElement("div"); row.className = "row-b";
     var nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p;
@@ -1806,8 +1813,7 @@ function hm(ms){
 function clockOf(iso){
   var t = Date.parse(iso);
   if (!t) return "—";
-  var d = new Date(t);
-  return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  return hhmm12(new Date(t));
 }
 function dayOf(iso){
   var t = Date.parse(iso);
