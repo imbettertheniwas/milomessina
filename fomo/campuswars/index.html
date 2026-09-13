@@ -8,7 +8,7 @@
 <meta property="og:type" content="website"><meta property="og:title" content="Greek Wars — fomo"><meta property="og:description" content="An empty lot is waiting for your letters. Explore the Greek village, bring your chapter, and compete on fomo. $500,000 committed to fomo / campus."><meta property="og:url" content="https://milomessina.com/fomo/campuswars/"><meta name="twitter:card" content="summary">
 <link rel="icon" href="/fomo/assets/favicon.svg">
 <link rel="preload" as="font" type="font/ttf" href="/fomo/campuswars/assets/aeonik-700.ttf" crossorigin>
-<link rel="stylesheet" href="/fomo/campuswars/styles.css?v=51"><script src="/fomo/campuswars/site.js?v=88" defer></script>
+<link rel="stylesheet" href="/fomo/campuswars/styles.css?v=51"><script src="/fomo/campuswars/site.js?v=89" defer></script>
 <script type="application/json" id="chapters-data">{
   "source": "Chapter registrations",
   "live": false,
@@ -220,14 +220,14 @@
     }
   ]
 }</script>
-<link rel="stylesheet" href="/fomo/campuswars/village.css?v=78">
+<link rel="stylesheet" href="/fomo/campuswars/village.css?v=79">
 </head>
 <body>
 <a class="skip" href="#village-viewport">Skip to village</a>
 <main id="main">
 <section class="village-shell" id="village" aria-label="Greek Wars village">
   <div id="street-controls" class="street-controls village-hud" role="group" aria-label="Street navigation" hidden>
-    <span>Click the road or use W / S · Drag to look around</span>
+    <span>W / S to move · A / D or drag to look · Scroll to zoom</span>
     <div><button id="street-back" type="button" aria-label="Step backward">↓</button><button id="street-forward" type="button" aria-label="Step forward">↑</button><button id="street-exit" type="button">Exit street view</button></div>
   </div>
   <div class="village-viewport" id="village-viewport" tabindex="-1"><div class="village-loading" id="village-loading" role="status"><span class="loading-mark"><img src="/fomo/assets/favicon.svg" alt="fomo" width="56" height="56"></span>Opening the village…</div></div>
@@ -239,6 +239,7 @@
     <div class="intro-controls"><button id="intro-pause" type="button" aria-pressed="false">Pause intro</button><button id="intro-skip" type="button">Skip ↗</button></div>
     <div class="intro-copy"><h2 id="intro-title">GREEK WARS.</h2><p id="intro-description">Your chapter. Your team. A trading competition on fomo.</p><a id="intro-join" href="https://www.aryatoufanian.com/fomo/onboard/" hidden>Join Greek Wars ↗</a></div>
   </div>
+  <p class="village-flight-hint village-hud">Click the village to explore · WASD to fly · Drag to look · Scroll or + / − to zoom</p>
   <div class="village-bottom village-hud">
     <div id="village-extra-controls" class="village-extra-controls">
     <div class="party-tools"><a id="village-discord" href="https://discord.gg/FhvKtyvFJp" target="_blank" rel="noopener noreferrer" aria-label="Join the FOMO Discord (opens in a new tab)">Discord ↗</a><button id="night-toggle" type="button" aria-pressed="false">Party mode</button><button id="party-toggle" type="button" aria-pressed="false">Pause activity</button></div>

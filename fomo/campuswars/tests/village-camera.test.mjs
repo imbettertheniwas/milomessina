@@ -12,14 +12,14 @@ import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from '../village-
 
 function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650}){
   const elements=new Map(),events=new Map(),selections=[],lighting=[],builds=[],pixelRatios=[];let intersection,frame,camera,finishWarmup,blimp,mockVillage,renders=0;
-  function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
+  function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
   element('chapters-data').textContent='{"chapters":[]}';
   Object.assign(element('village-viewport'),{clientWidth:screen.width,clientHeight:screen.height});
   const canvas=element('canvas');canvas.getBoundingClientRect=()=>({left:0,top:0,width:1200,height:650});canvas.hasPointerCapture=()=>false;
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},document:{getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(){},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},document:{getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
   sandbox.createVillageRendererAsync=async (...args)=>sandbox.createVillage(...args);
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
@@ -103,6 +103,54 @@ test('the join link appears only on the closing invitation',()=>{
   h.fire('document:village:replay');h.step(.02);assert.equal(h.element('intro-join').hidden,true);
 });
 function position(view){return new THREE.Vector3(view.target[0]+Math.sin(view.theta)*Math.cos(view.phi)*view.radius,view.target[1]+Math.sin(view.phi)*view.radius,view.target[2]+Math.cos(view.theta)*Math.cos(view.phi)*view.radius);}
+const viewKey=code=>({code,preventDefault(){}});
+function flightHarness(){const h=cameraHarness(true);h.show(true);h.step(.1);h.fire('intro-skip:click');h.step(.1);return h;}
+test('WASD translates the viewpoint in camera-relative directions without changing its angle or height',()=>{
+  for(const code of ['KeyW','KeyA','KeyS','KeyD']){
+    const h=flightHarness(),start=h.step(.1),rotation=h.camera().quaternion.clone();
+    const forward=h.camera().getWorldDirection(new THREE.Vector3());forward.y=0;forward.normalize();
+    const right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0));
+    const direction=(code==='KeyW'||code==='KeyS'?forward:right).multiplyScalar(code==='KeyS'||code==='KeyA'?-1:1);
+    h.fire('canvas:keydown',viewKey(code));const moved=h.step(1).sub(start);
+    assert(moved.length()>10);assert(moved.clone().normalize().distanceTo(direction)<1e-9);
+    assert(Math.abs(moved.y)<1e-9);assert(h.camera().quaternion.angleTo(rotation)<1e-7);
+    h.fire('window:keyup',viewKey(code));const stopped=h.step(.1);assert(stopped.distanceTo(h.step(1))<1e-9);
+  }
+});
+test('flight has normalized diagonals, cancelling opposite keys and consistent frame-rate speed',()=>{
+  function travel(codes,fps=60){const h=flightHarness(),start=h.step(.1);for(const code of codes)h.fire('canvas:keydown',viewKey(code));return h.step(1,fps).distanceTo(start);}
+  const straight=travel(['KeyW']);assert(Math.abs(travel(['KeyW','KeyD'])-straight)<1e-8);
+  assert.equal(travel(['KeyW','KeyS']),0);
+  assert(Math.abs(travel(['KeyW'],30)-straight)/straight<.04);
+});
+test('flight interrupts the intro, and blur, hidden views and reset clear held movement',()=>{
+  const intro=cameraHarness();intro.show(true);intro.step(1);intro.fire('canvas:keydown',viewKey('KeyW'));
+  assert.equal(intro.element('village-intro').hidden,true);
+  for(const stop of [h=>h.fire('canvas:blur'),h=>h.fire('window:blur'),h=>{h.show(false);h.step(.2);h.show(true);}]){
+    const h=flightHarness();h.fire('canvas:keydown',viewKey('KeyW'));h.step(.5);stop(h);
+    const at=h.step(.1);assert(at.distanceTo(h.step(1))<1e-9);
+  }
+  const h=flightHarness(),start=h.step(.1);h.fire('canvas:keydown',viewKey('KeyD'));h.step(1);h.reset();
+  assert(start.distanceTo(h.step(1))<1e-9);
+});
+test('zoom stays centered on the translated anchor and supports keys, wheel and buttons',()=>{
+  const h=flightHarness();h.fire('canvas:keydown',viewKey('KeyW'));h.step(1);h.fire('window:keyup',viewKey('KeyW'));
+  const radius=openingView.radius,anchor=h.camera().position.clone().addScaledVector(h.camera().getWorldDirection(new THREE.Vector3()),radius);
+  h.fire('canvas:keydown',viewKey('Equal'));let at=h.step(.1);assert(Math.abs(at.distanceTo(anchor)-radius*.8)<1e-8);
+  h.fire('village-zoom-out:click');at=h.step(.1);assert(Math.abs(at.distanceTo(anchor)-radius)<1e-8);
+  h.element('canvas').focus();
+  h.fire('canvas:wheel',{deltaY:Math.log(.8)/.001,preventDefault(){}});at=h.step(.1);assert(Math.abs(at.distanceTo(anchor)-radius*.8)<1e-8);
+  h.fire('village-zoom-out:click');h.step(.1);
+  h.fire('canvas:keydown',viewKey('Minus'));at=h.step(.1);assert(Math.abs(at.distanceTo(anchor)-radius*1.25)<1e-8);
+  const direction=h.camera().getWorldDirection(new THREE.Vector3());assert(direction.distanceTo(anchor.clone().sub(at).normalize())<1e-9);
+});
+test('unrelated keys and browser shortcuts leave the intro running',()=>{
+  const h=cameraHarness();h.show(true);h.step(1);
+  for(const event of [viewKey('Tab'),{...viewKey('KeyW'),metaKey:true},{...viewKey('Equal'),ctrlKey:true}]){
+    h.fire('canvas:keydown',{...event,preventDefault(){assert.fail('shortcut was consumed');}});
+    assert.equal(h.element('village-intro').hidden,false);
+  }
+});
 test('flight, bank and lens remain continuous at every shot boundary',()=>{
   for(const t of [0,2.72,5.44,8.075,10.625,13.6]){
     const before=introViewAt(t-.001),after=introViewAt(t+.001);
@@ -302,4 +350,11 @@ test('paused activity keeps loading a selected distant house until its scene is 
   village.updateView=()=>{if(village.building&&++steps===3){village.building=false;finish();}return false;};
   h.fire('document:chapter:select',{detail:{id:'sigma-chi-sdsu',focus:true}});h.step(1);
   assert.equal(steps,3);assert.equal(village.building,false);
+});
+
+test('street wheel zooms without moving and A/D turn at eye level',()=>{
+  const h=flightHarness();h.fire('village-street:click');const start=h.step(.1),lens=h.lens();
+  h.fire('canvas:wheel',{deltaY:-180,preventDefault(){}});assert(start.distanceTo(h.step(.1))<1e-9);assert(h.lens()<lens);
+  const facing=h.camera().quaternion.clone();h.fire('canvas:keydown',viewKey('KeyA'));h.step(.1);assert(h.camera().quaternion.angleTo(facing)>.1);
+  h.fire('canvas:keydown',viewKey('KeyD'));h.step(.1);assert(h.camera().quaternion.angleTo(facing)<1e-7);
 });

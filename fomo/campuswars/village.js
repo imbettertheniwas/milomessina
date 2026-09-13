@@ -26,10 +26,11 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
 if(renderer)startVillage();
 function startVillage(){
   let ready=false,pendingChapterUpdate=null;
+  const flightKeys=new Set();
   const renderScale=Math.min(devicePixelRatio,quality.pixelRatio);
   renderer.setPixelRatio(renderScale);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
-  viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Drag to rotate, shift-drag to pan, or select a house. Click the FOMO blimp to join Discord, or use the Discord link in the village controls. Pinch with two fingers to zoom. Use Street view to click along the block. In Street view, W and S or up and down move, left and right look around. Escape resets the view.');
+  viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Use W A S D to fly the viewpoint forward, left, backward and right. Drag or use arrow keys to rotate, shift-drag to pan, or select a house. Scroll, pinch, or use plus and minus to zoom around the viewpoint. Click the FOMO blimp to join Discord, or use the Discord link in the village controls. Use Street view to click along the block. In Street view, W and S or up and down move, A and D or left and right look around. Escape resets the view.');
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x98a7ba);scene.fog=new THREE.FogExp2(0x98a7ba,.0022);
   const camera=new THREE.PerspectiveCamera(48,1,1,650);
   const ambient=new THREE.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);
@@ -90,6 +91,7 @@ function startVillage(){
   }
   function beginIntro(){
     if(!ready)return;
+    flightKeys.clear();
     if(village.streaming&&!village.residentIndices.has(0)){village.focus(village.anchors[0].id,beginIntro);wake();return;}
     leaveStreet();
     entrancePending=false;entranceActive=true;entrancePaused=false;entranceTime=0;captionIndex=-1;lastTime=0;
@@ -125,7 +127,7 @@ function startVillage(){
     applyLighting(night?1:0);viewDirty=true;wake();
   });
   function snapLongJump(){if(target.distanceTo(wantedTarget)>180){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-  function resetView(){leaveStreet();const aim=()=>{wantedTarget.set(...openingView.target);wantedRadius=openingView.radius;wantedPhi=openingView.phi;wantedTheta=openingView.theta;snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
+  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{wantedTarget.set(...openingView.target);wantedRadius=openingView.radius;wantedPhi=openingView.phi;wantedTheta=openingView.theta;snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
   function choose(id,focus=false,emit=true){
     const anchor=village.anchors.find(a=>a.id===id);if(!anchor)return;selected=id;viewDirty=true;
     // Frame the house from its own street's centre line, whichever street that is.
@@ -180,6 +182,7 @@ function startVillage(){
     target.set(0,2,streetZ);wantedTarget.copy(target);radius=wantedRadius=30;phi=wantedPhi=.45;
   }
   function moveStreet(z){
+    flightKeys.clear();
     takeControl();
     if(!streetMode){
       streetMode=true;streetNav.root.visible=true;streetControls.hidden=false;streetButton.setAttribute('aria-pressed','true');streetButton.textContent='Exit street view';shell.classList.add('street-view');
@@ -242,13 +245,21 @@ function startVillage(){
   });
   canvas.addEventListener('pointerleave',()=>pointerHover.clear());
   canvas.addEventListener('pointercancel',e=>{endTouch(e);drag=null;});canvas.addEventListener('lostpointercapture',e=>{touchPoints.delete(e.pointerId);pinchDistance=touchPoints.size>1?touchDistance():0;drag=null;});
-  canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas&&!document.fullscreenElement)return;e.preventDefault();takeControl();if(streetMode){stepStreet(e.deltaY>0);return;}wantedRadius=Math.max(20,Math.min(MAX_ZOOM_RADIUS,wantedRadius*Math.exp(e.deltaY*.001)));wake();},{passive:false});
+  canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas&&!document.fullscreenElement)return;e.preventDefault();zoomView(Math.exp(e.deltaY*.001));},{passive:false});
   function handleViewKey(event){
-    takeControl();
-    if(event.code==='Escape'||event.code==='Home'){event.preventDefault();resetView();return;}
-    if(streetMode&&['KeyW','KeyS'].includes(event.code)){event.preventDefault();stepStreet(event.code==='KeyW');return;}
-    if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code))return;
+    if(event.ctrlKey||event.metaKey||event.altKey||event.isComposing)return;
+    if(!['KeyW','KeyA','KeyS','KeyD','Equal','Minus','NumpadAdd','NumpadSubtract','Escape','Home','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code))return;
     event.preventDefault();
+    takeControl();
+    if(event.code==='Escape'||event.code==='Home'){resetView();return;}
+    if(['Equal','NumpadAdd','Minus','NumpadSubtract'].includes(event.code)){zoomView(['Equal','NumpadAdd'].includes(event.code)?.8:1.25);return;}
+    if(['KeyW','KeyA','KeyS','KeyD'].includes(event.code)){
+      if(streetMode){
+        if(event.code==='KeyW'||event.code==='KeyS'){stepStreet(event.code==='KeyW');return;}
+        wantedTheta+=event.code==='KeyA'?-.13:.13;
+      }else flightKeys.add(event.code);
+      wake();return;
+    }
     if(streetMode&&(event.code==='ArrowUp'||event.code==='ArrowDown')){stepStreet(event.code==='ArrowUp');return;}
     if(event.code==='ArrowLeft')wantedTheta-=.13;
     if(event.code==='ArrowRight')wantedTheta+=.13;
@@ -257,8 +268,9 @@ function startVillage(){
     wake();
   }
   canvas.addEventListener('keydown',handleViewKey);
+  addEventListener('keyup',event=>flightKeys.delete(event.code));
   for(const control of [streetControls,streetButton])control.addEventListener('keydown',event=>{if(streetMode)handleViewKey(event);});
-  function releasePointer(){pointerHover.clear();drag=null;touchPoints.clear();pinchDistance=0;}
+  function releasePointer(){flightKeys.clear();pointerHover.clear();drag=null;touchPoints.clear();pinchDistance=0;}
   canvas.addEventListener('blur',releasePointer);addEventListener('blur',releasePointer);
   function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;viewDirty=true;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(stadiumView)wantedRadius=stadiumDistance();wake();}
   new ResizeObserver(resize).observe(viewport);
@@ -274,12 +286,22 @@ function startVillage(){
     if(!visible||document.hidden){lastTime=0;return;}
     const cameraMoving=(streetMode&&(Math.abs(streetZ-streetWantedZ)>.01||camera.position.distanceTo(new THREE.Vector3(0,2.6,streetWantedZ))>.01))||target.distanceToSquared(wantedTarget)>.0001||Math.abs(radius-wantedRadius)>.01||Math.abs(theta-wantedTheta)>.001||Math.abs(phi-wantedPhi)>.001;
     // Active people update on every rendered frame. Only paused scenery is capped.
-    if(paused&&!cameraMoving&&!drag&&!viewDirty&&now-lastRender<1000/30){wake();return;}
+    if(paused&&!cameraMoving&&!flightKeys.size&&!drag&&!viewDirty&&now-lastRender<1000/30){wake();return;}
     // Preserve pixel density: optimize invisible work instead of blurring the view.
     const elapsed=lastTime?Math.max(0,(now-lastTime)/1000):0;
     const dt=Math.min(elapsed,.05);lastTime=now;
     if(autoOrbit&&!entranceActive&&!paused&&visible&&!document.hidden)wantedTheta+=dt*.06;
     const cameraDt=visible&&!document.hidden?dt:0;
+    if(!streetMode&&flightKeys.size){
+      // Move the orbit anchor on the ground plane in the current viewing direction.
+      // Translate both ends of the camera easing so releasing a key stops travel.
+      const forward=Number(flightKeys.has('KeyW'))-Number(flightKeys.has('KeyS'));
+      const right=Number(flightKeys.has('KeyD'))-Number(flightKeys.has('KeyA'));
+      const distance=Math.min(90,Math.max(12,radius*.65))*cameraDt/(Math.hypot(forward,right)||1);
+      const dx=(right*Math.cos(theta)-forward*Math.sin(theta))*distance;
+      const dz=(-right*Math.sin(theta)-forward*Math.cos(theta))*distance;
+      target.x+=dx;target.z+=dz;wantedTarget.x+=dx;wantedTarget.z+=dz;
+    }
     if(entranceActive){
       if(visible&&!document.hidden&&!entrancePaused)entranceTime=Math.min(INTRO_DURATION,entranceTime+elapsed);
       applyIntroView();paintIntro();
@@ -324,9 +346,10 @@ function startVillage(){
     renderer.render(scene,camera);lastRender=now;
     viewDirty=false;
     const settling=(streetMode&&(Math.abs(streetZ-streetWantedZ)>.01||camera.position.distanceTo(new THREE.Vector3(0,2.6,streetWantedZ))>.01))||target.distanceTo(wantedTarget)>.01||Math.abs(radius-wantedRadius)>.01||Math.abs(theta-wantedTheta)>.001||Math.abs(phi-wantedPhi)>.001;
-    if(visible&&!document.hidden&&(!paused||settling||entranceActive||village.building))wake();
+    if(visible&&!document.hidden&&(!paused||flightKeys.size||settling||entranceActive||village.building))wake();
   }
   canvas.addEventListener('webglcontextlost',event=>{
+    releasePointer();
     event.preventDefault();ready=false;cancelAnimationFrame(raf);raf=0;
     loading.hidden=false;loading.textContent='Restoring the village… You can still open Chapters.';
     shell.classList.remove('village-ready','intro-playing');shell.classList.add('village-unavailable');

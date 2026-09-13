@@ -91,3 +91,9 @@ dialog{width:580px;max-width:calc(100% - 32px);max-height:calc(100dvh - 48px);pa
 #village-discord{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #aebce155;border-radius:12px;background:#4449a8e8;color:#fff;font-size:14px;pointer-events:auto;white-space:nowrap}
 #village-discord:hover{background:#5865f2}#village-discord:focus-visible{outline:3px solid #fff;outline-offset:3px}
 @media(max-width:700px),(pointer:coarse){#village-discord{font-size:12px;padding:10px 8px;grid-column:1 / -1}}
+
+/* Flight help stays above the desktop controls and leaves touch layouts clear. */
+.village-flight-hint{position:absolute;z-index:3;left:max(28px,env(safe-area-inset-left));bottom:84px;margin:0;max-width:calc(100% - 56px);font-size:12px;line-height:1.5;color:#edf0f8;text-shadow:0 1px 5px #101724,0 1px 12px #101724;pointer-events:none}
+.street-view .village-flight-hint,.village-unavailable .village-flight-hint{display:none}
+@media(max-width:1100px){.village-flight-hint{bottom:132px}}
+@media(max-width:700px),(pointer:coarse){.village-flight-hint{display:none}}
