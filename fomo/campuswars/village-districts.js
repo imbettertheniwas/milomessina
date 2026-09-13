@@ -1,9 +1,10 @@
-import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=63';
-import {createCampusKit} from './village-campus-kit.js?v=62';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=59';
+import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=77';
+import {createCampusKit} from './village-campus-kit.js?v=77';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=77';
+import {dressNeighborhood} from './village-places.js?v=77';
 
 export function createDistricts(T,extension=0,streets=1){
-  const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);
+  const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
   const {box,mesh,cylinder,bar,tree:plantTree,bench,lamp,table,path,sign}=kit;
   function tree(p,x,z,seed,size){
     const blocked=(p.userData.specs||[]).some(s=>{const dx=x-(s.x-p.position.x),dz=z-(s.z-p.position.z),a=s.rotation;return Math.abs(dx*Math.cos(a)-dz*Math.sin(a))<s.width/2+2&&Math.abs(dx*Math.sin(a)+dz*Math.cos(a))<s.depth/2+3;});
@@ -42,6 +43,7 @@ export function createDistricts(T,extension=0,streets=1){
     const spine=['library','athletics','commons'].includes(kind),seed=mod(cx*17+cz*41,27);
     // Staggered groves and varied setbacks replace the repeated fence of trees.
     if(kind==='greek'){corePlaces(p);return;}
+    if(['town','green','residential'].includes(kind))return;
     if(spine){
       path(p,[0,kind==='athletics'?-39:-7],[0,41],5);path(p,[-38,34],[38,34],2.5);if(kind!=='athletics')path(p,[-19,0],[19,27],2.2);else path(p,[-35,-8],[35,-8],2.2);
       for(const side of [-1,1]){bench(p,side*12,36);for(const z of [8,24,39])tree(p,side*(22+(z%3)*3),z,seed+mod(z,8),1.15);}
@@ -120,19 +122,22 @@ export function createDistricts(T,extension=0,streets=1){
     for(const spec of specs)kit.building(p,spec,cx*BLOCK,cz*BLOCK);
     landscape(p,kind,cx,cz);
     fillDetails(p,kind,cx,cz);
-    const activity=createCampusPeople(T,kit,kind,cx,cz);p.add(activity.root);
+    dressNeighborhood(T,kit,p,kind,cx,cz);
+    const activity=createCampusPeople(T,kit,kind,cx,cz,streets);p.add(activity.root);
     if(extension){
       if(cz>0)p.position.z+=extension;
       else if(cz===0)for(const child of p.children)if(child!==activity.root && child.position.z>=30)child.position.z+=extension;
     }
     kit.batch(p);
+    const lights=new Set();p.traverse(o=>{if(o.material?.userData.placeLight)lights.add(o.material);});
+    const setNight=enabled=>{for(const m of lights)m.emissiveIntensity=enabled?(m.userData.placeLight==='homeLight'?.65:m.userData.placeLight==='shopLight'?1.6:2.3):.04;activity.setNight(enabled);animatedAt=NaN;};
     p.updateMatrixWorld(true);p.traverse(o=>o.matrixAutoUpdate=false);
     // Use the same conservative bounds as the crowd's instance batches. These
     // include every route and prop, so skipping a whole invisible batch cannot
     // leave an old pose visible. Absolute-time poses catch up before drawing.
     const activityBounds=activity.root.children.find(o=>o.isInstancedMesh).boundingSphere.clone().applyMatrix4(activity.root.matrixWorld);
-    let animatedAt=0;
-    return {group:p,kind,specs,activityBounds,people:activity.people,animate(time,animatePeople=true){
+    let animatedAt=0;setNight(night);
+    return {group:p,kind,specs,activityBounds,people:activity.people,setNight,animate(time,animatePeople=true){
       if(animatePeople&&time!==animatedAt){activity.animate(time);animatedAt=time;}
     },dispose(){activity.dispose();kit.disposeChunk(p);}};
   }
@@ -162,5 +167,5 @@ export function createDistricts(T,extension=0,streets=1){
     kit.vehicles.resources.forEach(r=>resources.add(r));
     for(const r of resources)if(!r.userData?.sharedResource)r.dispose();chunks.clear();
   }
-  return {root,update,animate,chunks,traffic,horizon,dispose};
+  return {root,update,animate,chunks,traffic,horizon,dispose,setNight(enabled){night=Boolean(enabled);for(const chunk of chunks.values())chunk.setNight(night);}};
 }

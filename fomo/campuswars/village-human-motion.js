@@ -56,6 +56,7 @@ export function humanPose(person,state,time){
     if(seated){elbow[1]=hipY+.22;elbow[2]=.25;hand[1]=hipY+.21;hand[2]=.47;}
     if(action==='groundskeeper'){elbow[2]=.27;hand[1]=hipY+.1;hand[2]=.6;}
     if(action==='dogwalk'&&j){elbow[2]=.12;hand[1]=hipY+.08;hand[2]=.24;}
+    if(state.carrying){elbow[2]=.25;elbow[1]=hipY+.18;hand[0]=side*.18;hand[1]=hipY+.14;hand[2]=.42;}
     if(skate){elbow[0]+=side*.08;hand[0]+=side*.14;hand[1]+=.12;}
     if(state.pong&&j){
       const {lift,extension}=state.pong;

@@ -18,7 +18,7 @@ function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=fal
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),{dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({root:new THREE.Group(),update(){return false;},animate(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},document:{getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(){},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),{dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},document:{getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(){},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
   let now=100;
@@ -41,6 +41,14 @@ test('taking control cancels the descent immediately and reset remains usable',(
 });
 test('reduced motion opens directly on the row',()=>{
   const h=cameraHarness(true);h.show(true);const a=h.step(.02);assert(a.y<14);assert(a.distanceTo(h.step(5))<.001);
+});
+test('exploring a neighborhood exits street view and reset returns to Greek Row',()=>{
+  const h=cameraHarness(true);h.show(true);h.step(.1);
+  h.fire('village-street:click');h.step(.1);
+  const select={value:'market'};h.fire('village-explore:change',{target:select});h.step(3);
+  assert.equal(select.value,'');assert.equal(h.element('street-controls').hidden,true);
+  assert(Math.abs(h.camera().position.distanceTo(new THREE.Vector3(100,3,-100))-105)<.01);
+  h.reset();assert(h.step(3).y<14);
 });
 test('startup preserves a new chapter deep link while waiting for live registrations',()=>{
   const h=cameraHarness(false,'#chapter=chapter-new');h.show(true);h.step(4);

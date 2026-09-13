@@ -1,5 +1,13 @@
 # fomo Campus Wars
 
+## College-town neighborhoods
+
+The wider village now includes Market Lane (pizza, a bar and patio, a vintage shop, a convenience store, and a record shop with apartments above), Maple Court and Porch Lane (small homes, furnished porches, side yards, laundry and mailboxes), and Willow Green (wooded slopes, walking trails, picnic areas, a pond and a timber pavilion). Shop elevations include windows on the sides and rear, fire escapes, service alleys and deliveries. Noticeboards, leaning bicycles, fences, outdoor tables and street lighting give the spaces between buildings a purpose. The existing academic buildings and chapter registration rules remain in place.
+
+**Explore** jumps to Market Lane, Willow Green, Maple Court or Greek Row; on phones it is under **More**. Campus visitors follow timed journeys between destinations, including class to coffee, collecting pizza, visiting records and the patio, and carrying deliveries. Pickups appear after the destination stop. Party mode illuminates storefronts, selected apartment windows and patio strings; the green gets quieter and evening groups gather at the bar patio. Ambient visitors remain scenery and never count toward chapter registrations. Routes use the existing pause/visibility clock, and newly streamed areas inherit the current lighting mode. Repeated geometry stays batched, including shared roofs; automated checks retain the existing limits of fewer than 200 scenery meshes and 22,000 instances across the tested streamed views. These checks are not device frame-rate measurements.
+
+For a local preview with current registrations, run `node server/campuswars-preview.mjs` from the repository root and open `http://127.0.0.1:4179/fomo/campuswars/`. This localhost-only server serves the working files and forwards `/api/campuswars` to the deployed site's public aggregate feed, preserving its timestamp and stale status. It uses no admin credentials and accepts no writes. A plain static server does not serve that API and will show saved registrations instead. Production continues to use the existing Vercel endpoint. Neighborhood, route, lighting, camera and preview-feed checks are included in `node --test fomo/campuswars/tests/*.test.mjs`.
+
 Static landing page for `https://milomessina.com/fomo/campuswars/`, using the existing GitHub/Vercel deployment. Three.js 0.180.0 is pinned in `vendor/` with its MIT license. The page has no new dependencies or build step. `/api/campuswars` is a Vercel Node function that reads the authenticated registration source on the server.
 
 ## Graphics and performance refinement

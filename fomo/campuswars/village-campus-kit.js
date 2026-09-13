@@ -1,6 +1,7 @@
-import {createVehicleKit} from './village-vehicles.js?v=35';
+import {createVehicleKit} from './village-vehicles.js?v=77';
 import {createCampusBannerTexture} from './village-floor-logo.js?v=24';
-import {hash,pick} from './village-district-layout.js?v=63';
+import {hash,pick} from './village-district-layout.js?v=77';
+import {buildPlace} from './village-places.js?v=77';
 // Shared architectural parts, textures and landscape geometry. All static parts
 // are instanced per streamed block; texture resources live across block changes.
 export function createCampusKit(T){
@@ -18,7 +19,7 @@ export function createCampusKit(T){
     else for(let i=0;i<1500;i++){ctx.fillStyle=i%2?'#bdbdb322':'#ffffff22';ctx.fillRect((i*71)%256,(i*113)%256,1+(i%3),1);}
     const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;map.repeat.set(kind==='brick'?24:3,kind==='brick'?8:3);map.anisotropy=8;maps.set(kind,map);return map;
   }
-  function material(color,kind=''){const key=color+kind;if(!materials.has(key)){const map=kind?texture(kind):null;materials.set(key,new T.MeshLambertMaterial({color,...(map?{map}:{})}));}return materials.get(key);}
+  function material(color,kind=''){const key=color+kind;if(!materials.has(key)){const glow=kind==='shopLight'||kind==='homeLight'||kind==='lampLight',map=kind&&!glow?texture(kind):null;const m=new T.MeshLambertMaterial({color,...(map?{map}:{}),...(glow?{emissive:color,emissiveIntensity:.04}:{})});if(glow)m.userData.placeLight=kind;materials.set(key,m);}return materials.get(key);}
   function instances(parent,geometry,count,radius=66){
     const m=new T.InstancedMesh(geometry,material(0xffffff),count);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.boundingSphere=new T.Sphere(new T.Vector3(0,2,0),radius);parent.add(m);return m;
   }
@@ -32,7 +33,9 @@ export function createCampusKit(T){
     const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;const m=mesh(p,new T.PlaneGeometry(w,h),x,y,z,1,1,1,new T.MeshLambertMaterial({map}));m.userData.ownedTexture=true;return m;
   }
   function roof(p,w,d,y,height=3){
-    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([-w/2,0,-d/2,w/2,0,-d/2,w/2,0,d/2,-w/2,0,d/2,-w*.28,height,0,w*.28,height,0],3));g.setIndex([0,1,5,0,5,4,1,2,5,2,3,4,2,4,5,3,0,4]);g.computeVertexNormals();const mat=material(0x414b54).clone();mat.side=T.DoubleSide;const m=mesh(p,g,0,y,0,1,1,1,mat);m.userData.ownedGeometry=true;return m;
+    const key=`roof:${w}:${d}:${height}`;
+    if(!geometries[key]){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([-w/2,0,-d/2,w/2,0,-d/2,w/2,0,d/2,-w/2,0,d/2,-w*.28,height,0,w*.28,height,0],3));g.setIndex([0,1,5,0,5,4,1,2,5,2,3,4,2,4,5,3,0,4]);g.computeVertexNormals();geometries[key]=g;}
+    const mat=material(0x414b54);mat.side=T.DoubleSide;return mesh(p,geometries[key],0,y,0,1,1,1,mat);
   }
   function tree(p,x,z,seed=0,size=1){
     const species=Math.floor(hash(seed,x,z,'species')*3),scale=size*(.8+hash(seed,x,z,'scale')*.4),h=(4.6+hash(seed,x,z,'height')*2.2)*scale,lean=(hash(seed,x,z,'lean')-.5)*.6;
@@ -47,7 +50,7 @@ export function createCampusKit(T){
     }
   }
   function bench(p,x,z,turn=0){const g=new T.Group();g.position.set(x,0,z);g.rotation.y=turn;p.add(g);for(let i=0;i<4;i++){box(g,0,.5,-.28+i*.16,2,.075,.12,0x94734e);box(g,0,.7+i*.13,-.37,2,.075,.08,0x94734e);}for(const x of [-.75,.75]){box(g,x,.27,0,.08,.48,.55,0x404b4d);box(g,x,.83,-.37,.07,.75,.07,0x404b4d);}}
-  function lamp(p,x,z){cylinder(p,x,2.25,z,.07,4.5,0x424f52);const neck=bar(p,[x,4.4,z],[x+.5,4.7,z],.065,0x424f52);box(p,x+.55,4.68,z,.6,.08,.35,0xdcd9bf);neck.castShadow=false;}
+  function lamp(p,x,z){cylinder(p,x,2.25,z,.07,4.5,0x424f52);const neck=bar(p,[x,4.4,z],[x+.5,4.7,z],.065,0x424f52);box(p,x+.55,4.68,z,.6,.08,.35,0xffd497,'lampLight');neck.castShadow=false;}
   function table(p,x,z,umbrella=false){cylinder(p,x,.8,z,.72,.1,0x9b805a);cylinder(p,x,.4,z,.06,.8,0x414b50);if(umbrella){cylinder(p,x,1.9,z,.045,2.2,0x695a49);mesh(p,'cone',x,2.9,z,1.55,.52,1.55,0xe4d6b9);}for(const side of [-1,1]){box(p,x+side*1.05,.49,z,.6,.09,.55,0x9b805a);box(p,x+side*1.05,.26,z,.065,.5,.065,0x414b50);}}
   function path(p,a,b,width=2,color=0xc7c3b4){const dx=b[0]-a[0],dz=b[1]-a[1];const m=box(p,(a[0]+b[0])/2,.12,(a[1]+b[1])/2,width,.08,Math.hypot(dx,dz),color);m.rotation.y=Math.atan2(dx,dz);return m;}
   function facadeWindows(p,w,d,h,modern=false,seed=0){
@@ -64,6 +67,7 @@ export function createCampusKit(T){
   }
   function building(p,s,ox,oz){
     const g=new T.Group();g.name=s.type;g.position.set(s.x-ox,0,s.z-oz);g.rotation.y=s.rotation;p.add(g);
+    if(s.type==='storefront'||s.type==='cottage'){buildPlace(T,{box,cylinder,bar,mesh,sign,roof,bench,table,bins,material},g,s);return g;}
     const w=s.width,d=s.depth,h=s.height,modern=['science','union','gym','arts'].includes(s.type);
     const base=pick([0xb67f62,0xae7057,0xc29c7c,0x916d5c],s.seed,'brick'),tint=.94+Math.floor(hash(s.x,s.z,'tint')*16)/100;
     const brick=new T.Color(base).multiplyScalar(tint).getHex(),stone=new T.Color(0xc7c4b4).multiplyScalar(tint).getHex();

@@ -1,3 +1,4 @@
+import {marketShops} from './village-place-layout.js?v=77';
 // Stable per-instance hashing: unrelated objects do not repeat in stripes or shift
 // when another instance is inserted. No runtime randomness or network state.
 export function hash(...keys){let h=2166136261;for(const key of keys){for(const c of String(key)){h=Math.imul(h^c.charCodeAt(0),16777619);}h=Math.imul(h^255,16777619);}h^=h>>>16;h=Math.imul(h,0x7feb352d);h^=h>>>15;h=Math.imul(h,0x846ca68b);return ((h^(h>>>16))>>>0)/4294967296;}
@@ -14,6 +15,7 @@ export function districtAt(x,z){return {x:Math.floor((x+50)/BLOCK),z:Math.floor(
 export function greekColumn(cx,streets=1){return cx===0||(cx>0?cx*2-1:cx*-2)<streets;}
 export function districtKind(cx,cz,streets=1){
   if(cz===0&&greekColumn(cx,streets))return 'greek';
+  if(cx===-1&&cz===1)return 'green';
   const x=mod(cx+1,3)-1,z=mod(cz+1,3)-1;
   if(x===0)return z<0?'library':z>0?'athletics':'commons';
   if(z===0)return x<0?'arts':'science';
@@ -24,6 +26,7 @@ export function districtSpecs(cx,cz,streets=1){
   const specs=[];
   const add=(type,x,z,width,depth,height,rotation=0,label='')=>specs.push({type,x:ox+x,z:oz+z,width,depth,height,rotation,label,seed:Math.floor(hash(cx,cz,type,x,z)*1000000)});
   if(kind==='greek')return specs;
+  if(kind==='green')return specs;
   if(kind==='library'||kind==='commons'){
     add('library',0,-20,36,19,12,0,'UNIVERSITY LIBRARY');
     add('hall',-31,5,17,29,8,Math.PI/2,'HUMANITIES');
@@ -40,14 +43,9 @@ export function districtSpecs(cx,cz,streets=1){
     add('hall',-28,17,27,22,10,Math.PI/2,'LECTURE HALL');
     add('shops',-28,-28,25,12,5,0,'BOOKS / RECORDS');
   }else if(kind==='residential'){
-    add('residence',-27,-14,27,34,12+seed%3,Math.PI/2,'RESIDENCE HALL');
-    add('hall',27,19,23,23,8,-Math.PI/2,'');
-    add('townhouse',28,-24,22,13,7+seed%2,0,'');
+    for(const side of [-1,1])for(const z of [-23,20])add('cottage',side*(27+(z>0?2:0)),z,17+(z>0?3:0),16,6+hash(cx,cz,side,z)*2,-side*Math.PI/2,'');
   }else{
-    add('shops',-27,-24,28,14,6,Math.PI/2,'CAMPUS SHOPS');
-    add('townhouse',27,-18,27,19,8,-Math.PI/2,'');
-    add('union',-27,22,29,20,7,Math.PI/2,'STUDENT SERVICES');
-    add('hall',29,24,21,17,9,-Math.PI/2,'');
+    for(const shop of marketShops){add('storefront',shop.x,shop.z,shop.width,shop.depth,shop.height,shop.rotation,shop.label);Object.assign(specs.at(-1),{color:shop.color,awning:shop.awning});}
   }
   return specs;
 }
