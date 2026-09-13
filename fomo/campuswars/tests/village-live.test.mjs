@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.min.js';
 import {createVillage} from '../village-world.js';
-import {createLots,rowExtension,streetCount,streetOriginX,activityPose} from '../village-layout.js';
+import {createLots,rowExtension,streetCount,streetOriginX,activityPose,STREET_CAPACITY,MAIN_STREET_HOUSES} from '../village-layout.js';
 import {districtKind,districtSpecs} from '../village-district-layout.js';
 import {createDistricts} from '../village-districts.js';
 const chapters = count => Array.from({length:count},(_,i)=>({id:`test-${i}`,name:'Alpha Beta',letters:'ΑΒ',school:`School ${i}`,shortSchool:`School ${i}`,joined:i%2?15:1,active:100}));
@@ -17,27 +17,29 @@ test('the row adds a selectable lot for every chapter and retains one claim lot'
   for(const mesh of Object.values(village.parts))assert([...mesh.instanceMatrix.array].every(Number.isFinite));
   assert.equal(village.members.length,112);assert(village.competition.board.position.z>village.anchors.at(-1).lot.z+15);village.dispose();
 });
-test('a street takes ten houses down each side, then the village opens the next one',()=>{
+test('the main street keeps ten plots a side, one of them reserved for the claim lot',()=>{
   const plots=count=>{const streets=new Map();for(const lot of createLots(count))streets.set(lot.street,(streets.get(lot.street)||0)+1);return [...streets.values()];};
   const sides=count=>{const lots=createLots(count).filter(lot=>lot.street===0);return [lots.filter(l=>l.x<l.originX).length,lots.filter(l=>l.x>l.originX).length];};
-  assert.deepEqual(plots(19),[20]);         // ten a side, and the claim lot fills the twentieth
+  assert.deepEqual(plots(19),[20]);         // nineteen houses and the reserved lot fill the street
   assert.deepEqual(sides(19),[10,10]);
-  assert.deepEqual(plots(20),[21]);         // the claim lot trails a full street
-  assert.deepEqual(plots(21),[21,1]);       // and holds that spot once the next street opens
-  assert.deepEqual(plots(45),[21,20,5]);
+  assert.deepEqual(plots(20),[20,1]);       // the twentieth chapter opens the next street
+  assert.deepEqual(plots(21),[20,2]);
+  assert.deepEqual(plots(45),[20,20,6]);
   assert.equal(streetCount(45),3);
-  // Whatever the roster, the claim lot closes the main street rather than moving off it.
-  for(const count of [0,1,5,17,20,21,45,120]){
-    const lots=createLots(count),claim=lots.at(-1),main=lots.slice(0,count).filter(lot=>lot.street===0);
+  // Whatever the roster, the boulevard holds twenty plots and the claim lot ends it.
+  for(const count of [0,1,5,17,19,20,21,45,120]){
+    const lots=createLots(count),claim=lots.at(-1),main=lots.filter(lot=>lot.street===0);
     assert.equal(claim.street,0,'the claim lot stays on the boulevard');
-    assert(main.every(house=>house.z<=claim.z),'no house stands past the claim lot');
-    assert(!main.some(house=>house.x===claim.x&&house.z===claim.z),'and nothing shares its plot');
+    assert(main.length<=STREET_CAPACITY,'the main street never grows past ten plots a side');
+    assert.equal(main.length-1,Math.min(count,MAIN_STREET_HOUSES),'nineteen houses at most, ranked from the front');
+    assert(main.slice(0,-1).every(house=>house.z<=claim.z),'no house stands past the claim lot');
+    assert.equal(new Set(lots.map(lot=>`${lot.x},${lot.z}`)).size,lots.length,'and no two plots share an address');
   }
   // Streets stand on the campus road grid, opening east then west of the original.
   assert.deepEqual([0,1,2,3].map(streetOriginX),[0,100,-100,200]);
   for(const lot of createLots(45)){assert.equal(Math.abs(lot.x-lot.originX),20);assert(lot.z>=-19&&lot.z<=171);}
   // Every street shares one length, so the world stops growing with the row.
-  for(const count of [21,45,120,400])assert(rowExtension(count)<=152);
+  for(const count of [21,45,120,400])assert(rowExtension(count)<=133);
   // The row as it stands today is one street and keeps its own length.
   assert.equal(streetCount(17),1);assert.equal(rowExtension(17),114);
   // A street's own block carries houses instead of campus buildings.
@@ -51,7 +53,7 @@ test('houses on a second street stand clear of the campus and keep their own fro
   const village=createVillage(THREE,chapters(25));
   assert.equal(village.streetTotal,2);
   const second=village.anchors.filter(a=>a.lot.street===1);
-  assert.equal(second.length,5,'five houses, with the claimable lot left on the main street');
+  assert.equal(second.length,6,'six houses, with the claimable lot left on the main street');
   assert.equal(village.anchors.find(a=>a.id==='empty').lot.street,0);
   for(const anchor of second){
     assert.equal(anchor.lot.originX,100);

@@ -1,5 +1,5 @@
 import {hash} from './village-district-layout.js?v=63';
-import {lawnGround,toWorld} from './village-layout.js?v=68';
+import {lawnGround,toWorld} from './village-layout.js?v=69';
 const textures=new WeakMap();
 export const GRASS_COLOR=0x718753;
 // Numeric, periodic noise makes the small grass tile seamless without an asset download.
