@@ -96,7 +96,13 @@ function doGet() {
     ledger: typeof invoiceApi === 'function',
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
-    subs: typeof subsRoll === 'function'
+    subs: typeof subsRoll === 'function',
+    /* The roster this deployment will actually put on a line. The page
+       carries its own copy of the same list, and the two agree only while
+       the script behind the URL is current — so it is named here rather
+       than assumed. A page talking to an older deployment can then grey a
+       name out instead of taking the line and losing it to a refusal. */
+    payers: INVOICE_PAYERS
   });
 }
 

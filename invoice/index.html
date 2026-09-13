@@ -128,6 +128,13 @@ section{margin-top:clamp(22px,3vw,34px)}
 .chip.sm{padding:6px 13px;font-size:.81rem}
 .split-hint{font-size:.78rem;color:var(--muted-2);margin-top:8px}
 .split-hint b{color:var(--muted);font-weight:500}
+/* A name the deployed script has never heard of. Greyed rather than
+   removed: the chip missing entirely reads as "we dropped that person",
+   and the whole point is to say the sheet is behind, not the roster. */
+.chip.stale{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.chip.stale:hover{border-color:var(--line-2);color:var(--muted)}
+.stale-note{display:block;color:var(--owed)}
+.stale-note b{color:var(--owed);font-weight:600}
 /* A file input has to stay rendered to be clickable from script. Safari on
    iOS will not open the picker for one that is display:none — which is what
    the hidden attribute does — so it is moved out of sight instead. */
@@ -475,6 +482,7 @@ td.tnum.run{color:var(--good)}
         <div class="field">
           <span class="lbl">who paid</span>
           <div class="who" id="who" role="group" aria-label="Who paid"></div>
+          <span class="split-hint stale-note" id="who-stale" hidden></span>
         </div>
         <div class="field">
           <span class="lbl">who it was for</span>
@@ -761,6 +769,16 @@ var mode = BACKEND === 'sheet' ? 'sheet' : 'device';
    they write still land on the shared ledger like any other spend. */
 var sheetSubs = false;
 
+/* The names the deployment behind ENDPOINT will actually accept on a line.
+   PAYERS below is what this file believes; this is what the sheet enforces,
+   and the two only agree while the deployed script is current. Apps Script
+   serves the last DEPLOYED version, not the last saved one, so a page can
+   sit here offering a name the sheet has never heard of — which came back
+   as "that name is not on the bootcamp", a sentence about the person rather
+   than about the deployment, over a line that was already typed out.
+   null until the endpoint has been asked; only ever read in sheet mode. */
+var sheetPayers = null;
+
 /* what this browser was holding at the moment it moved to the sheet */
 var carried = null;
 
@@ -889,7 +907,18 @@ function apiSheet(action, payload){
     var out = null;
     try { out = JSON.parse(txt); } catch(e){}
     if (!out) throw new Error('the endpoint answered, but not with the ledger. Its deployment access is probably not set to "Anyone"');
-    if (out.ok !== true) throw new Error(out.error || "the sheet turned it away");
+    if (out.ok !== true) {
+      var why = out.error || "the sheet turned it away";
+      /* The sheet can only say it does not know the name; it has no way to
+         know that the page offered it. With BACKEND on 'sheet' the roster
+         is never probed, so this is the one place left where a version gap
+         surfaces — and unrewritten it reads as a fact about the person. */
+      if (/not on the bootcamp/.test(why)) {
+        why = "the shared sheet is running an older copy of the script, which doesn't know that name yet" +
+              " — redeploy fomo/setup/apps-script.gs (Deploy \u2192 Manage deployments \u2192 New version)";
+      }
+      throw new Error(why);
+    }
     if (!out.rows) throw new Error("the endpoint answered, but not with the ledger — the Apps Script behind it is still the old version. Redeploy it: Deploy → Manage deployments → New version");
     {
       rows = out.rows.map(function(r){
@@ -1010,6 +1039,60 @@ function resetSplit(){
 }
 document.getElementById("f-amt").addEventListener("input", renderSplit);
 resetSplit();
+
+/* ---------- names the sheet will not take ----------
+
+   Only ever a mismatch of versions: this page and the script were changed
+   together, but only one of them ships by being saved. Rather than let the
+   chip take a tap and the line take the fall, a name the deployment does
+   not know is greyed out and says why. On device storage there is no
+   deployment to disagree with, so everyone is available. */
+function payerOk(name){
+  return mode !== "sheet" || !sheetPayers || sheetPayers.indexOf(name) > -1;
+}
+var STALE_ROSTER = "The shared sheet is running an older copy of the script, " +
+  "which doesn't know this name yet. Redeploy fomo/setup/apps-script.gs — " +
+  "Deploy \u2192 Manage deployments \u2192 New version.";
+
+function applyRosterUi(){
+  /* the same name has a chip in both rows, and it is one name either way */
+  var lost = SHARERS.filter(function(n){ return !payerOk(n); });
+  [whoBox, splitBox].forEach(function(box){
+    Array.prototype.forEach.call(box.children, function(c){
+      var ok = payerOk(c.textContent);
+      c.disabled = !ok;
+      c.classList.toggle("stale", !ok);
+      if (ok) c.removeAttribute("title"); else c.title = STALE_ROSTER;
+    });
+  });
+  /* whoever was picked before the verdict came in cannot stay picked — the
+     name is remembered across visits, so this is the ordinary case for
+     anybody who last logged a line while the sheet was still current */
+  if (picked && !payerOk(picked)) {
+    picked = null;
+    Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed","false"); });
+    resetSplit();
+    /* the line under the button still reads "Logging as Arya" otherwise —
+       it was written before the endpoint had been asked */
+    hint("");
+  }
+  var dropped = false;
+  SHARERS.forEach(function(n){ if (sharedWith[n] && !payerOk(n)) { delete sharedWith[n]; dropped = true; } });
+  if (dropped) renderSplit();
+  /* Not the banner: that is cleared by the next successful sync, and this
+     is a standing condition rather than news about one request. It lives
+     under the chips it is about, where it is also readable on a phone,
+     which a hover title is not. */
+  var note = document.getElementById("who-stale");
+  note.hidden = !lost.length;
+  if (lost.length) {
+    var who = lost.slice(0, 2).join(" and "), many = lost.length > 1;
+    note.innerHTML = "<b>" + esc(who) + "</b> can't go on a line yet — the shared sheet is running an " +
+      "older copy of the script, which doesn't carry " + (many ? "those names" : "that name") + ". " +
+      "Everything else works as normal. Redeploy <b>fomo/setup/apps-script.gs</b> " +
+      "(Deploy \u2192 Manage deployments \u2192 New version).";
+  }
+}
 
 var fCat = document.getElementById("f-cat"), tCat = document.getElementById("t-cat"), tWho = document.getElementById("t-who");
 CATS.forEach(function(c){ fCat.appendChild(new Option(c.label, c.id)); tCat.appendChild(new Option(c.label, c.id)); });
@@ -1545,6 +1628,7 @@ document.getElementById("f-file").addEventListener("change", function(){
    done. Under 'auto' the move to the sheet happens after the page is
    already up, so this runs again then rather than only once at load. */
 function applyModeUi(){
+  applyRosterUi();
   if (pendingShot) return;
   if (repeat) {
     document.getElementById("f-drop").textContent =
@@ -2430,7 +2514,16 @@ function probeSheet(){
     if (!res.ok) throw new Error("HTTP " + res.status);
     return res.json();
   }).then(function(out){
-    if (out && out.ok === true && out.ledger === true && out.clock === true) return "shared";
+    if (out && out.ok === true && out.ledger === true && out.clock === true) {
+      /* A deployment that does not name its roster is, by definition, older
+         than the change that added the field — and that change went out
+         with the one that put Arya on the ledger. So silence is not "it
+         will take anything", it is the intern-only roster, and read that
+         way rather than optimistically. */
+      sheetPayers = (out.payers && out.payers.length)
+        ? out.payers.map(String) : PEOPLE.slice();
+      return "shared";
+    }
     return "old";
   })["catch"](function(){
     /* offline, blocked, rate-limited, or an HTML error page where the JSON
