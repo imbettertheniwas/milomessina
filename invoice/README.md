@@ -3,7 +3,9 @@
 `/invoice` is the internal tool for arya's fomo bootcamp.
 Milo, Bijan, Jesse and Luchi log what they front — lunches, API credits, coffee
 — and clock in and out; the page totals what's been spent, who is still owed,
-where the money went, and how many hours each of them has worked.
+where the money went, and how many hours each of them has worked. Anything that
+goes out every month, a subscription rather than a one-off, is set up once and
+puts itself on the ledger from then on.
 
 It works the moment it loads. Nothing to deploy, nothing to configure.
 
@@ -99,10 +101,19 @@ same sheet, through the same deployment, so there is no second URL.
 4. Nothing. On `'auto'` the page picks it up by itself on the next load, and
    offers to carry that browser's ledger up with it.
 
-> **This is already done.** The live deployment
+> **The ledger and the clock are already deployed.** The live deployment
 > (`AKfycbxDR-3zqJEQgFEY0a-…`) was moved to a new version on Sep 10, 2026 and
-> the endpoint reports `ledger`, `clock` and `shiftimport` all true. The steps
-> above are here for the next time the script changes.
+> the endpoint reports `ledger`, `clock` and `shiftimport` all true.
+>
+> **`subs` is not, yet.** Monthly subscriptions were added to the script after
+> that, so the four steps above are owed one more run. Nothing waits on it —
+> a subscription set up before the redeploy lives in the browser it was set up
+> in and writes its lines to the shared ledger from there, exactly as it does
+> on device storage. What the redeploy buys is the rules living on the sheet
+> like everything else: visible to all four of them, editable from any laptop,
+> and rolled forward by the endpoint instead of by whoever opens the page. The
+> page picks the change up by itself and offers to carry that browser's rules
+> up with it.
 >
 > The reason it was needed is worth remembering, because it will happen again.
 > The project had **two active deployments**. Somebody pasted the ledger code
@@ -123,13 +134,14 @@ serving the old code, which looks exactly like nothing happened.
 
 Open the `/exec` URL itself in a browser:
 
-    {"ok":true,"hint":"fomo campus form receiver is live","ledger":true,"clock":true,"shiftimport":true}
+    {"ok":true,"hint":"fomo campus form receiver is live","ledger":true,"clock":true,"shiftimport":true,"subs":true}
 
-`ledger` and `clock` are the two halves of this tool, and `shiftimport` is the
-carry-over described above. **`true` on all three means the deployed version is
-the current one** — and it is the same check the page itself runs on every load
-before deciding whether to go shared. If any is missing or `false`, that URL
-is still serving older code. Either you ended up with a second deployment, or
+`ledger` and `clock` are the two halves of this tool, `shiftimport` is the
+carry-over described above, and `subs` is monthly subscriptions. **`true` on
+all four means the deployed version is the current one** — and the first two
+are the same check the page itself runs on every load before deciding whether
+to go shared. If any is missing or `false`, that URL is still serving older
+code. Either you ended up with a second deployment, or
 the paste went into a different script project than the one this URL belongs to.
 
 If you do end up with a new URL, paste it into `ENDPOINT` in both
@@ -155,6 +167,18 @@ The `invoice` tab:
 | `receipt` | a link, if one was pasted in — see below |
 | `reimbursed` | when it was marked paid |
 | `shared` | who the line was *for* — see below. Blank on anything logged before this column existed |
+
+The `subs` tab — one row per monthly subscription, and none of them a spend:
+
+| Column | Holds |
+| --- | --- |
+| `id` | 8 characters, generated server-side |
+| `created` | when the rule was set up |
+| `who`, `what`, `category`, `amount`, `note`, `shared` | what each line it writes will say |
+| `day` | the day of the month it lands on, 1–31 |
+| `next` | the day the next line is due — the one field the whole thing turns on |
+| `active` | `yes`, or `no` while it is paused |
+| `last` | the day of the last line it wrote |
 
 The `hours` tab:
 
@@ -240,6 +264,58 @@ Lines with nobody ticked are left out of the per-person totals rather than
 guessed at. A spend that does not say who it was for is not evidence that the
 payer had it alone, and the panel's caption says how many lines it is actually
 describing so a chart drawn from three of forty is not read as all forty.
+
+## Spends that repeat
+
+Cursor, Claude, a gym membership — the things that go out on the same day
+every month and get typed in again every month until somebody forgets. The
+**repeat monthly** toggle beside *Add to ledger* turns the form into a rule
+instead of a line: same fields, same split, and from then on it writes itself.
+
+The day of the month comes from the date field, so a subscription set up on
+the 3rd lands on the 3rd. The date's usual ceiling of *today* lifts while the
+toggle is on, because a subscription can perfectly well start next week even
+though a spend cannot have happened next week. A receipt photo is refused for
+the same reason in reverse: the rule is not one purchase, and each month's
+receipt belongs on the line that month.
+
+An **on repeat** panel appears above the charts once there is one, with the
+next date, the monthly total, and a pause and a delete for each. **Pausing
+stops the next line; deleting stops the next line.** Neither touches the
+lines already written — that money was actually spent, and the ledger is
+the record of it. A rule resumed after a month off writes the month it
+missed as soon as it comes back.
+
+### What actually writes the line
+
+A rule is not a spend. What it puts on the ledger each month is an ordinary
+line — reimbursable, splittable, deletable, indistinguishable from one
+somebody typed — which is why the totals, the charts, the CSV and the settle
+buttons all needed no changes at all.
+
+Who writes it depends on where the rules live:
+
+- **On the shared sheet**, the endpoint does, inside the script lock it
+  already holds for every write. That lock is the point: four laptops opening
+  the page on the 14th all ask whether Cursor is due, and exactly one of them
+  is allowed to answer. The same loop running in four browsers would write
+  the month four times.
+- **In this browser** — device storage, or a sheet whose deployment predates
+  `subs` — the page does, and the rules are that browser's. A line it writes
+  still goes to the shared ledger like any other spend.
+
+Either way it is **the page being opened** that makes a month's line appear.
+Nothing runs while the tab is shut: there is no server here but a
+spreadsheet, and a spreadsheet does not wake up on the 14th. In practice
+somebody opens the ledger most days, and a rule that has been waiting three
+months writes all three the moment one of them does. Behind by more than a
+year, it catches up twelve lines at a time and says so, rather than
+unrolling two years of ledger in one go.
+
+A rule kept in two places — set up on a laptop, then carried up to a sheet
+too old to hold it — could write the same month twice. It doesn't: a line
+already on the ledger for the same person, day, description and amount *is*
+that line, and the rule steps over it.
 
 ## The clock
 

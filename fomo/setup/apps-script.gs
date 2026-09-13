@@ -95,7 +95,8 @@ function doGet() {
     hint: 'fomo campus form receiver is live',
     ledger: typeof invoiceApi === 'function',
     clock: typeof shiftIn === 'function',
-    shiftimport: typeof shiftImport === 'function'
+    shiftimport: typeof shiftImport === 'function',
+    subs: typeof subsRoll === 'function'
   });
 }
 
@@ -275,15 +276,42 @@ function invoiceApi(body) {
     var srow = shiftFind(ssh, body.id);
     if (srow) ssh.deleteRow(srow);
 
+  } else if (action === 'subadd') {
+    var rule = subClean(body);
+    if (rule.error) return reply(false, rule.error);
+    subSheet().appendRow(SUB_COLS.map(function (c) {
+      return rule.row[c] === undefined ? '' : rule.row[c];
+    }));
+
+  } else if (action === 'subpause') {
+    var bsh = subSheet();
+    var brow = subFind(bsh, body.id);
+    if (!brow) return reply(false, 'that subscription is no longer on the sheet');
+    bsh.getRange(brow, SUB_COLS.indexOf('active') + 1).setValue(body.active ? 'yes' : 'no');
+
+  } else if (action === 'subdelete') {
+    var dsh = subSheet();
+    var drow = subFind(dsh, body.id);
+    if (drow) dsh.deleteRow(drow);
+
   } else if (action !== 'list') {
     return reply(false, 'unknown action');
   }
 
-  /* Both halves come back on every call, so the page always renders
-     what the sheet actually holds rather than what it hoped it did. */
+  /* Any monthly line that has come due since somebody last opened the page
+     is written here, on the way out. It runs on every call, including a
+     plain 'list', because that is the call four laptops make when they
+     open /invoice in the morning and one of them has to be the one that
+     writes September's Cursor bill. A rule that cannot be turned into a
+     line is skipped rather than allowed to take the ledger down with it. */
+  try { subsRoll(sh); } catch (rollErr) {}
+
+  /* Every part comes back on every call, so the page always renders what
+     the sheet actually holds rather than what it hoped it did. */
   return reply(true, null, {
     rows: invoiceRead(sh).map(invoicePublic),
-    shifts: shiftRead(shiftSheet()).map(shiftPublic)
+    shifts: shiftRead(shiftSheet()).map(shiftPublic),
+    subs: subRead(subSheet()).map(subPublic)
   });
 }
 
@@ -402,6 +430,164 @@ function invoicePublic(r) {
 
 function invoiceStamp() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+/* ── subscriptions: a spend that repeats every month ─────────── */
+
+/* A subscription is a rule, not a spend. `next` is the day the rule is
+   owed its next line, and rolling that forward is the whole feature:
+   subsRoll asks every active rule whether its day has come round and
+   writes the ledger lines that are due.
+
+   It lives here rather than on the page for one reason. doPost holds a
+   script lock, so these run one at a time — and four laptops opening
+   /invoice within a minute of each other all ask the same question about
+   the same rule. One of them writes the line and moves `next`; the other
+   three arrive to find nothing due. The same loop on the page would have
+   each of them write their own copy of October's bill.
+
+   The page still carries its own copy of this loop, because a browser on
+   device storage has no sheet to do it for them. */
+var SUB_TAB = 'subs';
+var SUB_COLS = ['id', 'created', 'who', 'what', 'category', 'amount',
+                'day', 'next', 'active', 'note', 'shared', 'last'];
+
+/* A rule left alone for two years should not wake up and write two years
+   of lines. It catches up a year at a time and the page says so. */
+var SUB_MAX_CATCHUP = 12;
+
+function subSheet() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID)
+                           : SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('no spreadsheet — set SHEET_ID, or run this script from inside the sheet');
+
+  var sh = ss.getSheetByName(SUB_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(SUB_TAB);
+    sh.getRange(1, 1, sh.getMaxRows(), SUB_COLS.length).setNumberFormat('@');
+    sh.getRange(1, SUB_COLS.indexOf('amount') + 1, sh.getMaxRows()).setNumberFormat('$#,##0.00');
+    sh.getRange(1, 1, 1, SUB_COLS.length).setValues([SUB_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+/* Nothing reaches the sheet unchecked — a rule writes a line a month for
+   as long as it exists, so it is checked exactly as hard as a spend. */
+function subClean(b) {
+  var line = invoiceClean(b);
+  if (line.error) return line;
+
+  var start = line.row.date;
+  var day = Math.min(31, Math.max(1, Math.round(Number(b.day) || Number(start.split('-')[2]) || 1)));
+
+  return { row: {
+    id: Utilities.getUuid().slice(0, 8),
+    created: invoiceStamp(),
+    who: line.row.who,
+    what: line.row.what,
+    category: line.row.category,
+    amount: line.row.amount,
+    day: day,
+    next: start,
+    active: 'yes',
+    note: line.row.note,
+    shared: line.row.shared,
+    last: ''
+  }};
+}
+
+function subRead(sh) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, SUB_COLS.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var raw = vals[i];
+    if (!String(raw[0])) continue;
+    var o = { _row: i + 2 };
+    for (var j = 0; j < SUB_COLS.length; j++) o[SUB_COLS[j]] = raw[j];
+    o.id = String(o.id);
+    o.amount = Number(o.amount) || 0;
+    o.day = Math.min(31, Math.max(1, Math.round(Number(o.day) || 1)));
+    /* a hand-edit turns the text date back into a real one, same as the
+       ledger's own dates do */
+    o.next = invoiceDate(o.next);
+    o.last = invoiceDate(o.last);
+    o.active = String(o.active).toLowerCase() === 'no' ? 'no' : 'yes';
+    out.push(o);
+  }
+  return out;
+}
+
+function subFind(sh, id) {
+  id = String(id || '');
+  if (!id) return null;
+  var all = subRead(sh);
+  for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]._row;
+  return null;
+}
+
+function subPublic(s) {
+  return {
+    id: s.id, who: String(s.who), what: String(s.what), category: String(s.category),
+    amount: s.amount, day: s.day, next: s.next, active: s.active,
+    note: String(s.note || ''), shared: String(s.shared || ''), last: s.last || ''
+  };
+}
+
+/* The day of the month is kept as the rule's own number rather than read
+   back off the last line written, so a subscription on the 31st does not
+   walk itself back to the 28th the first time it passes February. */
+function subStep(iso, day) {
+  var p = String(iso || '').split('-');
+  var y = Number(p[0]), m = Number(p[1]);
+  if (!y || !m) return '';
+  m += 1;
+  if (m > 12) { m = 1; y += 1; }
+  var inMonth = new Date(y, m, 0).getDate();
+  var d = Math.min(Math.max(1, Number(day) || Number(p[2]) || 1), inMonth);
+  return y + '-' + subPad(m) + '-' + subPad(d);
+}
+function subPad(n) { return (n < 10 ? '0' : '') + n; }
+
+function subsRoll(insh) {
+  var sh = subSheet();
+  var all = subRead(sh);
+  if (!all.length) return 0;
+
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var nextCol = SUB_COLS.indexOf('next') + 1, lastCol = SUB_COLS.indexOf('last') + 1;
+  var made = 0;
+
+  for (var i = 0; i < all.length; i++) {
+    var s = all[i];
+    if (s.active !== 'yes') continue;
+
+    var next = s.next, wrote = '', guard = 0;
+    while (/^\d{4}-\d{2}-\d{2}$/.test(next) && next <= today && guard++ < SUB_MAX_CATCHUP) {
+      var line = invoiceClean({
+        who: s.who, what: s.what, category: s.category, amount: s.amount,
+        date: next, note: s.note, shared: s.shared
+      });
+      /* a rule whose name or amount was edited into something the ledger
+         will not take stops writing rather than throwing — it stays on the
+         subs tab, with its `next` where it was, saying which day it stuck on */
+      if (line.error) break;
+      insh.appendRow(INVOICE_COLS.map(function (c) {
+        return line.row[c] === undefined ? '' : line.row[c];
+      }));
+      wrote = next;
+      made++;
+      next = subStep(next, s.day);
+    }
+
+    if (wrote) {
+      sh.getRange(s._row, nextCol).setValue(next);
+      sh.getRange(s._row, lastCol).setValue(wrote);
+    }
+  }
+  return made;
 }
 
 /* ── the clock, behind the same /invoice page ────────────────── */
