@@ -14,6 +14,7 @@ import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,a
 import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=59';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=56';
 import {createSchoolBanner} from './village-school-banners.js?v=56';
+import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
 
 export function createVillage(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes}={}){
   // Physical addresses follow the same percentage standings as the rank badges.
@@ -167,34 +168,49 @@ export function createVillage(THREE,chapters,{streets:existingStreet,houseFinish
   const dummy=new THREE.Object3D(),up=new THREE.Vector3(0,1,0),a=new THREE.Vector3(),b=new THREE.Vector3(),direction=new THREE.Vector3();
   function posePart(name,i,x,y,z,sx,sy,sz,rotation=0,pitch=0){dummy.position.set(x,y,z);dummy.rotation.set(pitch,rotation,0,'YXZ');dummy.scale.set(sx,sy,sz);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
   function limb(name,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);dummy.position.copy(a).add(b).multiplyScalar(.5);const length=direction.length();dummy.quaternion.setFromUnitVectors(up,direction.normalize());dummy.scale.set(r,length+.025,r);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
-  function animateCrowd(time){
-    members.forEach((m,i)=>{
-      const state=activityPose(m,time),rig=humanPose(m,state,time),angle=state.rotation,h=m.height,cos=Math.cos(angle),sin=Math.sin(angle);
-      const transform=([x,y,z])=>[state.x+(x*cos+z*sin)*h,y*h+(state.ground??m.ground??0),state.z+(-x*sin+z*cos)*h];
-      const part=(name,point,x,y,z,yaw=0,pitch=0)=>posePart(name,i,...transform(point),x*h,y*h,z*h,angle+yaw,pitch);
-      part('torso',rig.chest,.40,.52,.25,rig.twist,rig.lean);
-      part('pelvis',rig.hip,.29,.20,.23,-rig.twist*.5);
-      part('neck',[rig.head[0],rig.head[1]-.19,rig.head[2]],.12,.15,.12);
-      part('head',rig.head,.126,.17,.136,rig.headYaw);
-      const hairOffset=-.025;
-      part('hair',[rig.head[0]+Math.sin(rig.headYaw)*hairOffset,rig.head[1]+.075,rig.head[2]+Math.cos(rig.headYaw)*hairOffset],.132,.105+m.hairLength*.04,.14,rig.headYaw);
-      part('nose',[rig.head[0]+Math.sin(rig.headYaw)*.132,rig.head[1]-.01,rig.head[2]+Math.cos(rig.headYaw)*.132],.026,.036,.036,rig.headYaw);
-      part('backpack',[rig.chest[0],rig.chest[1]-.025,rig.chest[2]-.19],m.backpack?.28:0,.34,.15,rig.twist);
-      construction.update(m,state,rig,transform);
-      for(let j=0;j<2;j++){
-        const side=j?'R':'L',arm=rig.arms[j],leg=rig.legs[j];
-        limb('arm'+side,i,transform(arm.shoulder),transform(arm.elbow),.115*h);
-        limb('fore'+side,i,transform(arm.elbow),transform(arm.hand),.083*h);
-        part('hand'+side,arm.hand,.047,.067,.043);
-        limb('leg'+side,i,transform(leg.hip),transform(leg.knee),.155*h);
-        limb('shin'+side,i,transform(leg.knee),transform(leg.ankle),.11*h);
-        part('shoe'+side,[leg.ankle[0],leg.ankle[1]-.055+Math.abs(Math.sin(leg.pitch))*.145,leg.ankle[2]+.045],.15,.13,.29,0,leg.pitch);
-        if(j)part('cup',[arm.hand[0],arm.hand[1]+.04,arm.hand[2]+.025],.065,!state.walking&&!['pong','die','build'].includes(m.action)&&hash(m.chapter,m.member,'cup')>.86?.13:0,.065);
+  const crowdVisibility=createCrowdVisibility(THREE,members);
+  let effectsTime=NaN;
+  function animateCrowd(time,camera){
+    let updated=0;
+    for(const batch of crowdVisibility.visible(camera,world.matrixWorld)){
+      if(batch.time===time)continue;
+      for(let i=batch.start;i<batch.start+batch.count;i++){
+        const m=members[i];
+        const state=activityPose(m,time),rig=humanPose(m,state,time),angle=state.rotation,h=m.height,cos=Math.cos(angle),sin=Math.sin(angle);
+        const transform=([x,y,z])=>[state.x+(x*cos+z*sin)*h,y*h+(state.ground??m.ground??0),state.z+(-x*sin+z*cos)*h];
+        const part=(name,point,x,y,z,yaw=0,pitch=0)=>posePart(name,i,...transform(point),x*h,y*h,z*h,angle+yaw,pitch);
+        part('torso',rig.chest,.40,.52,.25,rig.twist,rig.lean);
+        part('pelvis',rig.hip,.29,.20,.23,-rig.twist*.5);
+        part('neck',[rig.head[0],rig.head[1]-.19,rig.head[2]],.12,.15,.12);
+        part('head',rig.head,.126,.17,.136,rig.headYaw);
+        const hairOffset=-.025;
+        part('hair',[rig.head[0]+Math.sin(rig.headYaw)*hairOffset,rig.head[1]+.075,rig.head[2]+Math.cos(rig.headYaw)*hairOffset],.132,.105+m.hairLength*.04,.14,rig.headYaw);
+        part('nose',[rig.head[0]+Math.sin(rig.headYaw)*.132,rig.head[1]-.01,rig.head[2]+Math.cos(rig.headYaw)*.132],.026,.036,.036,rig.headYaw);
+        part('backpack',[rig.chest[0],rig.chest[1]-.025,rig.chest[2]-.19],m.backpack?.28:0,.34,.15,rig.twist);
+        construction.update(m,state,rig,transform);
+        for(let j=0;j<2;j++){
+          const side=j?'R':'L',arm=rig.arms[j],leg=rig.legs[j];
+          limb('arm'+side,i,transform(arm.shoulder),transform(arm.elbow),.115*h);
+          limb('fore'+side,i,transform(arm.elbow),transform(arm.hand),.083*h);
+          part('hand'+side,arm.hand,.047,.067,.043);
+          limb('leg'+side,i,transform(leg.hip),transform(leg.knee),.155*h);
+          limb('shin'+side,i,transform(leg.knee),transform(leg.ankle),.11*h);
+          part('shoe'+side,[leg.ankle[0],leg.ankle[1]-.055+Math.abs(Math.sin(leg.pitch))*.145,leg.ankle[2]+.045],.15,.13,.29,0,leg.pitch);
+          if(j)part('cup',[arm.hand[0],arm.hand[1]+.04,arm.hand[2]+.025],.065,!state.walking&&!['pong','die','build'].includes(m.action)&&hash(m.chapter,m.member,'cup')>.86?.13:0,.065);
+        }
       }
-    });
-    Object.values(parts).forEach(mesh=>mesh.instanceMatrix.needsUpdate=true);
-    pong.animate(time);die.animate(time);construction.finish();
-    flags.forEach((flag,i)=>{flag.rotation.y=Math.sin(time*2+i)*.15;flag.rotation.z=Math.sin(time*3+i)*.035;});
+      // Keep pending ranges until Three.js uploads them, including updates made
+      // while a mesh was culled or during prewarming before its first render.
+      for(const mesh of Object.values(parts))mesh.instanceMatrix.addUpdateRange(batch.start*16,batch.count*16);
+      batch.time=time;updated+=batch.count;
+    }
+    if(updated){Object.values(parts).forEach(mesh=>mesh.instanceMatrix.needsUpdate=true);construction.finish();}
+    if(effectsTime!==time){
+      pong.animate(time);die.animate(time);
+      flags.forEach((flag,i)=>{flag.rotation.y=Math.sin(time*2+i)*.15;flag.rotation.z=Math.sin(time*3+i)*.035;});
+      effectsTime=time;
+    }
+    return updated;
   }
   animateCrowd(0);
   const competition=createCompetition(THREE,chapters,anchors);world.add(competition.root);competition.board.position.z+=extension;
@@ -216,5 +232,5 @@ export function createVillage(THREE,chapters,{streets:existingStreet,houseFinish
   function animateEffects(time){beacon?.animate(time);if(nightLife.root.visible)nightLife.animate(time);}
   collect();
   function dispose(){for(const resource of resources)if(!resource.userData?.sharedResource)resource.dispose();resources.clear();}
-  return {world,streets,lots,extension,streetTotal,houseFinishes,dispose,pickables,anchors,members,parts,animateCrowd,competition,beacon,nightLife,animateEffects,pong,die,construction};
+  return {world,streets,lots,extension,streetTotal,houseFinishes,dispose,pickables,anchors,members,parts,crowdVisibility,animateCrowd,competition,beacon,nightLife,animateEffects,pong,die,construction};
 }

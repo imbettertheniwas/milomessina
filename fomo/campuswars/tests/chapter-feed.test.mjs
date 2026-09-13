@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseChapterAdmin,fetchChapterSnapshot} from '../../../server/campuswars-source.mjs';
-import {startChapterFeed,validateSnapshot} from '../chapter-feed.js';
-import handler from '../../../api/campuswars.mjs';
+import {startChapterFeed as startFeed,validateSnapshot} from '../chapter-feed.js';
+import {createChapterHandler} from '../../../api/campuswars.mjs';
+const startChapterFeed=options=>startFeed({random:()=>0,now:()=>Date.parse('2026-09-09T13:00:01Z'),...options});
 
 const row = ({id='12345678-abcd-abcd-abcd-123456789012',name='Phi Delta Theta',school='Florida International University',joined=1,active=55}={}) => `<tr><td><div class="ch">${name}</div><div class="sc">${school} · Fraternity</div></td><td>PRIVATE NAME</td><td>private@example.com</td><td><span class="prog">${joined} / ${Math.ceil(active*.8)}</span><div class="dim">${active} actives</div></td><td>PRIVATE NOMINATION</td><td>Sep 9, 2026</td><td><input value="PRIVATE INVITE"><button data-del="${id}">Delete</button></td></tr>`;
 const table = rows => `<table><thead><tr>${['Chapter','Who registered','Contact','Progress','Best / worst','Registered','Join link'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
@@ -50,7 +51,8 @@ test('refresh applies new data, skips unchanged payloads, recovers after failure
 
 test('hosted endpoint rejects writes, hides upstream failures and coalesces concurrent reads',async()=>{
   const password=process.env.CAMPUSWARS_ADMIN_PASSWORD,originalFetch=globalThis.fetch;
-  const response=()=>({headers:{},code:200,setHeader(k,v){this.headers[k]=v;},status(c){this.code=c;return this;},json(body){this.body=body;return this;}});
+  let time=0;const handler=createChapterHandler({now:()=>time});
+  const response=()=>({headers:{},code:200,setHeader(k,v){this.headers[k]=v;},status(c){this.code=c;return this;},json(body){this.body=body;return this;},end(body){this.body=body?JSON.parse(body):undefined;return this;}});
   try {
     delete process.env.CAMPUSWARS_ADMIN_PASSWORD;
     const missing=response();await handler({method:'GET'},missing);assert.equal(missing.code,503);assert.equal(missing.headers['Cache-Control'],'no-store');
@@ -58,6 +60,7 @@ test('hosted endpoint rejects writes, hides upstream failures and coalesces conc
     process.env.CAMPUSWARS_ADMIN_PASSWORD='test-only';
     globalThis.fetch=async()=>{throw new Error('PRIVATE secret source error');};
     const failed=response();await handler({method:'GET'},failed);assert.equal(failed.code,502);assert(!JSON.stringify(failed.body).includes('PRIVATE'));
+    time=5000;
     let requests=0,release;const held=new Promise(resolve=>release=resolve);
     globalThis.fetch=async()=>{requests++;await held;return {ok:true,text:async()=>table(row())};};
     const a=response(),b=response();const pending=Promise.all([handler({method:'GET'},a),handler({method:'GET'},b)]);release();await pending;
@@ -96,4 +99,52 @@ test('admin field readers accept status and layout classes added around their se
     original.replace('class="prog"','class="complete prog"')
   ])assert.deepEqual(parseChapterAdmin(html),expected);
   assert.throws(()=>parseChapterAdmin(original.replace('class="prog"','class="progress"')));
+});
+
+test('unchanged initial counts avoid rebuilding the village and repeated cache hits avoid storage writes',async()=>{
+  const updates=[],statuses=[];let writes=0;
+  const feed=startChapterFeed({initialSnapshot:snapshot(10),storageRef:{getItem(){},setItem(){writes++;}},onUpdate:s=>updates.push(s),onStatus:s=>statuses.push(s),documentRef:{hidden:false,addEventListener(){},removeEventListener(){}},schedule:()=>1,cancel(){},fetchImpl:async(_url,options)=>{
+    assert.equal(options.cache,undefined,'Polling permits shared HTTP caching');return {ok:true,json:async()=>snapshot(10)};
+  }});
+  await new Promise(resolve=>setImmediate(resolve));await feed.refresh();feed.stop();
+  assert.equal(updates.length,0);assert.equal(writes,1);assert.equal(statuses.at(-1).live,true);
+});
+
+test('polling backs off with jitter and Retry-After, caps delays, and resets after recovery',async()=>{
+  let fail=true,retry=90,id=0;const timers=new Map();
+  const feed=startChapterFeed({random:()=>.5,storageRef:null,onUpdate(){},onStatus(){},documentRef:{hidden:false,addEventListener(){},removeEventListener(){}},schedule:(fn,delay)=>{timers.set(++id,{fn,delay});return id;},cancel:id=>timers.delete(id),fetchImpl:async()=>({ok:!fail,headers:{get:()=>String(retry)},json:async()=>snapshot(1)})});
+  await new Promise(resolve=>setImmediate(resolve));assert.equal([...timers.values()][0].delay,90000);
+  retry=0;await feed.refresh();assert.equal([...timers.values()][0].delay,126000);
+  for(let i=0;i<8;i++)await feed.refresh();assert.equal([...timers.values()][0].delay,300000);
+  fail=false;await feed.refresh();assert.equal([...timers.values()][0].delay,31500);feed.stop();
+});
+
+test('stale responses and old CDN timestamps never claim fresh data or roll counts backward',async()=>{
+  const updates=[],statuses=[];let current={...snapshot(12),stale:true};
+  const feed=startChapterFeed({storageRef:null,onUpdate:s=>updates.push(s),onStatus:s=>statuses.push(s),documentRef:{hidden:false,addEventListener(){},removeEventListener(){}},schedule:()=>1,cancel(){},fetchImpl:async()=>({ok:true,json:async()=>current})});
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(updates.length,1);assert.equal(statuses.at(-1).live,false);
+  current=snapshot(12);await feed.refresh();assert.equal(statuses.at(-1).live,true);assert.equal(updates.length,1);
+  current={...snapshot(2),updatedAt:'2026-09-09T12:59:00Z'};await feed.refresh();assert.equal(updates.length,1);assert.equal(statuses.at(-1).live,false);feed.stop();
+  const old=startChapterFeed({now:()=>Date.parse('2026-09-09T13:02:00Z'),storageRef:null,onUpdate(){},onStatus:s=>statuses.push(s),documentRef:{hidden:false,addEventListener(){},removeEventListener(){}},schedule:()=>1,cancel(){},fetchImpl:async()=>({ok:true,json:async()=>snapshot(12)})});
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(statuses.at(-1).live,false);old.stop();
+});
+
+test('hiding a tab aborts an in-flight read and prevents late updates after stop',async()=>{
+  let visibility,signal,release;const updates=[],statuses=[],timers=new Map();let id=0;
+  const doc={hidden:false,addEventListener:(_,fn)=>visibility=fn,removeEventListener(){}};
+  const feed=startChapterFeed({storageRef:null,documentRef:doc,onUpdate:s=>updates.push(s),onStatus:s=>statuses.push(s),schedule:(fn,delay)=>{timers.set(++id,{fn,delay});return id;},cancel:id=>timers.delete(id),fetchImpl:async(_url,options)=>{
+    signal=options.signal;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>snapshot(2)};
+  }});
+  assert([...timers.values()].some(t=>t.delay===12000));doc.hidden=true;visibility();assert.equal(signal.aborted,true);
+  feed.stop();release();await new Promise(resolve=>setImmediate(resolve));assert.equal(updates.length,0);assert.equal(statuses.length,0);assert.equal(timers.size,0);
+});
+
+test('a quick hide and return refreshes immediately after the cancelled request settles',async()=>{
+  let visibility,id=0;const timers=new Map(),statuses=[];
+  const doc={hidden:false,addEventListener:(_,fn)=>visibility=fn,removeEventListener(){}};
+  const feed=startChapterFeed({storageRef:null,documentRef:doc,onUpdate(){},onStatus:s=>statuses.push(s),schedule:(fn,delay)=>{timers.set(++id,{fn,delay});return id;},cancel:id=>timers.delete(id),fetchImpl:async(_url,{signal})=>new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(signal.reason)))});
+  doc.hidden=true;visibility();doc.hidden=false;visibility();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(statuses.length,0,'An intentional cancellation is not an outage');
+  assert.equal([...timers.values()][0].delay,0);feed.stop();
 });

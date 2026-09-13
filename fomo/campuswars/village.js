@@ -1,7 +1,7 @@
 import {villageQuality} from './village-quality.js?v=56';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillage} from './village-world.js?v=67';
+import {createVillage} from './village-world.js?v=76';
 import {createDistricts} from './village-districts.js?v=63';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';
@@ -297,10 +297,10 @@ function startVillage(){
     if(!paused&&!(entranceActive&&entrancePaused)&&visible&&!document.hidden){
       if(!entranceActive&&!reduced)moneyRain.updateRewards(dt,nightToggle.getAttribute('aria-pressed')==='true'?1:0);
       partyTime+=dt;blimp.update(partyTime);village.animateEffects(partyTime);
-      village.animateCrowd(partyTime);
     }
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
+    village.animateCrowd(partyTime,camera);
     districts.animate(partyTime,target.x,target.z,camera);
     renderer.render(scene,camera);lastRender=now;
     viewDirty=false;

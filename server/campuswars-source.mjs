@@ -58,15 +58,40 @@ export function parseChapterAdmin(html) {
   return chapters.map((chapter, house) => ({...chapter, house}));
 }
 
+// Bound decoded bytes too: Content-Length may be absent or describe compressed
+// bytes. Never buffer an unbounded admin export in a public request handler.
+export async function readChapterSource(response,maxBytes=8*1024*1024){
+  const tooLarge=()=>new Error('Chapter source exceeds size limit');
+  if(Number(response.headers?.get('content-length'))>maxBytes){await response.body?.cancel();throw tooLarge();}
+  if(!response.body?.getReader){
+    const html=await response.text();
+    if(Buffer.byteLength(html)>maxBytes)throw tooLarge();
+    return html;
+  }
+  const reader=response.body.getReader(),chunks=[];let size=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();if(done)break;
+      size+=value.byteLength;
+      if(size>maxBytes){await reader.cancel();throw tooLarge();}
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks,size).toString('utf8');
+  }finally{reader.releaseLock();}
+}
+
 export async function fetchChapterSnapshot({password, username='village', fetchImpl=fetch, now=()=>new Date()}={}) {
   if (!password) throw new Error('Chapter source is not configured');
   const response = await fetchImpl('https://www.aryatoufanian.com/admin/', {
     headers:{Authorization:`Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`, Accept:'text/html', 'Cache-Control':'no-cache'},
-    redirect:'error', signal:AbortSignal.timeout(20000), cache:'no-store'
+    redirect:'error', signal:AbortSignal.timeout(8000), cache:'no-store'
   });
-  if (response.status===401||response.status===403) throw new Error('Chapter source authentication failed');
-  if (!response.ok) throw new Error('Chapter source unavailable');
-  const chapters = parseChapterAdmin(await response.text());
+  if (!response.ok){
+    await response.body?.cancel();
+    if(response.status===401||response.status===403)throw new Error('Chapter source authentication failed');
+    throw new Error('Chapter source unavailable');
+  }
+  const chapters = parseChapterAdmin(await readChapterSource(response));
   return {source:'Chapter registrations', live:true, updatedAt:now().toISOString(), chapters};
 }
 
@@ -84,7 +109,8 @@ export function chapterSourceErrorCode(error){
     'Missing chapter totals':'SOURCE_TOTALS',
     'Invalid chapter totals':'SOURCE_VALUES',
     'Duplicate chapter identity':'SOURCE_DUPLICATE',
-    'Chapter source is not configured':'SOURCE_CONFIG'
+    'Chapter source is not configured':'SOURCE_CONFIG',
+    'Chapter source exceeds size limit':'SOURCE_SIZE'
   };
   if(error?.name==='TimeoutError'||error?.name==='AbortError')return 'SOURCE_TIMEOUT';
   return codes[error?.message]||'SOURCE_CONNECTION';
