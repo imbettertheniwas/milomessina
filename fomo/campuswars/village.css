@@ -86,3 +86,8 @@ dialog{width:580px;max-width:calc(100% - 32px);max-height:calc(100dvh - 48px);pa
 @media(max-width:700px) and (max-height:600px){
   .village-drawer{top:auto;max-height:min(52dvh,300px)}
 }
+
+/* The blimp’s native link also works with a keyboard. */
+#village-discord{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #aebce155;border-radius:12px;background:#4449a8e8;color:#fff;font-size:14px;pointer-events:auto;white-space:nowrap}
+#village-discord:hover{background:#5865f2}#village-discord:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(max-width:700px),(pointer:coarse){#village-discord{font-size:12px;padding:10px 8px;grid-column:1 / -1}}

@@ -6,6 +6,7 @@ import {createDistricts} from './village-districts.js?v=63';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';
 import {prewarmVillage} from './village-prewarm.js?v=71';
+import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
@@ -27,13 +28,15 @@ function startVillage(){
   const renderScale=Math.min(devicePixelRatio,quality.pixelRatio);
   renderer.setPixelRatio(renderScale);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
-  viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Drag to rotate, shift-drag to pan, or select a house. Pinch with two fingers to zoom. Use Street view to click along the block. In Street view, W and S or up and down move, left and right look around. Escape resets the view.');
+  viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Drag to rotate, shift-drag to pan, or select a house. Click the FOMO blimp to join Discord, or use the Discord link in the village controls. Pinch with two fingers to zoom. Use Street view to click along the block. In Street view, W and S or up and down move, left and right look around. Escape resets the view.');
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x98a7ba);scene.fog=new THREE.FogExp2(0x98a7ba,.0022);
   const camera=new THREE.PerspectiveCamera(48,1,1,650);
   const ambient=new THREE.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
   const fill=new THREE.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
   let village=createVillage(THREE,chapters);scene.add(village.world);
+  const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
+  const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
   const moneyRain=createMoneyRain(THREE,chapters,village.anchors);scene.add(moneyRain.root);
   let streetNav=createStreetNavigation(THREE,village.extension);scene.add(streetNav.root);
   let streetMode=false,streetZ=28.5,streetWantedZ=28.5;
@@ -197,23 +200,30 @@ function startVillage(){
   document.addEventListener('fullscreenchange',()=>{expand.textContent=document.fullscreenElement?'Exit full screen ↙':'Full screen ↗';resize();});
   canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;
     if(e.pointerType==='touch'){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);if(touchPoints.size>1){takeControl();pinchDistance=touchDistance();drag=null;dragDistance=9;return;}}
-    takeControl();canvas.focus({preventScroll:true});drag={id:e.pointerId,x:e.clientX,y:e.clientY,pan:e.shiftKey};dragDistance=0;canvas.setPointerCapture(e.pointerId);});
+    takeControl();canvas.focus({preventScroll:true});rayAt(e);
+    const hit=raycaster.intersectObjects([...blimp.pickables,...village.pickables],false)[0];
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY,pan:e.shiftKey,blimp:hit?.object.userData.action==='discord'};dragDistance=0;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{
     if(touchPoints.has(e.pointerId)){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size>1){const distance=touchDistance();if(pinchDistance>0&&distance>0)zoomView(pinchDistance/distance);pinchDistance=distance;return;}}
-    if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;dragDistance+=Math.abs(dx)+Math.abs(dy);if(drag.pan&&!streetMode){const scale=radius*.0015;wantedTarget.x+=(-dx*Math.cos(theta)+dy*Math.sin(theta))*scale;wantedTarget.z+=(dx*Math.sin(theta)+dy*Math.cos(theta))*scale;}else{wantedTheta-=dx*.006;wantedPhi=Math.max(streetMode?-.65:.22,Math.min(streetMode?.65:1.3,wantedPhi+dy*.004));}drag.x=e.clientX;drag.y=e.clientY;wake();});
+    if(!drag){rayAt(e);const hovered=raycaster.intersectObjects(blimp.pickables,false).length>0;canvas.style.cursor=hovered?'pointer':'';canvas.title=hovered?'Join the FOMO Discord ↗':'';return;}
+    if(e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;dragDistance+=Math.abs(dx)+Math.abs(dy);if(drag.pan&&!streetMode){const scale=radius*.0015;wantedTarget.x+=(-dx*Math.cos(theta)+dy*Math.sin(theta))*scale;wantedTarget.z+=(dx*Math.sin(theta)+dy*Math.cos(theta))*scale;}else{wantedTheta-=dx*.006;wantedPhi=Math.max(streetMode?-.65:.22,Math.min(streetMode?.65:1.3,wantedPhi+dy*.004));}drag.x=e.clientX;drag.y=e.clientY;wake();});
   function rayAt(e){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(pointer,camera);}
   canvas.addEventListener('pointerup',e=>{
     if(endTouch(e))return;
-    if(!drag||drag.id!==e.pointerId)return;drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
+    if(!drag||drag.id!==e.pointerId)return;const startedOnBlimp=drag.blimp;drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
     if(dragDistance>8)return;
     // The canvas keeps the pointer for the whole gesture, so a tap that started
     // beside a control and drifted onto it would still pick the house behind it.
     if(document.elementFromPoint(e.clientX,e.clientY)!==canvas)return;
     rayAt(e);
+    // Remember a blimp press so its gentle motion cannot outrun a touch tap.
+    if(startedOnBlimp){discordLink.click();return;}
+    const hit=raycaster.intersectObjects([...blimp.pickables,...village.pickables],false)[0];
+    if(hit?.object.userData.action==='discord'){discordLink.click();return;}
     if(streetMode){const step=raycaster.intersectObjects(streetNav.pickables.filter(o=>o.parent.visible),false)[0];if(step){moveStreet(step.object.userData.streetZ);return;}}
-    const hit=raycaster.intersectObjects(village.pickables,false)[0];
     if(hit){if(hit.object.userData.action==='register'){document.getElementById('panel-claim').click();return;}choose(hit.object.userData.chapter,!streetMode);return;}
   });
+  canvas.addEventListener('pointerleave',()=>{canvas.style.cursor='';canvas.title='';});
   canvas.addEventListener('pointercancel',e=>{endTouch(e);drag=null;});canvas.addEventListener('lostpointercapture',e=>{touchPoints.delete(e.pointerId);pinchDistance=touchPoints.size>1?touchDistance():0;drag=null;});
   canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas&&!document.fullscreenElement)return;e.preventDefault();takeControl();if(streetMode){stepStreet(e.deltaY>0);return;}wantedRadius=Math.max(20,Math.min(MAX_ZOOM_RADIUS,wantedRadius*Math.exp(e.deltaY*.001)));wake();},{passive:false});
   function handleViewKey(event){
@@ -286,7 +296,7 @@ function startVillage(){
     }
     if(!paused&&!(entranceActive&&entrancePaused)&&visible&&!document.hidden){
       if(!entranceActive&&!reduced)moneyRain.updateRewards(dt,nightToggle.getAttribute('aria-pressed')==='true'?1:0);
-      partyTime+=dt;village.animateEffects(partyTime);
+      partyTime+=dt;blimp.update(partyTime);village.animateEffects(partyTime);
       village.animateCrowd(partyTime);
     }
     // Refresh newly visible crowds even while activity is paused; their pose

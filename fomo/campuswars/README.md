@@ -170,3 +170,10 @@ House exteriors use red and brown brick, warm ivory, slate blue, sage, sandstone
 House selection and the leading house no longer draw ground highlight rings. Chapter selection, rank labels and leader lighting continue to identify houses.
 
 The Your neighbors popup now uses the same live onboarding-percentage ordering and tie ranks as the 3D houses, with explicit rank labels. Opening it requests a refresh. Member fractions in the popup, chapter banners and in-world leaderboard display joined members / `ceil(active * 0.8)`; percentage labels explicitly refer to the full active roster, which remains the ranking metric.
+
+
+### FOMO Discord blimp
+
+A modeled purple FOMO blimp flies a continuous 110-second oval above the village. The redesigned airship has a satin purple hull, pearl underside, curved tail fins, panoramic cabin windows and spinning twin propellers. A large white Discord Clyde symbol and lowercase fomo wordmark are painted directly onto both sides with transparent artwork; there is no rectangular banner. The hull uses one surface for both paint finishes to avoid flickering. The Discord symbol comes from [Discord’s official brand assets](https://discord.com/branding). Clicking or tapping the blimp opens `https://discord.gg/FhvKtyvFJp` in a new tab. A native Discord link in the controls (under More on phones) provides keyboard access. Dragging and pinching do not open the invite.
+
+The blimp shares the existing activity clock, pauses with Pause activity and reduced-motion defaults, and suspends when the village or browser tab is hidden. It uses local canvas artwork, shared geometry/materials, and no extra lights, shadow passes, timers or downloaded model. It stays separate from roster rebuilds. The 118 automated checks include lap continuity, flight heading/clearance, picking both sides, pause/resume, reduced motion, hidden-view suspension and gesture handling. Desktop and 390 × 844 previews were checked in daylight and party mode; clicking the actual blimp opened the exact invite without browser errors.
