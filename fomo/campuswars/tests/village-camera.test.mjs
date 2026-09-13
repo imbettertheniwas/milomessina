@@ -42,14 +42,6 @@ test('taking control cancels the descent immediately and reset remains usable',(
 test('reduced motion opens directly on the row',()=>{
   const h=cameraHarness(true);h.show(true);const a=h.step(.02);assert(a.y<14);assert(a.distanceTo(h.step(5))<.001);
 });
-test('exploring a neighborhood exits street view and reset returns to Greek Row',()=>{
-  const h=cameraHarness(true);h.show(true);h.step(.1);
-  h.fire('village-street:click');h.step(.1);
-  const select={value:'market'};h.fire('village-explore:change',{target:select});h.step(3);
-  assert.equal(select.value,'');assert.equal(h.element('street-controls').hidden,true);
-  assert(Math.abs(h.camera().position.distanceTo(new THREE.Vector3(100,3,-100))-105)<.01);
-  h.reset();assert(h.step(3).y<14);
-});
 test('startup preserves a new chapter deep link while waiting for live registrations',()=>{
   const h=cameraHarness(false,'#chapter=chapter-new');h.show(true);h.step(4);
   assert.deepEqual(h.selections,[],'fallback selection must not overwrite the requested live chapter');

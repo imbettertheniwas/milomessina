@@ -152,13 +152,6 @@ function startVillage(){
   });
   document.addEventListener('party:pause',e=>{paused=e.detail.paused;wake();});
   document.getElementById('village-overview').addEventListener('click',()=>{takeControl();resetView();});
-  document.getElementById('village-explore').addEventListener('change',event=>{
-    const places={market:[100,3,-100,105,-.65,.7],green:[-100,2,100+village.extension,110,.3,.85],homes:[-100,3,-100,100,.55,.7]},place=places[event.target.value];
-    takeControl();leaveStreet();
-    if(place){wantedTarget.set(...place.slice(0,3));wantedRadius=place[3];wantedTheta=place[4];wantedPhi=place[5];}
-    else resetView();
-    event.target.value='';const more=document.getElementById('village-more');if(more.getAttribute('aria-expanded')==='true')more.click();canvas.focus({preventScroll:true});viewDirty=true;wake();
-  });
   document.getElementById('village-leaderboard').addEventListener('click',()=>{
     takeControl();leaveStreet();const board=village.competition.board;
     wantedTarget.set(board.position.x,5,board.position.z);
