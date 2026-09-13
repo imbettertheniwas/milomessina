@@ -1,7 +1,7 @@
 import {villageQuality} from './village-quality.js?v=56';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillage} from './village-world.js?v=65';
+import {createVillage} from './village-world.js?v=66';
 import {createDistricts} from './village-districts.js?v=63';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';

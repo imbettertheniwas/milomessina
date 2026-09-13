@@ -20,15 +20,18 @@ export const LOTS = [
 export const STREET_SIDE_CAPACITY=10,STREET_CAPACITY=STREET_SIDE_CAPACITY*2,STREET_SPACING=100;
 export const streetOriginX=street=>street?(street%2?1:-1)*Math.ceil(street/2)*STREET_SPACING:0;
 export function streetCount(chapterCount){return Math.max(1,Math.ceil(chapterCount/STREET_CAPACITY));}
+const plot=(index,street)=>{
+  const slot=index-street*STREET_CAPACITY,originX=streetOriginX(street);
+  return {x:originX+(slot%2?20:-20),z:-19+Math.floor(slot/2)*19,rotation:slot%2?-Math.PI/2:Math.PI/2,style:index%5,street,originX};
+};
 export function createLots(chapterCount) {
   if (!Number.isSafeInteger(chapterCount) || chapterCount < 0) throw new RangeError('Invalid chapter count');
   const last=streetCount(chapterCount)-1;
-  // The claimable lot follows the final house, staying on that street even when
-  // the ten houses in front of it have already filled it.
-  return Array.from({length:chapterCount+1},(_,i)=>{
-    const street=Math.min(Math.floor(i/STREET_CAPACITY),last),slot=i-street*STREET_CAPACITY,originX=streetOriginX(street);
-    return {x:originX+(slot%2?20:-20),z:-19+Math.floor(slot/2)*19,rotation:slot%2?-Math.PI/2:Math.PI/2,style:i%5,street,originX};
-  });
+  const houses=Array.from({length:chapterCount},(_,i)=>plot(i,Math.min(Math.floor(i/STREET_CAPACITY),last)));
+  // The claimable lot always closes the main street, however many side streets
+  // the village has opened behind it: it follows the last house on the boulevard,
+  // and waits one row past a full one rather than moving to another street.
+  return [...houses,plot(Math.min(chapterCount,STREET_CAPACITY),0)];
 }
 // Every street shares one world length, so the deepest of them sets the extension.
 export function rowExtension(chapterCount) {

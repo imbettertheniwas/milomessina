@@ -23,9 +23,16 @@ test('a street takes ten houses down each side, then the village opens the next 
   assert.deepEqual(plots(19),[20]);         // ten a side, and the claim lot fills the twentieth
   assert.deepEqual(sides(19),[10,10]);
   assert.deepEqual(plots(20),[21]);         // the claim lot trails a full street
-  assert.deepEqual(plots(21),[20,2]);
-  assert.deepEqual(plots(45),[20,20,6]);
+  assert.deepEqual(plots(21),[21,1]);       // and holds that spot once the next street opens
+  assert.deepEqual(plots(45),[21,20,5]);
   assert.equal(streetCount(45),3);
+  // Whatever the roster, the claim lot closes the main street rather than moving off it.
+  for(const count of [0,1,5,17,20,21,45,120]){
+    const lots=createLots(count),claim=lots.at(-1),main=lots.slice(0,count).filter(lot=>lot.street===0);
+    assert.equal(claim.street,0,'the claim lot stays on the boulevard');
+    assert(main.every(house=>house.z<=claim.z),'no house stands past the claim lot');
+    assert(!main.some(house=>house.x===claim.x&&house.z===claim.z),'and nothing shares its plot');
+  }
   // Streets stand on the campus road grid, opening east then west of the original.
   assert.deepEqual([0,1,2,3].map(streetOriginX),[0,100,-100,200]);
   for(const lot of createLots(45)){assert.equal(Math.abs(lot.x-lot.originX),20);assert(lot.z>=-19&&lot.z<=171);}
@@ -44,7 +51,8 @@ test('houses on a second street stand clear of the campus and keep their own fro
   const village=createVillage(THREE,chapters(25));
   assert.equal(village.streetTotal,2);
   const second=village.anchors.filter(a=>a.lot.street===1);
-  assert.equal(second.length,6,'five houses and the claimable lot');
+  assert.equal(second.length,5,'five houses, with the claimable lot left on the main street');
+  assert.equal(village.anchors.find(a=>a.id==='empty').lot.street,0);
   for(const anchor of second){
     assert.equal(anchor.lot.originX,100);
     assert(village.world.getObjectByName(`chapter-house-${anchor.id}`)||village.world.getObjectByName(`chapter-construction-${anchor.id}`)||anchor.id==='empty');
