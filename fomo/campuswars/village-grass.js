@@ -1,5 +1,5 @@
-import {hash} from './village-district-layout.js?v=77';
-import {lawnGround,toWorld} from './village-layout.js?v=69';
+import {hash} from './village-district-layout.js?v=80';
+import {lawnGround,toWorld} from './village-layout.js?v=80';
 const textures=new WeakMap();
 export const GRASS_COLOR=0x718753;
 // Numeric, periodic noise makes the small grass tile seamless without an asset download.
@@ -73,10 +73,11 @@ export function createLawnBlades(T,lots){
   const count=lots.length*220,mesh=new T.InstancedMesh(geometry,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}),count),dummy=new T.Object3D();
   mesh.name='foreground-grass-blades';mesh.receiveShadow=true;mesh.castShadow=false;
   lots.forEach((lot,index)=>{for(let i=0;i<220;i++){
-    let x=(hash(index,i,'blade-x')-.5)*14.4,z=7.1+hash(index,i,'blade-z')*6.6;
+    const seed=lot.sourceIndex??index;
+    let x=(hash(seed,i,'blade-x')-.5)*14.4,z=7.1+hash(seed,i,'blade-z')*6.6;
     if(Math.abs(x)<1.1)x+=(x<0?-1:1)*1.2;
-    const pos=toWorld(lot,x,z),size=.65+hash(index,i,'blade-size')*.7;
-    dummy.position.set(pos.x,lawnGround(x,z)+.008,pos.z);dummy.rotation.y=hash(index,i,'blade-angle')*Math.PI*2;dummy.scale.setScalar(size);dummy.updateMatrix();mesh.setMatrixAt(index*220+i,dummy.matrix);
+    const pos=toWorld(lot,x,z),size=.65+hash(seed,i,'blade-size')*.7;
+    dummy.position.set(pos.x,lawnGround(x,z)+.008,pos.z);dummy.rotation.y=hash(seed,i,'blade-angle')*Math.PI*2;dummy.scale.setScalar(size);dummy.updateMatrix();mesh.setMatrixAt(index*220+i,dummy.matrix);
   }});
   mesh.computeBoundingSphere();return mesh;
 }

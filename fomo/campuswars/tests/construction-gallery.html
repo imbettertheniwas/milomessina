@@ -4,8 +4,8 @@
 <header><strong>Construction crew review</strong><label>Site <select id="site"></select></label><label>Members <input id="count" type="number" min="0" max="15" value="2" style="width:42px"></label><label>Time <input id="time" type="range" min="0" max="40" step="0.05" value="0"></label><button id="play">Play</button><p>Preview counts only; live registrations are unchanged.</p></header>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createVillage} from '../village-world.js?v=64';
-import {schoolIdentity,loadSchoolLogo} from '../village-school-banners.js?v=54';
+import {createVillage} from '../village-world.js?v=87';
+import {schoolIdentity,loadSchoolLogo} from '../village-school-banners.js?v=87';
 const {chapters}=await (await fetch('../chapters.json')).json();
 const select=document.getElementById('site'),count=document.getElementById('count'),time=document.getElementById('time');
 for(const chapter of chapters){const option=document.createElement('option');option.value=chapter.id;option.textContent=chapter.name+' · '+chapter.shortSchool;select.append(option);}

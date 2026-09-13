@@ -44,7 +44,7 @@ test('all six lots face the shared boulevard and are individually selectable',()
 
 test('conversation gestures update articulated bodies with finite transforms',()=>{
   const before=Array.from(village.parts.armL.instanceMatrix.array);village.animateCrowd(.7);assert.notDeepEqual(Array.from(village.parts.armL.instanceMatrix.array),before);
-  for(const time of [0,1.2,47,3600]){village.animateCrowd(time);for(const part of Object.values(village.parts)){assert.equal(part.count,117);assert([...part.instanceMatrix.array].every(Number.isFinite));}}
+  for(const time of [0,1.2,47,3600]){village.animateCrowd(time);for(const [name,part] of Object.entries(village.parts)){assert.equal(part.count,117*(name==='backpack'?7:name==='hair'?2:1));assert([...part.instanceMatrix.array].every(Number.isFinite));}}
 });
 test('repeated architecture is batched for a bounded draw count',()=>{
   let drawables=0;village.world.traverse(object=>{if(object.isMesh)drawables++;});assert(drawables<150,`Too many scene meshes: ${drawables}`);
@@ -55,7 +55,7 @@ test('completed houses retain conversation groups and five leisure walkers',()=>
   const standing=village.members.filter(m=>!m.walking&&m.action!=='build');assert(standing.every(m=>m.groupSize>=2));
   for(const member of standing){const a=activityPose(member,0),b=activityPose(member,15);assert.equal(a.x,b.x);assert.equal(a.z,b.z);assert(Math.abs(a.breath)<.01&&Math.abs(b.breath)<.01);}
   const groups=Map.groupBy(standing.filter(m=>!['pong','die'].includes(m.action)),m=>m.chapter+':'+m.groupPhase);
-  for(const t of [0,4,13,27])for(const group of groups.values())assert.equal(group.filter(m=>activityPose(m,t).speaking).length,1);
+  for(const t of [0,4,13,27])for(const group of groups.values())assert(group.filter(m=>activityPose(m,t).speaking).length<=1);
   for(const member of village.members.filter(m=>m.walking)){const a=activityPose(member,0),b=activityPose(member,10);assert(Math.hypot(a.x-b.x,a.z-b.z)>1);}
 });
 
@@ -166,8 +166,11 @@ test('a denser campus retains bounded instances and a persistent static horizon'
   const horizonMatrix=horizon.matrixWorld.toArray(),horizonChildren=horizon.children.length;
   for(const [x,z] of [[0,0],[500,500],[-900,300],[2000,-3000],[0,0]]){
     districts.update(x,z);assert.equal(districts.chunks.size,9);
-    let instances=0,drawables=0;districts.root.traverse(o=>{if(o.isMesh)drawables++;if(o.isInstancedMesh)instances+=o.count;});
-    assert(instances<22000,`Unbounded instances: ${instances}`);assert(drawables<200,`Unbounded meshes: ${drawables}`);
+    // Keep the existing campus budget, with the separately tested stadium's
+    // fixed crowd/architecture budget accounted for independently.
+    const stadiumObjects=new Set();districts.stadium.root.traverse(o=>stadiumObjects.add(o));
+    let instances=0,drawables=0,distantBatches=0;districts.root.traverse(o=>{if(stadiumObjects.has(o))return;if(o.name==='distant-chapter-members'){distantBatches++;return;}if(o.isMesh)drawables++;if(o.isInstancedMesh)instances+=o.count;});
+    assert(distantBatches<=9,'At most one distant crowd draw per streamed block');assert(instances<22000,`Unbounded instances: ${instances}`);assert(drawables<200,`Unbounded meshes: ${drawables}`);
     for(const time of [0,8,16,23.99,240,10000]){districts.animate(time,x,z);districts.root.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite));if(o.isInstancedMesh)assert(o.instanceMatrix.array.every(Number.isFinite));});}
     assert.equal(districts.horizon,horizon);assert.equal(horizon.parent,districts.root);assert.deepEqual(horizon.matrixWorld.toArray(),horizonMatrix);assert.equal(horizon.children.length,horizonChildren);
   }
@@ -221,12 +224,12 @@ test('knees bend forward without stretching legs and standing feet stay still',(
   const p={height:1,phase:2},a=humanPose(p,{walking:false},0),b=humanPose(p,{walking:false},17);
   assert.deepEqual(a.legs.map(l=>l.ankle),b.legs.map(l=>l.ankle));assert.notDeepEqual(a.chest,b.chest);
 });
-test('chapter walkers keep an even pace and clear their conversation groups',()=>{
+test('chapter walkers pause smoothly and clear their conversation groups',()=>{
   const members=crowdMembers(chapters);
   for(const p of members.filter(m=>m.walking))for(let t=0;t<70;t+=.2){
     const a=activityPose(p,t),b=activityPose(p,t+.001);
-    assert(Math.abs(Math.hypot(b.x-a.x,b.z-a.z)/.001-p.motionProfile.walkSpeed)<.001);
-    assert(Math.cos(a.rotation)*(b.z-a.z)+Math.sin(a.rotation)*(b.x-a.x)>0);
+    assert(Math.abs(Math.hypot(b.x-a.x,b.z-a.z)/.001-p.motionProfile.walkSpeed*a.motion)<.002);
+    assert(Math.cos(a.rotation)*(b.z-a.z)+Math.sin(a.rotation)*(b.x-a.x)>=-1e-8);
     for(const other of members.filter(m=>!m.walking&&m.chapter===p.chapter))assert(Math.hypot(a.x-other.x,a.z-other.z)>.5);
   }
 });

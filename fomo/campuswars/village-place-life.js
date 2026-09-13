@@ -1,4 +1,4 @@
-import {marketJourneys,greenTrail} from './village-place-layout.js?v=77';
+import {marketJourneys,greenTrail} from './village-place-layout.js?v=80';
 
 export function placePeople(kind,add){
   const group=(x,z,n,extra={})=>{for(let i=0;i<n;i++){const a=i/n*Math.PI*2;add('talk',x+Math.sin(a)*1.35,z+Math.cos(a)*1.35,a+Math.PI,{seat:i,groupSize:n,groupPhase:x+z,...extra});}};

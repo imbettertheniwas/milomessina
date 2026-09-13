@@ -1,4 +1,4 @@
-import {hash} from './village-district-layout.js?v=77';
+import {hash} from './village-district-layout.js?v=80';
 
 // Traditional masonry and subdued exterior paint, independent of rank or fraternity.
 const finishes=[
@@ -18,6 +18,9 @@ const finishes=[
 const originals=['sigma-chi-sdsu','kappa-sigma-coastal','phi-delta-theta-tampa','phi-kappa-psi-vt','tau-kappa-epsilon-tampa'];
 export function assignHouseFinishes(chapters,previous=new Map()){
   const result=new Map(previous),used=new Set([...result.values()].map(f=>f.color));
+  // Once a candidate has been used it cannot become available in this pass.
+  // Keep a cursor per palette start instead of rescanning all previous houses.
+  const cursors=Array(finishes.length).fill(0);
   const pending=chapters.filter(c=>!result.has(c.id)).sort((a,b)=>{
     const ai=originals.indexOf(a.id),bi=originals.indexOf(b.id);
     return (ai<0?99:ai)-(bi<0?99:bi)||a.id.localeCompare(b.id);
@@ -25,13 +28,13 @@ export function assignHouseFinishes(chapters,previous=new Map()){
   for(const chapter of pending){
     const original=originals.indexOf(chapter.id),start=original<0?Math.floor(hash(chapter.id,'exterior')*finishes.length):original;
     let chosen;
-    for(let i=0;!chosen;i++){
+    for(let i=cursors[start];!chosen;i++){
       const base=finishes[(start+i)%finishes.length],round=Math.floor(i/finishes.length);
       // Additional chapters get small natural shade variations, never neon hues.
       const shift=round?Math.ceil(round/2)*(round%2?1:-1):0;
       const rgb=[base.color>>16,(base.color>>8)&255,base.color&255].map(c=>Math.max(40,Math.min(245,c+shift)));
       const color=(rgb[0]<<16)|(rgb[1]<<8)|rgb[2];
-      if(!used.has(color))chosen={...base,color};
+      if(!used.has(color)){chosen={...base,color};cursors[start]=i+1;}
     }
     result.set(chapter.id,chosen);used.add(chosen.color);
   }

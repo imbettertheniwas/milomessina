@@ -22,7 +22,7 @@ export function kneeBetween(hip,ankle,length=.43){
   return [(hip[0]+ankle[0])/2,(hip[1]+ankle[1])/2+dz/d*bend,(hip[2]+ankle[2])/2-dy/d*bend];
 }
 export function humanPose(person,state,time){
-  const action=person.action,phase=person.phase,gait=state.gait||0;
+  const action=person.action,phase=person.phase,gait=state.gait||0,buildWidth=person.build??1;
   const seated=['sit','study','lawn'].includes(action),lawn=action==='lawn',skate=action==='skate',jog=action==='jog';
   const moving=Boolean(state.walking)&&!seated,amount=state.motion??(moving?1:0);
   const profile=person.motionProfile;
@@ -48,7 +48,7 @@ export function humanPose(person,state,time){
     const knee=seated?[side*.13,hipY-.02,.36]:kneeBetween(joint,ankle);
     legs.push({hip:joint,knee,ankle,pitch:moving&&!skate?step.pitch:0});
     const gesture=((state.gesture||0)+(!moving&&!state.pong?idle:0))*(j?1:.2),swing=moving&&!skate?Math.cos(cycle)*amount:0;
-    const shoulder=[chest[0]+side*.19,chest[1]+.13,lean-side*twist*.19];
+    const shoulder=[chest[0]+side*.19*buildWidth,chest[1]+.13,lean-side*twist*.19];
     const upper=(jog?-.38:0)-swing*(jog?.55:.26)+gesture*.30;
     const elbow=[shoulder[0]+side*.025,shoulder[1]-.28*Math.cos(upper),shoulder[2]+.28*Math.sin(upper)];
     const lower=upper+(jog?1.25:.18)+gesture*3.0;

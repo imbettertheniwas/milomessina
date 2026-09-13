@@ -1,7 +1,7 @@
-import {DIE_TABLE,dieSeat,dieCup,dieTurn,lawnGround} from './village-layout.js?v=69';
-import {lawnGameKit,throwingHand} from './village-pong.js?v=60';
-import {bannerIdentity} from './village-banners.js?v=56';
-import {DIE_EDGE_UV,DIE_FACES,createDieTableTexture,createDieFaceTexture} from './village-die-art.js?v=2';
+import {DIE_TABLE,dieSeat,dieCup,dieTurn,lawnGround} from './village-layout.js?v=80';
+import {lawnGameKit,throwingHand} from './village-pong.js?v=80';
+import {bannerIdentity} from './village-banners.js?v=87';
+import {DIE_EDGE_UV,DIE_FACES,createDieTableTexture,createDieFaceTexture} from './village-die-art.js?v=80';
 
 // Die, as it is actually played: partners at one end, opponents at the other,
 // a cup in front of every player, and a lob that has to clear head height and

@@ -27,6 +27,11 @@ export function journeyPose(points,time,speed=1,offset=0){
       if(a[2]){segments.push({a,b,start:duration,duration:a[2],distance,length:0,pointIndex:i});duration+=a[2];}
       if(length){const seconds=length/speed+1;segments.push({a,b,start:duration,duration:seconds,distance,length,pointIndex:i});duration+=seconds;distance+=length;}
     }
+    for(let i=0;i<segments.length;i++){
+      const s=segments[i],outgoing=Array.from({length:segments.length},(_,j)=>segments[(i+j)%segments.length]).find(p=>p.length)||s;
+      s.angle=Math.atan2(outgoing.b[0]-outgoing.a[0],outgoing.b[1]-outgoing.a[1]);
+    }
+    for(let i=0;i<segments.length;i++)segments[i].entryAngle=segments[(i-1+segments.length)%segments.length].angle;
     route={segments,duration,distance};speeds.set(speed,route);
   }
   const {segments,duration,distance}=route;
@@ -35,5 +40,7 @@ export function journeyPose(points,time,speed=1,offset=0){
   // Ease the first/last half-second; distance drives the gait, including stops.
   const edge=.5/s.duration,integral=v=>v<edge?v*v/(2*edge):v>1-edge?1-edge-(1-v)*(1-v)/(2*edge):v-edge/2;
   const progress=s.length?integral(u)/(1-edge):0;
-  return {x:s.a[0]+(s.b[0]-s.a[0])*progress,z:s.a[1]+(s.b[1]-s.a[1])*progress,angle:Math.atan2(s.b[0]-s.a[0],s.b[1]-s.a[1]),walking:s.length>0,distance:Math.floor((time+offset)/duration)*distance+s.distance+s.length*progress,motion:s.length?Math.min(1,u/edge,(1-u)/edge):0,duration,pointIndex:s.pointIndex};
+  const turn=Math.max(0,Math.min(1,(clock-s.start)/Math.min(.7,s.duration))),ease=turn*turn*(3-2*turn);
+  const angle=s.entryAngle+Math.atan2(Math.sin(s.angle-s.entryAngle),Math.cos(s.angle-s.entryAngle))*ease;
+  return {x:s.a[0]+(s.b[0]-s.a[0])*progress,z:s.a[1]+(s.b[1]-s.a[1])*progress,angle,walking:s.length>0,distance:Math.floor((time+offset)/duration)*distance+s.distance+s.length*progress,motion:s.length?Math.min(1,u/edge,(1-u)/edge):0,duration,pointIndex:s.pointIndex};
 }

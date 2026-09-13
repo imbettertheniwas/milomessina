@@ -1,7 +1,7 @@
 import {createVehicleKit} from './village-vehicles.js?v=77';
 import {createCampusBannerTexture} from './village-floor-logo.js?v=24';
-import {hash,pick} from './village-district-layout.js?v=77';
-import {buildPlace} from './village-places.js?v=77';
+import {hash,pick} from './village-district-layout.js?v=80';
+import {buildPlace} from './village-places.js?v=80';
 // Shared architectural parts, textures and landscape geometry. All static parts
 // are instanced per streamed block; texture resources live across block changes.
 export function createCampusKit(T){
@@ -195,7 +195,8 @@ export function createCampusKit(T){
   return {geometries,get vehicles(){return vehicles();},material,instances,mesh,box,cylinder,bar,tree,bench,lamp,table,path,sign,building,disposeChunk,hedge,bins,hydrant,parkedCar,streetFurniture,claimFloor,batch:(p,exclude=[])=>batchCampusGeometry(T,p,exclude)};
 }
 
-export function batchCampusGeometry(T,parent,exclude=[]){
+export function batchCampusGeometry(T,parent,exclude=[]){for(const step of batchCampusGeometrySteps(T,parent,exclude)){} }
+export function* batchCampusGeometrySteps(T,parent,exclude=[]){
   parent.updateMatrixWorld(true);const skip=new Set(exclude),batches=new Map();
   parent.traverse(m=>{if(!m.isMesh||m.isInstancedMesh||skip.has(m)||m.userData.ownedGeometry||m.userData.ownedTexture)return;
     const mat=m.material,key=[m.geometry.uuid,mat.type,mat.map?.uuid||'',mat.bumpMap?.uuid||'',mat.roughness,mat.metalness,mat.vertexColors,mat.alphaTest,mat.emissive?.getHex(),mat.emissiveIntensity,mat.side,mat.transparent,mat.opacity,mat.depthWrite,m.castShadow,m.receiveShadow].join(':');
@@ -206,6 +207,7 @@ export function batchCampusGeometry(T,parent,exclude=[]){
     if(objects.length<2)continue;
     const first=objects[0],material=first.material.clone();material.color.set(0xffffff);
     const batch=new T.InstancedMesh(first.geometry,material,objects.length);batch.userData.ownedMaterial=true;batch.castShadow=first.castShadow;batch.receiveShadow=first.receiveShadow;
-    objects.forEach((m,i)=>{matrix.multiplyMatrices(inverse,m.matrixWorld);batch.setMatrixAt(i,matrix);batch.setColorAt(i,m.material.color);m.removeFromParent();});batch.computeBoundingSphere();parent.add(batch);
+    if(objects.some(m=>m.name.startsWith('school-banner-')))batch.onBeforeRender=(renderer,scene,camera)=>{for(const object of objects)object.onBeforeRender(renderer,scene,camera);};
+    objects.forEach((m,i)=>{matrix.multiplyMatrices(inverse,m.matrixWorld);batch.setMatrixAt(i,matrix);batch.setColorAt(i,m.material.color);m.removeFromParent();});batch.computeBoundingSphere();parent.add(batch);yield;
   }
 }

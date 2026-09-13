@@ -1,7 +1,8 @@
-import {rankedHouseSizes} from './village-house-sizing.js?v=56';
-import {hash,appearance,roundedLoop} from './village-district-layout.js?v=77';
-import {gaitPhase,speechGesture,smooth} from './village-human-motion.js?v=77';
-import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=51';
+import {conversation,personalClock} from './village-human-behavior.js?v=80';
+import {rankedHouseSizes} from './village-house-sizing.js?v=80';
+import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
+import {gaitPhase,smooth} from './village-human-motion.js?v=80';
+import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=80';
 const lawnRoute=roundedLoop(-7.9,7,7.9,14.4,1.15);
 // Ease over the low lawn/path edges; the walking loop clears the porch steps.
 export function lawnGround(x,z){const edge=smooth((12-z)/.25);return .045+.085*smooth((7.5-Math.abs(x))/.25)*edge+.07*smooth((.825-Math.abs(x))/.2)*edge;}
@@ -55,10 +56,7 @@ export const DIE_TABLE={x:-3.9,z:9.8,width:2.44,depth:1.22,height:.76,playerDist
 export const dieSeat=seat=>({side:seat<2?-1:1,dz:(seat%2?1:-1)*DIE_TABLE.seatOffset});
 export const dieSeatSpot=seat=>{const {side,dz}=dieSeat(seat);return {x:DIE_TABLE.x+side*DIE_TABLE.playerDistance,z:DIE_TABLE.z+dz,rotation:side<0?Math.PI/2:-Math.PI/2};};
 export const dieCup=seat=>{const {side,dz}=dieSeat(seat);return {x:DIE_TABLE.x+side*(DIE_TABLE.width/2-DIE_TABLE.cupBack),z:DIE_TABLE.z+Math.sign(dz)*(DIE_TABLE.depth/2-DIE_TABLE.cupInset)};};
-export function motionProfile(chapter,member){
-  const value=(key,min,range)=>min+hash(chapter,member,key)*range;
-  return {breathRate:value('breath-rate',1.05,1.05),breathAmount:value('breath-range',.002,.005),shiftRate:value('shift-rate',.21,.37),shiftAmount:value('shift-range',.014,.03),twistRate:value('twist-rate',.31,.51),twistAmount:value('twist-range',.012,.023),nodRate:value('nod-rate',.5,.8),nodAmount:value('nod-range',.002,.005),lookRate:value('look-rate',.27,.53),lookAmount:value('look-range',.025,.065),idlePeriod:value('idle-period',7,12),idleOffset:value('idle-offset',0,30),idleAmount:value('idle-range',.035,.085),gestureRate:value('gesture-rate',.65,.8),gestureAmount:value('gesture-range',.55,.6),walkSpeed:value('walk-speed',.59,.28)};
-}
+export {motionProfile} from './village-district-layout.js?v=80';
 export function pongTurn(chapter,time){
   const period=3.8+hash(chapter,'pong-period')*2.1,clock=time+hash(chapter,'pong-offset')*19,turn=Math.floor(clock/period);
   return {seat:((turn%2)+2)%2,elapsed:clock-turn*period,release:1.15,flight:.85,turn};
@@ -107,7 +105,7 @@ export function crowdMembers(chapters,lots=createLots(chapters.length),houseSize
       }
       groups.push(best);occupied.push(...best.seats);
       for(let seat=0;seat<size;seat++){
-        const pos=best.seats[seat],look=appearance(chapter.id,member),buildingSize=houseSizes.get(chapter.id);
+        const pos=best.seats[seat],look=appearance(chapter.id,member+1),buildingSize=houseSizes.get(chapter.id);
         const x=isPorch?pos.x*buildingSize.scaleX:pos.x,z=isPorch?pos.z*buildingSize.depthScale+buildingSize.offsetZ:pos.z;
         best.seats[seat]={chapter:chapter.id,member:++member,...toWorld(lot,x,z),lot,rotation:lot.rotation+pos.a+Math.PI,phase:hash(chapter.id,member,'phase')*20,groupPhase:hash(chapter.id,g,'turn')*50,turnDuration:4.2+hash(chapter.id,g,'turn-duration')*4.2,groupSize:size,seat,walking:false,ground:isPorch?.73*buildingSize.scaleY:lawnGround(pos.x,pos.z),...look};
       }
@@ -129,9 +127,10 @@ export function crowdMembers(chapters,lots=createLots(chapters.length),houseSize
 export function activityPose(member,time){
   if(member.action==='build')return constructionActivity(member,time);
   if(member.walking){
-    const distance=time*(member.motionProfile?.walkSpeed??.76)+member.walkPhase/(Math.PI*2)*lawnRoute.length,s=lawnRoute.sample(distance),ahead=lawnRoute.sample(distance+.24);
-    const look=Math.atan2(Math.sin(ahead.angle-s.angle),Math.cos(ahead.angle-s.angle))*.45;
-    return {...toWorld(member.lot,s.x,s.z),rotation:member.lot.rotation+s.angle,walking:true,ground:lawnGround(s.x,s.z),gait:gaitPhase(distance,member),look,speaking:false,gesture:0,breath:Math.sin(time*2+member.phase)*.007};
+    const clock=personalClock(member,time);
+    const distance=clock.time*(member.motionProfile?.walkSpeed??.76)+member.walkPhase/(Math.PI*2)*lawnRoute.length,s=lawnRoute.sample(distance),ahead=lawnRoute.sample(distance+.24);
+    const look=Math.atan2(Math.sin(ahead.angle-s.angle),Math.cos(ahead.angle-s.angle))*.45+clock.attention;
+    return {...toWorld(member.lot,s.x,s.z),rotation:member.lot.rotation+s.angle,walking:clock.motion>.001,motion:clock.motion,ground:lawnGround(s.x,s.z),gait:gaitPhase(distance,member),look,speaking:false,gesture:0,breath:Math.sin(time*2+member.phase)*.007};
   }
   if(member.action==='pong'){
     const shot=pongTurn(member.chapter,time),active=shot.seat===member.seat,t=shot.elapsed;
@@ -146,7 +145,7 @@ export function activityPose(member,time){
     else if(shot.target===member.seat&&!shot.sink){lift=smooth((t-hit+.5)/.55)*(1-smooth((t-caught-.3)/.5));extension=smooth((t-hit+.2)/.5);}
     return {x:member.x,z:member.z,rotation:member.rotation,walking:false,gait:0,speaking:false,gesture:0,breath:0,pong:{lift,extension}};
   }
-  const profile=member.motionProfile,turn=(time+member.groupPhase)/(member.turnDuration??6),speaking=Math.floor(turn)%member.groupSize===member.seat;
+  const profile=member.motionProfile,{speaking,gesture}=conversation(member,time);
   // The speaking hand rises only to chest level; listeners keep their arms down.
-  return {x:member.x,z:member.z,rotation:member.rotation+Math.sin(time*(profile?.lookRate??.47)+member.phase)*(profile?.lookAmount??.055),walking:false,gait:0,speaking,gesture:speaking?speechGesture(turn,time*(profile?.gestureRate??1),member.phase)*(profile?.gestureAmount??1):0,breath:Math.sin(time*(profile?.breathRate??1.7)+member.phase)*(profile?.breathAmount??.008)};
+  return {x:member.x,z:member.z,rotation:member.rotation+Math.sin(time*(profile?.lookRate??.47)+member.phase)*(profile?.lookAmount??.055),walking:false,gait:0,speaking,gesture:gesture*(profile?.gestureAmount??1),breath:Math.sin(time*(profile?.breathRate??1.7)+member.phase)*(profile?.breathAmount??.008)};
 }

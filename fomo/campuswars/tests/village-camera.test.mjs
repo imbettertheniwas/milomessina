@@ -1,3 +1,4 @@
+import {createPointerHover,releasedMouseDrag} from '../village-pointer-hover.js';
 import {villageQuality} from '../village-quality.js';
 import {createStreetNavigation,streetStops,streetStep} from '../village-street-navigation.js';
 import test from 'node:test';
@@ -10,7 +11,7 @@ import {createMoneyRain} from '../village-money-rain.js';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from '../village-intro.js';
 
 function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650}){
-  const elements=new Map(),events=new Map(),selections=[],lighting=[],builds=[],pixelRatios=[];let intersection,frame,camera,finishWarmup,blimp,renders=0;
+  const elements=new Map(),events=new Map(),selections=[],lighting=[],builds=[],pixelRatios=[];let intersection,frame,camera,finishWarmup,blimp,mockVillage,renders=0;
   function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
   element('chapters-data').textContent='{"chapters":[]}';
   Object.assign(element('village-viewport'),{clientWidth:screen.width,clientHeight:screen.height});
@@ -18,11 +19,12 @@ function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=fal
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),{dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},document:{getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(){},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},document:{getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(){},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  sandbox.createVillageRendererAsync=async (...args)=>sandbox.createVillage(...args);
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
   let now=100;
-  return {blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,lighting,lens:()=>camera.fov,element,fire(name,event){events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
+  return {village:()=>mockVillage,blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,lighting,lens:()=>camera.fov,element,fire(name,event){events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
 }
 test('slow frames preserve resolution and hidden villages perform no rendering',()=>{
   const h=cameraHarness();h.show(true);h.step(20,10);
@@ -291,4 +293,13 @@ test('clicking or tapping the blimp opens Discord; dragging, pinching and covere
   h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointermove',{...pointer,clientX:pointer.clientX+20});h.fire('canvas:pointerup',pointer);assert.equal(link.clicks,2);
   h.coverCanvas('village-more');h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointerup',pointer);assert.equal(link.clicks,2);h.coverCanvas(null);
   h.fire('canvas:pointerdown',touch);const second={...touch,pointerId:2,clientX:touch.clientX+20};h.fire('canvas:pointerdown',second);h.fire('canvas:pointerup',second);h.fire('canvas:pointerup',touch);assert.equal(link.clicks,2);
+});
+
+test('paused activity keeps loading a selected distant house until its scene is ready',()=>{
+  const h=cameraHarness();h.show(true);h.step(20);h.fire('document:party:pause',{detail:{paused:true}});h.step(1);
+  const village=h.village();let steps=0,finish;
+  village.focus=(_id,ready)=>{village.building=true;finish=ready;};
+  village.updateView=()=>{if(village.building&&++steps===3){village.building=false;finish();}return false;};
+  h.fire('document:chapter:select',{detail:{id:'sigma-chi-sdsu',focus:true}});h.step(1);
+  assert.equal(steps,3);assert.equal(village.building,false);
 });

@@ -15,7 +15,7 @@ function canvasTexture(T,w,h,paint){
   if(document.fonts)document.fonts.load('700 80px Aeonik').then(()=>{paint(ctx,w,h);map.needsUpdate=true;document.dispatchEvent(new Event('village:artwork'));});
   return map;
 }
-export function createCompetition(T,chapters,anchors){
+export function createCompetition(T,chapters,anchors,lightAnchors=anchors){
   const root=new T.Group();root.name='village-competition';
   const standings=houseStandings(chapters),leader=standings[0]?.joined>0?standings[0]:null,badges=[];
   for(const row of standings){
@@ -32,7 +32,7 @@ export function createCompetition(T,chapters,anchors){
   }
   let spotlight=null;
   if(leader){
-    const anchor=anchors.find(a=>a.id===leader.id);
+    const anchor=lightAnchors.find(a=>a.id===leader.id);
     if(anchor){
       spotlight=new T.SpotLight(0xffe3a6,360,40,.48,.8,2);spotlight.name='leading-house-spotlight';spotlight.position.set(anchor.lot.x-2,anchor.point.y+9,anchor.lot.z+3);spotlight.target.position.set(anchor.lot.x,4,anchor.lot.z);root.add(spotlight,spotlight.target);
       // A very faint dust-lit shaft makes the spotlight visible in daylight.

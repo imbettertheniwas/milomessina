@@ -1,23 +1,40 @@
-import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=79';
+import {createDistantCrowd} from './village-distant-crowd.js?v=87';
+import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
+import {personalClock,conversation} from './village-human-behavior.js?v=80';
+import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=80';
 import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=77';
-import {gaitPhase,humanPose,speechGesture,smooth} from './village-human-motion.js?v=77';
-import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=77';
-import {journeyPose} from './village-place-layout.js?v=77';
-import {placePeople} from './village-place-life.js?v=77';
+import {gaitPhase,humanPose,smooth} from './village-human-motion.js?v=80';
+import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=80';
+import {journeyPose} from './village-place-layout.js?v=80';
+import {placePeople} from './village-place-life.js?v=80';
 
 // Physical routes keep activity on sidewalks, lawns and bike lanes.
 export function campusPeople(kind,cx,cz,streets=1){
-  const core=kind==='greek',seed=hash(cx,cz,'people')*53,people=[];
-  const add=(action,x,z,angle=0,extra={})=>people.push({action,x,z,angle,phase:hash(cx,cz,people.length,'phase')*40,...appearance(`${cx},${cz}`,people.length),...extra});
+  const core=kind==='greek',people=[];
+  const add=(action,x,z,angle=0,extra={})=>{
+    const i=people.length,p={action,x,z,angle,phase:hash(cx,cz,i,'phase')*40,...appearance(`${cx},${cz}`,i),...extra};
+    if(action==='talk'||action==='lawn'){
+      p.x+=(hash(cx,cz,i,'space-x')-.5)*.32;p.z+=(hash(cx,cz,i,'space-z')-.5)*.32;
+      p.angle+=(hash(cx,cz,i,'stance')-.5)*.38;
+    }
+    if(action==='journey'){
+      p.offset+=hash(cx,cz,i,'departure')*17;
+      p.speed*=.88+hash(cx,cz,i,'pace')*.24;
+      p.points=p.points.map(([px,pz,wait])=>[px,pz,wait?wait*(.65+hash(cx,cz,i,px,pz,'linger')*.9):0]);
+    }
+    if(action==='jog'||action==='basketball'){p.outfit='athletic';p.shorts=true;p.jacket=false;p.backpack=false;}
+    if(action==='study'){p.backpack=hash(cx,cz,i,'study-bag')>.15;}
+    people.push(p);
+  };
   if(isCampusHill(cx,cz)){
     for(let i=0;i<24;i++){
-      const x=i%2?2.6:-2.6;
-      add('journey',x,39,0,{points:[[x,39,1],[x,-6,4],[x,39,1]],offset:i*4.9,speed:.75+hash(i,'class')*.3,purpose:'walking to class'});
+      const x=(i%2?1:-1)*(1.8+hash(i,'class-lane')*1.5);
+      add('journey',x,39,0,{points:i%3===0?[[x,39,2],[x,5,0],[-15.5,5,8],[x,5,0],[x,39,1]]:i%3===1?[[x,39,1],[x,-7,0],[18.8,-7,7],[x,-7,0],[x,39,1]]:[[x,39,1],[x,-6,4],[x,39,1]],offset:i*4.9,speed:.75+hash(i,'class')*.3,purpose:'walking to class'});
     }
     for(let i=0;i<4;i++)add('journey',10,38,0,{points:[...campusRamp.map(([x,z])=>[x,z,1]),...campusRamp.slice(0,-1).reverse().map(([x,z])=>[x,z,1])],offset:i*26,speed:.8,purpose:'quad hillside walk'});
     for(const [gx,gz] of [[-9,-3],[10,1],[-12,8]])for(let seat=0;seat<4;seat++){const a=seat*Math.PI/2;add('talk',gx+Math.sin(a),gz+Math.cos(a),a+Math.PI,{seat,groupSize:4,groupPhase:hash(gx,gz)*30});}
     for(const side of [-1,1])for(const z of [3,11])for(const dz of [-.45,.45])add('study',side*13,z+dz,side<0?Math.PI/2:-Math.PI/2);
-    for(let i=0;i<6;i++)add('lawn',-14+i*.8,-1,.8);
+    for(let i=0;i<6;i++)add('lawn',-15+(i%3)*1.7+hash(i,'lawn-space')*.4,-1+Math.floor(i/3)*2.2,.4+hash(i,'lawn-angle')*1.4);
     for(const spec of districtSpecs(cx,cz,streets)){
       const a=spec.rotation,d=spec.depth/2+.36;
       for(let i=0;i<2;i++)add('doorway',spec.x+Math.sin(a)*d,spec.z-cz*100+Math.cos(a)*d,a,{offset:hash(spec.seed,i)*24,speed:.65});
@@ -67,17 +84,18 @@ const maintenanceRoute=roundedLoop(-51,-29.6,-45,-28.4,.6);
 export function campusPose(person,time,night=false){
   let {x,z,angle}=person,gait=0,walking=false,look=0,motion=1,hidden=false;
   let carrying=false;
+  const clock=personalClock(person,time);
   if(person.action==='journey'){
-    const s=journeyPose(person.points,time,person.speed,person.offset);x=s.x;z=s.z;angle=s.angle;walking=s.walking;motion=s.motion;gait=gaitPhase(s.distance,person);carrying=Boolean(person.carry);
+    const s=journeyPose(person.points,clock.time,person.speed,person.offset);x=s.x;z=s.z;angle=s.angle;walking=s.walking;motion=s.motion*clock.motion;walking=walking&&motion>.001;look=clock.attention;gait=gaitPhase(s.distance,person);carrying=Boolean(person.carry);
     if(person.pickupIndex!==undefined)carrying=carrying&&(s.pointIndex>person.pickupIndex||s.pointIndex===person.pickupIndex&&walking);
     if(person.dropoffIndex!==undefined)carrying=carrying&&(s.pointIndex<person.dropoffIndex||s.pointIndex===person.dropoffIndex&&!walking);
   }else if(['walk','jog','dogwalk','skate'].includes(person.action)){
     let route=routes.get(person);
     if(!route){const side=Math.sign(x);route=roundedLoop(side>0?x:x-1.3,person.routeStart,side>0?x+1.3:x,39,.55);routes.set(person,route);}
-    const speed=person.speed*(person.action==='jog'?1.45:1),distance=person.offset+time*speed;
+    const speed=person.speed*(person.action==='jog'?1.45:1),distance=person.offset+(person.action==='walk'?clock.time:time)*speed;
     const s=route.sample(distance),ahead=route.sample(distance+.2);
     x=s.x;z=s.z;angle=s.angle;look=Math.atan2(Math.sin(ahead.angle-angle),Math.cos(ahead.angle-angle))*.45;
-    walking=true;gait=gaitPhase(distance,person,person.action==='jog');
+    motion=person.action==='walk'?clock.motion:1;walking=motion>.001;look+=person.action==='walk'?clock.attention:0;gait=gaitPhase(distance,person,person.action==='jog');
   }else if(person.action==='basketball'){
     x+=Math.sin(time*.38+person.phase)*1.8;z+=Math.sin(time*.26+person.phase)*2;angle=Math.atan2(-x-42,10-z);gait=time*3.2+person.phase;walking=true;motion=.55;
   }else if(person.action==='doorway'){
@@ -89,8 +107,8 @@ export function campusPose(person,time,night=false){
   }else if(person.action==='groundskeeper'){
     const distance=time*.39,s=maintenanceRoute.sample(distance);x=s.x;z=s.z;angle=s.angle;gait=gaitPhase(distance,person);walking=true;
   }
-  const turn=(time+(person.groupPhase||0))/6,speaking=person.action==='talk'&&Math.floor(turn)%(person.groupSize||3)===person.seat;
-  const gesture=speaking?speechGesture(turn,time,person.phase):person.action==='frisbee'?.2*(1+Math.sin(time*.8+person.phase)):0;
+  const chat=conversation(person,time),speaking=person.action==='talk'&&chat.speaking;
+  const gesture=speaking?chat.gesture:person.action==='frisbee'?.2*(1+Math.sin(time*.8+person.phase)):0;
   hidden=hidden||Boolean(person.dayOnly&&night)||Boolean(person.nightOnly&&!night);
   return {x,z,angle,gait,hidden,walking,motion,look,speaking,gesture,carrying};
 }
@@ -100,40 +118,56 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
   const capsule=new T.CapsuleGeometry(.5,1,2,7);capsule.scale(1,.5,1);
   const sphere=new T.SphereGeometry(1,8,6),cube=kit.geometries.box;
   const instances=(geometry,count)=>kit.instances(root,geometry,count,kind==='greek'&&cx===0&&cz===0?118:66);
-  const core=kind==='greek',body=instances(capsule,n*11+(core?7:0)),heads=instances(sphere,n*4),hair=instances(sphere,n),gear=instances(cube,n*2+(core?3:0)),shoes=instances(kit.geometries.shoe,n*2),balls=instances(sphere,core?2:0);
+  let detailCount=0;
+  const detailIndices=people.map(p=>detailSlots(p).map(visible=>visible?detailCount++:-1));
+  const core=kind==='greek',body=instances(capsule,n*11+(core?7:0)),heads=instances(sphere,n*4),hair=instances(sphere,n*2),gear=instances(cube,n*2+detailCount+(core?3:0)),shoes=instances(kit.geometries.shoe,n*2),balls=instances(sphere,core?2:0);
   const {shirts,skin:skins,pants}=palettes;
   const color=new T.Color();
   people.forEach((p,i)=>{
     const skin=skins[p.skin];
     for(let part=0;part<11;part++)body.setColorAt(i*11+part,color.set(part===0||part===1||part===3||(p.jacket&&part<5)?shirts[p.shirt]:part<5||part===10||(p.shorts&&(part===6||part===8))?skin:pants[p.pants]));
     for(let j=0;j<4;j++)heads.setColorAt(i*4+j,color.set(skin));
-    hair.setColorAt(i,color.set(palettes.hair[p.hair]));
-    gear.setColorAt(i*2,color.set([0x586574,0x9c7856,0x705658][Math.floor(hash(cx,cz,i)*3)]));gear.setColorAt(i*2+1,color.set(0xe0d9c8));
-    for(let j=0;j<2;j++)shoes.setColorAt(i*2+j,color.set(i%3?0xe4e1d7:0x32393c));
+    for(let j=0;j<2;j++)hair.setColorAt(i*2+j,color.set(j===0&&p.cap?palettes.shirts[p.shirt]:palettes.hair[p.hair]));
+    detailColors(p).forEach((c,j)=>{const slot=detailIndices[i][j];if(slot>=0)gear.setColorAt(n*2+(core?3:0)+slot,color.set(c));});
+    gear.setColorAt(i*2,color.set(p.bagColor));gear.setColorAt(i*2+1,color.set(0xe0d9c8));
+    for(let j=0;j<2;j++)shoes.setColorAt(i*2+j,color.set(p.shoeColor));
   });
   if(core){balls.setColorAt(0,color.set(0xbb713e));balls.setColorAt(1,color.set(0xd7a765));for(let i=0;i<7;i++)body.setColorAt(n*11+i,color.set(i===6?0x4a5453:0xa17c52));for(let i=0;i<3;i++)gear.setColorAt(n*2+i,color.set(i===2?0x312b25:0x94704d));}
   const dummy=new T.Object3D(),a=new T.Vector3(),b=new T.Vector3(),direction=new T.Vector3(),up=new T.Vector3(0,1,0);
   function pose(mesh,i,x,y,z,sx,sy,sz,angle=0,lean=0){dummy.position.set(x,y,z);dummy.rotation.set(lean,angle,0,'YXZ');dummy.scale.set(sx,sy,sz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
   function limb(mesh,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);dummy.position.copy(a).add(b).multiplyScalar(.5);const length=direction.length();dummy.quaternion.setFromUnitVectors(up,direction.normalize());dummy.scale.set(r,length+.025,r);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
-  function animate(time){
+  const distant=core?null:createDistantCrowd(T,n),detailMeshes=[body,heads,hair,gear,shoes,balls],viewBounds={bounds:new T.Sphere(new T.Vector3(0,2,0),66)};
+  if(distant)root.add(distant.mesh);
+  let lastPose=NaN,lastDistant=false;
+  function animate(time,camera=null){
+    const useDistant=distant?.distant(viewBounds,camera,root.matrixWorld)||false;
+    if(time===lastPose&&useDistant===lastDistant)return;lastPose=time;lastDistant=useDistant;
+    for(const mesh of detailMeshes)mesh.visible=!useDistant;
+    if(distant)distant.mesh.visible=useDistant;
+    if(useDistant){
+      distant.begin(time);for(const p of people){const s=campusPose(p,time,night);if(s.hidden)continue;const ground=campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));distant.add(p,{...s,rotation:s.angle,ground});}distant.finish();return;
+    }
     people.forEach((p,i)=>{
-      const s=campusPose(p,time,night),rig=humanPose(p,s,time),h=p.height,cos=Math.cos(s.angle),sin=Math.sin(s.angle);
+      const s=campusPose(p,time,night),rig=humanPose(p,s,time),h=p.height,w=p.build??1,cos=Math.cos(s.angle),sin=Math.sin(s.angle);
       const ground=campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));
       const local=([x,y,z])=>[s.x+(x*cos+z*sin)*h,y*h+ground+(s.hidden?-20:0),s.z+(-x*sin+z*cos)*h];
       const part=(mesh,index,point,x,y,z,yaw=0,pitch=0)=>pose(mesh,index,...local(point),x*h,y*h,z*h,s.angle+yaw,pitch);
-      part(body,i*11,rig.chest,.40,.52,.25,rig.twist,rig.lean);
-      part(body,i*11+9,rig.hip,.29,.20,.23,-rig.twist*.5);
+      part(body,i*11,rig.chest,.40*w,.52,.25*w,rig.twist,rig.lean);
+      part(body,i*11+9,rig.hip,.29*w,.20,.23*w,-rig.twist*.5);
       part(body,i*11+10,[rig.head[0],rig.head[1]-.19,rig.head[2]],.12,.15,.12);
       part(heads,i*4,rig.head,.126,.17,.136,rig.headYaw);
-      part(hair,i,[rig.head[0]-Math.sin(rig.headYaw)*.025,rig.head[1]+.075,rig.head[2]-Math.cos(rig.headYaw)*.025],.132,.105+p.hairLength*.04,.14,rig.headYaw);
+      const [hx,hy,hz,dy]=hairShape(p),back=backHair(p,rig);
+      part(hair,i*2,[rig.head[0]-Math.sin(rig.headYaw)*.025,rig.head[1]+dy,rig.head[2]-Math.cos(rig.headYaw)*.025],hx,hy,hz,rig.headYaw);
+      part(hair,i*2+1,back.point,...back.scale,rig.headYaw);
+      dressPerson(p,rig,(j,point,x,y,z,yaw)=>{const slot=detailIndices[i][j];if(slot>=0)part(gear,n*2+(core?3:0)+slot,point,x,y,z,yaw);});
       part(heads,i*4+3,[rig.head[0]+Math.sin(rig.headYaw)*.132,rig.head[1]-.01,rig.head[2]+Math.cos(rig.headYaw)*.132],.026,.036,.036,rig.headYaw);
       for(let j=0;j<2;j++){
         const arm=rig.arms[j],leg=rig.legs[j];
-        limb(body,i*11+1+j*2,local(arm.shoulder),local(arm.elbow),.115*h);
+        limb(body,i*11+1+j*2,local(arm.shoulder),local(arm.elbow),.115*h*w);
         limb(body,i*11+2+j*2,local(arm.elbow),local(arm.hand),.083*h);
         part(heads,i*4+1+j,arm.hand,.047,.067,.043);
-        limb(body,i*11+5+j*2,local(leg.hip),local(leg.knee),.155*h);
-        limb(body,i*11+6+j*2,local(leg.knee),local(leg.ankle),.11*h);
+        limb(body,i*11+5+j*2,local(leg.hip),local(leg.knee),.155*h*w);
+        limb(body,i*11+6+j*2,local(leg.knee),local(leg.ankle),.11*h*w);
         part(shoes,i*2+j,[leg.ankle[0],leg.ankle[1]-.055+Math.abs(Math.sin(leg.pitch))*.145,leg.ankle[2]+.045],.15,.13,.29,0,leg.pitch);
       }
       part(gear,i*2,[rig.chest[0],rig.chest[1]-.025,rig.chest[2]-.19],p.backpack?.28:0,.34,.15,rig.twist);
@@ -156,7 +190,7 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
     }
     for(const m of [body,heads,hair,gear,shoes,balls])m.instanceMatrix.needsUpdate=true;
   }
-  animate(0);return {root,people,animate,setNight(enabled){night=enabled;},dispose(){capsule.dispose();sphere.dispose();}};
+  animate(0);return {root,people,animate,setNight(enabled){night=enabled;lastPose=NaN;},dispose(){capsule.dispose();sphere.dispose();distant?.dispose();}};
 }
 
 export function createCampusTraffic(T,kit,extension=0){

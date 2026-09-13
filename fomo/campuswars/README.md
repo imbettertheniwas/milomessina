@@ -1,5 +1,29 @@
 # fomo Campus Wars
 
+## Large villages and road hover
+
+Above 80 chapters, the renderer retains all addresses, ranks, colors and navigation metadata while constructing house models around the camera. Scene construction is spread across frames, and selecting a distant house prepares its neighborhood before moving the camera. Paused activity continues pending house loads. Repeated roofs, signs and school banners share resources; banners allocate higher-resolution artwork as they approach the camera. Distant people use compact animated silhouettes at small projected sizes, and their detailed models return on approach. Display pixel density remains unchanged.
+
+Road hover now coalesces pointer events to one hit check per animation frame and rejects empty pavement before testing blimp triangles. It also releases a stale mouse drag when the button is no longer down. A burst of 1,000 road-hover events is covered by the input regression test. These changes address excess hover work and unintended camera movement; the exact reported flashing artifact has not been independently reproduced.
+
+`tests/scale-gallery.html` creates 1,000 houses and 20,000 members without modifying live data, with controls for house 1,000, a wide view, the stadium, night and pause. Local browser checks reached approximately 58–60 FPS in a narrow street/house view. The fixed desktop stress view (2560 × 1440 drawing pixels, 2,380 visible members) reached approximately 28–30 FPS after loading, with about 760 draws and 3.8 million triangles. This is a working scaling baseline, not a guarantee of 60 FPS on every device. Further work should prioritize broad-view GPU cost and transitions while neighborhoods are being prepared.
+
+## Memorial football stadium
+
+The Stadium control visits a dedicated football ground at `(0, 200 + rowExtension)`, beyond the athletics block with a full block separating it from Greek Row. Its reserved district prevents campus buildings and walkers from appearing inside the bowl. The stadium includes a marked 100-yard field and end zones, goalposts, tiered seats, aisles and handrails, press boxes, concessions, gate signs, four floodlight towers, and a changing exhibition scoreboard. It stays in place as surrounding districts stream, and moves outward with the campus when Greek Row grows.
+
+There are 2,732 independently waving and bouncing spectators and 22 helmeted players. The continuous exhibition alternates possessions through the snap, an airborne pass, a catch, a touchdown and a return to formation. Crowd animation runs on the GPU; player and scoreboard updates pause when offscreen and resume at the current village animation time. Existing Pause activity and reduced-motion behavior apply to the match. Party mode illuminates the stadium field and light banks. Spectators and players are scenery and do not affect registrations or standings.
+
+The stadium is procedural 3D scenery in the village's visual style, rather than photoreal footage. Its fixed budget is under 40 meshes, 7,000 instances and 850,000 triangles; existing campus scenery retains its previous separate limits. The full 148-test suite passed, followed by the stadium tests after the final player refinements. Browser checks covered daylight, night, the stands, the sideline, and the 390 × 844 phone layout without rendering errors. `tests/stadium-gallery.html` provides independent views and a touchdown/pause preview; `node --test fomo/campuswars/tests/stadium.test.mjs` checks location, streaming, continuity, culling, pause and rendering budgets.
+
+## Individual people and campus routines
+
+Campus visitors and chapter members now keep stable clothing and appearance traits: four outfit families, five hairstyles, different builds, skin tones, caps, sunglasses, shoe colors and backpacks with shoulder straps. Academic students have individual idle profiles, departure offsets and destination wait times. They branch toward the academic halls, while readers occupy a loose lawn gathering. Sports participants wear athletic clothing. Chapter and sidewalk walkers pause and glance around on individual schedules, easing smoothly into and out of each stop. Conversation groups share irregular speaker choices and quiet intervals rather than rotating through every member in order.
+
+Movement remains on the existing routes. The random choices are seeded per identity and time interval; they remain consistent after pausing, streaming away, or refreshing the same scene. Destination heading transitions now ease through corners and waits, including repeated start/end points. Registration totals, construction assignments and game rules remain unchanged. Clothing details reuse existing instance batches, and campus accessories allocate slots only when present. Existing automated scenery limits remain in place; device frame rates have not been benchmarked for this change.
+
+`tests/human-gallery.html` provides chapter, quad and sidewalk close-ups with daylight/night and pause controls. The full suite, `node --test fomo/campuswars/tests/*.test.mjs`, covers individual stop/start continuity, irregular conversations, stable appearances after roster growth, academic building clearance, destination turns, rendering bounds and paused/offscreen catch-up. Day/night close-ups were also inspected in the local browser.
+
 ## College-town neighborhoods
 
 The wider village now includes Market Lane (pizza, a bar and patio, a vintage shop, a convenience store, and a record shop with apartments above), Maple Court and Porch Lane (small homes, furnished porches, side yards, laundry and mailboxes), and Willow Green (wooded slopes, walking trails, picnic areas, a pond and a timber pavilion). Shop elevations include windows on the sides and rear, fire escapes, service alleys and deliveries. Noticeboards, leaning bicycles, fences, outdoor tables and street lighting give the spaces between buildings a purpose. The existing academic buildings and chapter registration rules remain in place.
@@ -152,7 +176,7 @@ The separate Party mode button switches to a dusk sky and fog, cooler ambient li
 
 ## Individual chapter motion and beer pong
 
-Each member has deterministic, independent timing and movement ranges for breathing, weight shifts, torso turns, head nods, glances, and gestures. Idle movements have individual pauses; conversation groups also vary their speaking cadence. Standing feet stay planted while the body shifts subtly. Walkers each retain a steady but distinct speed of 0.59–0.87 units per second.
+Each member has deterministic, independent timing and movement ranges for breathing, weight shifts, torso turns, head nods, glances, and gestures. Idle movements have individual pauses; conversation groups also vary their speaking cadence. Standing feet stay planted while the body shifts subtly. Walkers each have a distinct cruising speed of 0.59–0.87 units per second, with individual eased pauses added by the campus routines update.
 
 `village-pong.js` adds a table on each completed house’s front lawn, with two existing members, two triangular racks of six red cups, and an animated ball. Players alternate on chapter-specific schedules; the ball releases from the modeled throwing hand, arcs toward a cup, then disappears before the next turn. These are decorative games with reusable cup racks. Placement reserves room for each table and both players, away from the central path and walking loop. Tables and cups batch with static scenery; only the three balls animate. The existing activity pause, reduced-motion setting and offscreen handling apply to the games.
 

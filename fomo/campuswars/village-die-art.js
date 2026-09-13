@@ -1,4 +1,4 @@
-import {hash} from './village-district-layout.js?v=77';
+import {hash} from './village-district-layout.js?v=80';
 import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=37';
 
 // One sheet of plywood art serves every die table in the village: houses tell

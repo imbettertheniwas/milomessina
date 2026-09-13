@@ -1,6 +1,6 @@
 import {resolveSchoolArtwork,artworkPalette} from './school-artwork.js?v=51';
-import {hash} from './village-district-layout.js?v=77';
-import {createClothBanner} from './village-banners.js?v=56';
+import {hash} from './village-district-layout.js?v=80';
+import {createClothBanner} from './village-banners.js?v=87';
 
 // Official logo files and palette provenance: school-banner-references.md.
 const identities=[
@@ -60,14 +60,16 @@ export function paintSchoolBanner(ctx,chapter,w,h,logo=null,school=schoolIdentit
   ctx.restore();
 }
 const rails=new WeakMap();
-export function createSchoolBanner(T,chapter){
+export function createSchoolBanner(T,chapter,options={}){
+  const key=JSON.stringify([chapter.school,chapter.shortSchool]);
+  if(options.cache?.has(key)){const source=options.cache.get(key),banner=source.clone();banner.onBeforeRender=source.onBeforeRender;banner.name=`school-banner-${chapter.id}`;banner.userData={...source.userData,chapter:chapter.id};return banner;}
   const identity=schoolIdentity(chapter);let logo=null;
   const ready=loadSchoolLogo(identity).then(image=>{logo=image;});
-  const banner=createClothBanner(T,{width:3.2,height:4.2,resolution:1024,primary:identity.primary,ready,paint:(ctx,w,h)=>paintSchoolBanner(ctx,chapter,w,h,logo,identity)});
+  const banner=createClothBanner(T,{width:3.2,height:4.2,resolution:1024,shrink:!options.cache,primary:identity.primary,ready,paint:(ctx,w,h)=>paintSchoolBanner(ctx,chapter,w,h,logo,identity),...options});
   banner.name=`school-banner-${chapter.id}`;
   banner.userData={chapter:chapter.id,school:chapter.school,identity:identity.key};
   if(!rails.has(T)){const geometry=new T.BoxGeometry(3.45,.08,.10);geometry.userData.sharedResource=true;rails.set(T,geometry);}
   const rail=new T.Mesh(rails.get(T),new T.MeshStandardMaterial({color:0xb4ab91,metalness:.65,roughness:.35}));
   rail.position.set(0,2.17,-.025);banner.add(rail);
-  return banner;
+  options.cache?.set(key,banner);return banner;
 }

@@ -1,11 +1,13 @@
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=79';
-import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=77';
-import {createCampusKit} from './village-campus-kit.js?v=77';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=79';
-import {dressNeighborhood} from './village-places.js?v=77';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=80';
+import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=80';
+import {createCampusKit} from './village-campus-kit.js?v=87';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=87';
+import {dressNeighborhood} from './village-places.js?v=80';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=87';
 
 export function createDistricts(T,extension=0,streets=1){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
+  const stadium=createStadium(T,extension);root.add(stadium.root);
   const {box,mesh,cylinder,bar,tree:plantTree,bench,lamp,table,path,sign}=kit;
   function tree(p,x,z,seed,size){
     const blocked=(p.userData.specs||[]).some(s=>{const dx=x-(s.x-p.position.x),dz=z-(s.z-p.position.z),a=s.rotation;return Math.abs(dx*Math.cos(a)-dz*Math.sin(a))<s.width/2+2&&Math.abs(dx*Math.sin(a)+dz*Math.cos(a))<s.depth/2+3;});
@@ -103,11 +105,12 @@ export function createDistricts(T,extension=0,streets=1){
     const p=new T.Group();p.name='permanent-campus-horizon';
     for(let i=0;i<65;i++){
       const a=hash(i,'sky-angle')*Math.PI*2,r=225+hash(i,'sky-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r,w=7+hash(i,'sky-width')*17,h=6+hash(i,'sky-height')*19;
+      if(Math.abs(x)<STADIUM_SITE.width/2+w&&Math.abs(z-STADIUM_SITE.z)<STADIUM_SITE.depth/2+18)continue;
       box(p,x,h/2,z,w,h,8+hash(i,'sky-depth')*9,pick([0x8d9c9b,0x899292,0x9eaaa3,0x92988f],i,'sky-color'));
       box(p,x,h+.3,z,w+.5,.5,10,0x9daba7);
       for(let row=1;row<4;row++)for(const side of [-1,1])box(p,x,h*row/4,z+side*(4+hash(i,'sky-depth')*4.5+.03),w*.8,.55,.05,0x768a8b);
     }
-    for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130;mesh(p,'leaf',Math.sin(a)*r,3.5,Math.cos(a)*r,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
+    for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
     // Water tower, bell tower and stadium floodlights break the dormitory skyline.
     for(const x of [233,241])for(const z of [181,189])bar(p,[x,0,z],[x,24,z],.20,0x8c9f9d);
     cylinder(p,237,26,185,6,6,0xaebdb5);mesh(p,'dome',237,29,185,6,2,6,0xaebdb5);
@@ -119,6 +122,9 @@ export function createDistricts(T,extension=0,streets=1){
   const horizon=distantCampus();root.add(horizon);
   function makeChunk(cx,cz){
     const p=new T.Group();p.position.set(cx*BLOCK,0,cz*BLOCK);root.add(p);
+    // Reserve this entire outlying block for the permanent stadium. No campus
+    // buildings, through-path crowds or trees may be streamed into its bowl.
+    if(cx===0&&cz===2){p.position.z+=extension;return {group:p,kind:'stadium',specs:[],people:[],activityBounds:stadium.bounds.clone(),setNight(){},animate(){},dispose(){}};}
     const kind=districtKind(cx,cz,streets),specs=districtSpecs(cx,cz,streets);p.userData.specs=specs;
     for(const spec of specs){const building=kit.building(p,spec,cx*BLOCK,cz*BLOCK);if(isCampusHill(cx,cz))building.position.y=CAMPUS_HILL_HEIGHT;}
     if(isCampusHill(cx,cz))createCampusHill(T,kit,p);
@@ -137,8 +143,8 @@ export function createDistricts(T,extension=0,streets=1){
     // leave an old pose visible. Absolute-time poses catch up before drawing.
     const activityBounds=activity.root.children.find(o=>o.isInstancedMesh).boundingSphere.clone().applyMatrix4(activity.root.matrixWorld);
     let animatedAt=0;setNight(night);
-    return {group:p,kind,specs,activityBounds,people:activity.people,setNight,animate(time,animatePeople=true){
-      if(animatePeople&&time!==animatedAt){activity.animate(time);animatedAt=time;}
+    return {group:p,kind,specs,activityBounds,people:activity.people,setNight,animate(time,animatePeople=true,camera=null){
+      if(animatePeople){activity.animate(time,camera);animatedAt=time;}
     },dispose(){activity.dispose();kit.disposeChunk(p);}};
   }
   let lastKey='';
@@ -153,19 +159,22 @@ export function createDistricts(T,extension=0,streets=1){
   let trafficTime,trafficX,trafficZ;
   function animate(time,x=0,z=0,camera=null){
     if(camera)frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
+    stadium.root.visible=!camera||frustum.intersectsSphere(stadium.bounds);
+    if(stadium.root.visible)stadium.animate(time);
     for(const chunk of chunks.values()){
       const inView=camera?frustum.intersectsSphere(chunk.activityBounds):Math.hypot(chunk.group.position.x-x,chunk.group.position.z-z)<165;
-      chunk.animate(time,inView);
+      chunk.animate(time,inView,camera);
     }
     if(time!==trafficTime||x!==trafficX||z!==trafficZ){traffic.animate(time,x,z);trafficTime=time;trafficX=x;trafficZ=z;}
   }
   update(0,0);
   function dispose(){
+    stadium.dispose();
     for(const chunk of chunks.values())chunk.dispose();
     const resources=new Set();root.traverse(o=>{if(o.geometry)resources.add(o.geometry);if(o.isInstancedMesh)resources.add(o);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){resources.add(m);for(const v of Object.values(m))if(v?.isTexture)resources.add(v);}});
     Object.values(kit.geometries).forEach(g=>resources.add(g));
     kit.vehicles.resources.forEach(r=>resources.add(r));
     for(const r of resources)if(!r.userData?.sharedResource)r.dispose();chunks.clear();
   }
-  return {root,update,animate,chunks,traffic,horizon,dispose,setNight(enabled){night=Boolean(enabled);for(const chunk of chunks.values())chunk.setNight(night);}};
+  return {root,update,animate,chunks,traffic,horizon,stadium,dispose,setNight(enabled){night=Boolean(enabled);stadium.setNight(night);for(const chunk of chunks.values())chunk.setNight(night);}};
 }

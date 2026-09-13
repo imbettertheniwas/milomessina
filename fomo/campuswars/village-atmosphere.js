@@ -1,4 +1,4 @@
-import {houseStandings} from './village-competition.js?v=56';
+import {houseStandings} from './village-competition.js?v=87';
 // Local effects share the village's clock, visibility and reduced-motion controls.
 export function createLotBeacon(T,lot){
   const root=new T.Group();root.name='empty-lot-beacon';root.position.set(lot.x,0,lot.z);root.rotation.y=lot.rotation;

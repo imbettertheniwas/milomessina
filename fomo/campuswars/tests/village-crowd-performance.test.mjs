@@ -15,7 +15,7 @@ test('a populated multi-street village skips invisible members with exactly matc
     assert(updated>0&&updated<optimized.members.length/2);assert.equal(optimized.members.length,810);
     const visible=optimized.crowdVisibility.visible(camera,optimized.world.matrixWorld);
     for(const batch of visible)for(const name of Object.keys(optimized.parts)){
-      const start=batch.start*16,end=(batch.start+batch.count)*16;
+      const stride=reference.parts[name].count/reference.members.length,start=batch.start*stride*16,end=(batch.start+batch.count)*stride*16;
       assert.deepEqual(optimized.parts[name].instanceMatrix.array.slice(start,end),reference.parts[name].instanceMatrix.array.slice(start,end));
     }
     assert(optimized.crowdVisibility.batches.some(b=>b.time===0),'Invisible people retain their initial pose');
@@ -27,7 +27,7 @@ test('a populated multi-street village skips invisible members with exactly matc
     camera.position.set(100,8,130);camera.lookAt(100,2,0);camera.updateMatrixWorld();
     assert(optimized.animateCrowd(23,camera)>0);
     for(const batch of optimized.crowdVisibility.visible(camera,optimized.world.matrixWorld))for(const name of Object.keys(optimized.parts)){
-      const start=batch.start*16,end=(batch.start+batch.count)*16;
+      const stride=reference.parts[name].count/reference.members.length,start=batch.start*stride*16,end=(batch.start+batch.count)*stride*16;
       assert.deepEqual(optimized.parts[name].instanceMatrix.array.slice(start,end),reference.parts[name].instanceMatrix.array.slice(start,end));
     }
     optimized.animateCrowd(23);

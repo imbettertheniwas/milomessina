@@ -1,8 +1,8 @@
-import {constructionPlan,constructionStation} from './village-construction-layout.js?v=51';
-import {createChapterBanner} from './village-banners.js?v=56';
-import {createSchoolBanner} from './village-school-banners.js?v=56';
+import {constructionPlan,constructionStation} from './village-construction-layout.js?v=80';
+import {createChapterBanner} from './village-banners.js?v=87';
+import {createSchoolBanner} from './village-school-banners.js?v=87';
 
-export function createConstructionSite(T,chapter,{box,cylinder,sign,pickables}){
+export function createConstructionSite(T,chapter,{box,cylinder,sign,pickables,artworkOptions={}}){
   const site=new T.Group(),plan=constructionPlan(chapter);
   site.name=`chapter-construction-${chapter.id}`;
   site.userData={chapter:chapter.id,joined:chapter.joined,state:'construction',plan};
@@ -133,11 +133,11 @@ export function createConstructionSite(T,chapter,{box,cylinder,sign,pickables}){
     box(site,x,.16,6.55,.45,.08,.45,steel);
   }
   for(const x of [-2.4,2.4])box(site,x,1.6,7.25,.1,3,.1,steel);
-  const banner=createChapterBanner(T,chapter,4.8);banner.position.set(0,1.66,7.35);site.add(banner);pickables.push(banner);
+  const banner=createChapterBanner(T,chapter,4.8,artworkOptions);banner.position.set(0,1.66,7.35);site.add(banner);pickables.push(banner);
   box(site,0,2.8,7.25,5.1,.1,.12,steel);
   sign(site,`UNDER CONSTRUCTION · ${chapter.joined} / 15`,0,3.12,7.35,4.8,.42,'#d6b26d','#2c3038');
   for(const face of [-1,1]){
-    const schoolBanner=createSchoolBanner(T,chapter);schoolBanner.rotation.y=face*Math.PI/2;
+    const schoolBanner=createSchoolBanner(T,chapter,artworkOptions);schoolBanner.rotation.y=face*Math.PI/2;
     schoolBanner.position.set(face*6.25,2.55,-.5);site.add(schoolBanner);pickables.push(schoolBanner);
     for(const z of [-2.25,1.25])cylinder(site,face*6.25,2.45,z,.055,4.9,steel);
   }
