@@ -46,13 +46,13 @@ test('rendered students and visitors from Greek Row follow the hill elevation',(
   assert(campusPeople('greek',0,0).some(p=>p.purpose==='class to campus coffee'));
 });
 
-test('only the main campus rises and the streamed hill releases its geometry',()=>{
-  const districts=createDistricts(T,76,3);
+test('only the main campus rises and a larger campus releases evicted hill geometry',()=>{
+  const districts=createDistricts(T,76,5);
   try{
     const main=districts.chunks.get('0,-1'),hill=main.group.getObjectByName('main-campus-hillside');assert(hill);
     assert.equal(main.group.children.find(o=>o.name==='library').position.y,6);
     let disposed=false;hill.geometry.addEventListener('dispose',()=>disposed=true);
-    districts.update(300,-100);assert(disposed);
+    districts.update(300,-100);districts.update(300,176);assert(disposed);
     const other=districts.chunks.get('3,-1');assert.equal(other.group.children.find(o=>o.name==='library').position.y,0);assert(!other.group.getObjectByName('main-campus-hillside'));
     districts.update(0,0);assert(districts.chunks.get('0,-1').group.getObjectByName('main-campus-hillside'));
   }finally{districts.dispose();}

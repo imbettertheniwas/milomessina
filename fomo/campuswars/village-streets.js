@@ -1,21 +1,26 @@
 import {villageQuality} from './village-quality.js?v=92';
 import {createGrassMaterial} from './village-grass.js?v=92';
 import {hash} from './village-district-layout.js?v=80';
+import {campusBounds} from './village-campus-bounds.js?v=1';
 // Insert road sections in the one opaque floor. UVs repeat the straight part
 // while the original end junction and the campus beyond it move outward.
-export function setStreetExtension(T,streets,extension=0) {
-  if ((streets.userData.extension||0)===extension) return;
-  const strips=[[-10000,30,-10000,30]];
+export function setStreetExtension(T,streets,extension=0,streetTotal=1) {
+  if (streets.userData.extension===extension&&streets.userData.streetTotal===streetTotal) return;
+  const campus=campusBounds(streetTotal,extension),padding=1200;
+  const x0=campus.minX-padding,x1=campus.maxX+padding,z0=campus.minZ-padding,z1=campus.maxZ+padding;
+  streets.material.userData.campusBounds.set(campus.minX,campus.maxX,campus.minZ,campus.maxZ);
+  const strips=[[z0,30,z0,30]];
   for(let z=30;z<30+extension;z+=19) strips.push([z,Math.min(z+19,30+extension),-9.5,9.5]);
-  strips.push([30+extension,10000+extension,30,10000]);
+  strips.push([30+extension,z1,30,z1-extension]);
   const positions=[],uvs=[];
   for(const [start,end,sourceStart,sourceEnd] of strips) {
-    const vertices=[[-10000,-start,0],[10000,-start,0],[-10000,-end,0],[10000,-end,0]];
-    const uv=[[0,(10000-sourceStart)/20000],[1,(10000-sourceStart)/20000],[0,(10000-sourceEnd)/20000],[1,(10000-sourceEnd)/20000]];
+    const vertices=[[x0,-start,0],[x1,-start,0],[x0,-end,0],[x1,-end,0]];
+    const u0=x0/300+.5,u1=x1/300+.5;
+    const uv=[[u0,.5-sourceStart/300],[u1,.5-sourceStart/300],[u0,.5-sourceEnd/300],[u1,.5-sourceEnd/300]];
     for(const i of [0,2,1,2,3,1]) {positions.push(...vertices[i]);uvs.push(...uv[i]);}
   }
   const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geometry.computeVertexNormals();
-  streets.geometry.dispose();streets.geometry=geometry;streets.userData.extension=extension;
+  streets.geometry.dispose();streets.geometry=geometry;streets.userData.extension=extension;streets.userData.streetTotal=streetTotal;
 }
 // A single opaque floor carries all roads, grass, paths and paint. Its larger
 // campus pattern includes pedestrian districts instead of one road per block.
@@ -99,8 +104,8 @@ export function createStreetNetwork(T){
       for(let i=0;i<4;i++)rect('#e3d1ad',ox+6.6,z+i*.4,.5,.07);
     }
     grassMask=new T.CanvasTexture(maskCanvas);grassMask.wrapS=grassMask.wrapT=T.RepeatWrapping;grassMask.anisotropy=8;
-    map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.repeat.set(200/3,200/3);map.offset.set(.5,.5);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;
+    map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;
   }
-  const material=createGrassMaterial(T,map,grassMask);
-  const streets=new T.Mesh(new T.PlaneGeometry(20000,20000),material);streets.name='continuous-village-floor';streets.rotation.x=-Math.PI/2;streets.position.y=.045;streets.receiveShadow=true;return streets;
+  const bounds=new T.Vector4(),material=createGrassMaterial(T,map,grassMask,bounds);material.userData.campusBounds=bounds;
+  const streets=new T.Mesh(new T.BufferGeometry(),material);streets.name='continuous-village-floor';streets.rotation.x=-Math.PI/2;streets.position.y=.045;streets.receiveShadow=true;setStreetExtension(T,streets);return streets;
 }

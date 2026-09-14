@@ -72,7 +72,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
 
 
 
-  const streets=existingStreet||createStreetNetwork(THREE);setStreetExtension(THREE,streets,extension);if(attachStreet)world.add(streets);
+  const streets=existingStreet||createStreetNetwork(THREE);setStreetExtension(THREE,streets,extension,streetTotal);if(attachStreet)world.add(streets);
 
 
   // Street lamps, paths, trees and furniture give the village a lived-in scale.

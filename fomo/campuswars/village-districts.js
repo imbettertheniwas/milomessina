@@ -3,7 +3,8 @@ import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './villa
 import {createCampusKit} from './village-campus-kit.js?v=87';
 import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=92';
 import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=87';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=89';
+import {campusDistrictExists} from './village-campus-bounds.js?v=1';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
@@ -156,10 +157,18 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
       const wanted=new Set(),missing=[];
       for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
         const a=center.x+dx,b=center.z+dz,id=`${a},${b}`;
+        if(!campusDistrictExists(a,b,streets))continue;
         wanted.add(id);if(!chunks.has(id))missing.push({a,b,id,distance:dx*dx+dz*dz});
       }
       pending=missing.sort((a,b)=>a.distance-b.distance);
-      for(const [id,chunk] of chunks)if(!wanted.has(id)){chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);changed=true;}
+      // Keep nearby blocks resident when crossing an intersection. The small
+      // campus fits in this cache, avoiding buildings popping out and rebuilding.
+      const evict=[...chunks].filter(([id,c])=>!wanted.has(id)&&c.kind!=='stadium').sort((a,b)=>{
+        const distance=([,c])=>Math.hypot(c.group.position.x-x,c.group.position.z-z);
+        return distance(b)-distance(a);
+      });
+      let detailed=[...chunks.values()].filter(c=>c.kind!=='stadium').length+missing.filter(c=>!(c.a===0&&c.b===2)).length;
+      while(detailed>9&&evict.length){const [id,chunk]=evict.shift();chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);detailed--;changed=true;}
     }
     const count=incremental?Math.min(1,pending.length):pending.length;
     for(let i=0;i<count;i++){const {a,b,id}=pending.shift();chunks.set(id,makeChunk(a,b));changed=true;}

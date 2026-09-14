@@ -85,7 +85,7 @@ test('a failed warm-up paints nothing and leaves the cover to the caller',async(
   assert(!h.calls.some(([kind])=>kind==='present'));
 });
 
-test('a desktop drops culling so offscreen scenery warms as well',async()=>{
+test('desktop warm-up also keeps offscreen scenery out of texture uploads',async()=>{
   const scene=new THREE.Scene(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());scene.add(mesh);
   const seen=[];
   const renderer={
@@ -93,7 +93,7 @@ test('a desktop drops culling so offscreen scenery warms as well',async()=>{
     async compileAsync(){seen.push(mesh.frustumCulled);},render(){seen.push(mesh.frustumCulled);}
   };
   await prewarmVillage(THREE,renderer,scene,new THREE.PerspectiveCamera(),()=>{},{update(){},clear(){}});
-  assert(seen.slice(0,-1).every(value=>value===false),'a desktop kept culling during warm-up');
+  assert(seen.every(Boolean),'desktop warm-up uploaded offscreen scenery');
   // The opening frame is a playback frame, so it culls the way playback does.
   assert.equal(seen.at(-1),true);
   assert.equal(mesh.frustumCulled,true);
