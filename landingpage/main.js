@@ -15,7 +15,12 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const returningFromHistory = document.documentElement.classList.contains('intro-return');
 let introComplete = returningFromHistory;
 let active = false, usedFallback = false, finishTimer, raf = 0;
-let playRetry, playAttempts = 0;
+let playRetry, playAttempts = 0, stallTimer, playbackRevision = 0;
+function cancelStallTimer() { clearTimeout(stallTimer); stallTimer = undefined; }
+function watchPlayback() {
+  cancelStallTimer();
+  if (active && !document.hidden) stallTimer = setTimeout(() => finish(), 8000);
+}
 let videoFrame = 0, lastPaint = -1, lastStage = -1, lastOutro = -1;
 
 function focusDestination() {
@@ -99,15 +104,16 @@ function play() {
   video.playsInline = true;
   video.autoplay = true;
   video.controls = false;
+  const revision = playbackRevision;
   const pending = video.play();
   if (pending) pending.catch(() => {
-    if (!active || document.hidden) return;
+    if (!active || document.hidden || revision !== playbackRevision) return;
     syncPlayback();
     // Retry startup races after visibility/layout settles, without a click.
     // A browser's explicit autoplay restriction still takes precedence.
     if (playAttempts < 4) {
       playRetry = setTimeout(play, 250 * 2 ** playAttempts++);
-    }
+    } else finish();
   });
 }
 function rememberVisit() {
@@ -118,6 +124,8 @@ function rememberVisit() {
 function restorePage() {
   clearTimeout(finishTimer);
   active = false;
+  playbackRevision++;
+  cancelStallTimer();
   cancelPlayRetry();
   cancelPaint();
   video.pause();
@@ -135,6 +143,8 @@ function restorePage() {
 function finish({scroll = true, cinematic = false} = {}) {
   if (!active) return;
   active = false;
+  playbackRevision++;
+  cancelStallTimer();
   introComplete = true;
   cancelPlayRetry();
   rememberVisit();
@@ -167,6 +177,8 @@ function finish({scroll = true, cinematic = false} = {}) {
 function start({replay: replaying = false} = {}) {
   clearTimeout(finishTimer);
   active = true; usedFallback = false;
+  playbackRevision++;
+  watchPlayback();
   cancelPlayRetry(); playAttempts = 0;
   lastPaint = lastStage = lastOutro = -1;
   transition.hidden = false;
@@ -177,7 +189,7 @@ function start({replay: replaying = false} = {}) {
   opening.hidden = false; opening.inert = false; page.inert = true;
   if (replaying) video.currentTime = 0;
   if (!video.getAttribute('src')) {
-    video.src = matchMedia('(max-width:700px)').matches ? '/landingpage/assets/intro-mobile-hd.mp4' : '/landingpage/assets/intro-desktop-smooth.mp4';
+    video.src = matchMedia('(max-width:700px)').matches ? '/landingpage/assets/intro-mobile.mp4' : matchMedia('(pointer:coarse)').matches ? '/landingpage/assets/intro-desktop.mp4' : '/landingpage/assets/intro-desktop-smooth.mp4';
   }
   window.scrollTo({top: 0, behavior: 'instant'});
   alignTransition();
@@ -188,9 +200,13 @@ function start({replay: replaying = false} = {}) {
 video.addEventListener('playing', () => { cancelPlayRetry(); playAttempts = 0; syncPlayback(); });
 video.addEventListener('pause', syncPlayback);
 video.addEventListener('loadeddata', syncPlayback);
+video.addEventListener('timeupdate', () => { if (active) watchPlayback(); });
+video.addEventListener('waiting', watchPlayback);
+video.addEventListener('stalled', watchPlayback);
 video.addEventListener('ended', () => finish({cinematic: true}));
 function recoverVideo() {
-  if (!active || usedFallback) return;
+  if (!active) return;
+  if (usedFallback || video.src.endsWith('/intro-mobile.mp4')) { finish(); return; }
   usedFallback = true;
   video.classList.remove('has-frame');
   opening.classList.remove('has-video-frame');
@@ -206,15 +222,15 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape') fini
 document.addEventListener('pointerdown', () => { if (active && video.paused) play(); });
 document.addEventListener('visibilitychange', () => {
   if (!active) return;
-  if (document.hidden) { cancelPlayRetry(); video.pause(); }
-  else play();
+  if (document.hidden) { cancelPlayRetry(); cancelStallTimer(); video.pause(); }
+  else { watchPlayback(); play(); }
 });
 replay.hidden = false;
 replay.addEventListener('click', () => { start({replay: true}); document.getElementById('skip-intro').focus({preventScroll: true}); });
-window.addEventListener('pagehide', rememberVisit);
+window.addEventListener('pagehide', () => { rememberVisit(); cancelPlayRetry(); cancelStallTimer(); cancelPaint(); video.pause(); });
 window.addEventListener('pageshow', event => {
   if (returningFromHistory || (event.persisted && introComplete)) restorePage();
-  else if (event.persisted && active) play();
+  else if (event.persisted && active) { watchPlayback(); play(); }
 });
 if (returningFromHistory) restorePage();
 else if (reduced.matches) {

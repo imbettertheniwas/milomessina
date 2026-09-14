@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {INTRO_DURATION,introCaptionAt} from '../../fomo/campuswars/village-intro.js';
 
-function harness({reduced=false,hash='',blocked=false,frameCallbacks=false,hidden=false,navigationType='navigate',historyState=null}={}) {
+function harness({reduced=false,mobile=false,hash='',blocked=false,frameCallbacks=false,hidden=false,navigationType='navigate',historyState=null}={}) {
   const nodes=new Map(),events=new Map(),timers=new Map();let timerId=0,animation,frameId=0;const frames=new Map();
   function node(id) {
     if(!nodes.has(id))nodes.set(id,{
@@ -30,14 +30,14 @@ function harness({reduced=false,hash='',blocked=false,frameCallbacks=false,hidde
   const context=vm.createContext({
     INTRO_DURATION,introCaptionAt,document:doc,history,performance:{getEntriesByType:()=>[{type:navigationType}]},
     window:win,location:{hash},
-    matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced,addEventListener(type,fn){events.set('media:'+type,fn);}}),
+    matchMedia:query=>({matches:query.includes('reduced-motion')?reduced:query.includes('max-width')&&mobile,addEventListener(type,fn){events.set('media:'+type,fn);}}),
     setTimeout(fn,delay){timers.set(++timerId,{fn,delay});return timerId;},clearTimeout(id){timers.delete(id);},
     requestAnimationFrame(fn){animation=fn;return 1;},cancelAnimationFrame(){animation=null;}
   });
   const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
   vm.runInContext(html.match(/<script id="intro-entry">([\s\S]*?)<\/script>/)[1],context);
   vm.runInContext(fs.readFileSync(new URL('../main.js',import.meta.url),'utf8').replace(/^import .*;\n/,''),context);
-  return {node,doc,video,timers,frames,history,win,allowPlayback(){blocked=false;},renderFrame(time){const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(0,{mediaTime:time}));},fire(name,event={}){events.get(name)(event);},flush(){const pending=[...timers.values()];timers.clear();pending.forEach(t=>t.fn());},step(time){video.currentTime=time;animation?.();}};
+  return {node,doc,video,timers,frames,history,win,allowPlayback(){blocked=false;},renderFrame(time){const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(0,{mediaTime:time}));},fire(name,event={}){events.get(name)(event);},flush(maxDelay=Infinity){const pending=[...timers].filter(([,t])=>t.delay<=maxDelay);pending.forEach(([id])=>timers.delete(id));pending.forEach(([,t])=>t.fn());},step(time){video.currentTime=time;animation?.();}};
 }
 test('intro streams a video immediately without constructing the 3D village',()=>{
   const h=harness();assert.equal(h.video.src,'/landingpage/assets/intro-desktop-smooth.mp4');assert.equal(h.video.paused,false);assert.equal(h.node('page').inert,true);
@@ -104,9 +104,9 @@ test('a visit opened in the background starts playing when brought forward',()=>
   const h=harness({hidden:true});assert.equal(h.node('opening').hidden,false);assert.equal(h.video.paused,true);
   h.doc.hidden=false;h.fire('document:visibilitychange');assert.equal(h.video.paused,false);
 });
-test('media errors try the compatible video without automatically skipping the intro',()=>{
+test('media errors try the compatible video and release the page if recovery fails',()=>{
   const h=harness();h.fire('intro-video:error');assert.equal(h.video.src,'/landingpage/assets/intro-desktop.mp4');assert.equal(h.node('opening').hidden,false);
-  h.fire('intro-video:error');assert.equal(h.node('page').inert,true);
+  h.fire('intro-video:error');assert.equal(h.node('page').inert,false);
   h.fire('skip-intro:click');assert.equal(h.node('page').inert,false);
 });
 test('cached Back navigation preserves the completed intro and section position',()=>{
@@ -136,12 +136,12 @@ test('startup playback retries without requiring a click and keeps inline muted 
   const h=harness({blocked:true});await Promise.resolve();
   assert.equal(h.video.defaultMuted,true);assert.equal(h.video.muted,true);
   assert.equal(h.video.playsInline,true);assert.equal(h.video.controls,false);
-  assert.equal(h.timers.size,1);
-  h.allowPlayback();h.flush();assert.equal(h.video.paused,false);
+  assert.equal(h.timers.size,2);
+  h.allowPlayback();h.flush(2000);assert.equal(h.video.paused,false);
 });
 test('blocked autoplay retries are bounded and cannot restart a skipped intro',async()=>{
   const h=harness({blocked:true});await Promise.resolve();
-  for(let i=0;i<4;i++){h.flush();await Promise.resolve();}
+  for(let i=0;i<4;i++){h.flush(2000);await Promise.resolve();}
   assert.equal(h.timers.size,0);
   const skipped=harness({blocked:true});await Promise.resolve();
   skipped.fire('skip-intro:click');skipped.allowPlayback();skipped.flush();
@@ -153,3 +153,17 @@ test('the intro video remains visible during initial autoplay eligibility checks
   assert.doesNotMatch(html+css,/\.opening-video\{opacity:0\}/);
   assert.match(html,/<video[^>]+poster=/);
 });
+
+ test('phones use the smaller compatible movie and recover from media failure',()=>{
+  const h=harness({mobile:true});assert.equal(h.video.src,'/landingpage/assets/intro-mobile.mp4');
+  h.fire('intro-video:error');assert.equal(h.node('page').inert,false);assert.equal(h.timers.size,0);
+ });
+ test('a stalled intro releases scrolling, and hidden tabs do not time out',()=>{
+  const h=harness();h.fire('intro-video:waiting');h.flush();assert.equal(h.node('page').inert,false);
+  const hidden=harness();hidden.doc.hidden=true;hidden.fire('document:visibilitychange');hidden.flush();assert.equal(hidden.node('page').inert,true);
+  hidden.doc.hidden=false;hidden.fire('document:visibilitychange');hidden.flush();assert.equal(hidden.node('page').inert,false);
+ });
+ test('navigating away stops playback and callbacks, and back resumes an unfinished intro',()=>{
+  const h=harness({frameCallbacks:true});h.fire('window:pagehide');assert.equal(h.video.paused,true);assert.equal(h.frames.size,0);assert.equal(h.timers.size,0);
+  h.fire('window:pageshow',{persisted:true});assert.equal(h.video.paused,false);assert.equal(h.frames.size,1);
+ });

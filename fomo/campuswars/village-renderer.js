@@ -1,3 +1,4 @@
+import {villageQuality} from './village-quality.js?v=57';
 import {createVillage,buildVillageSteps} from './village-world.js?v=87';
 import {houseStandings} from './village-competition.js?v=87';
 import {rankedHouseSizes} from './village-house-sizing.js?v=80';
@@ -34,21 +35,22 @@ function startingIndices(T,layout,options){
   indices.add(layout.chapters.length);return indices;
 }
 export function createVillageRenderer(T,chapters,options={}){
-  if(chapters.length<=STREAMING_THRESHOLD)return createVillage(T,chapters,options);
+  if(chapters.length<=STREAMING_THRESHOLD)return createVillage(T,chapters,{compactCrowd:villageQuality().mobile,...options});
   const layout=villageRenderLayout(T,chapters,options.houseFinishes),indices=startingIndices(T,layout,options);
   const active=createVillage(T,layout.chapters,{...options,layout,indices,compactCrowd:true});
   return streamedRenderer(T,layout,active,indices);
 }
 export async function createVillageRendererAsync(T,chapters,options={}){
-  if(chapters.length<=STREAMING_THRESHOLD)return createVillageRenderer(T,chapters,{...options,attachStreet:false});
-  const layout=villageRenderLayout(T,chapters,options.houseFinishes),indices=startingIndices(T,layout,options);
-  const steps=buildVillageSteps(T,layout.chapters,{...options,layout,indices,attachStreet:false,compactCrowd:true});
+  const streaming=chapters.length>STREAMING_THRESHOLD;
+  const layout=streaming?villageRenderLayout(T,chapters,options.houseFinishes):null;
+  const indices=streaming?startingIndices(T,layout,options):null;
+  const steps=buildVillageSteps(T,layout?.chapters||chapters,{...options,layout,indices,attachStreet:!streaming&&(options.attachStreet??false),compactCrowd:streaming||villageQuality().mobile});
   let result;
   do{
     const start=performance.now();do{result=steps.next();}while(!result.done&&performance.now()-start<4);
     if(!result.done)await new Promise(resolve=>requestAnimationFrame(resolve));
   }while(!result.done);
-  return streamedRenderer(T,layout,result.value,indices,false);
+  return streaming?streamedRenderer(T,layout,result.value,indices,options.attachStreet??false):result.value;
 }
 function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true){
   const world=new T.Group();world.name='streamed-greek-village';world.add(initial.world);if(attachStreet)world.add(initial.streets);

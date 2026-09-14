@@ -249,3 +249,18 @@ a.role-card:hover{transform:translateY(-2px);border-color:#516af666}
 .is-leaving .transition-logo{transform:translate(-50%,-50%) scale(1.035);transition:transform .8s cubic-bezier(.22,1,.36,1)}
 .hero-arriving .hero-inner{animation:hero-arrival .9s cubic-bezier(.22,1,.36,1) both}
 @keyframes hero-arrival{from{opacity:0}to{opacity:1}}
+
+/* Keep controls clear of phone cutouts and avoid live backdrop blur while scrolling. */
+@media(max-width:700px),(pointer:coarse){
+  .campus-page #hdr{backdrop-filter:none;background:var(--bg-primary)}
+  .campus-page #hdr .replay{min-height:44px}
+  .film-top{padding-top:max(18px,env(safe-area-inset-top));padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  .campus-page #hdr .campus-top{padding-top:max(10px,env(safe-area-inset-top));padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  .program-index{flex-wrap:wrap}
+}
+@media(max-width:360px){
+  .campus-page #hdr .logo{font-size:16px;gap:5px}
+  .campus-page #hdr .logo-mark{width:26px;height:26px}
+  .campus-page #hdr .replay{font-size:12px;padding-inline:10px}
+  .program-index a{padding-inline:9px}.creator-rate{padding-inline:20px}
+}

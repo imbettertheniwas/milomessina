@@ -1,11 +1,11 @@
-import {villageQuality} from './village-quality.js?v=56';
+import {villageQuality} from './village-quality.js?v=57';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRenderer as createVillage,createVillageRendererAsync} from './village-renderer.js?v=87';
-import {createDistricts} from './village-districts.js?v=87';
+import {createVillageRendererAsync} from './village-renderer.js?v=88';
+import {createDistricts} from './village-districts.js?v=88';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';
-import {prewarmVillage} from './village-prewarm.js?v=87';
+import {prewarmVillage} from './village-prewarm.js?v=88';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
@@ -23,11 +23,13 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
   loading.textContent='This device can’t open the 3D village. Open Chapters to see progress, or join Greek Wars.';
   shell.classList.add('village-unavailable');
 }
-if(renderer)startVillage();
-function startVillage(){
+if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';shell.classList.add('village-unavailable');});
+async function startVillage(){
   let ready=false,pendingChapterUpdate=null;
+  const queueChapterUpdate=event=>{pendingChapterUpdate=event;};
+  document.addEventListener('chapters:update',queueChapterUpdate);
   const flightKeys=new Set();
-  const renderScale=Math.min(devicePixelRatio,quality.pixelRatio);
+  let renderScale=Math.min(devicePixelRatio,quality.pixelRatio);
   renderer.setPixelRatio(renderScale);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
   viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Use W A S D to fly the viewpoint forward, left, backward and right. Drag or use arrow keys to rotate, shift-drag to pan, or select a house. Scroll, pinch, or use plus and minus to zoom around the viewpoint. Click the FOMO blimp to join Discord, or use the Discord link in the village controls. Use Street view to click along the block. In Street view, W and S or up and down move, A and D or left and right look around. Escape resets the view.');
@@ -36,7 +38,7 @@ function startVillage(){
   const ambient=new THREE.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
   const fill=new THREE.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
-  let village=createVillage(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight});scene.add(village.world);
+  let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true});scene.add(village.world);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
   const pointerHover=createPointerHover(THREE,canvas,camera,blimp);
   const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
@@ -44,7 +46,7 @@ function startVillage(){
   let streetNav=createStreetNavigation(THREE,village.extension);scene.add(streetNav.root);
   let streetMode=false,streetZ=28.5,streetWantedZ=28.5;
   const streetButton=document.getElementById('village-street'),streetControls=document.getElementById('street-controls');
-  let districts=createDistricts(THREE,village.extension,village.streetTotal);scene.add(districts.root);
+  let districts=createDistricts(THREE,village.extension,village.streetTotal,{incremental:quality.mobile});scene.add(districts.root);
   const dusk={sky:new THREE.Color(0x25233f),ambient:new THREE.Color(0x9a9fdc),ground:new THREE.Color(0x453649),sun:new THREE.Color(0xc49ab1),fill:new THREE.Color(0x858dff)};
   let litAtNight=false;
   function applyLighting(amount){
@@ -143,7 +145,7 @@ function startVillage(){
     if(buildRevision!==chapterBuildRevision){next.dispose();return;}
     chapters=event.detail.chapters;scene.remove(previous.world);scene.add(next.world);next.world.add(next.streets);village=next;previous.dispose();
     // A new street opens its own Greek block, so the campus around it restreams.
-    if(previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=createDistricts(THREE,next.extension,next.streetTotal);scene.add(districts.root);}
+    if(previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=createDistricts(THREE,next.extension,next.streetTotal,{incremental:quality.mobile});scene.add(districts.root);}
     if(previous.extension!==next.extension){
       scene.remove(streetNav.root);streetNav.dispose();streetNav=createStreetNavigation(THREE,next.extension);scene.add(streetNav.root);streetNav.root.visible=streetMode;
       const stops=streetStops(next.extension);streetWantedZ=Math.max(stops[0],Math.min(stops.at(-1),streetWantedZ));
@@ -156,6 +158,7 @@ function startVillage(){
     choose(village.anchors.some(a=>a.id===requested)?requested:chapters[0]?.id||'empty',false);
     renderer.shadowMap.needsUpdate=true;viewDirty=true;wake();
   }
+  document.removeEventListener('chapters:update',queueChapterUpdate);
   document.addEventListener('chapters:update',event=>{
     // Do not dispose materials while their asynchronous compilation is pending.
     if(!ready){pendingChapterUpdate=event;return;}
@@ -289,17 +292,20 @@ function startVillage(){
     if(!visible){releasePointer();lastTime=0;}wake();
   },{threshold:0}).observe(shell);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)releasePointer();lastTime=0;wake();});
+  let slowFrames=0,overlayOpen=quality.mobile&&(!document.getElementById('village-drawer').hidden||document.getElementById('village-more').getAttribute('aria-expanded')==='true'||Boolean(document.getElementById('about-dialog').open));
+  document.addEventListener('village:overlay',event=>{overlayOpen=quality.mobile&&event.detail.open;lastTime=0;viewDirty=true;wake();});
   function wake(){if(ready&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
   function frame(now){
     raf=0;
     if(!visible||document.hidden){lastTime=0;return;}
-    const cameraMoving=(streetMode&&(Math.abs(streetZ-streetWantedZ)>.01||camera.position.distanceTo(new THREE.Vector3(0,2.6,streetWantedZ))>.01))||target.distanceToSquared(wantedTarget)>.0001||Math.abs(radius-wantedRadius)>.01||Math.abs(theta-wantedTheta)>.001||Math.abs(phi-wantedPhi)>.001;
-    // Active people update on every rendered frame. Only paused scenery is capped.
-    if(paused&&!cameraMoving&&!flightKeys.size&&!drag&&!viewDirty&&now-lastRender<1000/30){wake();return;}
-    // Preserve pixel density: optimize invisible work instead of blurring the view.
+    const activityPaused=paused||overlayOpen;
+    // Bound GPU and animation work on high-refresh phones as well as 60 Hz displays.
+    const interval=1000/quality.frameRate;
+    if(lastRender&&now-lastRender<interval-1){wake();return;}
+    const frameStarted=performance.now();
     const elapsed=lastTime?Math.max(0,(now-lastTime)/1000):0;
     const dt=Math.min(elapsed,.05);lastTime=now;
-    if(autoOrbit&&!entranceActive&&!paused&&visible&&!document.hidden)wantedTheta+=dt*.06;
+    if(autoOrbit&&!entranceActive&&!activityPaused&&visible&&!document.hidden)wantedTheta+=dt*.06;
     const cameraDt=visible&&!document.hidden?dt:0;
     if(!streetMode&&flightKeys.size){
       // Move the orbit anchor on the ground plane in the current viewing direction.
@@ -344,7 +350,7 @@ function startVillage(){
     if(districtChanged||lightX!==shadowX||lightZ!==shadowZ){
       shadowX=lightX;shadowZ=lightZ;sun.position.set(lightX-35,55,lightZ+30);sun.target.position.set(lightX,0,lightZ);renderer.shadowMap.needsUpdate=true;
     }
-    if(!paused&&!(entranceActive&&entrancePaused)&&visible&&!document.hidden){
+    if(!activityPaused&&!(entranceActive&&entrancePaused)&&visible&&!document.hidden){
       if(!entranceActive&&!reduced)moneyRain.updateRewards(dt,nightToggle.getAttribute('aria-pressed')==='true'?1:0);
       partyTime+=dt;blimp.update(partyTime);village.animateEffects(partyTime);
     }
@@ -353,9 +359,15 @@ function startVillage(){
     village.animateCrowd(partyTime,camera);
     districts.animate(partyTime,target.x,target.z,camera);
     renderer.render(scene,camera);lastRender=now;
+    if(quality.mobile){
+      slowFrames=performance.now()-frameStarted>interval*.8?slowFrames+1:Math.max(0,slowFrames-1);
+      if(slowFrames>=20&&renderScale>quality.minPixelRatio){
+        renderScale=Math.max(quality.minPixelRatio,renderScale-.25);renderer.setPixelRatio(renderScale);slowFrames=0;
+      }
+    }
     viewDirty=false;
     const settling=(streetMode&&(Math.abs(streetZ-streetWantedZ)>.01||camera.position.distanceTo(new THREE.Vector3(0,2.6,streetWantedZ))>.01))||target.distanceTo(wantedTarget)>.01||Math.abs(radius-wantedRadius)>.01||Math.abs(theta-wantedTheta)>.001||Math.abs(phi-wantedPhi)>.001;
-    if(visible&&!document.hidden&&(!paused||flightKeys.size||settling||entranceActive||village.building))wake();
+    if(visible&&!document.hidden&&((!activityPaused&&!(entranceActive&&entrancePaused))||flightKeys.size||settling||(entranceActive&&!entrancePaused)||village.building||districts.building))wake();
   }
   canvas.addEventListener('webglcontextlost',event=>{
     releasePointer();
@@ -368,7 +380,9 @@ function startVillage(){
   // Do not overwrite a new chapter's deep link before its first live response.
   const initial=new URLSearchParams(location.hash.slice(1)).get('chapter');choose(village.anchors.some(a=>a.id===initial)?initial:selected,false,false);
   camera.position.set(0,104,104);camera.lookAt(target);camera.updateMatrixWorld();
-  function prepare(){return prewarmVillage(THREE,renderer,scene,camera,applyLighting,moneyRain,{mobile:quality.mobile||Boolean(village.streaming),variantRoots:[districts.stadium.root]}).then(()=>{
+  async function prepare(){
+    while(districts.building){await new Promise(resolve=>requestAnimationFrame(resolve));districts.update(target.x,target.z);}
+    return prewarmVillage(THREE,renderer,scene,camera,applyLighting,moneyRain,{mobile:quality.mobile||Boolean(village.streaming),variantRoots:[districts.stadium.root]}).then(()=>{
     if(pendingChapterUpdate){
       const event=pendingChapterUpdate;pendingChapterUpdate=null;
       return updateChapters(event).then(()=>prepare());
@@ -378,7 +392,7 @@ function startVillage(){
     applyLighting(nightToggle.getAttribute('aria-pressed')==='true'?1:0);
     loading.hidden=true;shell.classList.remove('village-unavailable');shell.classList.add('village-ready');
     if(entranceActive)shell.classList.add('intro-playing');
-    if(visible&&entrancePending)beginIntro();
+    if(visible&&entrancePending){if(overlayOpen){finishIntro();resetView();}else beginIntro();}
     wake();
   });}
   function showLoadingError(error){

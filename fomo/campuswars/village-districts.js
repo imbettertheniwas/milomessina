@@ -5,7 +5,7 @@ import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v
 import {dressNeighborhood} from './village-places.js?v=80';
 import {createStadium,STADIUM_SITE} from './village-stadium.js?v=87';
 
-export function createDistricts(T,extension=0,streets=1){
+export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
   const stadium=createStadium(T,extension);root.add(stadium.root);
   const {box,mesh,cylinder,bar,tree:plantTree,bench,lamp,table,path,sign}=kit;
@@ -147,13 +147,23 @@ export function createDistricts(T,extension=0,streets=1){
       if(animatePeople){activity.animate(time,camera);animatedAt=time;}
     },dispose(){activity.dispose();kit.disposeChunk(p);}};
   }
-  let lastKey='';
+  let lastKey='',pending=[];
   function update(x,z){
-    const center=districtAt(x,z>30?Math.max(30,z-extension):z),key=`${center.x},${center.z}`;if(key===lastKey)return false;lastKey=key;
-    const wanted=new Set();
-    for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){const a=center.x+dx,b=center.z+dz,id=`${a},${b}`;wanted.add(id);if(!chunks.has(id))chunks.set(id,makeChunk(a,b));}
-    for(const [id,chunk] of chunks)if(!wanted.has(id)){chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);}
-    root.updateMatrixWorld(true);return true;
+    const center=districtAt(x,z>30?Math.max(30,z-extension):z),key=`${center.x},${center.z}`;
+    let changed=false;
+    if(key!==lastKey){
+      lastKey=key;
+      const wanted=new Set(),missing=[];
+      for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+        const a=center.x+dx,b=center.z+dz,id=`${a},${b}`;
+        wanted.add(id);if(!chunks.has(id))missing.push({a,b,id,distance:dx*dx+dz*dz});
+      }
+      pending=missing.sort((a,b)=>a.distance-b.distance);
+      for(const [id,chunk] of chunks)if(!wanted.has(id)){chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);changed=true;}
+    }
+    const count=incremental?Math.min(1,pending.length):pending.length;
+    for(let i=0;i<count;i++){const {a,b,id}=pending.shift();chunks.set(id,makeChunk(a,b));changed=true;}
+    if(changed)root.updateMatrixWorld(true);return changed;
   }
   const frustum=new T.Frustum(),projection=new T.Matrix4();
   let trafficTime,trafficX,trafficZ;
@@ -176,5 +186,5 @@ export function createDistricts(T,extension=0,streets=1){
     kit.vehicles.resources.forEach(r=>resources.add(r));
     for(const r of resources)if(!r.userData?.sharedResource)r.dispose();chunks.clear();
   }
-  return {root,update,animate,chunks,traffic,horizon,stadium,dispose,setNight(enabled){night=Boolean(enabled);stadium.setNight(night);for(const chunk of chunks.values())chunk.setNight(night);}};
+  return {root,update,animate,chunks,get building(){return pending.length>0;},traffic,horizon,stadium,dispose,setNight(enabled){night=Boolean(enabled);stadium.setNight(night);for(const chunk of chunks.values())chunk.setNight(night);}};
 }

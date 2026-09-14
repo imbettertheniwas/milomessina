@@ -35,6 +35,7 @@ export async function prewarmVillage(T,renderer,scene,camera,applyLighting,money
       for(const seconds of INTRO_PREWARM_TIMES){
         aimIntroCamera(camera,seconds);
         renderer.render(scene,camera);
+        if(mobile)await new Promise(resolve=>setTimeout(resolve,0));
       }
       // Optional districts remove their lights from the scene when offscreen.
       // Compile that light-count variant too, before the first camera move.

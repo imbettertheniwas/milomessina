@@ -58,3 +58,17 @@ test('visibility bounds follow streamed blocks and chapter-row extensions',()=>{
     }
   }finally{districts.dispose();}
 });
+
+test('mobile district streaming builds one block at a time and abandons obsolete destinations',()=>{
+  const districts=createDistricts(T,0,1,{incremental:true});
+  try{
+    assert.equal(districts.chunks.size,1);assert(districts.chunks.has('0,0'));assert(districts.building);
+    for(let i=2;i<=9;i++){districts.update(0,0);assert.equal(districts.chunks.size,i);}
+    assert.equal(districts.building,false);assert.equal(districts.update(0,0),false);
+    districts.update(500,500);assert.equal(districts.chunks.size,1);assert(districts.chunks.has('5,5'));
+    districts.update(-500,-500);assert.equal(districts.chunks.size,1);assert(districts.chunks.has('-5,-5'));
+    while(districts.building)districts.update(-500,-500);
+    assert.equal(districts.chunks.size,9);
+    for(const key of districts.chunks.keys())assert(key.startsWith('-'),'an obsolete destination was built');
+  }finally{districts.dispose();}
+});
