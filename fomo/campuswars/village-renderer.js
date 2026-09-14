@@ -1,5 +1,5 @@
-import {villageQuality} from './village-quality.js?v=92';
-import {createVillage,buildVillageSteps} from './village-world.js?v=92';
+import {villageQuality} from './village-quality.js?v=97';
+import {createVillage,buildVillageSteps} from './village-world.js?v=97';
 import {houseStandings} from './village-competition.js?v=87';
 import {rankedHouseSizes} from './village-house-sizing.js?v=80';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';

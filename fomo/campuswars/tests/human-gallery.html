@@ -3,8 +3,8 @@
 <nav><button id="people">Chapter friends</button><button id="students">Quad students</button><button id="walking">Campus walkers</button><button id="quad">Campus quad</button><button id="street">From Greek Row</button><button id="overhead">Overhead</button><button id="night">Day / night</button><button id="pause">Pause students</button></nav><output id="stats">Loading campus…</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createDistricts} from '../village-districts.js?v=87';
-import {createVillage} from '../village-world.js?v=87';
+import {createDistricts} from '../village-districts.js?v=97';
+import {createVillage} from '../village-world.js?v=97';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);scene.fog=new T.FogExp2(0x98a7ba,.0022);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,1,650);
 const ambient=new T.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);const sun=new T.DirectionalLight(0xffe5c6,2.6);sun.position.set(-45,65,-65);sun.target.position.set(0,0,-100);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.normalBias=.05;Object.assign(sun.shadow.camera,{left:-75,right:75,top:65,bottom:-65,near:1,far:180});scene.add(sun,sun.target);const fill=new T.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);

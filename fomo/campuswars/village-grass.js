@@ -1,4 +1,4 @@
-import {villageQuality} from './village-quality.js?v=92';
+import {villageQuality} from './village-quality.js?v=97';
 import {hash} from './village-district-layout.js?v=80';
 import {lawnGround,toWorld} from './village-layout.js?v=80';
 const textures=new WeakMap();

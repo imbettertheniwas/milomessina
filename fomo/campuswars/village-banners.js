@@ -1,4 +1,4 @@
-import {villageQuality} from './village-quality.js?v=92';
+import {villageQuality} from './village-quality.js?v=97';
 import {bannerIdentity,paintChapterBanner} from './village-banner-art.js?v=55';
 export {bannerIdentity} from './village-banner-art.js?v=55';
 // Chapter-specific artwork on shared sewn cloth and mounting hardware.

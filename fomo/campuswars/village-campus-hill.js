@@ -1,4 +1,5 @@
-import {createGrassMaterial} from './village-grass.js?v=92';
+import {createGrassMaterial} from './village-grass.js?v=97';
+import {createNationalPrize,NATIONAL_PRIZE_SITE} from './village-national-prize.js?v=2';
 
 // The original academic block, immediately north of Greek Row. Heights are
 // shared by the landscape and students, including visitors from other blocks.
@@ -48,6 +49,7 @@ export function createCampusHill(T,kit,p){
   terrain.computeVertexNormals();
   const lawn=new T.Mesh(terrain,createGrassMaterial(T));lawn.name='main-campus-hillside';lawn.receiveShadow=true;lawn.userData.ownedGeometry=true;p.add(lawn);
   const raised=new T.Group();raised.position.y=6;raised.name='academic-quad';p.add(raised);
+  const prize=createNationalPrize(T);prize.root.position.set(NATIONAL_PRIZE_SITE.x,0,NATIONAL_PRIZE_SITE.z+100);raised.add(prize.root);p.userData.nationalPrize=prize;
   // A paved forecourt connects the three academic entrances around a real lawn.
   path(raised,[0,-8],[0,8],10.8);path(raised,[-16.1,5],[19.1,5],3.4);
   path(raised,[19.1,5],[19.1,-7],3.4);path(raised,[-15,-7],[19.1,-7],3.4);
