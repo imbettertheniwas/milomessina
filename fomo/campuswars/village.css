@@ -97,3 +97,16 @@ dialog{width:580px;max-width:calc(100% - 32px);max-height:calc(100dvh - 48px);pa
 .street-view .village-flight-hint,.village-unavailable .village-flight-hint{display:none}
 @media(max-width:1100px){.village-flight-hint{bottom:132px}}
 @media(max-width:700px),(pointer:coarse){.village-flight-hint{display:none}}
+
+/* A scrolling sheet must not trigger a full-screen blur pass over the live world. */
+@media(max-width:700px),(pointer:coarse){
+  .village-drawer{backdrop-filter:none;background:#111a2b}
+  .village-reset,.village-view-tools button,.party-tools button{backdrop-filter:none;background:#121929}
+  .intro-controls{top:max(12px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right))}
+  .copy-fallback input{font-size:16px}
+}
+@media(max-height:450px) and (pointer:coarse){
+  .village-drawer{top:max(76px,env(safe-area-inset-top));bottom:72px;max-height:none}
+}
+
+.village-shell:not(.village-ready) .village-top{z-index:7}

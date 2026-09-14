@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import {createVillage} from '../village-world.js';
-import {createVillageRenderer,villageRenderLayout,visibleHouseIndices} from '../village-renderer.js';
+import {createVillageRendererAsync,createVillageRenderer,villageRenderLayout,visibleHouseIndices} from '../village-renderer.js';
 import {assignHouseFinishes} from '../village-house-colors.js';
 import {createPointerHover,releasedMouseDrag} from '../village-pointer-hover.js';
 
@@ -69,3 +69,18 @@ test('the same view loads the same houses regardless of the total addresses beyo
   const ids=(layout)=>[...visibleHouseIndices(T,layout,camera)].filter(i=>i<layout.chapters.length).map(i=>layout.chapters[i].id).sort();
   assert.deepEqual(ids(small),ids(large));
 });
+
+ test('asynchronous startup keeps terrain attached when a large village streams to a new block',async()=>{
+  const previous=globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame=callback=>setImmediate(callback);
+  let village;
+  try{
+    village=await createVillageRendererAsync(T,rows.slice(0,100),{camera:cameraAt(),attachStreet:true});
+    assert.equal(village.streets.parent,village.world);
+    const destination=village.anchors[95];let focused=false;
+    village.focus(destination.id,()=>focused=true);
+    while(village.building)village.advance(Infinity);
+    assert(focused);assert.equal(village.streets.parent,village.world);
+    assert(village.renderAnchors.some(anchor=>anchor.id===destination.id));
+  }finally{village?.dispose();if(previous)globalThis.requestAnimationFrame=previous;else delete globalThis.requestAnimationFrame;}
+ });
