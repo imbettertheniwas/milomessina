@@ -166,9 +166,10 @@ test('a denser campus retains bounded instances and a persistent static horizon'
   const horizonMatrix=horizon.matrixWorld.toArray(),horizonChildren=horizon.children.length;
   for(const [x,z] of [[0,0],[500,500],[-900,300],[2000,-3000],[0,0]]){
     districts.update(x,z);assert.equal(districts.chunks.size,9);
-    // Keep the existing campus budget, with the separately tested stadium's
-    // fixed crowd/architecture budget accounted for independently.
+    // Keep the existing campus budget; the stadium and seven-draw national
+    // prize monument have their own fixed, separately tested budgets.
     const stadiumObjects=new Set();districts.stadium.root.traverse(o=>stadiumObjects.add(o));
+    districts.root.getObjectByName('national-prize-trophy')?.traverse(o=>stadiumObjects.add(o));
     let instances=0,drawables=0,distantBatches=0;districts.root.traverse(o=>{if(stadiumObjects.has(o))return;if(o.name==='distant-chapter-members'){distantBatches++;return;}if(o.isMesh)drawables++;if(o.isInstancedMesh)instances+=o.count;});
     assert(distantBatches<=9,'At most one distant crowd draw per streamed block');assert(instances<22000,`Unbounded instances: ${instances}`);assert(drawables<200,`Unbounded meshes: ${drawables}`);
     for(const time of [0,8,16,23.99,240,10000]){districts.animate(time,x,z);districts.root.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite));if(o.isInstancedMesh)assert(o.instanceMatrix.array.every(Number.isFinite));});}
