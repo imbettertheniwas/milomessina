@@ -1,8 +1,9 @@
-import {villageQuality} from './village-quality.js?v=57';
+import {createFramePacer} from './village-frame-pacing.js?v=92';
+import {villageQuality} from './village-quality.js?v=92';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=88';
-import {createDistricts} from './village-districts.js?v=88';
+import {createVillageRendererAsync} from './village-renderer.js?v=92';
+import {createDistricts} from './village-districts.js?v=92';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';
 import {prewarmVillage} from './village-prewarm.js?v=88';
@@ -212,7 +213,11 @@ async function startVillage(){
   function endTouch(event){
     if(!touchPoints.delete(event.pointerId))return false;
     const wasPinching=pinchDistance>0;pinchDistance=touchPoints.size>1?touchDistance():0;
-    if(wasPinching){drag=null;dragDistance=9;}
+    if(wasPinching){
+      const remaining=touchPoints.size===1?[...touchPoints.entries()][0]:null;
+      drag=remaining?{id:remaining[0],...remaining[1],pan:false,blimp:false}:null;
+      dragDistance=9;
+    }
     if(wasPinching&&canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
     return wasPinching;
   }
@@ -247,7 +252,7 @@ async function startVillage(){
     if(hit){if(hit.object.userData.action==='register'){document.getElementById('panel-claim').click();return;}choose(hit.object.userData.chapter,!streetMode);return;}
   });
   canvas.addEventListener('pointerleave',()=>pointerHover.clear());
-  canvas.addEventListener('pointercancel',e=>{endTouch(e);drag=null;});canvas.addEventListener('lostpointercapture',e=>{touchPoints.delete(e.pointerId);pinchDistance=touchPoints.size>1?touchDistance():0;drag=null;});
+  canvas.addEventListener('pointercancel',e=>{endTouch(e);if(drag?.id===e.pointerId)drag=null;});canvas.addEventListener('lostpointercapture',e=>{endTouch(e);if(drag?.id===e.pointerId)drag=null;});
   canvas.addEventListener('wheel',e=>{e.preventDefault();zoomView(Math.exp(e.deltaY*.001));},{passive:false});
   function handleViewKey(event){
     if(event.ctrlKey||event.metaKey||event.altKey||event.isComposing)return;
@@ -284,7 +289,18 @@ async function startVillage(){
   for(const control of [streetControls,streetButton])control.addEventListener('keydown',event=>{if(streetMode)handleViewKey(event);});
   function releasePointer(){flightKeys.clear();pointerHover.clear();drag=null;touchPoints.clear();pinchDistance=0;}
   canvas.addEventListener('blur',releasePointer);addEventListener('blur',releasePointer);
-  function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;viewDirty=true;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(stadiumView)wantedRadius=stadiumDistance();wake();}
+  let viewportWidth=0,viewportHeight=0,resizeFrame=0;
+  function resize(){
+    if(resizeFrame)return;
+    resizeFrame=requestAnimationFrame(()=>{
+      resizeFrame=0;
+      const w=viewport.clientWidth,h=viewport.clientHeight;
+      if(!w||!h||(w===viewportWidth&&h===viewportHeight))return;
+      viewportWidth=w;viewportHeight=h;viewDirty=true;
+      renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+      if(stadiumView)wantedRadius=stadiumDistance();wake();
+    });
+  }
   new ResizeObserver(resize).observe(viewport);
   new IntersectionObserver(([entry])=>{
     visible=entry.isIntersecting;lastTime=0;
@@ -292,6 +308,7 @@ async function startVillage(){
     if(!visible){releasePointer();lastTime=0;}wake();
   },{threshold:0}).observe(shell);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)releasePointer();lastTime=0;wake();});
+  const framePacer=createFramePacer(quality.frameRate);
   let slowFrames=0,overlayOpen=quality.mobile&&(!document.getElementById('village-drawer').hidden||document.getElementById('village-more').getAttribute('aria-expanded')==='true'||Boolean(document.getElementById('about-dialog').open));
   document.addEventListener('village:overlay',event=>{overlayOpen=quality.mobile&&event.detail.open;lastTime=0;viewDirty=true;wake();});
   function wake(){if(ready&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
@@ -301,7 +318,8 @@ async function startVillage(){
     const activityPaused=paused||overlayOpen;
     // Bound GPU and animation work on high-refresh phones as well as 60 Hz displays.
     const interval=1000/quality.frameRate;
-    if(lastRender&&now-lastRender<interval-1){wake();return;}
+    if(!framePacer.due(now)){wake();return;}
+    const frameGap=lastRender?now-lastRender:0;
     const frameStarted=performance.now();
     const elapsed=lastTime?Math.max(0,(now-lastTime)/1000):0;
     const dt=Math.min(elapsed,.05);lastTime=now;
@@ -360,7 +378,7 @@ async function startVillage(){
     districts.animate(partyTime,target.x,target.z,camera);
     renderer.render(scene,camera);lastRender=now;
     if(quality.mobile){
-      slowFrames=performance.now()-frameStarted>interval*.8?slowFrames+1:Math.max(0,slowFrames-1);
+      slowFrames=performance.now()-frameStarted>interval*.8||(frameGap>interval*1.45&&frameGap<250)?slowFrames+1:Math.max(0,slowFrames-1);
       if(slowFrames>=20&&renderScale>quality.minPixelRatio){
         renderScale=Math.max(quality.minPixelRatio,renderScale-.25);renderer.setPixelRatio(renderScale);slowFrames=0;
       }
@@ -376,7 +394,8 @@ async function startVillage(){
     shell.classList.remove('village-ready','intro-playing');shell.classList.add('village-unavailable');
   });
   canvas.addEventListener('webglcontextrestored',()=>{prepare().catch(showLoadingError);});
-  resize();resetView();
+  viewportWidth=viewport.clientWidth;viewportHeight=viewport.clientHeight;
+  renderer.setSize(viewportWidth,viewportHeight,false);camera.aspect=viewportWidth/viewportHeight;camera.updateProjectionMatrix();resetView();
   // Do not overwrite a new chapter's deep link before its first live response.
   const initial=new URLSearchParams(location.hash.slice(1)).get('chapter');choose(village.anchors.some(a=>a.id===initial)?initial:selected,false,false);
   camera.position.set(0,104,104);camera.lookAt(target);camera.updateMatrixWorld();
@@ -388,7 +407,7 @@ async function startVillage(){
       return updateChapters(event).then(()=>prepare());
     }
     if(renderer.getContext?.().isContextLost())return;
-    ready=true;lastTime=0;lastRender=0;
+    ready=true;lastTime=0;lastRender=0;framePacer.reset();
     applyLighting(nightToggle.getAttribute('aria-pressed')==='true'?1:0);
     loading.hidden=true;shell.classList.remove('village-unavailable');shell.classList.add('village-ready');
     if(entranceActive)shell.classList.add('intro-playing');

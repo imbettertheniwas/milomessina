@@ -1,4 +1,4 @@
-import {createGrassMaterial} from './village-grass.js?v=87';
+import {createGrassMaterial} from './village-grass.js?v=92';
 
 // The original academic block, immediately north of Greek Row. Heights are
 // shared by the landscape and students, including visitors from other blocks.

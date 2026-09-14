@@ -1,3 +1,4 @@
+import {createFramePacer} from '../village-frame-pacing.js';
 import {createPointerHover,releasedMouseDrag} from '../village-pointer-hover.js';
 import {villageQuality} from '../village-quality.js';
 import {createStreetNavigation,streetStops,streetStep} from '../village-street-navigation.js';
@@ -20,7 +21,7 @@ async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobi
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={createFramePacer,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
   sandbox.createVillageRendererAsync=async (...args)=>sandbox.createVillage(...args);
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
@@ -405,4 +406,16 @@ test('pausing the intro stops rendering until resumed',async()=>{
   const h=await cameraHarness();h.show(true);h.step(1);h.fire('intro-pause:click');h.step(1);
   const before=h.renders();h.step(3);assert.equal(h.renders(),before);
   h.fire('intro-pause:click');h.step(1);assert(h.renders()>before);
+});
+
+test('lifting one finger after a pinch preserves the remaining drag without selecting a house',async()=>{
+  const h=await cameraHarness(true,'',false,true);h.show(true);h.step(.1);h.fire('intro-skip:click');
+  const touch=(id,x)=>({pointerType:'touch',pointerId:id,button:0,clientX:x,clientY:300});
+  h.fire('canvas:pointerdown',touch(1,100));h.fire('canvas:pointerdown',touch(2,200));
+  h.fire('canvas:pointermove',touch(2,260));h.step(.1);
+  h.fire('canvas:pointerup',touch(2,260));h.fire('canvas:lostpointercapture',touch(2,260));
+  const before=h.camera().quaternion.clone(),selected=h.selections.length;
+  h.fire('canvas:pointermove',touch(1,160));h.step(.1);
+  assert(h.camera().quaternion.angleTo(before)>.1,'the remaining finger must still turn the camera');
+  h.fire('canvas:pointerup',touch(1,160));assert.equal(h.selections.length,selected);
 });

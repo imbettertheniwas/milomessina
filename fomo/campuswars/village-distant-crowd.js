@@ -1,6 +1,6 @@
 import {palettes,hash} from './village-district-layout.js?v=80';
 
-// People smaller than twelve CSS pixels use one articulated silhouette. Their
+// People smaller than twenty-two CSS pixels use one articulated silhouette. Their
 // actual routes, height, build and clothing colors are retained; small features
 // return before they become distinguishable when the camera approaches.
 export function createDistantCrowd(T,capacity){
@@ -42,7 +42,7 @@ export function createDistantCrowd(T,capacity){
   material.customProgramCacheKey=()=> 'distant-members-1';
   const mesh=new T.InstancedMesh(geometry,material,capacity);mesh.name='distant-chapter-members';mesh.count=0;mesh.instanceColor=new T.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(T.DynamicDrawUsage);mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.instanceMatrix.needsUpdate=true;mesh.boundingSphere=new T.Sphere(new T.Vector3(0,2,0),66);
   const dummy=new T.Object3D(),color=new T.Color(),slots=[];let count=0,pixelHeight=1440,colorsChanged=false;
-  mesh.onBeforeRender=renderer=>{pixelHeight=renderer.getDrawingBufferSize(new T.Vector2()).y;};
+  mesh.onBeforeRender=renderer=>{pixelHeight=renderer.getSize(new T.Vector2()).y;};
   const view=new T.Vector3();
   function distant(batch,camera,matrixWorld){
     if(!camera)return false;

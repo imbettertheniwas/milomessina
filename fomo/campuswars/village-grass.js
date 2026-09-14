@@ -1,3 +1,4 @@
+import {villageQuality} from './village-quality.js?v=92';
 import {hash} from './village-district-layout.js?v=80';
 import {lawnGround,toWorld} from './village-layout.js?v=80';
 const textures=new WeakMap();
@@ -22,15 +23,16 @@ export function grassTexture(T){
       ctx.beginPath();ctx.moveTo(x+ox,y+oy);ctx.quadraticCurveTo(x+ox+dx*.2,y+oy-length*.65,x+ox+dx,y+oy-length);ctx.stroke();
     }
   }
-  const map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=16;map.minFilter=T.LinearMipmapLinearFilter;map.colorSpace=T.NoColorSpace;
+  const map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=villageQuality().mobile?4:16;map.minFilter=T.LinearMipmapLinearFilter;map.colorSpace=T.NoColorSpace;
   textures.set(T,map);return map;
 }
 export function createGrassMaterial(T,map=null,mask=null){
+  const mobile=villageQuality().mobile;
   const detail=grassTexture(T),material=new T.MeshStandardMaterial({roughness:1,color:map?0xffffff:GRASS_COLOR,...(map?{map}:{}),transparent:false,alphaTest:0,depthWrite:true});
   material.name=mask?'campus-grass-and-pavement':'chapter-lawn-grass';
   if(!detail)return material;
   material.defines={...(material.defines||{}),...(mask?{USE_GRASS_MASK:1}:{})};
-  material.customProgramCacheKey=()=>`grass-v1-${Boolean(mask)}`;
+  material.customProgramCacheKey=()=>`grass-v2-${Boolean(mask)}-${mobile}`;
   material.onBeforeCompile=shader=>{
     shader.uniforms.grassDetail={value:detail};shader.uniforms.grassMask={value:mask};
     shader.vertexShader='varying vec3 vGrassWorld;\n'+shader.vertexShader;
@@ -54,7 +56,7 @@ export function createGrassMaterial(T,map=null,mask=null){
       float mowing=1.0+.027*sin((vGrassWorld.x+vGrassWorld.z*.22)*1.12);
       vec3 grassTint=clamp(diffuseColor.rgb/vec3(.165,.247,.086),vec3(.68),vec3(1.32));
       diffuseColor.rgb=mix(diffuseColor.rgb,grassLinear*grassTint*meadow*mowing,grassAmount);`);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+    if(!mobile)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       float grassX=texture2D(grassDetail,grassUv+vec2(1.0/512.0,0.0)).g;
       float grassZ=texture2D(grassDetail,grassUv+vec2(0.0,1.0/512.0)).g;
       normal=normalize(normal+mat3(viewMatrix)*vec3(grassSample.g-grassX,0.0,grassSample.g-grassZ)*grassAmount*.65);`);
