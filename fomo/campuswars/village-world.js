@@ -6,13 +6,13 @@ import {createPongGames} from './village-pong.js?v=80';
 import {createDieGames} from './village-die.js?v=80';
 import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=56';
 import {createCompetition,houseStandings} from './village-competition.js?v=87';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=87';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=88';
 import {humanPose} from './village-human-motion.js?v=80';
 import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=87';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=87';
 import {palettes,hash} from './village-district-layout.js?v=80';
 import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose} from './village-layout.js?v=80';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=80';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=81';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=87';
 import {createSchoolBanner} from './village-school-banners.js?v=87';
 import {createDistantCrowd} from './village-distant-crowd.js?v=87';
@@ -72,7 +72,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
 
 
 
-  const streets=existingStreet||createStreetNetwork(THREE);setStreetExtension(THREE,streets,extension);if(attachStreet)world.add(streets);
+  const streets=existingStreet||createStreetNetwork(THREE);setStreetExtension(THREE,streets,extension,streetTotal);if(attachStreet)world.add(streets);
 
 
   // Street lamps, paths, trees and furniture give the village a lived-in scale.

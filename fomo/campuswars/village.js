@@ -1,11 +1,12 @@
-import {villageQuality} from './village-quality.js?v=57';
+import {villageQuality} from './village-quality.js?v=58';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=88';
-import {createDistricts} from './village-districts.js?v=88';
+import {createVillageRendererAsync} from './village-renderer.js?v=89';
+import {createDistricts} from './village-districts.js?v=91';
+import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';
-import {prewarmVillage} from './village-prewarm.js?v=88';
+import {prewarmVillage} from './village-prewarm.js?v=89';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
@@ -323,6 +324,8 @@ async function startVillage(){
       if(!reduced)moneyRain.update(entranceTime,introNight);
       if(entranceTime>=INTRO_DURATION)finishIntro();
     }else{
+      clampCampusTarget(wantedTarget,village.streetTotal,village.extension);
+      clampCampusTarget(target,village.streetTotal,village.extension);
       const ease=reduced?1:1-Math.exp(-cameraDt*7);target.lerp(wantedTarget,ease);theta+=(wantedTheta-theta)*ease;phi+=(wantedPhi-phi)*ease;radius+=(wantedRadius-radius)*ease;
     }
     if(streetMode){

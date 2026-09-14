@@ -1,5 +1,6 @@
 import {hash} from './village-district-layout.js?v=80';
-import {footballState,footballPlayer,footballBall} from './village-football.js?v=87';
+import {footballState,footballPlayer,footballBall} from './village-football.js?v=88';
+import {createStadiumFireworks} from './village-stadium-fireworks.js?v=1';
 
 export const STADIUM_SITE={x:0,z:200,width:82,depth:84};
 export function createStadium(T,extension=0){
@@ -205,7 +206,7 @@ export function createStadium(T,extension=0){
     c.fillStyle='#081826';c.fillRect(0,0,W,512);
     c.fillStyle='#dcad60';c.fillRect(0,0,W,8);c.font='bold 32px Arial';c.textAlign='center';c.fillText('GREEK VILLAGE  /  EXHIBITION',512,57);
     c.fillStyle='#235679';c.fillRect(30,86,440,208);c.fillStyle='#863540';c.fillRect(554,86,440,208);
-    c.fillStyle='#f6edda';c.font='bold 34px Arial';c.fillText('HOME',250,132);c.fillText('VISITORS',774,132);
+    c.fillStyle='#f6edda';c.font='bold 34px Arial';c.fillText('FOMO',250,132);c.fillText('AWAY',774,132);c.fillText('v',512,132);
     c.font='bold 130px Arial';c.fillText(String(state.home),250,266);c.fillText(String(state.away),774,266);
     c.font='bold 48px monospace';c.fillText(`Q${state.quarter}   ${state.clock}`,512,361);
     c.fillStyle=state.celebration?'#f5c769':'#a8c5cf';c.font='bold 43px Arial';c.fillText(state.celebration?'TOUCHDOWN!':state.phase==='RESET'?'NEXT POSSESSION':state.phase==='SET'?'1ST & 10  •  READY TO PLAY':state.phase==='PASS'?'PASS IN THE AIR':'MAKE SOME NOISE',512,435);
@@ -217,10 +218,12 @@ export function createStadium(T,extension=0){
     const mesh=own(new T.InstancedMesh(b.geometry,mat,b.items.length));mesh.name=`stadium-architecture-${key.split(':')[1]}`;
     b.items.forEach((item,i)=>{mesh.setMatrixAt(i,item.matrix);mesh.setColorAt(i,item.color);});mesh.computeBoundingSphere();mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
   }
+  const fireworks=createStadiumFireworks(T);root.add(fireworks.root);
   const bounds=new T.Sphere(new T.Vector3(0,8,STADIUM_SITE.z+extension),64);
   let lastTime=NaN,lastBoard='',night=false;
   function animate(time){
     if(time===lastTime)return;lastTime=time;const state=footballState(time);
+    fireworks.animate(time);
     crowdUniforms.stadiumTime.value=time;crowdUniforms.stadiumRoar.value=state.celebration;
     for(let i=0;i<22;i++){
       const p=footballPlayer(i,time),stride=p.running?Math.sin(time*10+i)*.55:0,jersey=p.team?0xa12f40:0x164d75;
@@ -243,7 +246,7 @@ export function createStadium(T,extension=0){
     const b=footballBall(time);ball.position.set(b.x,.505+b.y,b.z);ball.rotation.set(time*5,0,Math.PI/5);ball.updateMatrix();
     const boardKey=`${state.play}:${state.phase}:${state.clock}`;if(boardKey!==lastBoard){lastBoard=boardKey;drawScoreboard(state);}
   }
-  function setNight(enabled){night=Boolean(enabled);flood.intensity=night?2.8:0;for(const b of root.children)if(b.material?.emissive?.getHex()===0xffefd5)b.material.emissiveIntensity=night?3.5:.4;}
+  function setNight(enabled){night=Boolean(enabled);flood.intensity=night?2.8:0;fireworks.setEnabled(night,Number.isFinite(lastTime)?lastTime:0);bounds.center.y=night?25:8;bounds.radius=night?82:64;for(const b of root.children)if(b.material?.emissive?.getHex()===0xffefd5)b.material.emissiveIntensity=night?3.5:.4;}
   animate(0);root.updateMatrixWorld(true);
-  return {root,bounds,fanCount:fans.length,fanMesh,playerParts,helmets,ball,crowdUniforms,animate,setNight,get night(){return night;},dispose(){for(const resource of resources)resource.dispose();root.removeFromParent();}};
+  return {root,bounds,fanCount:fans.length,fanMesh,playerParts,helmets,ball,crowdUniforms,animate,setNight,get night(){return night;},dispose(){fireworks.dispose();for(const resource of resources)resource.dispose();root.removeFromParent();}};
 }

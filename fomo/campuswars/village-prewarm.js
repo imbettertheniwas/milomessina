@@ -14,14 +14,10 @@ import {INTRO_PREWARM_TIMES,aimIntroCamera} from './village-intro.js?v=70';
 export async function prewarmVillage(T,renderer,scene,camera,applyLighting,moneyRain,{mobile=false,variantRoots=[]}={}){
   const scissor=renderer.getScissor(new T.Vector4()),scissorTest=renderer.getScissorTest();
   const home={position:camera.position.clone(),quaternion:camera.quaternion.clone(),fov:camera.fov};
-  const culled=new Map(),lodVisibility=new Map();
+  const lodVisibility=new Map();
   scene.traverse(object=>{if(object.name==='distant-chapter-members'){lodVisibility.set(object,object.visible);object.visible=true;}});
-  // A desktop can hold the whole world resident, so drop culling and warm every
-  // offscreen banner too. Phones cannot: uploading all of them at once exhausts
-  // Safari's GPU memory, so they keep culling and warm what the route passes.
-  if(!mobile)scene.traverse(object=>{
-    if(object.isMesh||object.isSprite||object.isPoints){culled.set(object,object.frustumCulled);object.frustumCulled=false;}
-  });
+  // Upload scenery along the actual intro route on every device. Distant
+  // blocks keep their normal culling instead of filling GPU memory at startup.
   renderer.setScissor(0,0,1,1);renderer.setScissorTest(true);
   try{
     for(const night of [1,0]){
@@ -48,7 +44,6 @@ export async function prewarmVillage(T,renderer,scene,camera,applyLighting,money
   }finally{
     applyLighting(0);moneyRain.clear();
     for(const [object,visible] of lodVisibility)object.visible=visible;
-    for(const [object,frustumCulled] of culled)object.frustumCulled=frustumCulled;
     camera.position.copy(home.position);camera.quaternion.copy(home.quaternion);
     camera.fov=home.fov;camera.updateProjectionMatrix();camera.updateMatrixWorld();
     renderer.setScissor(scissor);renderer.setScissorTest(scissorTest);

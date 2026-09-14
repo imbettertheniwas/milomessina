@@ -25,14 +25,15 @@ export function grassTexture(T){
   const map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=16;map.minFilter=T.LinearMipmapLinearFilter;map.colorSpace=T.NoColorSpace;
   textures.set(T,map);return map;
 }
-export function createGrassMaterial(T,map=null,mask=null){
+export function createGrassMaterial(T,map=null,mask=null,bounds=null){
   const detail=grassTexture(T),material=new T.MeshStandardMaterial({roughness:1,color:map?0xffffff:GRASS_COLOR,...(map?{map}:{}),transparent:false,alphaTest:0,depthWrite:true});
   material.name=mask?'campus-grass-and-pavement':'chapter-lawn-grass';
   if(!detail)return material;
   material.defines={...(material.defines||{}),...(mask?{USE_GRASS_MASK:1}:{})};
-  material.customProgramCacheKey=()=>`grass-v1-${Boolean(mask)}`;
+  material.customProgramCacheKey=()=>`grass-v2-${Boolean(mask)}-${Boolean(bounds)}`;
   material.onBeforeCompile=shader=>{
     shader.uniforms.grassDetail={value:detail};shader.uniforms.grassMask={value:mask};
+    shader.uniforms.campusBounds={value:bounds||new T.Vector4(-1e6,1e6,-1e6,1e6)};
     shader.vertexShader='varying vec3 vGrassWorld;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <worldpos_vertex>',`#include <worldpos_vertex>
       vec4 grassWorld=vec4(transformed,1.0);
@@ -40,11 +41,15 @@ export function createGrassMaterial(T,map=null,mask=null){
       grassWorld=instanceMatrix*grassWorld;
       #endif
       vGrassWorld=(modelMatrix*grassWorld).xyz;`);
-    shader.fragmentShader='uniform sampler2D grassDetail;\nuniform sampler2D grassMask;\nvarying vec3 vGrassWorld;\n'+shader.fragmentShader;
+    shader.fragmentShader='uniform sampler2D grassDetail;\nuniform sampler2D grassMask;\nuniform vec4 campusBounds;\nvarying vec3 vGrassWorld;\n'+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
       float grassAmount=1.0;
       #ifdef USE_GRASS_MASK
       grassAmount=texture2D(grassMask,vMapUv).r;
+      float outside=max(max(campusBounds.x-vGrassWorld.x,vGrassWorld.x-campusBounds.y),max(campusBounds.z-vGrassWorld.z,vGrassWorld.z-campusBounds.w));
+      float edge=smoothstep(0.0,24.0,outside);
+      grassAmount=mix(grassAmount,1.0,edge);
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.165,.247,.086),edge);
       #endif
       vec2 grassUv=vGrassWorld.xz/2.8;
       vec3 grassSample=texture2D(grassDetail,grassUv).rgb;

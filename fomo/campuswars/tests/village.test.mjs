@@ -72,7 +72,7 @@ test('crowd culling bounds contain all chapter activity positions',()=>{
     const pose=activityPose(member,time);
     for(const part of Object.values(village.parts))assert(part.boundingSphere.containsPoint(new THREE.Vector3(pose.x,1.5,pose.z)));
   }
-  const districts=createDistricts(THREE);assert.equal(districts.update(0,0),false);assert.equal(districts.update(150,0),true);
+  const districts=createDistricts(THREE);assert.equal(districts.update(0,0),false);assert.equal(districts.update(150,0),false);
   for(const chunk of districts.chunks.values())assert.equal(chunk.group.matrixAutoUpdate,false);
 });
 
@@ -96,7 +96,7 @@ function paintedFloor(){
 }
 test('the opaque campus floor has connected roads and pedestrian-only academic axes',()=>{
   const {streets,at}=paintedFloor();
-  assert.deepEqual(streets.material.map.offset.toArray(),[.5,.5]);assert.deepEqual(streets.material.map.repeat.toArray(),[200/3,200/3]);
+  assert.deepEqual(streets.material.map.offset.toArray(),[0,0]);assert.deepEqual(streets.material.map.repeat.toArray(),[1,1]);
   for(const [x,z] of [[1,0],[101,0],[-101,0],[20,51],[1,50],[101,-50],[301,0]])assert.equal(at(x,z),'#505a60');
   assert.equal(at(0,100),'#c4c2b3');assert.equal(at(0,-85),'#c4c2b3');
   assert.equal(at(7,0),'#bfc0b5');
@@ -124,12 +124,12 @@ test('campus activity varies and stays outside building footprints',()=>{
 test('streaming neighborhoods never replaces or removes the street network',()=>{
   const districts=createDistricts(THREE),street=village.streets,parent=street.parent;
   for(const [x,z] of [[49,0],[51,0],[-51,150],[0,0]]){districts.update(x,z);assert.equal(street.parent,parent);assert.equal(street,village.streets);}
-  assert.equal(street.geometry.parameters.width,20000);assert.equal(street.position.y,.045);
+  street.geometry.computeBoundingBox();assert(street.geometry.boundingBox.max.x-street.geometry.boundingBox.min.x<3000);assert.equal(street.position.y,.045);
 });
 
 test('terrain and roads use one opaque floor without a competing large plane',()=>{
   const floors=[];
-  village.world.traverse(o=>{if(o.isMesh&&o.geometry.type==='PlaneGeometry'&&o.geometry.parameters.width>=1000)floors.push(o);});
+  village.world.traverse(o=>{if(o.isMesh){o.geometry.computeBoundingBox();if(o.geometry.boundingBox.max.x-o.geometry.boundingBox.min.x>=1000)floors.push(o);}});
   assert.equal(floors.length,1);assert.equal(floors[0],village.streets);
   assert.equal(floors[0].material.alphaTest,0);assert.equal(floors[0].material.transparent,false);assert.equal(floors[0].material.depthWrite,true);
 });
