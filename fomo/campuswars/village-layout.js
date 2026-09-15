@@ -1,5 +1,6 @@
+import {hasChapterHouse} from './village-backyards.js?v=112';
 import {conversation,personalClock} from './village-human-behavior.js?v=80';
-import {rankedHouseSizes} from './village-house-sizing.js?v=105';
+import {rankedHouseSizes} from './village-house-sizing.js?v=112';
 import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
 import {gaitPhase,smooth} from './village-human-motion.js?v=80';
 import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=80';
@@ -71,7 +72,7 @@ export function dieTurn(chapter,time){
 export function crowdMembers(chapters,lots=createLots(chapters.length),houseSizes=rankedHouseSizes(chapters)){
   return chapters.flatMap((chapter,index)=>{
     if(!Number.isSafeInteger(chapter.joined)||chapter.joined<0)throw new RangeError('Invalid member count');
-    if(chapter.joined<15)return Array.from({length:chapter.joined},(_,workerIndex)=>{
+    if(!hasChapterHouse(chapter))return Array.from({length:chapter.joined},(_,workerIndex)=>{
       const construction=constructionAssignment(chapter,workerIndex),member=workerIndex+1,lot=lots[index];
       const person={...appearance(chapter.id,member),chapter:chapter.id,member,lot,construction,
         action:'build',walking:false,phase:hash(chapter.id,member,'phase')*20,ground:.13,

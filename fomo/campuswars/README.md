@@ -1,5 +1,15 @@
 # fomo Campus Wars
 
+## Backyard pool reward
+
+Every chapter unlocks a furnished backyard when joined members reach `ceil(active * 0.8)`. The original house styles and rank-based sizes remain. The rejected campus-house replicas and address catalog have been removed. Already-qualified chapters receive their pool on the first snapshot; live changes add or remove it with current eligibility. A small chapter reaching its goal before 15 members receives its completed house too.
+
+Backyards sit behind the houses within existing Greek Row blocks. Raised stone paving encloses a recessed tiled basin with entry steps, curved steel ladder, rippling turquoise water, a subtle sky reflection and underwater glow in Party mode. Loungers, towels, a sun umbrella, a bench, planters, fences and a connecting path finish the terrace. **View backyard pool** in chapter details moves the camera behind the selected house and closes the drawer.
+
+Water shares the existing activity clock and pause/reduced-motion behavior. Repeated furnishings batch with the village, and all pools share one water geometry and material per scene. No extra lights, reflection render passes or new members are added. Crowds cannot be relocated into the backyards. Pending streamed scenes and disposal use the existing renderer lifecycle.
+
+`tests/backyards.test.mjs` covers the goal boundary, small rosters, live upgrades and corrections, lot clearance, member totals, water pause/night state, shared rendering resources and disposal. The camera tests cover the backyard view on desktop and phones.
+
 ## Rasmr and Orangie helicopter arrival
 
 The **Helipad** control visits a new stop beside the stadium and replays their Maybach arrival. Both guests step out, walk over, stand together, board the helicopter and fly before returning. Distinct builds, clothes, name labels and locally served face textures use public visual references. These are stylized likenesses, not exact scans. The sequence shares activity pause and reduced-motion behavior and survives live roster updates. See [references and preview details](helipad-references.md).
@@ -244,3 +254,7 @@ The original fomo campus building and its two academic halls now stand six world
 `village-campus-hill.js` shares its terrain and path heights with the ambient students, including the coffee-shop visitors coming from Greek Row. Only the original academic block is raised; surrounding streets retain their original elevations. The hill uses the existing grass material and district streaming/disposal system.
 
 The visual preview at `tests/campus-hill-gallery.html` includes quad, street-level, overhead and day/night views. The 140 automated checks pass, including foundation support, road-edge elevations, stair and ramp grades, rendered student heights and removal/recreation of the streamed hill. Daylight and night views were checked in the local browser. Full-scene device frame rates were not benchmarked.
+
+### Pool yards and activity
+
+Greek Row keeps the rear-yard strips clear on every street. The café and basketball court sit beyond the rear walks, and the fountain moves with the end of an extended row. Eligible chapters move up to six existing members into bathing suits: two swimmers in separate lap lanes, loungers on deck chairs, and poolside conversation. Their identities and the visible roster count are preserved. Pool animation shares the village clock, including pause and reduced motion.

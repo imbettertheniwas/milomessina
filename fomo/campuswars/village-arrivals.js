@@ -1,4 +1,4 @@
-import {toWorld,lawnGround} from './village-layout.js?v=105';
+import {toWorld,lawnGround} from './village-layout.js?v=112';
 import {smooth} from './village-human-motion.js?v=80';
 
 export const ARRIVAL_HEIGHT=36,ARRIVAL_FALL=2.2,ARRIVAL_SETTLE=.65,ARRIVAL_RETURN=1.4;

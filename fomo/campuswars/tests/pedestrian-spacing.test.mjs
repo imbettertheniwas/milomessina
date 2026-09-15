@@ -59,7 +59,8 @@ test('chapter lawns and campus sidewalks share collision space and render the re
       let poses=spacing.update(time,groups);check(spacing.agents);
       for(let step=1;step<=12;step++){poses=spacing.update(time+step/30,groups);check(spacing.agents);}
       village.animateCrowd(time+.4,null,poses);districts.animate(time+.4,0,0,null,poses);
-      const p=poses.get(village.pedestrians[0])[0],matrix=new T.Matrix4();village.parts.pelvis.getMatrixAt(0,matrix);
+      const standingIndex=village.members.findIndex(m=>!m.poolRole);
+      const p=poses.get(village.pedestrians[0])[standingIndex],matrix=new T.Matrix4();village.parts.pelvis.getMatrixAt(standingIndex,matrix);
       assert(Math.hypot(matrix.elements[12]-p.x,matrix.elements[14]-p.z)<.1,'Rendered bodies use collision-adjusted positions');
       for(const a of spacing.agents)assert(a.group.allowed(a.x-a.group.offsetX,a.z-a.group.offsetZ,a.pose,a.person),'Avoidance must keep people outside buildings');
     }

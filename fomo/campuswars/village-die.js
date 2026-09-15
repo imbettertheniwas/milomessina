@@ -1,4 +1,4 @@
-import {DIE_TABLE,dieSeat,dieCup,dieTurn,lawnGround} from './village-layout.js?v=105';
+import {DIE_TABLE,dieSeat,dieCup,dieTurn,lawnGround} from './village-layout.js?v=112';
 import {lawnGameKit,throwingHand} from './village-pong.js?v=105';
 import {bannerIdentity} from './village-banners.js?v=105';
 import {DIE_EDGE_UV,DIE_FACES,createDieTableTexture,createDieFaceTexture} from './village-die-art.js?v=80';

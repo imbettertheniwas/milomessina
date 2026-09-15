@@ -3,7 +3,7 @@ import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus
 import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=101';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=105';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=113';
 import {dressNeighborhood} from './village-places.js?v=80';
 import {createStadium,STADIUM_SITE} from './village-stadium.js?v=102';
 import {campusDistrictExists} from './village-campus-bounds.js?v=1';
@@ -25,25 +25,35 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
       }
     }
   }
-  function corePlaces(p){
-    box(p,41,.07,-18,16,.08,18,0xc4bcaa);box(p,41,1.95,-20,8,3.6,5.5,0xc5b599,'stone');box(p,41,3.92,-20,9,.22,6.2,0x626961);box(p,41,2,-17.17,6.8,1.8,.08,0x49616b);
-    for(let i=0;i<8;i++)box(p,37.5+i,3.2,-16.5,1,.12,2.2,i%2?0xb4805d:0xe9dfc7);
-    sign(p,'CAMPUS COFFEE',41,3.6,-17.12,7,.6);
-    for(const x of [37,43,46])table(p,x,-11,x!==43);
-    bikeRack(p,34,-25);
-    // A low fountain and curved seating edge anchor the social lawn.
-    cylinder(p,42,.3,14,3.2,.45,0xc9c2b1);cylinder(p,42,.56,14,2.85,.07,0x729ca1);cylinder(p,42,.8,14,.35,.7,0xd6cdb6);
-    for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const water=bar(p,[42,.9,14],[42+Math.cos(a)*1.1,.68,14+Math.sin(a)*1.1],.025,0xb6cfca);water.castShadow=false;}
-    bench(p,36,12,Math.PI/2);bench(p,48,12,-Math.PI/2);bench(p,42,21);bench(p,35,23,.4);
-    // Court lines sit on one raised sports slab, with a visible curb clearance.
-    box(p,-42,.2,10,18,.24,28,0x718888);
-    for(const x of [-50,-34])box(p,x,.335,10,.09,.025,25,0xe8e0cd);
-    for(const z of [-2.5,10,22.5])box(p,-42,.335,z,16,.025,.09,0xe8e0cd);
-    for(const z of [-1.5,21.5]){cylinder(p,-42,1.8,z,.07,3.2,0x8a9590);box(p,-42,3.35,z,1.55,1,.1,0xe4dfcb);const hoop=mesh(p,'wheel',-42,3.05,z+(z<0?.5:-.5),1.15,1.15,1.15,0xb37350);hoop.rotation.x=Math.PI/2;}
-    bench(p,-32,7,Math.PI/2);bench(p,-32,14,Math.PI/2);
-    for(const z of [-34,-7,31]){tree(p,-42,z,mod(z,9),1.1);tree(p,43,z+2,mod(z+3,9),1.0);}
-    for(const side of [-1,1]){path(p,[side*30.8,-39],[side*30.8,39],2.6);path(p,[side*7,34],[side*45,34],2.2);}
-    for(const [x,z] of [[-52,-30],[53,-22],[55,5],[-56,25],[-52,-9],[55,34]])tree(p,x,z,mod(x+z,9),1.15);
+  function corePlaces(parent){
+    // Reserve x=25.6..37 on both sides for the chapter backyards. Amenities
+    // share the gap between streets; café and court occupy different z ranges.
+    const p=new T.Group();p.name='greek-row-amenities';parent.add(p);
+    const cafe=new T.Group();cafe.position.x=9;cafe.name='campus-coffee';p.add(cafe);
+    box(cafe,41,.07,-18,16,.08,18,0xc4bcaa);box(cafe,41,1.95,-20,8,3.6,5.5,0xc5b599,'stone');box(cafe,41,3.92,-20,9,.22,6.2,0x626961);box(cafe,41,2,-17.17,6.8,1.8,.08,0x49616b);
+    for(let i=0;i<8;i++)box(cafe,37.5+i,3.2,-16.5,1,.12,2.2,i%2?0xb4805d:0xe9dfc7);
+    sign(cafe,'CAMPUS COFFEE',41,3.6,-17.12,7,.6);
+    for(const x of [37,43,46])table(cafe,x,-11,x!==43);
+    bikeRack(cafe,34,-25);
+    const fountain=new T.Group();fountain.position.set(8,0,18+extension);fountain.name='social-fountain';p.add(fountain);
+    cylinder(fountain,42,.3,14,3.2,.45,0xc9c2b1);cylinder(fountain,42,.56,14,2.85,.07,0x729ca1);cylinder(fountain,42,.8,14,.35,.7,0xd6cdb6);
+    for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const water=bar(fountain,[42,.9,14],[42+Math.cos(a)*1.1,.68,14+Math.sin(a)*1.1],.025,0xb6cfca);water.castShadow=false;}
+    bench(fountain,36,14,Math.PI/2);bench(fountain,48,14,-Math.PI/2);bench(fountain,42,20);bench(fountain,36,8,.4);
+    const court=new T.Group();court.position.x=-9;court.name='basketball-court';p.add(court);
+    box(court,-42,.2,10,18,.24,28,0x718888);
+    for(const x of [-50,-34])box(court,x,.335,10,.09,.025,25,0xe8e0cd);
+    for(const z of [-2.5,10,22.5])box(court,-42,.335,z,16,.025,.09,0xe8e0cd);
+    for(const z of [-1.5,21.5]){cylinder(court,-42,1.8,z,.07,3.2,0x8a9590);box(court,-42,3.35,z,1.55,1,.1,0xe4dfcb);const hoop=mesh(court,'wheel',-42,3.05,z+(z<0?.5:-.5),1.15,1.15,1.15,0xb37350);hoop.rotation.x=Math.PI/2;}
+    bench(p,-41.4,7,Math.PI/2);bench(p,-41.4,14,Math.PI/2);
+    for(const side of [-1,1]){
+      // The whole path is authored at its final length, so an extended row
+      // cannot leave a disconnected middle section or move it into a yard.
+      path(p,[side*39.5,-39],[side*39.5,39+extension],2.6);
+      path(p,[side*7,38+extension],[side*45,38+extension],2.2);
+      path(p,[side*7,-39],[side*39.5,-39],2.2);
+      for(const [x,z] of [[43,-34],[55,-33],[55,37+extension]])tree(p,side*x,z,mod(x+z,9),.9);
+    }
+    path(p,[39.5,-15],[44,-15],2.2);
   }
   function landscape(p,kind,cx,cz){
     const spine=['library','athletics','commons'].includes(kind),seed=mod(cx*17+cz*41,27);
@@ -92,7 +102,7 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
         cylinder(p,side*32,3.3,-32,.06,6.6,0x687575);box(p,side*32+.44,5.3,-32,.78,1.7,.045,0x7b83ac);box(p,side*32+.44,5.3,-31.97,.035,1.4,.015,0xd9d4bd);
         for(const dx of [-5,5])tree(p,x+dx,-38,Math.floor(hash(x,dx)*10000),.8);
         kit.parkedCar(p,side*43,-37,0,side,false);kit.parkedCar(p,side*47,-37,0,side+8,true);
-        kit.bins(p,side*31,30);kit.hedge(p,side*44,33,11);
+        kit.bins(p,side*31,30);kit.hedge(p,side*26,40,11);
       }else{
         kit.hedge(p,side*35,42,15);kit.hedge(p,side*46,20,11,Math.PI/2);
         kit.streetFurniture(p,side*15,37,cx*71+cz);

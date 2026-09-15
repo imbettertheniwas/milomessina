@@ -1,3 +1,4 @@
+import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
 // Conservative whole-house occlusion. Only a solid wall that covers the entire
 // projected lot (including its lawn and badge) can hide a distant house. A
 // nearer building's screen bounding box alone is NOT an occluder: its corners
@@ -34,14 +35,15 @@ export function unoccludedHouses(T,layout,camera,indices){
   }
   const candidates=[...indices].map(index=>{
     const lot=layout.lots[index],chapter=layout.chapters[index],size=chapter&&layout.houseSizes.get(chapter.id);
-    const bounds=project([lot.x-17,0,lot.z-10],[lot.x+17,chapter?chapter.joined>=15?size.roofline+5:9:26,lot.z+10]);
+    const reach=backyardUnlocked(chapter)?28:17;
+    const bounds=project([lot.x-reach,0,lot.z-10],[lot.x+reach,chapter?hasChapterHouse(chapter)?size.roofline+5:9:26,lot.z+10]);
     return {index,lot,chapter,size,bounds};
   }).sort((a,b)=>(a.bounds?.near||0)-(b.bounds?.near||0));
   const keep=new Set(),occluders=[];
   for(const {index,lot,chapter,size,bounds} of candidates){
     const hidden=index!==0&&bounds&&bounds.near>100&&occluders.some(r=>r.far<bounds.near&&r.left<bounds.left&&r.right>bounds.right&&r.bottom<bounds.bottom&&r.top>bounds.top);
     if(hidden)continue;keep.add(index);
-    if(chapter?.joined>=15){
+    if(hasChapterHouse(chapter)){
       const x=lot.x+Math.sin(lot.rotation)*size.offsetZ,dx=7.5*size.depthScale/2,dz=size.width*size.scaleX/2;
       const wall=project([x-dx,.6*size.scaleY,lot.z-dz],[x+dx,(size.height+.6)*size.scaleY,lot.z+dz]);
       if(wall){const rect=rectangle(wall);if(rect)occluders.push(rect);}

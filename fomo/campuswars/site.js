@@ -2,13 +2,17 @@
 (() => {
   const savedSnapshot=JSON.parse(document.getElementById('chapters-data').textContent);
   let {chapters}=savedSnapshot;
-  let chapterFeed,rankChapters;
+  let chapterFeed,rankChapters,backyardStatus;
   const byId = new Map(chapters.map(chapter => [chapter.id, chapter]));
   const neighborhood = document.getElementById('neighborhood');
   let cards = [...document.querySelectorAll('.house-card')];
   const cardTemplate = cards[0].cloneNode(true);
   const panel = document.getElementById('chapter-panel');
   const panelShare = document.getElementById('panel-share');
+  const panelBackyard = document.getElementById('panel-backyard');
+  panelBackyard.addEventListener('click',()=>{
+    document.dispatchEvent(new CustomEvent('chapter:backyard',{detail:{id:selectedId}}));setDrawer(false);
+  });
   const panelClaim = document.getElementById('panel-claim');
   const canonicalUrl = 'https://milomessina.com/fomo/campuswars/';
   const drawer = document.getElementById('village-drawer');
@@ -81,6 +85,7 @@
       }
     });
     panelShare.hidden = !chapter;
+    panelBackyard.hidden = !chapter||!backyardStatus?.(chapter).unlocked;
     panelClaim.hidden = Boolean(chapter);
     panel.classList.toggle('claim-mode', !chapter);
     if (chapter) {
@@ -89,7 +94,8 @@
       text('panel-letters', chapter.letters);
       text('panel-school', chapter.school.toUpperCase());
       text('panel-name', chapter.name);
-      text('panel-target', chapter.joined<15 ? `${15-chapter.joined} more to build your house.` : remaining ? `${remaining} more to qualify.` : 'Your house reached 80%.');
+      const upgrade=backyardStatus?.(chapter);
+      text('panel-target', upgrade?.message||(remaining ? `${remaining} more to unlock your backyard pool.` : 'Backyard pool unlocked.'));
       text('panel-detail', `${chapter.joined} / ${target} joined · 80% qualification target`);
       panelShare.setAttribute('aria-label', `Share ${chapter.name}’s Greek Wars progress`);
     } else {
@@ -195,7 +201,7 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village.js?v=111').catch(error => {
+  import('./village.js?v=113').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
@@ -236,8 +242,9 @@
     selectChapter(selectedId,{writeHash:false,emit:false});
     if (focusedChapter) cards.find(card => card.dataset.chapter === focusedChapter)?.focus({preventScroll:true});
   }
-  Promise.all([import('./chapter-feed.js?v=106'),import('./village-competition.js?v=111')]).then(([{startChapterFeed},{houseStandings}]) => {
+  Promise.all([import('./chapter-feed.js?v=106'),import('./village-competition.js?v=111'),import('./village-backyards.js?v=112')]).then(([{startChapterFeed},{houseStandings},houses]) => {
     rankChapters=houseStandings;
+    backyardStatus=houses.backyardStatus;
     updateChapters(savedSnapshot);
     chapterFeed=startChapterFeed({
     initialSnapshot:savedSnapshot,

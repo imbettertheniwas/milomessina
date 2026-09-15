@@ -18,7 +18,7 @@ test('rank determines width, roof height and depth even when lower ranks have mo
     assert(size.footprint<=13.6);assert(size.roofline<=15);assert(size.depthScale<=1);
     assert(Math.abs((size.width+1)*house.scale.x-size.footprint)<1e-9);
     assert(Math.abs((size.height+2.82)*house.scale.y-size.roofline)<1e-9);
-    const porch=village.members.filter(m=>m.chapter===size.chapter&&m.action!=='pong'&&!m.walking&&m.ground>.3);
+    const porch=village.members.filter(m=>m.chapter===size.chapter&&!m.poolRole&&m.action!=='pong'&&!m.walking&&m.ground>.3);
     assert.equal(porch.length,2);assert(porch.every(m=>Math.abs(m.ground-.73*size.scaleY)<1e-9));
   }
   village.dispose();

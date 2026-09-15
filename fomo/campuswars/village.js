@@ -1,3 +1,4 @@
+import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createLiveArrivals} from './village-arrivals.js?v=106';
 import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
@@ -5,12 +6,12 @@ import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=111';
-import {createDistricts} from './village-districts.js?v=108';
+import {createVillageRendererAsync} from './village-renderer.js?v=113';
+import {createDistricts} from './village-districts.js?v=113';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=111';
-import {prewarmVillage} from './village-prewarm.js?v=111';
+import {prewarmVillage} from './village-prewarm.js?v=113';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
@@ -146,6 +147,19 @@ async function startVillage(){
     if(emit)document.dispatchEvent(new CustomEvent('village:select',{detail:{id,interactive:focus}}));wake();
   }
   document.addEventListener('chapter:select',e=>choose(e.detail.id,Boolean(e.detail.focus)));
+  document.addEventListener('chapter:backyard',event=>{
+    const id=event.detail.id,chapter=chapters.find(c=>c.id===id),anchor=village.anchors.find(a=>a.id===id);
+    if(!anchor||!backyardUnlocked(chapter))return;
+    choose(id,false,false);takeControl();leaveStreet();
+    const aim=()=>{
+      if(selected!==id)return;
+      const side=anchor.lot.x-(anchor.lot.originX||0),phone=viewport.clientWidth<650;
+      wantedTarget.set(anchor.lot.x+(side<0?-10:10),1,anchor.lot.z);
+      wantedRadius=phone?35:23;wantedPhi=.78;wantedTheta=side<0?-1.1:1.1;
+      snapLongJump();viewDirty=true;wake();
+    };
+    if(village.focus)village.focus(id,aim);else aim();
+  });
   let chapterBuildRevision=0;
   async function updateChapters(event){
     const buildRevision=++chapterBuildRevision,previous=village;

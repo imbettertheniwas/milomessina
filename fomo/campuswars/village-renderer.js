@@ -1,10 +1,11 @@
+import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
 import {villageQuality} from './village-quality.js?v=97';
-import {createVillage,buildVillageSteps} from './village-world.js?v=111';
+import {createVillage,buildVillageSteps} from './village-world.js?v=113';
 import {houseStandings} from './village-competition.js?v=111';
-import {rankedHouseSizes} from './village-house-sizing.js?v=111';
+import {rankedHouseSizes} from './village-house-sizing.js?v=112';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=105';
-import {unoccludedHouses} from './village-occlusion.js?v=87';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=112';
+import {unoccludedHouses} from './village-occlusion.js?v=112';
 
 export const STREAMING_THRESHOLD=80;
 export function villageRenderLayout(T,input,previousFinishes){
@@ -13,7 +14,7 @@ export function villageRenderLayout(T,input,previousFinishes){
   const lots=createLots(chapters.length).map((lot,sourceIndex)=>({...lot,sourceIndex}));
   const houseSizes=rankedHouseSizes(chapters),houseFinishes=assignHouseFinishes(chapters,previousFinishes);
   const anchors=lots.map((lot,index)=>{
-    const chapter=chapters[index],size=chapter&&houseSizes.get(chapter.id),finished=chapter?.joined>=15;
+    const chapter=chapters[index],size=chapter&&houseSizes.get(chapter.id),finished=hasChapterHouse(chapter);
     return {id:chapter?.id||'empty',lot,point:new T.Vector3(lot.x,chapter?(finished?size.roofline+1:6):4,lot.z),...(finished?{house:{halfWidth:size.footprint/2,front:size.offsetZ+7.5*size.depthScale/2}}:{})};
   });
   return {chapters,lots,houseSizes,houseFinishes,anchors,extension:rowExtension(chapters.length),streetTotal:streetCount(chapters.length)};
@@ -21,7 +22,7 @@ export function villageRenderLayout(T,input,previousFinishes){
 export function visibleHouseIndices(T,layout,camera,margin=0){
   const frustum=new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
   const bounds=new T.Sphere(new T.Vector3(),24+margin),indices=new Set();
-  layout.lots.forEach((lot,i)=>{bounds.center.set(lot.x,7,lot.z);if(frustum.intersectsSphere(bounds))indices.add(i);});
+  layout.lots.forEach((lot,i)=>{bounds.radius=(backyardUnlocked(layout.chapters[i])?32:24)+margin;bounds.center.set(lot.x,7,lot.z);if(frustum.intersectsSphere(bounds))indices.add(i);});
   return unoccludedHouses(T,layout,camera,indices);
 }
 function startingIndices(T,layout,options){
@@ -94,7 +95,7 @@ function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arri
   return {
     world,streets,...layout,updateView,advance,focus,cancelFocus(){focusPending=null;},
     get streaming(){return true;},get building(){return Boolean(pending);},get revision(){return revision;},get residentCount(){return resident.size;},get residentIndices(){return new Set(resident);},
-    get renderAnchors(){return active.anchors;},get members(){return active.members;},get pedestrians(){return active.pedestrians;},get parts(){return active.parts;},get distantCrowd(){return active.distantCrowd;},get crowdVisibility(){return active.crowdVisibility;},get pickables(){return active.pickables;},get competition(){return active.competition;},get beacon(){return active.beacon;},get pong(){return active.pong;},get die(){return active.die;},get construction(){return active.construction;},
+    get backyards(){return active.backyards;},get renderAnchors(){return active.anchors;},get members(){return active.members;},get pedestrians(){return active.pedestrians;},get parts(){return active.parts;},get distantCrowd(){return active.distantCrowd;},get crowdVisibility(){return active.crowdVisibility;},get pickables(){return active.pickables;},get competition(){return active.competition;},get beacon(){return active.beacon;},get pong(){return active.pong;},get die(){return active.die;},get construction(){return active.construction;},
     nightLife:{setNight(enabled){night=Boolean(enabled);active.nightLife.setNight(night);}},
     animateCrowd(time,camera,poses){return active.animateCrowd(time,camera,poses);},animateEffects(time){active.animateEffects(time);},
     dispose(){disposed=true;discard();active.dispose();world.removeFromParent();}
