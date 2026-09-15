@@ -3,7 +3,7 @@
 <nav><button id="quad">Campus quad</button><button id="street">From Greek Row</button><button id="overhead">Overhead</button><button id="prize">National prize</button><button id="night">Day / night</button><button id="pause">Pause students</button></nav><output id="stats">Loading campus…</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createDistricts} from '../village-districts.js?v=97';
+import {createDistricts} from '../village-districts.js?v=99';
 import {createVillage} from '../village-world.js?v=97';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);scene.fog=new T.FogExp2(0x98a7ba,.0022);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,1,650);

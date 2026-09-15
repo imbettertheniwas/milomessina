@@ -64,12 +64,12 @@ test('the national prize monument retains a mystery amount and a small static re
   let cleaned=false;
   try{
     let draws=0,triangles=0;prize.root.traverse(o=>{if(o.isMesh){draws++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);}});
-    assert(draws<=7);assert(triangles<7000);
+    assert(draws<=8);assert(triangles<7000);
     assert.equal(prize.root.userData.prizeAmount,null);
     assert.deepEqual(NATIONAL_PRIZE_COPY,['NATIONAL CHAMPION']);
     assert(prize.root.getObjectByName('national-prize-engraved-cup'));
     assert(!prize.root.getObjectByName('national-prize-label'));
-    assert.equal(prize.root.getObjectByName('national-prize-fomo-purple').material.color.getHex(),0x626cf3);
+    assert.equal(prize.root.getObjectByName('national-prize-gold').material.color.getHex(),0xe7ad3c);
     const cash=prize.root.getObjectByName('national-prize-cash');assert.equal(cash.count,28);
     assert(cash.instanceMatrix.array.every(Number.isFinite));
     let freed=false;cash.geometry.addEventListener('dispose',()=>freed=true);prize.dispose();cleaned=true;assert(freed);

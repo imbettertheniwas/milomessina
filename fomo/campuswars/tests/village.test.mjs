@@ -166,7 +166,7 @@ test('a denser campus retains bounded instances and a persistent static horizon'
   const horizonMatrix=horizon.matrixWorld.toArray(),horizonChildren=horizon.children.length;
   for(const [x,z] of [[0,0],[500,500],[-900,300],[2000,-3000],[0,0]]){
     districts.update(x,z);assert.equal(districts.chunks.size,9);
-    // Keep the existing campus budget; the stadium and seven-draw national
+    // Keep the existing campus budget; the stadium and eight-draw national
     // prize monument have their own fixed, separately tested budgets.
     const stadiumObjects=new Set();districts.stadium.root.traverse(o=>stadiumObjects.add(o));
     districts.root.getObjectByName('national-prize-trophy')?.traverse(o=>stadiumObjects.add(o));

@@ -1,5 +1,5 @@
 import {createGrassMaterial} from './village-grass.js?v=97';
-import {createNationalPrize,NATIONAL_PRIZE_SITE} from './village-national-prize.js?v=2';
+import {createNationalPrize,NATIONAL_PRIZE_SITE} from './village-national-prize.js?v=99';
 
 // The original academic block, immediately north of Greek Row. Heights are
 // shared by the landscape and students, including visitors from other blocks.
