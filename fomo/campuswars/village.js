@@ -1,11 +1,12 @@
 import {createLiveArrivals} from './village-arrivals.js?v=106';
+import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
 import {createVillageRendererAsync} from './village-renderer.js?v=106';
-import {createDistricts} from './village-districts.js?v=105';
+import {createDistricts} from './village-districts.js?v=108';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=105';
@@ -45,6 +46,7 @@ async function startVillage(){
   const fill=new THREE.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
   let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals});scene.add(village.world);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
+  const helipad=createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true');
   const pointerHover=createPointerHover(THREE,canvas,camera,blimp);
   const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
   const moneyRain=createMoneyRain(THREE,chapters,village.renderAnchors||village.anchors);scene.add(moneyRain.root);
@@ -62,7 +64,7 @@ async function startVillage(){
     sun.color.set(0xffe5c6).lerp(dusk.sun,amount);sun.intensity=2.6-amount*2.18;
     fill.color.set(0xc4d2e0).lerp(dusk.fill,amount);fill.intensity=.5-amount*.07;
     const night=amount>.45;
-    if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);}
+    if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);helipad.setNight(night);}
   }
   const intro=document.getElementById('village-intro');
   let autoOrbit=!reduced,entrancePending=true,entranceActive=false,entrancePaused=false,entranceTime=0,captionIndex=-1;
@@ -110,6 +112,7 @@ async function startVillage(){
   }
   function takeControl(){
     stadiumView=false;
+    helipadView=false;
     village.cancelFocus?.();
     autoOrbit=false;
     if(entranceActive){wantedTarget.copy(target);wantedRadius=radius;wantedPhi=phi;wantedTheta=theta;}
@@ -123,7 +126,7 @@ async function startVillage(){
   });
   document.addEventListener('village:replay',beginIntro);
   document.addEventListener('village:artwork',()=>{viewDirty=true;wake();});
-  let selected='sigma-chi-sdsu',paused=reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true',visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,stadiumView=false;
+  let selected='sigma-chi-sdsu',paused=reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true',visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,stadiumView=false,helipadView=false;
   const target=new THREE.Vector3(...openingView.target),wantedTarget=new THREE.Vector3(...openingView.target),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let {theta,phi,radius}=openingView;let wantedTheta=theta,wantedPhi=phi,wantedRadius=radius;
   if(!reduced)applyIntroView();
@@ -152,6 +155,8 @@ async function startVillage(){
     // A new street opens its own Greek block, so the campus around it restreams.
     if(previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=createDistricts(THREE,next.extension,next.streetTotal,{incremental:quality.mobile});scene.add(districts.root);}
     if(previous.extension!==next.extension){
+      helipad.relocate(next.extension);
+      if(helipadView){wantedTarget.z+=next.extension-previous.extension;target.z+=next.extension-previous.extension;}
       scene.remove(streetNav.root);streetNav.dispose();streetNav=createStreetNavigation(THREE,next.extension);scene.add(streetNav.root);streetNav.root.visible=streetMode;
       const stops=streetStops(next.extension);streetWantedZ=Math.max(stops[0],Math.min(stops.at(-1),streetWantedZ));
     }
@@ -173,6 +178,12 @@ async function startVillage(){
   document.addEventListener('party:pause',e=>{paused=e.detail.paused;wake();});
   document.getElementById('village-overview').addEventListener('click',()=>{takeControl();resetView();});
   const stadiumDistance=()=>136/Math.min(1,camera.aspect);
+  const helipadDistance=()=>34/Math.min(1,camera.aspect);
+  document.getElementById('village-helipad').addEventListener('click',()=>{
+    takeControl();leaveStreet();wantedTarget.copy(helipad.root.position).add(new THREE.Vector3(-4,1.6,3));
+    helipadView=true;wantedTheta=-.78;wantedPhi=.38;wantedRadius=helipadDistance();
+    helipad.restart(partyTime,paused||reduced);snapLongJump();viewDirty=true;wake();
+  });
   document.getElementById('village-stadium').addEventListener('click',()=>{
     takeControl();leaveStreet();wantedTarget.copy(districts.stadium.root.position);wantedTarget.y=2;
     stadiumView=true;wantedTheta=-2.42;wantedPhi=.6;wantedRadius=stadiumDistance();snapLongJump();viewDirty=true;wake();
@@ -303,7 +314,7 @@ async function startVillage(){
       if(!w||!h||(w===viewportWidth&&h===viewportHeight))return;
       viewportWidth=w;viewportHeight=h;viewDirty=true;
       renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
-      if(stadiumView)wantedRadius=stadiumDistance();wake();
+      if(stadiumView)wantedRadius=stadiumDistance();if(helipadView)wantedRadius=helipadDistance();wake();
     });
   }
   new ResizeObserver(resize).observe(viewport);
@@ -382,6 +393,7 @@ async function startVillage(){
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
     arrivals.advance(partyTime);
+    helipad.update(partyTime);
     const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
     village.animateCrowd(partyTime,camera,pedestrianPoses);
     districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);
@@ -410,7 +422,7 @@ async function startVillage(){
   camera.position.set(0,104,104);camera.lookAt(target);camera.updateMatrixWorld();
   async function prepare(){
     while(districts.building){await new Promise(resolve=>requestAnimationFrame(resolve));districts.update(target.x,target.z);}
-    return prewarmVillage(THREE,renderer,scene,camera,applyLighting,moneyRain,{mobile:quality.mobile||Boolean(village.streaming),variantRoots:[districts.stadium.root]}).then(()=>{
+    return prewarmVillage(THREE,renderer,scene,camera,applyLighting,moneyRain,{mobile:quality.mobile||Boolean(village.streaming),variantRoots:[districts.stadium.root,helipad.root]}).then(()=>{
     if(pendingChapterUpdate){
       const event=pendingChapterUpdate;pendingChapterUpdate=null;
       return updateChapters(event).then(()=>prepare());

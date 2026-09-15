@@ -109,9 +109,10 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     for(let i=0;i<65;i++){
       const a=hash(i,'sky-angle')*Math.PI*2,r=225+hash(i,'sky-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r,w=7+hash(i,'sky-width')*17,h=6+hash(i,'sky-height')*19;
       if(Math.abs(x)<STADIUM_SITE.width/2+w&&Math.abs(z-STADIUM_SITE.z)<STADIUM_SITE.depth/2+18)continue;
+      if(Math.abs(x-100)<36+w&&Math.abs(z-200)<55)continue;
       buildSkylineBuilding(T,kit,p,{x,z,width:w,depth:8+hash(i,'sky-depth')*9,height:h,seed:i});
     }
-    for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
+    for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;if(Math.abs(x-100)<38&&Math.abs(z-200)<56)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
     // Water tower, bell tower and stadium floodlights break the dormitory skyline.
     for(const x of [233,241])for(const z of [181,189])bar(p,[x,0,z],[x,24,z],.20,0x8c9f9d);
     cylinder(p,237,26,185,6,6,0xaebdb5);mesh(p,'dome',237,29,185,6,2,6,0xaebdb5);

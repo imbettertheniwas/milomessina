@@ -1,5 +1,9 @@
 # fomo Campus Wars
 
+## Rasmr and Orangie helicopter arrival
+
+The **Helipad** control visits a new stop beside the stadium and replays their Maybach arrival. Both guests step out, walk over, stand together, board the helicopter and fly before returning. Distinct builds, clothes, name labels and locally served face textures use public visual references. These are stylized likenesses, not exact scans. The sequence shares activity pause and reduced-motion behavior and survives live roster updates. See [references and preview details](helipad-references.md).
+
 ## Live member arrivals
 
 Fresh increases in the public joined counts from Arya’s admin now drop one anonymous avatar per added member from the sky onto that chapter’s front lawn. Arrivals raise their arms, stagger briefly, bounce on touchdown, and rejoin the existing crowd. The first network snapshot establishes a baseline; saved rosters, stale responses, unchanged counts and decreases do not trigger arrivals. No registrant names or other personal records are fetched by the browser.
