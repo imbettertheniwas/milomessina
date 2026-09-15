@@ -675,7 +675,13 @@ function dayMigrate(ss, sh) {
     var key = who + '|' + day;
     if (seen[key]) continue;
     seen[key] = true;
-    add.push([Utilities.getUuid().slice(0, 8), who, day, invoiceStamp()]);
+    /* Stamped with the moment the shift was clocked in, not the moment
+       this migration ran. `marked` is read as "was this day written down
+       afterwards", so stamping fourteen years of history with today
+       would report the whole archive as backfilled — the one thing the
+       column exists to flag. The clock-in is when the day was recorded,
+       and it is the honest answer. */
+    add.push([Utilities.getUuid().slice(0, 8), who, day, dayStamp(all[i].start)]);
   }
   if (add.length) sh.getRange(2, 1, add.length, DAY_COLS.length).setValues(add);
 }
@@ -687,6 +693,14 @@ function isDayString(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')); }
 function dayText(v) {
   if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
   return String(v || '').trim();
+}
+
+/* a UTC stamp off the old hours tab, in the same shape invoiceStamp()
+   writes — local to the script's timezone, seconds, no offset */
+function dayStamp(iso) {
+  var t = new Date(iso);
+  if (isNaN(t.getTime())) return invoiceStamp();
+  return Utilities.formatDate(t, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
 }
 
 function dayFromStamp(iso) {
@@ -800,8 +814,13 @@ function dayFind(sh, id) {
   return null;
 }
 
+/* `marked` travels with the row. It is what tells a day filled in
+   afterwards apart from one marked on the day itself, which is the only
+   guard this tab has against attendance being written in retrospect —
+   dropping it here left the sheet holding the evidence and the page
+   unable to show it. */
 function dayPublic(d) {
-  return { id: d.id, who: d.who, day: d.day };
+  return { id: d.id, who: d.who, day: d.day, marked: dayText(d.marked) };
 }
 
 /* ── the clock, behind the same /invoice page ────────────────── */
