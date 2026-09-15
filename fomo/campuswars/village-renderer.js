@@ -1,5 +1,5 @@
 import {villageQuality} from './village-quality.js?v=97';
-import {createVillage,buildVillageSteps} from './village-world.js?v=101';
+import {createVillage,buildVillageSteps} from './village-world.js?v=103';
 import {houseStandings} from './village-competition.js?v=87';
 import {rankedHouseSizes} from './village-house-sizing.js?v=80';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
@@ -94,9 +94,9 @@ function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true){
   return {
     world,streets,...layout,updateView,advance,focus,cancelFocus(){focusPending=null;},
     get streaming(){return true;},get building(){return Boolean(pending);},get revision(){return revision;},get residentCount(){return resident.size;},get residentIndices(){return new Set(resident);},
-    get renderAnchors(){return active.anchors;},get members(){return active.members;},get parts(){return active.parts;},get distantCrowd(){return active.distantCrowd;},get crowdVisibility(){return active.crowdVisibility;},get pickables(){return active.pickables;},get competition(){return active.competition;},get beacon(){return active.beacon;},get pong(){return active.pong;},get die(){return active.die;},get construction(){return active.construction;},
+    get renderAnchors(){return active.anchors;},get members(){return active.members;},get pedestrians(){return active.pedestrians;},get parts(){return active.parts;},get distantCrowd(){return active.distantCrowd;},get crowdVisibility(){return active.crowdVisibility;},get pickables(){return active.pickables;},get competition(){return active.competition;},get beacon(){return active.beacon;},get pong(){return active.pong;},get die(){return active.die;},get construction(){return active.construction;},
     nightLife:{setNight(enabled){night=Boolean(enabled);active.nightLife.setNight(night);}},
-    animateCrowd(time,camera){return active.animateCrowd(time,camera);},animateEffects(time){active.animateEffects(time);},
+    animateCrowd(time,camera,poses){return active.animateCrowd(time,camera,poses);},animateEffects(time){active.animateEffects(time);},
     dispose(){disposed=true;discard();active.dispose();world.removeFromParent();}
   };
 }

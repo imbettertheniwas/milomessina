@@ -1,3 +1,4 @@
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=103';
 import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
 import {rankedHouseSizes} from './village-house-sizing.js?v=80';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
@@ -11,7 +12,7 @@ import {humanPose} from './village-human-motion.js?v=80';
 import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=92';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=101';
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose} from './village-layout.js?v=80';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=80';
 import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=97';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=92';
 import {createSchoolBanner} from './village-school-banners.js?v=92';
@@ -201,21 +202,44 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   function posePart(name,i,x,y,z,sx,sy,sz,rotation=0,pitch=0){dummy.position.set(x,y,z);dummy.rotation.set(pitch,rotation,0,'YXZ');dummy.scale.set(sx,sy,sz);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
   function limb(name,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);dummy.position.copy(a).add(b).multiplyScalar(.5);const length=direction.length();dummy.quaternion.setFromUnitVectors(up,direction.normalize());dummy.scale.set(r,length+.025,r);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
   const crowdVisibility=createCrowdVisibility(THREE,members);
+  const localPoint=(m,x,z)=>{const dx=x-m.lot.x,dz=z-m.lot.z,c=Math.cos(m.lot.rotation),s=Math.sin(m.lot.rotation);return {x:dx*c-dz*s,z:dx*s+dz*c};};
+  const pongChapters=new Set(members.filter(m=>m.action==='pong').map(m=>m.chapter)),dieChapters=new Set(members.filter(m=>m.action==='die').map(m=>m.chapter));
+  const overflowSlots=new Map();
+  for(const m of members)if(!overflowSlots.has(m.chapter)){const points=[];for(let x=-8.5;x<=8.5;x+=1.02)for(let z=-15;z<=15.1;z+=1.02)points.push(toWorld(m.lot,x,z));overflowSlots.set(m.chapter,points);}
+  const pedestrian=pedestrianGroup('chapters',members,activityPose,{
+    slots:m=>overflowSlots.get(m.chapter),
+    ground:(s,m)=>{if(!m.walking)return s.ground??m.ground??0;const p=localPoint(m,s.x,s.z);return lawnGround(p.x,p.z);},
+    allowed:(x,z,s,m)=>{
+      if(m.action==='build')return Math.abs(x-s.x)<=.55&&Math.abs(z-s.z)<=.55;
+      if(m.ground>.5)return Math.hypot(x-m.x,z-m.z)<.7;
+      const p=localPoint(m,x,z);
+      if(Math.abs(p.x)>8.65||p.z<-15||p.z>15.25)return false;
+      const size=houseSizes.get(m.chapter);
+      if(Math.abs(p.x)<size.footprint/2+.5&&p.z>size.offsetZ-4.5*size.depthScale-.5&&p.z<6.6)return false;
+      if(m.walking&&p.z<6.6)return false;
+      if(!m.walking&&!m.action&&p.z>=6.6&&(Math.abs(p.x)>7.05||p.z<8.0||p.z>13.4))return false;
+      if(pongChapters.has(m.chapter)&&Math.abs(p.x-PONG_TABLE.x)<PONG_TABLE.width/2+.25&&Math.abs(p.z-PONG_TABLE.z)<PONG_TABLE.length/2+.25)return false;
+      if(dieChapters.has(m.chapter)&&Math.abs(p.x-DIE_TABLE.x)<DIE_TABLE.width/2+.25&&Math.abs(p.z-DIE_TABLE.z)<DIE_TABLE.depth/2+.25)return false;
+      return true;
+    }
+  });
+  const pedestrians=[pedestrian],spacing=createPedestrianSpacing();let previousPoses=null;
   let effectsTime=NaN;
-  function animateCrowd(time,camera){
+  function animateCrowd(time,camera,sharedPoses=null){
+    const poses=(sharedPoses||spacing.update(time,pedestrians)).get(pedestrian),posesChanged=poses!==previousPoses;previousPoses=poses;
     let updated=0;
     const allVisible=crowdVisibility.visible(camera,world.matrixWorld),visibleBatches=allVisible.filter(batch=>!distantCrowd?.distant(batch,camera,world.matrixWorld));
     const key=visibleBatches.map(b=>b.chapter).join('|'),repack=compactCrowd&&key!==visibleKey;
-    if(distantCrowd){distantCrowd.begin(time);for(const batch of allVisible)if(batch.distant)for(let i=batch.start;i<batch.start+batch.count;i++){const member=members[i];distantCrowd.add(member,member.walking||member.action==='build'?activityPose(member,time):member);}distantCrowd.finish();}
+    if(distantCrowd){distantCrowd.begin(time);for(const batch of allVisible)if(batch.distant)for(let i=batch.start;i<batch.start+batch.count;i++){const member=members[i];distantCrowd.add(member,poses[i]);}distantCrowd.finish();}
     visibleKey=key;let packedStart=0;
     if(compactCrowd){const count=visibleBatches.reduce((n,b)=>n+b.count,0);for(const [name,mesh] of Object.entries(parts))mesh.count=count*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1);}
     for(const batch of visibleBatches){
       const start=compactCrowd?packedStart:batch.start;packedStart+=batch.count;
-      if(batch.time===time&&!repack)continue;
+      if(batch.time===time&&!repack&&!posesChanged)continue;
       if(repack)for(const [name,mesh] of Object.entries(parts)){const stride=name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1;if(partColors[name]){mesh.instanceColor.array.set(partColors[name].subarray(batch.start*stride*3,(batch.start+batch.count)*stride*3),start*stride*3);mesh.instanceColor.needsUpdate=true;}}
       for(let i=batch.start;i<batch.start+batch.count;i++){
         const m=members[i],slot=start+i-batch.start;
-        const state=activityPose(m,time),rig=humanPose(m,state,time),angle=state.rotation,h=m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
+        const state=poses[i],rig=humanPose(m,state,time),angle=state.rotation,h=m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
         const transform=([x,y,z])=>[state.x+(x*cos+z*sin)*h,y*h+(state.ground??m.ground??0),state.z+(-x*sin+z*cos)*h];
         const part=(name,point,x,y,z,yaw=0,pitch=0)=>posePart(name,slot*(name==='hair'?2:name==='backpack'?DETAIL_COUNT+1:1),...transform(point),x*h,y*h,z*h,angle+yaw,pitch);
         part('torso',rig.chest,.40*w,.52,.25*w,rig.twist,rig.lean);
@@ -274,5 +298,5 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   function animateEffects(time){beacon?.animate(time);if(nightLife.root.visible)nightLife.animate(time);}
   collect();
   function dispose(){for(const resource of resources)if(!resource.userData?.sharedResource)resource.dispose();resources.clear();}
-  return {world,streets,lots,extension,streetTotal,houseFinishes,dispose,pickables,anchors,members,parts,distantCrowd,crowdVisibility,animateCrowd,competition,beacon,nightLife,animateEffects,pong,die,construction};
+  return {world,streets,lots,extension,streetTotal,houseFinishes,dispose,pickables,anchors,members,pedestrians,parts,distantCrowd,crowdVisibility,animateCrowd,competition,beacon,nightLife,animateEffects,pong,die,construction};
 }

@@ -1,3 +1,4 @@
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=103';
 import {createDistantCrowd} from './village-distant-crowd.js?v=92';
 import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
 import {personalClock,conversation} from './village-human-behavior.js?v=80';
@@ -113,7 +114,7 @@ export function campusPose(person,time,night=false){
   return {x,z,angle,gait,hidden,walking,motion,look,speaking,gesture,carrying};
 }
 
-export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
+export function createCampusPeople(T,kit,kind,cx,cz,streets=1,extension=0){
   const root=new T.Group(),people=campusPeople(kind,cx,cz,streets),n=people.length;let night=false;
   const capsule=new T.CapsuleGeometry(.5,1,2,7);capsule.scale(1,.5,1);
   const sphere=new T.SphereGeometry(1,8,6),cube=kit.geometries.box;
@@ -138,17 +139,30 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
   function limb(mesh,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);dummy.position.copy(a).add(b).multiplyScalar(.5);const length=direction.length();dummy.quaternion.setFromUnitVectors(up,direction.normalize());dummy.scale.set(r,length+.025,r);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
   const distant=core?null:createDistantCrowd(T,n),detailMeshes=[body,heads,hair,gear,shoes,balls],viewBounds={bounds:new T.Sphere(new T.Vector3(0,2,0),66)};
   if(distant)root.add(distant.mesh);
+  const obstacles=[];
+  for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)obstacles.push(...districtSpecs(x,z,streets).map(b=>({...b,cos:Math.cos(b.rotation),sin:Math.sin(b.rotation)})));
+  const ground=(s,p)=>campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));
+  const pedestrian=pedestrianGroup(`campus:${cx},${cz}`,people,(p,time)=>campusPose(p,time,night),{
+    offsetX:cx*100,offsetZ:cz*100+(cz>0?extension:0),ground,
+    allowed:(x,z,s,p)=>{
+      if(Math.hypot(x-s.x,z-s.z)>2.4)return false;
+      for(const b of obstacles){const dx=x+cx*100-b.x,dz=z+cz*100-b.z,c=b.cos,a=b.sin;if(Math.abs(dx*c-dz*a)<b.width/2+.2&&Math.abs(dx*a+dz*c)<b.depth/2+.2)return false;}
+      return true;
+    }
+  });
+  const spacing=createPedestrianSpacing();let previousPoses=null;
   let lastPose=NaN,lastDistant=false;
-  function animate(time,camera=null){
+  function animate(time,camera=null,sharedPoses=null){
+    const poses=sharedPoses?.get(pedestrian)||spacing.update(time,[pedestrian]).get(pedestrian),posesChanged=poses!==previousPoses;previousPoses=poses;
     const useDistant=distant?.distant(viewBounds,camera,root.matrixWorld)||false;
-    if(time===lastPose&&useDistant===lastDistant)return;lastPose=time;lastDistant=useDistant;
+    if(time===lastPose&&useDistant===lastDistant&&!posesChanged)return;lastPose=time;lastDistant=useDistant;
     for(const mesh of detailMeshes)mesh.visible=!useDistant;
     if(distant)distant.mesh.visible=useDistant;
     if(useDistant){
-      distant.begin(time);for(const p of people){const s=campusPose(p,time,night);if(s.hidden)continue;const ground=campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));distant.add(p,{...s,rotation:s.angle,ground});}distant.finish();return;
+      distant.begin(time);for(const [i,p] of people.entries()){const s=poses[i];if(s.hidden)continue;const ground=campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));distant.add(p,{...s,rotation:s.angle,ground});}distant.finish();return;
     }
     people.forEach((p,i)=>{
-      const s=campusPose(p,time,night),rig=humanPose(p,s,time),h=p.height,w=p.build??1,cos=Math.cos(s.angle),sin=Math.sin(s.angle);
+      const s=poses[i],rig=humanPose(p,s,time),h=p.height,w=p.build??1,cos=Math.cos(s.angle),sin=Math.sin(s.angle);
       const ground=campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));
       const local=([x,y,z])=>[s.x+(x*cos+z*sin)*h,y*h+ground+(s.hidden?-20:0),s.z+(-x*sin+z*cos)*h];
       const part=(mesh,index,point,x,y,z,yaw=0,pitch=0)=>pose(mesh,index,...local(point),x*h,y*h,z*h,s.angle+yaw,pitch);
@@ -177,10 +191,10 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
       else if(s.carrying)part(gear,i*2+1,[0,rig.hip[1]+.16,.43],p.carry==='coffee'?.12:p.carry==='pizza'?.65:.4,p.carry==='coffee'?.2:p.carry==='pizza'?.07:.3,p.carry==='coffee'?.12:.4);
       else part(gear,i*2+1,[0,rig.hip[1]+.19,.49],book?.34:0,.035,.26);
     });
-    if(balls.count){const p=campusPose(people.find(p=>p.action==='basketball'),time);pose(balls,0,p.x+.42,.55+Math.abs(Math.sin(time*3.3))*1.05,p.z+.35,.19,.19,.19);}
+    if(balls.count){const p=poses[people.findIndex(p=>p.action==='basketball')];pose(balls,0,p.x+.42,.55+Math.abs(Math.sin(time*3.3))*1.05,p.z+.35,.19,.19,.19);}
     if(core){
       // The dog and its leash share the existing body/accessory instance buffers.
-      const owner=people.find(p=>p.action==='dogwalk'),dog=campusPose(owner,time),hand=humanPose(owner,dog,time).arms[1].hand,a=dog.angle,local=(x,y,z)=>[dog.x+x*Math.cos(a)+z*Math.sin(a),y,dog.z-x*Math.sin(a)+z*Math.cos(a)];
+      const owner=people.find(p=>p.action==='dogwalk'),dog=poses[people.indexOf(owner)],hand=humanPose(owner,dog,time).arms[1].hand,a=dog.angle,local=(x,y,z)=>[dog.x+x*Math.cos(a)+z*Math.sin(a),y,dog.z-x*Math.sin(a)+z*Math.cos(a)];
       pose(body,n*11,...local(.85,.43,.5),.32,.35,.63,a);
       for(let j=0;j<4;j++){const x=.85+(j%2?-.12:.12),z=.5+(j<2?-.22:.22),swing=Math.sin(time*5+j*Math.PI/2)*.1;limb(body,n*11+1+j,local(x,.39,z),local(x,.08,z+swing),.08);}
       limb(body,n*11+5,local(.85,.5,.2),local(.85,.7,-.05),.07);
@@ -190,7 +204,7 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1){
     }
     for(const m of [body,heads,hair,gear,shoes,balls])m.instanceMatrix.needsUpdate=true;
   }
-  animate(0);return {root,people,animate,setNight(enabled){night=enabled;lastPose=NaN;},dispose(){capsule.dispose();sphere.dispose();distant?.dispose();}};
+  animate(0);return {root,people,pedestrian,get poses(){return previousPoses;},animate,setNight(enabled){night=enabled;pedestrian.revision=(pedestrian.revision||0)+1;lastPose=NaN;},dispose(){capsule.dispose();sphere.dispose();distant?.dispose();}};
 }
 
 export function createCampusTraffic(T,kit,extension=0){

@@ -1,9 +1,10 @@
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=101';
-import {createDistricts} from './village-districts.js?v=102';
+import {createVillageRendererAsync} from './village-renderer.js?v=103';
+import {createDistricts} from './village-districts.js?v=103';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=72';
@@ -27,6 +28,7 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
 }
 if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';shell.classList.add('village-unavailable');});
 async function startVillage(){
+  const pedestrianSpacing=createPedestrianSpacing();
   let ready=false,pendingChapterUpdate=null;
   const queueChapterUpdate=event=>{pendingChapterUpdate=event;};
   document.addEventListener('chapters:update',queueChapterUpdate);
@@ -377,8 +379,9 @@ async function startVillage(){
     }
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
-    village.animateCrowd(partyTime,camera);
-    districts.animate(partyTime,target.x,target.z,camera);
+    const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
+    village.animateCrowd(partyTime,camera,pedestrianPoses);
+    districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);
     renderer.render(scene,camera);lastRender=now;
     if(quality.mobile){
       slowFrames=performance.now()-frameStarted>interval*.8||(frameGap>interval*1.45&&frameGap<250)?slowFrames+1:Math.max(0,slowFrames-1);

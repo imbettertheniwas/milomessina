@@ -37,7 +37,7 @@ test('rendered students and visitors from Greek Row follow the hill elevation',(
         crowd.animate(time);
         crowd.people.forEach((person,i)=>{
           if(person.action!=='journey')return;
-          const pose=campusPose(person,time),rig=humanPose(person,pose,time),ground=campusGroundHeight(pose.x+cx*100,pose.z+cz*100);
+          const pose=crowd.poses[i],rig=humanPose(person,pose,time),ground=campusGroundHeight(pose.x+cx*100,pose.z+cz*100);
           heads.getMatrixAt(i*4,matrix);
           assert(Math.abs(matrix.elements[13]-(rig.head[1]*person.height+ground+.17))<.00001);
         });

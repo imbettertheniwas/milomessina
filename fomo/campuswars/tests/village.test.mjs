@@ -166,9 +166,12 @@ test('a denser campus retains bounded instances and a persistent static horizon'
   const horizonMatrix=horizon.matrixWorld.toArray(),horizonChildren=horizon.children.length;
   for(const [x,z] of [[0,0],[500,500],[-900,300],[2000,-3000],[0,0]]){
     districts.update(x,z);assert.equal(districts.chunks.size,9);
-    // Keep the existing campus budget; the stadium and eight-draw national
-    // prize monument have their own fixed, separately tested budgets.
+    // Keep the streamed campus budget separate from the permanent, detailed
+    // skyline and stadium. Neither grows as more chapters are registered.
     const stadiumObjects=new Set();districts.stadium.root.traverse(o=>stadiumObjects.add(o));
+    let skylineInstances=0,skylineDraws=0;
+    horizon.traverse(o=>{stadiumObjects.add(o);if(o.isMesh)skylineDraws++;if(o.isInstancedMesh)skylineInstances+=o.count;});
+    assert(skylineInstances<30000,'The permanent skyline has a fixed geometry budget');assert(skylineDraws<35);
     districts.root.getObjectByName('national-prize-trophy')?.traverse(o=>stadiumObjects.add(o));
     let instances=0,drawables=0,distantBatches=0;districts.root.traverse(o=>{if(stadiumObjects.has(o))return;if(o.name==='distant-chapter-members'){distantBatches++;return;}if(o.isMesh)drawables++;if(o.isInstancedMesh)instances+=o.count;});
     assert(distantBatches<=9,'At most one distant crowd draw per streamed block');assert(instances<22000,`Unbounded instances: ${instances}`);assert(drawables<200,`Unbounded meshes: ${drawables}`);
