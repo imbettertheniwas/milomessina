@@ -3,7 +3,7 @@
 <nav><button id="aerial">Stadium</button><button id="stands">From the stands</button><button id="field">Sideline</button><button id="night">Day / night</button><button id="pause">Pause</button><button id="touchdown">Touchdown</button><button id="fireworks">Fireworks</button></nav><output id="stats">Loading…</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createStadium} from '../village-stadium.js?v=89';
+import {createStadium} from '../village-stadium.js?v=98';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);scene.fog=new T.FogExp2(0x98a7ba,.0022);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,.1,500);
 const ambient=new T.HemisphereLight(0xd4e2ed,0x857768,1.55),sun=new T.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,225);sun.target.position.set(0,0,200);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:160});sun.shadow.normalBias=.04;scene.add(ambient,sun,sun.target);

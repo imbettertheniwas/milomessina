@@ -46,8 +46,8 @@ export function createStadium(T,extension=0){
     for(let n=-25;n<25;n+=2.5){c.fillStyle=Math.round(n/2.5)%2?'#3f7948':'#396e40';c.fillRect(0,z(n),W,z(2.5)-z(0));}
     for(let i=0;i<90000;i++){const shade=hash(i,'turf');c.fillStyle=shade>.5?'#dddc9821':'#052e2028';c.fillRect(hash(i,'tx')*W,hash(i,'tz')*H,1,2+shade*4);}
     for(const end of [-1,1]){
-      c.fillStyle=end<0?'#16364d':'#812d35';c.fillRect(0,z(end<0?-30:25),W,H/12);
-      c.save();c.translate(W/2,z(end*27.5));if(end>0)c.rotate(Math.PI);c.fillStyle='#efe9d6';c.font='900 96px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(end<0?'GREEK VILLAGE':'MEMORIAL',0,0,W*.92);c.restore();
+      c.fillStyle=end<0?'#4048a8':'#812d35';c.fillRect(0,z(end<0?-30:25),W,H/12);
+      c.save();c.translate(W/2,z(end*27.5));if(end>0)c.rotate(Math.PI);c.fillStyle='#efe9d6';c.font='900 144px Arial';c.textAlign='center';c.textBaseline='middle';c.scale(1.55,1);c.fillText(end<0?'FOMO':'AWAY',0,0,W*.92/1.55);c.restore();
     }
     c.strokeStyle='#eeeede';c.lineWidth=3;c.strokeRect(2,2,W-4,H-4);
     for(let yard=0;yard<=100;yard+=5){const zz=-25+yard*.5;c.beginPath();c.moveTo(0,z(zz));c.lineTo(W,z(zz));c.stroke();}
@@ -170,9 +170,9 @@ export function createStadium(T,extension=0){
   const seatGeometry=merged([[cube,[0,.22,0],[.48,.07,.45],0xffffff],[cube,[0,.46,-.2],[.46,.43,.055],0xffffff]]);
   fans.forEach((f,i)=>{
     dummy.position.set(f.x,f.y,f.z);dummy.rotation.set(0,f.angle,0);dummy.scale.setScalar(.86+hash(i,'fan-height')*.22);dummy.updateMatrix();fanMesh.setMatrixAt(i,dummy.matrix);
-    color.setHex(hash(i,'fan-shirt')>.27?(f.team?0xb0444c:0x2a678a):hash(i,'white-shirt')>.4?0xece3cf:0xd9b35a);fanMesh.setColorAt(i,color);
+    color.setHex(hash(i,'fan-shirt')>.27?(f.team?0xb0444c:0x626cf3):hash(i,'white-shirt')>.4?0xece3cf:0xd9b35a);fanMesh.setColorAt(i,color);
     phases[i*2]=hash(i,'cheer-phase')*Math.PI*2;phases[i*2+1]=hash(i,'cheer-speed')*2;
-    part(seatGeometry,f.x,f.y,f.z,1,1,1,f.team?0x853c43:0x325674,'seat',f.angle);
+    part(seatGeometry,f.x,f.y,f.z,1,1,1,f.team?0x853c43:0x454da9,'seat',f.angle);
   });
   fanGeometry.setAttribute('fanPhase',new T.InstancedBufferAttribute(phases,2));fanMesh.boundingSphere=new T.Sphere(new T.Vector3(0,5,0),56);root.add(fanMesh);
 
@@ -205,7 +205,7 @@ export function createStadium(T,extension=0){
     const c=scoreboardCanvas.getContext('2d'),W=1024;
     c.fillStyle='#081826';c.fillRect(0,0,W,512);
     c.fillStyle='#dcad60';c.fillRect(0,0,W,8);c.font='bold 32px Arial';c.textAlign='center';c.fillText('GREEK VILLAGE  /  EXHIBITION',512,57);
-    c.fillStyle='#235679';c.fillRect(30,86,440,208);c.fillStyle='#863540';c.fillRect(554,86,440,208);
+    c.fillStyle='#626cf3';c.fillRect(30,86,440,208);c.fillStyle='#863540';c.fillRect(554,86,440,208);
     c.fillStyle='#f6edda';c.font='bold 34px Arial';c.fillText('FOMO',250,132);c.fillText('AWAY',774,132);c.fillText('v',512,132);
     c.font='bold 130px Arial';c.fillText(String(state.home),250,266);c.fillText(String(state.away),774,266);
     c.font='bold 48px monospace';c.fillText(`Q${state.quarter}   ${state.clock}`,512,361);
@@ -226,7 +226,7 @@ export function createStadium(T,extension=0){
     fireworks.animate(time);
     crowdUniforms.stadiumTime.value=time;crowdUniforms.stadiumRoar.value=state.celebration;
     for(let i=0;i<22;i++){
-      const p=footballPlayer(i,time),stride=p.running?Math.sin(time*10+i)*.55:0,jersey=p.team?0xa12f40:0x164d75;
+      const p=footballPlayer(i,time),stride=p.running?Math.sin(time*10+i)*.55:0,jersey=p.team?0xa12f40:0x626cf3;
       const pieces=[
         [0,1.05,0,.56,.5,.33,jersey],[0,.76,0,.4,.14,.28,0xe9decc],
         [-.14,.52,stride*.2,.15,.4,.19,0xe1d8c1],[.14,.52,-stride*.2,.15,.4,.19,0xe1d8c1],
@@ -240,7 +240,7 @@ export function createStadium(T,extension=0){
         const bodyScale=.76,limb=j>=2&&j<=5?stride*(j%2?-1:1):j===8||j===9?stride*(j%2?1:-1):0;
         dummy.position.set(p.x+(x*c+z*s)*bodyScale,.505+y*bodyScale+(p.running?Math.abs(stride)*.035:0),p.z+(z*c-x*s)*bodyScale);dummy.rotation.set(limb,angle,0,'YXZ');dummy.scale.set(w*bodyScale,h*bodyScale,d*bodyScale);dummy.updateMatrix();playerParts.setMatrixAt(i*12+j,dummy.matrix);playerParts.setColorAt(i*12+j,color.setHex(hex));
       });
-      dummy.position.set(p.x,.505+1.56*.76,p.z);dummy.rotation.set(0,angle,0);dummy.scale.set(.23*.76,.25*.76,.24*.76);dummy.updateMatrix();helmets.setMatrixAt(i,dummy.matrix);helmets.setColorAt(i,color.setHex(p.team?0xe8d7b5:0xe4e8e4));
+      dummy.position.set(p.x,.505+1.56*.76,p.z);dummy.rotation.set(0,angle,0);dummy.scale.set(.23*.76,.25*.76,.24*.76);dummy.updateMatrix();helmets.setMatrixAt(i,dummy.matrix);helmets.setColorAt(i,color.setHex(p.team?0xe8d7b5:0x626cf3));
     }
     playerParts.instanceMatrix.needsUpdate=true;playerParts.instanceColor.needsUpdate=true;helmets.instanceMatrix.needsUpdate=true;helmets.instanceColor.needsUpdate=true;
     const b=footballBall(time);ball.position.set(b.x,.505+b.y,b.z);ball.rotation.set(time*5,0,Math.PI/5);ball.updateMatrix();
