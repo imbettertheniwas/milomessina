@@ -1,4 +1,4 @@
-import {MONEY_START} from './village-money-rain.js?v=104';
+import {MONEY_START} from './village-money-rain.js?v=105';
 import {INTRO_PREWARM_TIMES,aimIntroCamera} from './village-intro.js?v=70';
 
 // Compile and upload everything the intro flight will draw while the loading

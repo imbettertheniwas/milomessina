@@ -14,7 +14,7 @@ Phi Kappa Psi's current toolkit says a brand refresh is underway; the colors abo
 
 ## FOMO redesign — September 15, 2026
 
-The current house banners use a shared near-black scorecard, the original eyes mark and large Greek letters. Each fraternity’s own colors fill the identity panel, diagonal accent and progress bar. Member counts stay visible alongside the existing $500 paid status after qualification. A progress bar measures the 80% target; roster percentages are omitted. The gallery includes a clearly labeled paid-state preview.
+The current house banners use a shared near-black scorecard, the original eyes mark and large Greek letters. Each fraternity’s own colors fill the identity panel and diagonal accent. Completed houses display a large FOMO-purple $500 PAID headline with member counts underneath. Other houses keep their member counts as the headline. Progress bars and roster percentages are omitted. The gallery includes a clearly labeled paid-state preview.
 
 ## Implementation and review
 

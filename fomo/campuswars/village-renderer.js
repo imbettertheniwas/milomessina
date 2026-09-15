@@ -1,9 +1,9 @@
 import {villageQuality} from './village-quality.js?v=97';
-import {createVillage,buildVillageSteps} from './village-world.js?v=104';
-import {houseStandings} from './village-competition.js?v=104';
-import {rankedHouseSizes} from './village-house-sizing.js?v=104';
+import {createVillage,buildVillageSteps} from './village-world.js?v=105';
+import {houseStandings} from './village-competition.js?v=105';
+import {rankedHouseSizes} from './village-house-sizing.js?v=105';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=104';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=105';
 import {unoccludedHouses} from './village-occlusion.js?v=87';
 
 export const STREAMING_THRESHOLD=80;

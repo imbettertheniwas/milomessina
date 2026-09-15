@@ -1,5 +1,5 @@
 import {conversation,personalClock} from './village-human-behavior.js?v=80';
-import {rankedHouseSizes} from './village-house-sizing.js?v=104';
+import {rankedHouseSizes} from './village-house-sizing.js?v=105';
 import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
 import {gaitPhase,smooth} from './village-human-motion.js?v=80';
 import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=80';

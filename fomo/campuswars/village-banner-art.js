@@ -17,7 +17,6 @@ export function paintChapterBanner(ctx,chapter,w,h){
   const b=bannerIdentity(chapter),sans='Aeonik, Arial, sans-serif';
   const white='#FFFFFF',muted='#BFC1D8',black='#12111A';
   const target=Math.ceil(chapter.active*.8),reached=chapterGoalReached(chapter);
-  const progress=target>0?Math.max(0,Math.min(1,chapter.joined/target)):0;
   ctx.save();ctx.clearRect(0,0,w,h);ctx.textBaseline='middle';
   const rect=(x,y,sw,sh,color)=>{ctx.fillStyle=color;ctx.fillRect(x*w,y*h,sw*w,sh*h);};
   const text=(value,x,y,size,color,width,align='left',weight=700)=>{
@@ -47,14 +46,18 @@ export function paintChapterBanner(ctx,chapter,w,h){
   text((chapter.shortSchool||chapter.school||'').toUpperCase(),.21,.851,.049,white,.32,'center',500);
 
   text('GREEK WARS',.45,.135,.068,muted,.24);
-  const status=reached?'$500 PAID':'ROAD TO $500';
-  rect(.744,.075,.211,.12,reached?'#CAFF83':'#29273D');
-  text(status,.8495,.138,.060,reached?black:'#DAD9FF',.19,'center');
-  text(`${chapter.joined} / ${target}`,.45,.425,.28,white,.50);
-  text('MEMBERS ONBOARDED',.453,.614,.059,muted,.49);
-  rect(.45,.73,.505,.028,'#343245');
-  if(progress>0)rect(.45,.73,.505*progress,.028,reached?'#CAFF83':b.secondary);
-  text(reached?'80% GOAL REACHED':'80% MEMBER TARGET',.45,.862,.054,reached?'#CAFF83':muted,.32);
+  if(reached){
+    text('GOAL REACHED',.955,.135,.055,muted,.23,'right');
+    text('$500 PAID',.45,.405,.255,'#626CF3',.505);
+    text(`${chapter.joined} / ${target}`,.45,.68,.165,white,.50);
+    text('MEMBERS ONBOARDED',.453,.842,.059,muted,.49);
+  }else{
+    rect(.744,.075,.211,.12,'#29273D');
+    text('ROAD TO $500',.8495,.138,.060,'#DAD9FF',.19,'center');
+    text(`${chapter.joined} / ${target}`,.45,.455,.32,white,.50);
+    text('MEMBERS ONBOARDED',.453,.685,.059,muted,.49);
+    text('80% MEMBER TARGET',.45,.862,.054,muted,.32);
+  }
   // Quiet stitching keeps the cloth tangible without muddying the typography.
   ctx.strokeStyle='#FFFFFF38';ctx.lineWidth=Math.max(.5,h*.002);ctx.setLineDash([h*.01,h*.008]);
   ctx.strokeRect(w*.009,h*.027,w*.982,h*.946);ctx.setLineDash([]);

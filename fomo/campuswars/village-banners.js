@@ -1,6 +1,6 @@
 import {villageQuality} from './village-quality.js?v=97';
-import {bannerIdentity,paintChapterBanner} from './village-banner-art.js?v=104';
-export {bannerIdentity} from './village-banner-art.js?v=104';
+import {bannerIdentity,paintChapterBanner} from './village-banner-art.js?v=105';
+export {bannerIdentity} from './village-banner-art.js?v=105';
 // Chapter-specific artwork on shared sewn cloth and mounting hardware.
 const hardware=new WeakMap();
 export function createChapterBanner(T,chapter,width,options={}){
