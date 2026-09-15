@@ -24,9 +24,9 @@ test('scroll cycles all ten chapters seamlessly, freezes at the same time, and e
   assert.equal(competition.topChapters.length,10);
   assert.deepEqual(competition.topChapters.map(c=>c.id),chapters.slice(0,10).map(c=>c.id));
   const rowAtTop=()=>{map.updateMatrix();return Math.floor(map.transformUv(new T.Vector2(.5,.999999)).y*10);};
-  for(let row=0;row<10;row++){competition.animate(row*4);assert.equal(rowAtTop(),row);}
+  for(let row=0;row<10;row++){competition.animate(row*3.2);assert.equal(rowAtTop(),row);}
   competition.animate(0);const start=map.offset.y;
-  competition.animate(40);assert.equal(map.offset.y,start);
+  competition.animate(32);assert.equal(map.offset.y,start);
   competition.animate(13);const frozen=map.offset.y,version=map.version;
   competition.animate(13);assert.equal(map.offset.y,frozen);assert.equal(map.version,version,'scrolling must not reupload the canvas');
   competition.animate(13,true);assert.equal(map.repeat.y,1);assert.equal(map.offset.y,0);

@@ -1,7 +1,7 @@
 import {chapterGoalReached,GOAL_RAIN_DURATION} from './village-rewards.js?v=55';
 import {INTRO_PACE} from './village-intro.js?v=70';
 import {createCloudTexture,createBanknoteTexture} from './village-money-art.js?v=42';
-import {houseStandings} from './village-competition.js?v=109';
+import {houseStandings} from './village-competition.js?v=110';
 
 export const MONEY_START=7.3*INTRO_PACE;
 export const MONEY_END=12*INTRO_PACE;

@@ -1,4 +1,4 @@
-import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=109';
+import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=110';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){
@@ -59,7 +59,7 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors){
     if(!rowMap)return;
     const visibleRows=reducedMotion?topChapters.length:Math.min(5,topChapters.length);
     rowMap.repeat.y=visibleRows/topChapters.length;
-    rowMap.offset.y=1-rowMap.repeat.y-(reducedMotion||topChapters.length<2?0:(time/4/topChapters.length)%1);
+    rowMap.offset.y=1-rowMap.repeat.y-(reducedMotion||topChapters.length<2?0:(time/3.2/topChapters.length)%1);
   }
   animate(0);
   const backMap=canvasTexture(T,2048,1376,paintLeaderboardGraffiti);

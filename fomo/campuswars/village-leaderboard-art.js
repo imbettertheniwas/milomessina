@@ -33,7 +33,7 @@ export function paintLeaderboardRows(ctx,w,h,rows){
   });
 }
 
-// Spray-painted original FOMO eyes: offset paint, overspray and long drips.
+// Spray-painted original FOMO eyes: purple overspray and long white drips.
 export function paintLeaderboardGraffiti(ctx,w,h){
   ctx.fillStyle='#141320';ctx.fillRect(0,0,w,h);
   let seed=47;
@@ -48,7 +48,7 @@ export function paintLeaderboardGraffiti(ctx,w,h){
   const paths=FOMO_MARK_PATHS.map(path=>new Path2D(path));
   ctx.lineJoin='round';ctx.strokeStyle='#626CF3';ctx.lineWidth=8;ctx.shadowColor='#626CF3';ctx.shadowBlur=35;
   for(const path of paths)ctx.stroke(path);
-  ctx.shadowBlur=0;ctx.save();ctx.translate(1.2,1.6);ctx.fillStyle='#C4F568';for(const path of paths)ctx.fill(path);ctx.restore();
+  ctx.shadowBlur=0;
   ctx.fillStyle='#F5F1E7';for(const path of paths)ctx.fill(path);
   ctx.lineCap='round';
   for(const [x,y,len,width] of [[22,73,14,1.1],[30,74,21,.65],[39,71,10,.8],[59,74,15,1.2],[67,73,23,.7],[78,69,12,.9]]){
