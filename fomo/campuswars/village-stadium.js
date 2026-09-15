@@ -56,7 +56,7 @@ export function createStadium(T,extension=0){
       c.fillStyle=end<0?'#4048a8':'#111111';c.fillRect(0,z(end<0?-30:25),W,H/12);
       c.save();c.translate(W/2,z(end*27.5));
       if(end>0){c.rotate(Math.PI);drawFomoEyes(c,0,0,H/12*.76,(W/26.667)/(H/60));}
-      else{c.fillStyle='#efe9d6';c.font='900 144px Arial';c.textAlign='center';c.textBaseline='middle';c.scale(1.55,1);c.fillText('FOMO',0,0,W*.92/1.55);}
+      else{c.fillStyle='#efe9d6';c.font='900 144px Arial';c.textAlign='center';c.textBaseline='middle';c.scale(1.55,1);c.fillText('fomo',0,0,W*.92/1.55);}
       c.restore();
     }
     c.strokeStyle='#eeeede';c.lineWidth=3;c.strokeRect(2,2,W-4,H-4);

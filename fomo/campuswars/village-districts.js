@@ -4,7 +4,7 @@ import {createCampusKit} from './village-campus-kit.js?v=101';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
 import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=99';
 import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=100';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=102';
 import {campusDistrictExists} from './village-campus-bounds.js?v=1';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
