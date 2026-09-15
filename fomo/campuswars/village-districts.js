@@ -1,6 +1,7 @@
 import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=99';
 import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=80';
-import {createCampusKit} from './village-campus-kit.js?v=87';
+import {createCampusKit} from './village-campus-kit.js?v=101';
+import {buildSkylineBuilding} from './village-skyline.js?v=101';
 import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=99';
 import {dressNeighborhood} from './village-places.js?v=80';
 import {createStadium,STADIUM_SITE} from './village-stadium.js?v=100';
@@ -107,9 +108,7 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     for(let i=0;i<65;i++){
       const a=hash(i,'sky-angle')*Math.PI*2,r=225+hash(i,'sky-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r,w=7+hash(i,'sky-width')*17,h=6+hash(i,'sky-height')*19;
       if(Math.abs(x)<STADIUM_SITE.width/2+w&&Math.abs(z-STADIUM_SITE.z)<STADIUM_SITE.depth/2+18)continue;
-      box(p,x,h/2,z,w,h,8+hash(i,'sky-depth')*9,pick([0x8d9c9b,0x899292,0x9eaaa3,0x92988f],i,'sky-color'));
-      box(p,x,h+.3,z,w+.5,.5,10,0x9daba7);
-      for(let row=1;row<4;row++)for(const side of [-1,1])box(p,x,h*row/4,z+side*(4+hash(i,'sky-depth')*4.5+.03),w*.8,.55,.05,0x768a8b);
+      buildSkylineBuilding(T,kit,p,{x,z,width:w,depth:8+hash(i,'sky-depth')*9,height:h,seed:i});
     }
     for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
     // Water tower, bell tower and stadium floodlights break the dormitory skyline.
