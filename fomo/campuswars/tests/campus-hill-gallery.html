@@ -5,7 +5,7 @@
 import * as T from '../vendor/three.module.min.js';
 import {createDistricts} from '../village-districts.js?v=99';
 import {createVillage} from '../village-world.js?v=97';
-import {createVillagePopulation} from '../village-population.js?v=2';
+import {createVillagePopulation} from '../village-population.js?v=3';
 import {startChapterFeed} from '../chapter-feed.js?v=120';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);scene.fog=new T.FogExp2(0x98a7ba,.0022);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,1,650);
@@ -13,7 +13,7 @@ const ambient=new T.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);c
 const chapters=await fetch('../chapters.json').then(r=>r.json());const village=createVillage(T,chapters.chapters);scene.add(village.world);const districts=createDistricts(T,village.extension,village.streetTotal);scene.add(districts.root);
 const population=createVillagePopulation(T,chapters.chapters,{live:false,updatedAt:chapters.updatedAt});scene.add(population.root);
 startChapterFeed({initialSnapshot:chapters,onUpdate:s=>population.setChapters(s.chapters),onStatus:s=>population.setStatus(s)});
-document.getElementById('population').onclick=()=>view(-5,11,-57,-12,9,-81);
+document.getElementById('population').onclick=()=>view(-49,12,-60,-44,9,-83);
 function view(x,y,z,tx,ty,tz){camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);camera.updateMatrixWorld();districts.update(tx,tz);renderer.shadowMap.needsUpdate=true;}
 document.getElementById('quad').onclick=()=>view(68,54,-35,0,7,-101);document.getElementById('street').onclick=()=>view(0,4,-43,0,13,-111);document.getElementById('overhead').onclick=()=>view(0,113,-44,0,0,-102);let night=false,paused=false;
 document.getElementById('night').onclick=()=>{night=!night;scene.background.set(night?0x25233f:0x98a7ba);scene.fog.color.copy(scene.background);ambient.intensity=night?.83:1.55;sun.intensity=night?.42:2.6;districts.setNight(night);village.nightLife.setNight(night);renderer.shadowMap.needsUpdate=true;};document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume students':'Pause students';};

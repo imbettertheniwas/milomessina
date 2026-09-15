@@ -1,5 +1,5 @@
 import {backyardUnlocked} from './village-backyards.js?v=112';
-import {createVillagePopulation} from './village-population.js?v=2';
+import {createVillagePopulation} from './village-population.js?v=3';
 import {createLiveArrivals} from './village-arrivals.js?v=120';
 import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
