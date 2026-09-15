@@ -15,9 +15,12 @@ export function createCampusKit(T){
     if(typeof document==='undefined')return null;
     const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');
     ctx.fillStyle=kind==='brick'?'#b7a696':'#d8d4c9';ctx.fillRect(0,0,256,256);
-    if(kind==='brick')for(let y=0;y<16;y++)for(let x=-1;x<5;x++){const value=173+(x*17+y*13+256)%40;ctx.fillStyle=`rgb(${value},${value-9},${value-15})`;ctx.fillRect(x*64+(y%2)*32+1,y*16+1,62,14);}
+    if(kind==='facadeBrick'){
+      ctx.fillStyle='#d4cbbb';ctx.fillRect(0,0,256,256);
+      for(let y=0;y<16;y++)for(let x=-1;x<5;x++){const value=218+Math.floor(hash(x,y,'masonry')*35);ctx.fillStyle=`rgb(${value},${value-2},${value-5})`;ctx.fillRect(x*64+(y%2)*32+1,y*16+1,62,14);}
+    }else if(kind==='brick')for(let y=0;y<16;y++)for(let x=-1;x<5;x++){const value=173+(x*17+y*13+256)%40;ctx.fillStyle=`rgb(${value},${value-9},${value-15})`;ctx.fillRect(x*64+(y%2)*32+1,y*16+1,62,14);}
     else for(let i=0;i<1500;i++){ctx.fillStyle=i%2?'#bdbdb322':'#ffffff22';ctx.fillRect((i*71)%256,(i*113)%256,1+(i%3),1);}
-    const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;map.repeat.set(kind==='brick'?24:3,kind==='brick'?8:3);map.anisotropy=8;maps.set(kind,map);return map;
+    const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;map.repeat.set(kind==='brick'?24:kind==='facadeBrick'?6:3,kind==='brick'?8:3);map.anisotropy=8;maps.set(kind,map);return map;
   }
   function material(color,kind=''){const key=color+kind;if(!materials.has(key)){const glow=kind==='shopLight'||kind==='homeLight'||kind==='lampLight',map=kind&&!glow?texture(kind):null;const m=new T.MeshLambertMaterial({color,...(map?{map}:{}),...(glow?{emissive:color,emissiveIntensity:.04}:{})});if(glow)m.userData.placeLight=kind;materials.set(key,m);}return materials.get(key);}
   function instances(parent,geometry,count,radius=66){
@@ -32,10 +35,10 @@ export function createCampusKit(T){
     const c=document.createElement('canvas');c.width=1024;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#e4ddc9';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#323c46';ctx.font='600 57px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(words,512,67,955);
     const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;const m=mesh(p,new T.PlaneGeometry(w,h),x,y,z,1,1,1,new T.MeshLambertMaterial({map}));m.userData.ownedTexture=true;return m;
   }
-  function roof(p,w,d,y,height=3){
+  function roof(p,w,d,y,height=3,color=0x414b54){
     const key=`roof:${w}:${d}:${height}`;
     if(!geometries[key]){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([-w/2,0,-d/2,w/2,0,-d/2,w/2,0,d/2,-w/2,0,d/2,-w*.28,height,0,w*.28,height,0],3));g.setIndex([0,1,5,0,5,4,1,2,5,2,3,4,2,4,5,3,0,4]);g.computeVertexNormals();geometries[key]=g;}
-    const mat=material(0x414b54);mat.side=T.DoubleSide;return mesh(p,geometries[key],0,y,0,1,1,1,mat);
+    const mat=material(color);mat.side=T.DoubleSide;return mesh(p,geometries[key],0,y,0,1,1,1,mat);
   }
   function tree(p,x,z,seed=0,size=1){
     const species=Math.floor(hash(seed,x,z,'species')*3),scale=size*(.8+hash(seed,x,z,'scale')*.4),h=(4.6+hash(seed,x,z,'height')*2.2)*scale,lean=(hash(seed,x,z,'lean')-.5)*.6;
@@ -70,7 +73,8 @@ export function createCampusKit(T){
     if(s.type==='storefront'||s.type==='cottage'){buildPlace(T,{box,cylinder,bar,mesh,sign,roof,bench,table,bins,material},g,s);return g;}
     const w=s.width,d=s.depth,h=s.height,modern=['science','union','gym','arts'].includes(s.type);
     const base=pick([0xb67f62,0xae7057,0xc29c7c,0x916d5c],s.seed,'brick'),tint=.94+Math.floor(hash(s.x,s.z,'tint')*16)/100;
-    const brick=new T.Color(base).multiplyScalar(tint).getHex(),stone=new T.Color(0xc7c4b4).multiplyScalar(tint).getHex();
+    const campusFinishes={science:[0x83a6ad,0x75969f],union:[0xd5ae73,0xc99569],gym:[0x8caa8e,0xa3b18c],arts:[0xcb8b70,0xbc7969]};
+    const brick=new T.Color(base).multiplyScalar(tint).getHex(),stone=new T.Color(pick(campusFinishes[s.type]||[0xc7c4b4],s.seed,'campus-finish')).multiplyScalar(tint).getHex();
     box(g,0,.3,0,w+.65,.55,d+.65,0xbdb7a7,'stone');
     box(g,0,h/2+.55,0,w,h,d,modern?stone:brick,modern?'stone':'brick');
     facadeWindows(g,w,d,h,modern,s.seed);
@@ -192,7 +196,7 @@ export function createCampusKit(T){
     return floor;
   }
   function disposeChunk(p){p.traverse(m=>{if(m.isInstancedMesh)m.dispose();if(m.userData.ownedMap)m.material.map.dispose();if(m.userData.ownedMaterial)m.material.dispose();if(m.userData.ownedTexture){m.material.map.dispose();m.material.dispose();m.geometry.dispose();}else if(m.userData.ownedGeometry){m.geometry.dispose();if(![...materials.values()].includes(m.material))m.material.dispose();}});}
-  return {geometries,get vehicles(){return vehicles();},material,instances,mesh,box,cylinder,bar,tree,bench,lamp,table,path,sign,building,disposeChunk,hedge,bins,hydrant,parkedCar,streetFurniture,claimFloor,batch:(p,exclude=[])=>batchCampusGeometry(T,p,exclude)};
+  return {geometries,get vehicles(){return vehicles();},material,instances,mesh,box,cylinder,bar,roof,tree,bench,lamp,table,path,sign,building,disposeChunk,hedge,bins,hydrant,parkedCar,streetFurniture,claimFloor,batch:(p,exclude=[])=>batchCampusGeometry(T,p,exclude)};
 }
 
 export function batchCampusGeometry(T,parent,exclude=[]){for(const step of batchCampusGeometrySteps(T,parent,exclude)){} }

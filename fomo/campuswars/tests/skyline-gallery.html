@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Outer campus architecture</title>
+<style>body{margin:0;background:#b9c8cf;font:14px system-ui;color:#20332e}nav{position:fixed;top:18px;left:18px;right:18px;display:flex;gap:8px;flex-wrap:wrap}button,a,output{background:#fff9ec;border:1px solid #938b7955;border-radius:6px;padding:10px 14px;color:inherit;text-decoration:none}button{cursor:pointer}output{position:fixed;bottom:18px;left:18px}</style>
+<nav><button id="all">All finishes</button><button id="previous">← Previous building</button><button id="next">Next building →</button><button id="rear">Front / rear</button><a href="../">Greek Village ↗</a></nav><output id="status">Loading architecture…</output>
+<script type="module">
+import * as T from '../vendor/three.module.min.js';
+import {createCampusKit} from '../village-campus-kit.js?v=98';
+import {buildSkylineBuilding} from '../village-skyline.js?v=98';
+import {hash} from '../village-district-layout.js?v=80';
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;document.body.append(renderer.domElement);
+const scene=new T.Scene();scene.background=new T.Color(0xb9c8cf);const camera=new T.PerspectiveCamera(42,innerWidth/innerHeight,.5,1200);
+scene.add(new T.HemisphereLight(0xd4e2ed,0x857768,1.55));const sun=new T.DirectionalLight(0xffe5c6,2.6);sun.position.set(-45,95,65);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-230,right:230,top:230,bottom:-230,near:1,far:500});sun.shadow.normalBias=.05;scene.add(sun);const fill=new T.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
+const kit=createCampusKit(T),root=new T.Group();scene.add(root);const buildings=[];
+for(let i=0;i<65;i++){
+ const s={x:(i%9-4)*32,z:(Math.floor(i/9)-3)*30,width:7+hash(i,'sky-width')*17,depth:8+hash(i,'sky-depth')*9,height:6+hash(i,'sky-height')*19,seed:i};
+ const g=buildSkylineBuilding(T,kit,root,s);buildings.push(g);kit.box(root,s.x,.01,s.z,29,.05,27,0xd8c9ac);
+}
+kit.box(root,0,-.15,0,310,.2,270,0x7e9167);kit.batch(root);
+let selected=-1,rear=false;
+function draw(){renderer.render(scene,camera);const g=buildings[selected];document.getElementById('status').textContent=(g?`Building ${selected+1} / 65 · ${g.userData.skylineFinish.style}`:'65 individual buildings · 6 architectural styles')+` · ${renderer.info.render.calls} draws`;}
+function view(){if(selected<0){camera.position.set(190,245,330);camera.lookAt(0,0,0);}else{const g=buildings[selected],side=rear?-1:1;camera.position.set(g.position.x+side*31,26,g.position.z+side*42);camera.lookAt(g.position.x,10,g.position.z);}draw();}
+document.getElementById('all').onclick=()=>{selected=-1;view();};document.getElementById('next').onclick=()=>{selected=(selected+1)%65;view();};document.getElementById('previous').onclick=()=>{selected=(selected+64)%65;view();};document.getElementById('rear').onclick=()=>{rear=!rear;if(selected<0)selected=0;view();};
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);draw();});view();
+</script></html>
