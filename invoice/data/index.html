@@ -23,6 +23,7 @@
   --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#9085e9; --s7:#4f9e4f;
   --shadow:0 24px 60px -30px rgba(0,0,0,.9);
   --land:#1C1B29; --land-hi:#242334; --coast:rgba(203,208,235,.17);
+  --gold:#F2C14E; --gold-soft:rgba(242,193,78,.16); --none:#5A5E6C;
   --display:'Aeonik',system-ui,-apple-system,sans-serif;
   --body:'Aeonik',system-ui,-apple-system,sans-serif;
   --mono:'DM Mono',ui-monospace,SFMono-Regular,monospace;
@@ -58,24 +59,54 @@ section{margin-top:clamp(20px,3.4vw,30px)}
 .panel-h .note{font-size:.79rem;color:var(--muted-2);margin-left:auto}
 .head p{color:var(--muted);margin:13px 0 0;max-width:62ch}
 .crumb{font-size:.85rem;color:var(--muted-2);margin-bottom:10px}
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
   border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden}
-.stat{background:var(--surface);padding:15px 17px 17px}
-.stat .v{font-family:var(--mono);font-size:1.45rem;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin-top:7px}
-.stat .s{font-size:.73rem;color:var(--muted-2);margin-top:5px;min-height:1.1em}
+.stat{background:var(--surface);padding:13px 15px 14px}
+.stat .v{font-family:var(--mono);font-size:1.3rem;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin-top:6px}
+.stat .s{font-size:.71rem;color:var(--muted-2);margin-top:4px;min-height:1.05em;line-height:1.35}
 .stat.good .v{color:var(--good)}
+.stat.gold .v{color:var(--gold)}
 .stat.warn .v{color:var(--owed)}
 @media(max-width:980px){.stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+/* progress distribution ------------------------------------------ */
+.dist{display:flex;flex-direction:column;gap:9px;padding:15px 18px 18px}
+.dist .d{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:.83rem}
+.dist .sw{width:9px;height:9px;border-radius:50%;flex:none}
+.dist .tr{height:8px;border-radius:99px;background:var(--raise);overflow:hidden}
+.dist .tr i{display:block;height:100%;border-radius:99px}
+.dist .n{font-family:var(--mono);font-size:.8rem;color:var(--muted);min-width:2.4em;text-align:right}
+/* leaderboard ------------------------------------------------------ */
+.lead{display:flex;flex-direction:column;gap:10px;padding:15px 18px 18px}
+.lead .l{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
+.lead .nm{font-size:.86rem}
+.lead .nm small{color:var(--muted-2);font-size:.75rem;margin-left:6px}
+.lead .v{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.lead .v b{color:var(--gold);font-weight:500}
+.lead .tr{grid-column:1/-1;height:7px;border-radius:99px;background:var(--raise);overflow:hidden;position:relative}
+.lead .tr i{display:block;height:100%;border-radius:99px;background:var(--violet)}
+.lead .tr i.g{background:var(--gold)}
+.lead .tr u{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--line-2);left:100%}
+/* a progress cell inside the table */
+td .mini-tr{height:5px;border-radius:99px;background:var(--raise);overflow:hidden;margin-top:5px;min-width:70px}
+td .mini-tr i{display:block;height:100%;border-radius:99px;background:var(--violet)}
+td .mini-tr i.g{background:var(--gold)}
 .mapwrap{padding:10px 8px 4px;position:relative}
 svg.usmap{display:block;width:100%;height:auto}
 svg.usmap path.st{fill:var(--land);stroke:var(--coast);stroke-width:.7;vector-effect:non-scaling-stroke}
 svg.usmap path.st.on{fill:var(--land-hi)}
-svg.usmap circle.dot{fill:var(--violet);fill-opacity:.85;stroke:#0A0913;stroke-width:1.4;cursor:pointer}
-svg.usmap circle.dot.hot{fill:var(--good)}
-svg.usmap circle.dot:hover{fill:var(--violet-hi);fill-opacity:1}
-svg.usmap circle.halo{fill:var(--violet);fill-opacity:.13;pointer-events:none}
-svg.usmap circle.halo.hot{fill:var(--good)}
+/* Three states, not two. A house that has hit the 80% target is a
+   different thing from one with a couple of joins, and the map said the
+   same green for both. */
+svg.usmap circle.dot{fill:var(--none);fill-opacity:.8;stroke:#0A0913;stroke-width:1.4;cursor:pointer}
+svg.usmap circle.dot.prog{fill:var(--violet);fill-opacity:.9}
+svg.usmap circle.dot.goal{fill:var(--gold);fill-opacity:1}
+svg.usmap circle.dot:hover{fill-opacity:1;stroke:var(--text)}
+svg.usmap circle.halo{fill:var(--none);fill-opacity:.1;pointer-events:none}
+svg.usmap circle.halo.prog{fill:var(--violet);fill-opacity:.13}
+svg.usmap circle.halo.goal{fill:var(--gold);fill-opacity:.2}
+svg.usmap circle.ring{fill:none;stroke:var(--gold);stroke-width:1.2;stroke-opacity:.55;pointer-events:none}
 
 /* the map, alive ------------------------------------------------ */
 svg.usmap{touch-action:none;cursor:grab;user-select:none}
@@ -95,7 +126,7 @@ svg.usmap circle.halo.sel{fill-opacity:.3}
 @keyframes pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
 svg.usmap .marks>g{transform-box:fill-box;transform-origin:center;animation:pop .42s cubic-bezier(.2,.9,.3,1.3) backwards}
 @keyframes pulse{0%{r:var(--r0);opacity:.30}70%{r:var(--r1);opacity:0}100%{r:var(--r1);opacity:0}}
-svg.usmap circle.ping{fill:none;stroke:var(--good);stroke-width:1.5;animation:pulse 2.8s ease-out infinite;pointer-events:none}
+svg.usmap circle.ping{fill:none;stroke:var(--gold);stroke-width:1.5;animation:pulse 2.8s ease-out infinite;pointer-events:none}
 @media(prefers-reduced-motion:reduce){
   svg.usmap .marks>g{animation:none}
   svg.usmap circle.ping{animation:none;opacity:0}
@@ -119,8 +150,9 @@ svg.usmap circle.ping{fill:none;stroke:var(--good);stroke-width:1.5;animation:pu
 .maplegend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:4px 14px 15px;
   font-size:.74rem;color:var(--muted-2)}
 .maplegend .k{display:inline-flex;align-items:center;gap:7px}
-.maplegend .k i{width:10px;height:10px;border-radius:50%;background:var(--violet);flex:none}
-.maplegend .k i.hot{background:var(--good)}
+.maplegend .k i{width:10px;height:10px;border-radius:50%;background:var(--none);flex:none}
+.maplegend .k i.prog{background:var(--violet)}
+.maplegend .k i.goal{background:var(--gold);box-shadow:0 0 10px var(--gold-soft)}
 .maplegend .k i.sz{width:16px;height:16px;background:var(--violet);opacity:.55}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,20px)}
 @media(max-width:860px){.two{grid-template-columns:1fr}}
@@ -153,6 +185,7 @@ td.num2{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:rig
   padding:3px 7px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted)}
 .pill.dup{border-color:rgba(255,122,77,.45);color:var(--owed);background:var(--owed-soft)}
 .pill.hot{border-color:rgba(25,217,124,.4);color:var(--good);background:var(--good-soft)}
+.pill.goal{border-color:rgba(242,193,78,.5);color:var(--gold);background:var(--gold-soft)}
 .empty{padding:30px 18px;text-align:center;color:var(--muted-2);font-size:.88rem}
 #tip{position:fixed;z-index:60;pointer-events:none;opacity:0;transition:opacity .12s;
   background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;padding:9px 12px;
@@ -236,11 +269,23 @@ footer{margin-top:44px;padding:22px 0 0;border-top:1px solid var(--line);display
         <span class="maphint">Tap a dot to filter · drag to pan · scroll to zoom</span>
       </div>
       <div class="maplegend">
-        <span class="k"><i></i> a school with chapters onboarded</span>
-        <span class="k"><i class="hot"></i> somebody has actually joined</span>
+        <span class="k"><i></i> onboarded, nobody joined</span>
+        <span class="k"><i class="prog"></i> joining, under the 80% target</span>
+        <span class="k"><i class="goal"></i> hit the target</span>
         <span class="k"><i class="sz"></i> bigger dot = more chapters there</span>
         <span class="k" id="unmapped"></span>
       </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <div class="panel-h"><h2>how far along</h2><span class="note" id="dist-note"></span></div>
+      <div class="dist" id="dist"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>closest to target</h2><span class="note" id="lead-note"></span></div>
+      <div class="lead" id="lead"></div>
     </div>
   </section>
 
@@ -267,7 +312,7 @@ footer{margin-top:44px;padding:22px 0 0;border-top:1px solid var(--line);display
       <div class="panel-h"><h2>every chapter</h2><span class="note" id="tbl-note"></span></div>
       <div class="tbl-scroll">
         <table>
-          <thead><tr><th>chapter</th><th>school</th><th>state</th><th style="text-align:right">size</th><th style="text-align:right">joined</th><th style="text-align:right">registered</th><th></th></tr></thead>
+          <thead><tr><th>chapter</th><th>school</th><th>st</th><th style="text-align:right">roster</th><th style="text-align:right">target</th><th style="text-align:right">joined</th><th>progress</th><th style="text-align:right">age</th><th></th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -333,6 +378,15 @@ var SCHOOLS = {
   "Virginia Tech":                       [37.2284,  -80.4234, "VA"]
 };
 
+/* What "hit goal" means, and it is not a number invented here.
+   server/campuswars-source.mjs reads the admin's progress cell and notes
+   that its denominator is the 80% target rather than the full roster,
+   and the village scoreboard draws the same "80% TARGET" line. So the
+   target is four fifths of a chapter's actives, and this page uses that
+   rather than a threshold of its own. */
+var TARGET = 0.8;
+function goalOf(size){ return Math.ceil(size * TARGET); }
+
 var REGION = {
   West:["CA","AZ","WA","OR","NV","UT","CO","NM","ID","MT","WY","AK","HI"],
   Midwest:["OH","MI","IN","IL","WI","MN","IA","MO","KS","NE","SD","ND"],
@@ -357,6 +411,11 @@ function hhmm12(d){
   var h = d.getHours(), m = d.getMinutes(), ap = h < 12 ? "am" : "pm";
   h = h % 12; if (!h) h = 12;
   return h + ":" + String(m).padStart(2,"0") + ap;
+}
+function daysSince(iso){
+  var t = Date.parse(String(iso||"").slice(0,10) + "T00:00:00");
+  if (!t) return null;
+  return Math.max(0, Math.round((Date.now() - t) / 86400000));
 }
 function niceDate(iso){
   var p = String(iso||"").slice(0,10).split("-"); if (p.length !== 3) return "—";
@@ -400,10 +459,25 @@ function unitsFrom(rows){
     /* One chapter, several submissions that disagree about its size.
        The largest is taken and the disagreement is shown rather than
        averaged into a number nobody typed. */
-    u.size    = Math.max.apply(null, u.rows.map(function(r){ return Number(r.active)||0; }));
+    var claims = u.rows.map(function(r){ return Number(r.active)||0; });
+    u.size    = Math.max.apply(null, claims);
+    u.sizeMin = Math.min.apply(null, claims);
+    /* Repeat submissions do not always agree about how big the house is,
+       and the target is four fifths of that number — so the disagreement
+       can decide whether a house counts as finished. The largest claim is
+       taken, because it is the one that makes the target hardest to hit
+       and success should not be an artefact of picking the kind number.
+       Where the claims differ the row says so rather than hiding it. */
+    u.disputed = u.sizeMin !== u.size;
     u.joined  = Math.max.apply(null, u.rows.map(function(r){ return Number(r.joined)||0; }));
     u.first   = u.rows.map(function(r){ return String(r.registered||""); }).sort()[0];
     u.dupes   = u.rows.length;
+    u.goal    = goalOf(u.size);
+    u.pct     = u.goal ? Math.round(u.joined / u.goal * 100) : 0;
+    u.atGoal  = u.goal > 0 && u.joined >= u.goal;
+    u.wouldHit = !u.atGoal && u.disputed && u.joined >= goalOf(u.sizeMin);
+    u.started = u.joined > 0;
+    u.age     = daysSince(u.first);
     var s = SCHOOLS[u.school];
     u.state   = s ? s[2] : "";
     u.placed  = !!s;
@@ -430,18 +504,29 @@ function render(){
   });
   var reach  = units.reduce(function(n,u){ return n + u.size; }, 0);
   var joined = units.reduce(function(n,u){ return n + u.joined; }, 0);
-  var live   = units.filter(function(u){ return u.joined > 0; }).length;
+  var goal   = units.reduce(function(n,u){ return n + u.goal; }, 0);
+  var live   = units.filter(function(u){ return u.started; }).length;
+  var atGoal = units.filter(function(u){ return u.atGoal; }).length;
+  var pcts   = units.map(function(u){ return u.pct; }).sort(function(a,b){ return a-b; });
+  var medPct = pcts.length ? pcts[Math.floor(pcts.length/2)] : 0;
+  var ages   = units.map(function(u){ return u.age; }).filter(function(v){ return v != null; });
+  var medAge = ages.length ? ages.slice().sort(function(a,b){return a-b;})[Math.floor(ages.length/2)] : null;
 
   /* ---- the six numbers ---- */
   var stats = [
     {l:"chapters", v:units.length,
-     s:dupRows ? raw.length + " rows, " + plural(dupRows,"a repeat","repeats") : raw.length + " rows"},
+     s:dupRows ? raw.length + " rows · " + plural(dupRows,"repeat","repeats") : raw.length + " rows"},
     {l:"schools",  v:Object.keys(schools).length, s:plural(Object.keys(states).length,"state","states")},
-    {l:"members reachable", v:reach.toLocaleString("en-US"), s:"across every house"},
-    {l:"joined fomo", v:joined.toLocaleString("en-US"), s:pct(joined,reach) + "% of the reach", cls:joined?"good":""},
-    {l:"houses activated", v:live + " / " + units.length,
+    {l:"roster reach", v:reach.toLocaleString("en-US"), s:"actives across every house"},
+    {l:"the target", v:goal.toLocaleString("en-US"), s:"80% of the roster"},
+    {l:"joined", v:joined.toLocaleString("en-US"),
+     s:pct(joined,goal) + "% of target · " + pct(joined,reach) + "% of roster", cls:joined?"good":""},
+    {l:"at target", v:atGoal + " / " + units.length,
+     s:atGoal ? plural(atGoal,"house has","houses have") + " hit 80%" : "none there yet",
+     cls:atGoal ? "gold" : "warn"},
+    {l:"started", v:live + " / " + units.length,
      s:(units.length - live) + " with nobody joined", cls:live > units.length/2 ? "good" : "warn"},
-    {l:"newest", v:niceDate(units.map(function(u){return u.first;}).sort().slice(-1)[0]||""), s:"last registration"}
+    {l:"median house", v:medPct + "%", s:"to target" + (medAge != null ? " · " + plural(medAge,"day","days") + " old" : "")}
   ];
   el("stats").innerHTML = stats.map(function(k){
     return '<div class="stat ' + (k.cls||"") + '"><div class="lbl">' + esc(k.l) + '</div>' +
@@ -451,8 +536,9 @@ function render(){
   /* ---- the map ---- */
   var bySchool = {};
   placed.forEach(function(u){
-    var b = bySchool[u.school] || (bySchool[u.school] = {school:u.school, units:[], size:0, joined:0});
-    b.units.push(u); b.size += u.size; b.joined += u.joined;
+    var b = bySchool[u.school] || (bySchool[u.school] = {school:u.school, units:[], size:0, joined:0, goal:0, atGoal:0});
+    b.units.push(u); b.size += u.size; b.joined += u.joined; b.goal += u.goal;
+    if (u.atGoal) b.atGoal++;
   });
   var onStates = {};
   Object.keys(bySchool).forEach(function(s){ onStates[SCHOOLS[s][2]] = true; });
@@ -470,18 +556,21 @@ function render(){
   var marks = keys.map(function(s, i){
     var b = bySchool[s], c = SCHOOLS[s], p = project(c[1], c[0]);
     var r = 5 + Math.min(9, (b.units.length - 1) * 3.2);
-    var hot = b.joined > 0;
+    /* Gold only for a school where a house has actually hit the target —
+       the pulse and the ring go with it and nothing else gets them, so
+       the four that made it are findable at a glance across the map. */
+    var cls = b.atGoal ? "goal" : (b.joined > 0 ? "prog" : "");
     var x = p[0].toFixed(1), y = p[1].toFixed(1);
-    /* the pulse is only on houses somebody has actually joined — it is
-       the one thing on this map worth drawing the eye to */
-    var ping = hot ? '<circle class="ping" cx="' + x + '" cy="' + y + '" r="' + r +
-      '" style="--r0:' + r + 'px;--r1:' + (r + 16) + 'px"></circle>' : "";
+    var ping = b.atGoal ? '<circle class="ping" cx="' + x + '" cy="' + y + '" r="' + r +
+      '" style="--r0:' + r + 'px;--r1:' + (r + 18) + 'px"></circle>' : "";
+    var ring = b.atGoal ? '<circle class="ring" cx="' + x + '" cy="' + y + '" r="' + (r + 4.5).toFixed(1) + '"></circle>' : "";
     return '<g style="animation-delay:' + (i * 34) + 'ms" data-school="' + esc(s) + '">' +
-      '<circle class="halo' + (hot?" hot":"") + '" cx="' + x + '" cy="' + y + '" r="' + (r+7).toFixed(1) + '"></circle>' +
-      ping +
-      '<circle class="dot' + (hot?" hot":"") + '" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) + '"' +
+      '<circle class="halo ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + (r+7).toFixed(1) + '"></circle>' +
+      ping + ring +
+      '<circle class="dot ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) + '"' +
       ' tabindex="0" role="button" data-school="' + esc(s) + '"' +
-      ' aria-label="' + esc(s) + ', ' + plural(b.units.length,"chapter","chapters") + '"></circle></g>';
+      ' aria-label="' + esc(s) + ', ' + plural(b.units.length,"chapter","chapters") +
+      (b.atGoal ? ", at target" : "") + '"></circle></g>';
   }).join("");
 
   el("mapwrap").innerHTML = '<svg class="usmap" id="usmap" viewBox="0 0 ' + MAP.width + ' ' + MAP.height +
@@ -489,8 +578,10 @@ function render(){
     '<g id="mapg"><g class="states">' + stPaths + '</g><g class="marks">' + marks + '</g></g></svg>';
   bindMap();
   applySelection();
-  el("map-note").textContent = plural(keys.length,"school","schools") + " placed · " +
-    plural(Object.keys(onStates).length,"state","states");
+  var goalSchools = keys.filter(function(k){ return bySchool[k].atGoal; }).length;
+  el("map-note").textContent = plural(keys.length,"school","schools") + " · " +
+    plural(Object.keys(onStates).length,"state","states") +
+    (goalSchools ? " · " + goalSchools + " at target" : "");
   el("unmapped").innerHTML = missing.length
     ? '<b style="color:var(--owed)">' + plural(missing.length,"house","houses") + " not on the map:</b>&nbsp;" +
       esc(missing.map(function(u){ return u.school; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(", ")) +
@@ -530,7 +621,42 @@ function render(){
       '<div class="track"><i style="width:' + (s.n/smax*100) + '%"></i></div></div>';
   }).join("");
 
-  renderFindings({units:units, dupRows:dupRows, reach:reach, joined:joined, live:live,
+  /* ---- how far along ---- */
+  var BUCKETS = [
+    {k:"not started", test:function(u){ return !u.started; },                 c:"var(--none)"},
+    {k:"under a quarter", test:function(u){ return u.started && u.pct < 25; }, c:"var(--s1)"},
+    {k:"a quarter to half", test:function(u){ return u.pct >= 25 && u.pct < 50; }, c:"var(--violet)"},
+    {k:"half to target", test:function(u){ return u.pct >= 50 && !u.atGoal; }, c:"var(--violet-hi)"},
+    {k:"at target", test:function(u){ return u.atGoal; },                     c:"var(--gold)"}
+  ];
+  var bmax = 1;
+  var buckets = BUCKETS.map(function(b){
+    var n = units.filter(b.test).length;
+    if (n > bmax) bmax = n;
+    return {k:b.k, c:b.c, n:n};
+  });
+  el("dist-note").textContent = pct(atGoal, units.length) + "% there";
+  el("dist").innerHTML = buckets.map(function(b){
+    return '<div class="d"><span class="sw" style="background:' + b.c + '"></span>' +
+      '<span>' + esc(b.k) + '</span><span class="n">' + b.n + '</span>' +
+      '<span class="sw" style="visibility:hidden"></span>' +
+      '<span class="tr"><i style="width:' + (b.n/bmax*100) + '%;background:' + b.c + '"></i></span>' +
+      '<span class="n"></span></div>';
+  }).join("");
+
+  /* ---- closest to target ---- */
+  var lead = units.slice().filter(function(u){ return u.started; })
+    .sort(function(a,b){ return b.pct - a.pct || b.joined - a.joined; }).slice(0, 9);
+  el("lead-note").textContent = lead.length ? plural(units.length - lead.length, "other", "others") + " not shown" : "nobody has joined yet";
+  el("lead").innerHTML = lead.length ? lead.map(function(u){
+    return '<div class="l"><div class="nm">' + esc(u.letters ? u.letters + " " : "") + esc(u.name) +
+      '<small>' + esc(u.shortSchool || u.school) + '</small></div>' +
+      '<div class="v">' + (u.atGoal ? "<b>" + u.pct + "%</b>" : u.pct + "%") +
+      ' <span style="color:var(--muted-2)">' + u.joined + "/" + u.goal + '</span></div>' +
+      '<div class="tr"><i class="' + (u.atGoal?"g":"") + '" style="width:' + Math.min(100,u.pct) + '%"></i><u></u></div></div>';
+  }).join("") : '<div class="empty" style="padding:14px 0">Nobody has joined at any house yet.</div>';
+
+  renderFindings({units:units, atGoal:atGoal, goal:goal, medPct:medPct, dupRows:dupRows, reach:reach, joined:joined, live:live,
                   frats:fl, regions:regions, topRegion:topRegion, missing:missing, states:states});
   renderTable();
 }
@@ -559,13 +685,13 @@ function renderFindings(d){
     f.push({ic:"1", t:"<b>Every single one is a " + esc(tk[0].toLowerCase()) + ".</b>",
       s:"Not one sorority or co-ed chapter has come through onboarding yet. That is the clearest gap in the roster."});
   } else {
-    f.push({ic:"1", t:"<b>" + esc(tk.map(function(k){ return types[k] + " " + k.toLowerCase(); }).join(", ")) + ".</b>",
+    f.push({ic:"2", t:"<b>" + esc(tk.map(function(k){ return types[k] + " " + k.toLowerCase(); }).join(", ")) + ".</b>",
       s:"Mixed roster."});
   }
 
   if (d.topRegion) {
     var second = Object.keys(d.regions).sort(function(a,b){ return d.regions[b]-d.regions[a]; })[1];
-    f.push({ic:"2", t:"<b>They cluster in the " + esc(d.topRegion) + " — " +
+    f.push({ic:"3", t:"<b>They cluster in the " + esc(d.topRegion) + " — " +
       pct(d.regions[d.topRegion], d.units.length) + "% of the houses.</b>",
       s:second ? "Next is the " + esc(second) + " at " + pct(d.regions[second], d.units.length) +
         "%. Whole regions are still empty, which is where the next ones are cheapest to find."
@@ -574,22 +700,67 @@ function renderFindings(d){
 
   var multi = d.frats.filter(function(x){ return x.n > 1; });
   if (multi.length) {
-    f.push({ic:"3", t:"<b>" + esc(multi[0].name) + " is the most repeated — " +
+    f.push({ic:"4", t:"<b>" + esc(multi[0].name) + " is the most repeated — " +
       plural(multi[0].n,"chapter","chapters") + " at " +
       plural(Object.keys(multi[0].schools).length,"school","schools") + ".</b>",
       s:plural(multi.length,"organisation has","organisations have") + " more than one house on board, which is the" +
         " cheapest kind of growth here: a national that already knows the product."});
   } else {
-    f.push({ic:"3", t:"<b>No organisation has two houses yet.</b>",
+    f.push({ic:"5", t:"<b>No organisation has two houses yet.</b>",
       s:"Every chapter came in on its own. A second house inside a national that already said yes is the easier ask."});
   }
 
   var dead = d.units.length - d.live;
-  f.push({warn:dead > d.units.length / 2, ic:"4",
+  f.push({warn:dead > d.units.length / 2, ic:"6",
     t:"<b>" + dead + " of " + d.units.length + " houses have nobody joined at all.</b>",
     s:"Onboarding a chapter and activating one are different events, and the gap between them is where this " +
-      "actually stands: " + d.joined.toLocaleString("en-US") + " members joined out of " +
-      d.reach.toLocaleString("en-US") + " reachable, " + pct(d.joined, d.reach) + "%."});
+      "actually stands: " + d.joined.toLocaleString("en-US") + " joined against a target of " +
+      d.goal.toLocaleString("en-US") + " — " + pct(d.joined, d.goal) + "% of the way there, " +
+      pct(d.joined, d.reach) + "% of the full roster."});
+
+  if (d.atGoal) {
+    var winners = d.units.filter(function(u){ return u.atGoal; })
+      .sort(function(a,b){ return b.pct - a.pct; });
+    f.push({ic:"\u2605",
+      t:"<b>" + plural(d.atGoal,"house has","houses have") + " hit the 80% target: " +
+        esc(winners.map(function(u){ return u.name + " at " + (u.shortSchool || u.school); }).join(", ")) + ".</b>",
+      s:"They are gold on the map. Median house sits at " + d.medPct + "% of its target, so these are not " +
+        "the middle of the pack — they are what a finished house looks like, and the only examples there are."});
+  } else {
+    f.push({warn:true, ic:"\u2605", t:"<b>No house has hit the 80% target yet.</b>",
+      s:"Median house is at " + d.medPct + "% of its target."});
+  }
+
+  var disputed = d.units.filter(function(u){ return u.disputed; });
+  if (disputed.length) {
+    var swing = disputed.filter(function(u){ return u.wouldHit; });
+    f.push({warn:true, ic:"!",
+      t:"<b>" + (disputed.length === 1
+          ? "One house's repeat rows disagree about how big it is"
+          : disputed.length + " houses' repeat rows disagree about how big they are") + ".</b>",
+      s:esc(disputed.map(function(u){
+          return (u.shortSchool||u.school) + " says " + u.sizeMin + " and " + u.size;
+        }).join("; ")) + ". The target is 80% of that number, so the disagreement moves it. " +
+        (swing.length
+          ? "It decides the answer for " + esc(swing.map(function(u){ return u.name + " at " + (u.shortSchool||u.school); }).join(" and ")) +
+            " — at the smaller roster " + (swing.length === 1 ? "it is" : "they are") +
+            " at target, at the larger " + (swing.length === 1 ? "it is not" : "they are not") +
+            ". The larger is used here, so the count above is the cautious one."
+          : "It does not change who is at target today.")});
+  }
+
+  /* the near-misses are the cheapest wins on the page */
+  var close = d.units.filter(function(u){ return !u.atGoal && u.pct >= 50; })
+    .sort(function(a,b){ return b.pct - a.pct; });
+  if (close.length) {
+    var need = close.reduce(function(n,u){ return n + (u.goal - u.joined); }, 0);
+    f.push({ic:"\u2192",
+      t:"<b>" + plural(close.length,"house is","houses are") + " over halfway and short of target.</b>",
+      s:esc(close.slice(0,3).map(function(u){
+          return u.name + " at " + (u.shortSchool||u.school) + " needs " + (u.goal - u.joined);
+        }).join("; ")) + ". " + need + " more sign-ups across " + plural(close.length,"house","houses") +
+        " would finish every one of them."});
+  }
 
   var byDate = d.units.slice().filter(function(u){ return u.first; })
     .sort(function(a,b){ return a.first < b.first ? -1 : 1; });
@@ -600,7 +771,7 @@ function renderFindings(d){
     var lJ = late.reduce(function(n,u){ return n+u.joined; },0), lS = late.reduce(function(n,u){ return n+u.size; },0);
     if (pct(eJ,eS) !== pct(lJ,lS)) {
       var better = pct(eJ,eS) > pct(lJ,lS);
-      f.push({ic:"5", t:"<b>The " + (better ? "earliest" : "newest") + " houses are the ones actually using it.</b>",
+      f.push({ic:"7", t:"<b>The " + (better ? "earliest" : "newest") + " houses are the ones actually using it.</b>",
         s:"The " + half + " registered first sit at " + pct(eJ,eS) + "% joined; the " + half +
           " registered most recently, " + pct(lJ,lS) + "%. " +
           (better ? "Either the early ones were hand-picked, or activation simply takes the weeks the new ones have not had yet."
@@ -609,9 +780,11 @@ function renderFindings(d){
   }
 
   var sizes = d.units.map(function(u){ return u.size; }).sort(function(a,b){ return a-b; });
+  /* renumber the icons so they still read 1..n after the goal findings
+     were spliced in above */
   if (sizes.length) {
     var med = sizes[Math.floor(sizes.length/2)];
-    f.push({ic:"6", t:"<b>The median house is about " + med + " members.</b>",
+    f.push({ic:"8", t:"<b>The median house is about " + med + " members.</b>",
       s:"Smallest " + sizes[0] + ", largest " + sizes[sizes.length-1] +
         ". Worth knowing before a feature is designed around the big ones."});
   }
@@ -624,17 +797,24 @@ function renderFindings(d){
 
 function renderTable(){
   var list = units.filter(inSelection).sort(function(a,b){
-    return b.joined - a.joined || b.size - a.size || (a.name < b.name ? -1 : 1);
+    return b.pct - a.pct || b.joined - a.joined || b.size - a.size || (a.name < b.name ? -1 : 1);
   });
   el("tbody").innerHTML = list.map(function(u){
     return "<tr>" +
       '<td class="who">' + esc(u.letters ? u.letters + " " : "") + esc(u.name) + "</td>" +
       "<td>" + esc(u.shortSchool || u.school) + "</td>" +
-      "<td>" + (u.state ? esc(u.state) : '<span class="pill">unplaced</span>') + "</td>" +
+      "<td>" + (u.state ? esc(u.state) : '<span class="pill">—</span>') + "</td>" +
       '<td class="num2">' + u.size + "</td>" +
-      '<td class="num2">' + (u.joined ? '<span class="pill hot">' + u.joined + "</span>" : "0") + "</td>" +
-      '<td class="num2">' + esc(niceDate(u.first)) + "</td>" +
-      "<td>" + (u.dupes > 1 ? '<span class="pill dup">' + u.dupes + " rows</span>" : "") + "</td>" +
+      '<td class="num2" style="color:var(--muted-2)">' + u.goal + "</td>" +
+      '<td class="num2">' + (u.joined ? u.joined : '<span style="color:var(--muted-2)">0</span>') + "</td>" +
+      '<td style="min-width:110px">' +
+        '<span class="num2" style="text-align:left;display:inline-block;min-width:3em;' +
+        (u.atGoal ? "color:var(--gold)" : "") + '">' + u.pct + "%</span>" +
+        '<div class="mini-tr"><i class="' + (u.atGoal?"g":"") + '" style="width:' + Math.min(100,u.pct) + '%"></i></div></td>' +
+      '<td class="num2" style="color:var(--muted-2)">' + (u.age == null ? "—" : u.age + "d") + "</td>" +
+      "<td>" + (u.atGoal ? '<span class="pill goal">target</span>' : "") +
+               (u.wouldHit ? '<span class="pill dup" title="At target against the smaller of its disputed roster figures">disputed</span>' : "") +
+               (u.dupes > 1 ? ' <span class="pill dup">' + u.dupes + "</span>" : "") + "</td>" +
     "</tr>";
   }).join("");
   el("tbl-empty").hidden = list.length > 0;
