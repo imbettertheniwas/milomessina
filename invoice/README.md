@@ -43,6 +43,35 @@ script whenever, and the board comes on by itself on the next load.
 Nothing else changes. All three answer the same calls, so every button on the
 page behaves identically either way.
 
+### How long the switch takes
+
+There is a spreadsheet at the end of every call, so none of them are fast, and
+`'auto'` used to need two before anything shared could go on screen: one asking
+the deployment what it is, another asking the sheet what is on it. Back to
+back, on a cold script, that is the several seconds the ledger spent looking
+empty on every single load. Two things shorten it, and neither changes what any
+of the answers mean.
+
+**The two questions go out together.** The probe and the first read do not need
+each other's answer, so they are sent in the same breath and the wait is one
+round trip rather than two. If the probe comes back saying there is nothing to
+move onto, the read in flight is dropped unread.
+
+**A load that has been here before skips the probe.** Every successful read is
+written down under `fomo.ledger.seen` — the ledger, the days, the rules, the
+roster, and the minute it was taken. A browser holding one from *this* endpoint,
+from a deployment that carried everything, opens straight onto it in shared
+mode: the full board is up in the first frame, stamped `shared · from 4:31pm`
+with its own age, and the read that replaces it is the session's only call.
+
+The snapshot is never treated as true. It is what the sheet last said, kept so
+the wait happens under a board instead of under nothing, and every load replaces
+it a second later. It is dropped on sight if the `/exec` URL has changed, and a
+page that took the short way onto a deployment that has since been rolled back
+finds out on that same read — it steps back onto device storage and says so, the
+same sentence the probe would have said. An unchanged ledger is not rewritten,
+so the 30-second poll is not also a 30-second write.
+
 ### The first load after the switch
 
 Whatever was typed while the page was on device storage is still in that
