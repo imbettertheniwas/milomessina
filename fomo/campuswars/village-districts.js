@@ -1,7 +1,7 @@
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=83';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=81';
 import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=87';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=89';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=87';
 import {dressNeighborhood} from './village-places.js?v=80';
 import {createStadium,STADIUM_SITE} from './village-stadium.js?v=89';
 import {campusDistrictExists} from './village-campus-bounds.js?v=1';
@@ -146,7 +146,7 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     let animatedAt=0;setNight(night);
     return {group:p,kind,specs,activityBounds,people:activity.people,setNight,animate(time,animatePeople=true,camera=null){
       if(animatePeople){activity.animate(time,camera);animatedAt=time;}
-    },dispose(){p.userData.nationalPrize?.dispose();activity.dispose();kit.disposeChunk(p);}};
+    },dispose(){activity.dispose();kit.disposeChunk(p);}};
   }
   let lastKey='',pending=[];
   function update(x,z){
