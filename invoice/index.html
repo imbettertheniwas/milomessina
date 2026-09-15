@@ -740,6 +740,17 @@ function hhmm12(d){
   return h + ":" + String(m).padStart(2,"0") + ap;
 }
 function clockNow(){ return hhmm12(new Date()); }
+/* How old the board on screen is, while the sheet is still being asked.
+   The time of day if it was today, the date if the tab has been shut
+   since — the one question a stale board has to answer is whether it is
+   this morning's or last week's. */
+function seenStamp(iso){
+  var d = new Date(iso || "");
+  if (isNaN(d.getTime())) return "earlier";
+  if (d.toDateString() === new Date().toDateString()) return hhmm12(d);
+  return niceDate(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") +
+                  "-" + String(d.getDate()).padStart(2,"0"));
+}
 function safeUrl(u){ u = String(u||"").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
 
 /* ---------- splitting a line between the people it was for ----------
@@ -831,6 +842,25 @@ var LS_ROWS = "fomo.ledger.rows", LS_DAYS = "fomo.ledger.days", LS_SUBS = "fomo.
    once, converted, and then left alone */
 var LS_SHIFTS = "fomo.ledger.shifts";
 
+/* ---------- the shared ledger as this browser last saw it ----------
+
+   The page used to open onto an empty board and stay there for two round
+   trips to Apps Script: one to ask the deployment what it is, another to
+   ask the sheet what is on it. Neither is fast — there is a spreadsheet
+   at the end of both — and neither had anything on screen to wait behind,
+   so the ledger looked broken for several seconds every single load.
+
+   What was missing is that this browser already knew the answer. Every
+   successful read is written down here, and the next load paints it
+   immediately, says how old it is, and replaces it when the sheet
+   answers. Nothing here is ever treated as authoritative: it is the last
+   thing the sheet said, kept so the wait happens under a full board
+   instead of an empty one. Deliberately its own key rather than the
+   device ledger's — those rows are this browser's alone and are what the
+   carry-over offers to send up, and the two must not be mistaken for
+   each other. */
+var LS_SEEN = "fomo.ledger.seen";
+
 function lsGet(k){
   try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }
   catch(e){ return null; }
@@ -863,6 +893,55 @@ function saveSubs(){
   try { localStorage.setItem(LS_SUBS, JSON.stringify(subs)); return true; }
   catch(e){ return false; }
 }
+
+/* Written after every read the sheet answers, so the head start is never
+   more than one poll out of date.
+
+   `url` because a redeployment gets a new /exec and a snapshot of the old
+   sheet is not a head start on the new one. `full` because the fast path
+   below is only honest if the deployment served both halves — a ledger-only
+   one has to be caught by the probe and said out loud, which is what the
+   slow path is for. */
+var seenWrote = "";
+function saveSeen(){
+  var snap = {
+    url: ENDPOINT,
+    full: sheetDays === true,
+    payers: sheetPayers,
+    rows: rows,
+    days: sheetDays ? days : null,
+    subs: sheetSubs ? subs : null
+  };
+  var body = JSON.stringify(snap);
+  /* Every read comes through here, which on the shared sheet is once every
+     thirty seconds for as long as the tab is open — and almost all of them
+     find the ledger exactly as they left it. Writing an unchanged ledger to
+     disk every half minute is the sort of thing that turns up later as a
+     page that stutters, so an unchanged one is not written. The stamp then
+     goes stale by up to a poll, which is the truth anyway: nothing about
+     the board has moved since it was taken. */
+  if (body === seenWrote) return;
+  try {
+    snap.at = new Date().toISOString();
+    localStorage.setItem(LS_SEEN, JSON.stringify(snap));
+    seenWrote = body;
+  } catch(e){
+    seenWrote = "";
+    /* A full store costs the next load its head start and nothing else,
+       so it is not worth a word on screen — but a stale snapshot sitting
+       in the way of a fresh one is worth clearing. */
+    try { localStorage.removeItem(LS_SEEN); } catch(e2){}
+  }
+}
+/* Only handed back when it is this endpoint's, and only when the
+   deployment it came from carried everything. Anything else and the page
+   takes the long way round, which is what it did before. */
+function seenSnapshot(){
+  var s = lsGet(LS_SEEN);
+  if (!s || s.url !== ENDPOINT || s.full !== true || !s.rows) return null;
+  return s;
+}
+function forgetSeen(){ try { localStorage.removeItem(LS_SEEN); } catch(e){} }
 
 function loadLocal(){
   rows = lsGet(LS_ROWS) || [];
@@ -986,10 +1065,19 @@ function api(action, payload){
 }
 
 /* ---------- the shared sheet, once the page is on it ---------- */
+/* The first read of the session, already in flight before anything asked
+   for it — see listAhead below. Drunk here rather than at the call site so
+   every caller stays unchanged, and only once: a Response body can be read
+   one time, and a second `list` must go and ask again. */
+var listAhead = null;
+
 function apiSheet(action, payload){
   var body = {_api:"invoice", action:action, _key:PASSCODE};
   if (payload) Object.keys(payload).forEach(function(k){ body[k] = payload[k]; });
-  return fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body)}).then(function(res){
+  var sent;
+  if (action === "list" && listAhead) { sent = listAhead; listAhead = null; }
+  else sent = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body)});
+  return sent.then(function(res){
     if (!res.ok) throw new Error("the sheet answered HTTP " + res.status);
     return res.text();
   }).then(function(txt){
@@ -1019,7 +1107,16 @@ function apiSheet(action, payload){
       refusal.refused = action !== "list";
       throw refusal;
     }
-    if (!out.rows) throw new Error("the endpoint answered, but not with the ledger — the Apps Script behind it is still the old version. Redeploy it: Deploy → Manage deployments → New version");
+    if (!out.rows) {
+      /* Marked, because one caller can do something about it: a page that
+         took the fast path onto a deployment that has since been rolled
+         back is on the sheet on the strength of a snapshot, and this is
+         the answer that says the snapshot is out of date. It steps back
+         onto device storage rather than sitting there under a banner. */
+      var behind = new Error("the endpoint answered, but not with the ledger — the Apps Script behind it is still the old version. Redeploy it: Deploy → Manage deployments → New version");
+      behind.stale = true;
+      throw behind;
+    }
     {
       rows = out.rows.map(function(r){
         return {
@@ -1058,6 +1155,9 @@ function apiSheet(action, payload){
       setLive(true, "shared · synced " + clockNow());
       hideBanner();
       render();
+      /* Written on the way out of every read, so the next load has a full
+         board to wait behind rather than an empty one. */
+      saveSeen();
     }
     return out;
   });
@@ -2287,7 +2387,7 @@ document.getElementById("t-hours-csv").addEventListener("click", function(){
    What it therefore cannot see: commits in repos that are still private,
    and commits pushed to somebody else's repository. */
 var GH_WEEKS = 13, GH_CACHE = "fomo.github.cache", GH_LOGINS = "fomo.github.logins";
-var GH_FRESH = 15 * 60 * 1000, GH_MAX_REPOS = 6, GH_MAX_PAGES = 3;
+var GH_FRESH = 15 * 60 * 1000, GH_MAX_REPOS = 6, GH_MAX_PAGES = 20, GH_MAX_READS = 40;
 var GH_SEEDED = "fomo.github.seeded";
 var GH_DEFAULTS = {
   "Milo": "koolkid696969",
@@ -2295,7 +2395,7 @@ var GH_DEFAULTS = {
   "Jesse": "jsebaiz, jessebaiz",
   "Luchi": "ouchip"
 };
-var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false;
+var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false, ghReads = 0;
 
 function dayKey(d){
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -2408,6 +2508,8 @@ function ghFetch(names, nameSet){
     });
   }, Promise.resolve()).then(function(){
     var live = repos.slice(0, GH_MAX_REPOS);
+    /* more active repos than one read covers: the count is a floor, and says so */
+    if (repos.length > live.length) truncated = true;
     if (!live.length) return {days:days, truncated:false, repos:0};
     return live.reduce(function(chain, repo){
       return chain.then(function(){ return ghRepoCommits(repo.full_name, nameSet, since, days); })
@@ -2418,10 +2520,17 @@ function ghFetch(names, nameSet){
   });
 }
 
-/* One page holds 100 commits; a busy repo needs a few, and past the cap
-   the number is a floor rather than a total. */
+/* One page holds 100 commits, and a page is only asked for once the one
+   before it came back full — so the cost follows how much was actually
+   pushed, not the cap. The cap was three pages, which is 300 commits, and
+   a quarter's work in one repo runs past that: the page showed 300+ while
+   the real number sat just above it. Twenty pages covers 2000 commits per
+   repo, and GH_MAX_READS bounds a whole refresh however many repos there
+   are, since none of this carries a token and the hourly allowance for an
+   anonymous caller is small. Hitting either cap is what puts the + back. */
 function ghRepoCommits(fullName, nameSet, since, days){
   function page(n){
+    ghReads++;
     return ghJson("https://api.github.com/repos/" + fullName + "/commits?since=" +
                   encodeURIComponent(since) + "&per_page=100&page=" + n)["catch"](function(e){
       /* an empty repo answers 409; that is not a failure worth reporting */
@@ -2438,7 +2547,7 @@ function ghRepoCommits(fullName, nameSet, since, days){
         days[dayKey(new Date(when))] = (days[dayKey(new Date(when))] || 0) + 1;
       });
       if (list.length < 100) return false;
-      if (n >= GH_MAX_PAGES) return true;
+      if (n >= GH_MAX_PAGES || ghReads >= GH_MAX_READS) return true;
       return page(n + 1);
     });
   }
@@ -2452,6 +2561,7 @@ function refreshGh(force){
   if (ghBusy) return Promise.resolve();
 
   ghBusy = true;
+  ghReads = 0;
   document.getElementById("gh-status").textContent = "Counting commits on GitHub…";
   /* one person at a time: four people fanned out at once is a quick way to
      spend an unauthenticated hour's worth of requests */
@@ -2716,6 +2826,15 @@ document.getElementById("banner-do").addEventListener("click", function(){
    Apps Script serves one of Google's own error pages often enough, under
    load or a held lock, that treating it as a verdict on the deployment
    sends someone off to fix a thing that was never broken. */
+/* Said in two places now — by the probe, and by a page stepping back off
+   the sheet because the deployment behind it went backwards — and it is
+   one situation, so it is one sentence. */
+var OLD_DEPLOY = "<b>The days aren't shared yet.</b> This browser is keeping its own ledger, so these " +
+  "cards are the days marked <em>here</em> and nobody else's — someone marking themselves in on their " +
+  "own laptop cannot show up on this page. The endpoint answers, but the version deployed behind it is " +
+  "the forms-only one. Redeploy <b>fomo/setup/apps-script.gs</b> — Deploy → Manage deployments → " +
+  "New version — and this page moves itself over, on its own, next time it loads.";
+
 function probeSheet(){
   return fetch(ENDPOINT, {method:"GET"}).then(function(res){
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -2744,15 +2863,48 @@ function probeSheet(){
   });
 }
 
-function goSheet(){
+function goSheet(seen){
   mode = "sheet";
   applyModeUi();
-  setLive(true, "shared · syncing…");
-  api("list").then(function(){ offerCarry(false); return runSubs(); })["catch"](function(e){ fail(e); });
+  /* With a board already up from the snapshot, "syncing…" over the top of
+     it would be saying the screen is empty when it plainly is not. What it
+     says instead is how old what you are looking at is — two segments like
+     every other state, because the header is mono, uppercase and letter-
+     spaced, and a third one wraps it onto a third line. The read is a
+     second or two behind this and replaces it with its own stamp; what
+     this has to get across in the meantime is which minute the board in
+     front of you belongs to. */
+  setLive(true, seen ? "shared · from " + seenStamp(seen.at) : "shared · syncing…");
+  api("list").then(function(){ offerCarry(false); return runSubs(); })["catch"](function(e){
+    /* A snapshot got this page onto the sheet without asking the
+       deployment first, and this is the one answer that says the snapshot
+       was writing a cheque the sheet no longer honours — the script behind
+       the URL has gone back to a version with no ledger in it. Step off,
+       and say the same thing the long way round would have said. */
+    if (seen && e && e.stale) { unSheet(); return; }
+    fail(e);
+  });
   if (!poll) poll = setInterval(function(){
     if (busy || document.hidden) return;
     api("list")["catch"](function(){ /* the banner already says it */ });
   }, 30000);
+}
+
+/* Back off the sheet and onto this browser's own ledger, undoing the fast
+   path in full: the snapshot is wrong about the deployment, so it goes,
+   and everything inferred from it goes with it. */
+function unSheet(){
+  forgetSeen();
+  clearInterval(poll); poll = null;
+  mode = "device";
+  sheetPayers = null; sheetDays = false; sheetSubs = false;
+  carried = null;
+  loadLocal();
+  applyModeUi();
+  render();
+  setLive(true, "on this device only");
+  runSubs();
+  showBanner(OLD_DEPLOY);
 }
 
 /* ---------- carrying this browser's ledger up with it ----------
@@ -2902,11 +3054,57 @@ function open_(){
     loadLocal();
     applyModeUi();
     render();
+    var seen = BACKEND === "auto" ? seenSnapshot() : null;
     if (BACKEND !== "auto") {
       setLive(true, "on this device only");
       runSubs();
+    } else if (seen) {
+      /* The short way round. A previous load on this browser got the
+         deployment to name both halves it carries and then read the sheet
+         through it; none of that has to be established again from scratch
+         before anything can go on screen. So the board goes up from the
+         snapshot in this frame, in shared mode, honestly stamped with its
+         own age, and the read that replaces it is the session's only round
+         trip rather than its second.
+
+         What is given up is the probe's verdict, and with it the two
+         sentences it can say that a read cannot. A deployment rolled back
+         since the snapshot is caught by the read instead — goSheet steps
+         off the sheet and says the same thing. */
+      carried = {rows: rows.slice(), days: days.slice(), subs: subs.slice()};
+      sheetPayers = (seen.payers && seen.payers.length) ? seen.payers.map(String) : PEOPLE.slice();
+      sheetDays = true;
+      rows = seen.rows || [];
+      days = seen.days || [];
+      /* Only ever stored on a deployment that keeps them, so its presence
+         is the answer about whose rules these are. */
+      if (seen.subs) { sheetSubs = true; subs = seen.subs; }
+      /* Before the paint, not after it: these cards are everybody's days
+         and the day table says so, and a first frame calling them this
+         browser's own would be wrong about the one thing the board is
+         for — then correct itself a second later, which is worse. */
+      mode = "sheet";
+      applyModeUi();
+      render();
+      goSheet(seen);
     } else {
       setLive(true, "on this device · checking");
+      /* Two round trips to the same place, neither waiting on the other's
+         answer: the probe says whether to move onto the sheet, the read
+         says what is on it. Sent together, the wait is one trip long
+         instead of two — which on Apps Script, cold, is the difference
+         between a few seconds and rather more than a few. Dropped
+         unread if the verdict is that there is nothing to move onto. */
+      listAhead = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(
+        {_api:"invoice", action:"list", _key:PASSCODE})});
+      /* A branch off it rather than a handler on the way through, so the
+         answer itself is still there to be read. It does two things: an
+         answer nobody ends up asking for stops being an unhandled
+         rejection, and a read that failed while the probe's own request
+         succeeded is thrown away rather than handed on — the sheet is
+         reachable, so the thing to do with one dropped request is make
+         it again, not report the sheet as down. */
+      listAhead["catch"](function(){ listAhead = null; });
       var tries = 0;
       (function attempt(){
         probeSheet().then(function(verdict){
@@ -2917,17 +3115,16 @@ function open_(){
             goSheet();
             return;
           }
+          /* Whatever it is, it is not a sheet to read, and the answer in
+             flight is no longer wanted by anybody. */
+          listAhead = null;
           if (verdict === "old") {
             setLive(true, "on this device only");
             /* held until the verdict is in: a monthly line written here
                while the endpoint was still being asked about would be
                written again by the sheet a second later */
             runSubs();
-            showBanner("<b>The days aren't shared yet.</b> This browser is keeping its own ledger, so these " +
-              "cards are the days marked <em>here</em> and nobody else's — someone marking themselves in on their " +
-              "own laptop cannot show up on this page. The endpoint answers, but the version deployed behind it is " +
-              "the forms-only one. Redeploy <b>fomo/setup/apps-script.gs</b> — Deploy → Manage deployments → " +
-              "New version — and this page moves itself over, on its own, next time it loads.");
+            showBanner(OLD_DEPLOY);
             return;
           }
           /* Unreachable. One flaky answer used to leave the page on device
