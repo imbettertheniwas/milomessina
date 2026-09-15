@@ -14,6 +14,7 @@ function browserStorage(){try{return globalThis.localStorage;}catch{return null;
 export function startChapterFeed({initialSnapshot,storageRef=browserStorage(),onUpdate, onStatus, fetchImpl=fetch, documentRef=document, interval=30000, schedule=setTimeout, cancel=clearTimeout,random=Math.random,now=Date.now}) {
   let timer, stopped=false, running=false, controller, failures=0,refreshOnResume=false;
   let signature=initialSnapshot?.chapters?JSON.stringify(initialSnapshot.chapters):'';
+  let observedCounts=null;
   let latestAt=Date.parse(initialSnapshot?.updatedAt)||0,lastSaved='';
   // Restore public chapter aggregates before the first network request. Storage
   // is optional: Safari private mode and quota failures must not stop the feed.
@@ -44,11 +45,17 @@ export function startChapterFeed({initialSnapshot,storageRef=browserStorage(),on
       const updatedAt=Date.parse(snapshot.updatedAt);
       if(updatedAt<latestAt)throw new Error('Older chapter update');
       const next=JSON.stringify(snapshot.chapters);
-      if (next!==signature) {onUpdate(snapshot); signature=next;}
+      const live=snapshot.stale!==true&&now()-updatedAt<=90000;
+      // Establish a network baseline first: saved/initial rosters are not joins.
+      const arrivals=live&&observedCounts?snapshot.chapters.flatMap(c=>{
+        const from=observedCounts.get(c.id)??0;
+        return c.joined>from?[{chapter:c.id,from,to:c.joined}]:[];
+      }):[];
+      observedCounts=new Map(snapshot.chapters.map(c=>[c.id,c.joined]));
+      if (next!==signature) {onUpdate({...snapshot,arrivals}); signature=next;}
       latestAt=updatedAt;
       const saved=JSON.stringify(snapshot);
       if(saved!==lastSaved)try{storageRef?.setItem(SNAPSHOT_KEY,saved);lastSaved=saved;}catch{}
-      const live=snapshot.stale!==true&&now()-updatedAt<=90000;
       failures=live?0:failures+1;
       onStatus({live,updatedAt:snapshot.updatedAt});
     } catch {

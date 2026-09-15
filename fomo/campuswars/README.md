@@ -1,5 +1,13 @@
 # fomo Campus Wars
 
+## Live member arrivals
+
+Fresh increases in the public joined counts from Arya’s admin now drop one anonymous avatar per added member from the sky onto that chapter’s front lawn. Arrivals raise their arms, stagger briefly, bounce on touchdown, and rejoin the existing crowd. The first network snapshot establishes a baseline; saved rosters, stale responses, unchanged counts and decreases do not trigger arrivals. No registrant names or other personal records are fetched by the browser.
+
+Arrivals use the existing 30–33-second polling feed, so they appear on the next fresh update rather than through an instant push connection. They share the village activity clock, pause with the scene, skip motion for reduced-motion visitors, and retain their progress through house reranking and streamed scene replacement. They reuse the existing member instances, preserving exact totals.
+
+`tests/arrivals-gallery.html` previews staggered falls, touchdown and settled crowds without submitting registrations. `tests/arrivals.test.mjs` checks feed baselines/deltas, grass touchdown, construction, reduced motion, exact totals and scene replacement.
+
 ## Large villages and road hover
 
 Above 80 chapters, the renderer retains all addresses, ranks, colors and navigation metadata while constructing house models around the camera. Scene construction is spread across frames, and selecting a distant house prepares its neighborhood before moving the camera. Paused activity continues pending house loads. Repeated roofs, signs and school banners share resources; banners allocate higher-resolution artwork as they approach the camera. Distant people use compact animated silhouettes at small projected sizes, and their detailed models return on approach. Display pixel density remains unchanged.

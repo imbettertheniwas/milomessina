@@ -32,7 +32,7 @@ export function humanPose(person,state,time){
   const weight=seated?0:moving?Math.sin(gait)*.017*amount:Math.sin(time*(profile?.shiftRate??.43)+phase)*(profile?.shiftAmount??.025);
   const standingHip=.975-(moving?(jog?.105:.075)*amount:0);
   const build=state.construction;
-  const hipY=(lawn?.25:seated?.65:standingHip)+breath+(moving&&!skate?Math.cos(gait*2)*(jog?.025:.012)*amount:0)-(build?.bend||0)*.16;
+  const hipY=(lawn?.25:seated?.65:standingHip)+breath+(moving&&!skate?Math.cos(gait*2)*(jog?.025:.012)*amount:0)-(build?.bend||0)*.16-(state.arrival?.crouch||0);
   const lean=(seated?.085:jog?.055:skate?.07:.012)+(build?.bend||0)*.18;
   const twist=moving?Math.sin(gait)*.055*amount:Math.sin(time*(profile?.twistRate??.61)+phase)*(profile?.twistAmount??.024);
   const hip=[weight,hipY,0],chest=[weight*.65,hipY+.30,lean];
@@ -79,6 +79,11 @@ export function humanPose(person,state,time){
         const z=build.role==='saw'?.38+stroke*.15:build.role==='drill'?.52+stroke*.035:.49;
         reach(hand,[side*(j?.10:.15),y,z],build.effort);
       }
+    }
+    if(state.arrival){
+      const reach=state.arrival.arms;
+      const targets=[[shoulder[0]+side*.18,shoulder[1]+.12,.03],[shoulder[0]+side*.26,shoulder[1]+.37,.06]];
+      for(const [index,point] of [elbow,hand].entries())point.forEach((v,k)=>point[k]=v+(targets[index][k]-v)*reach);
     }
     arms.push({shoulder,elbow,hand});
   }

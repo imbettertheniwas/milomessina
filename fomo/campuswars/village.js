@@ -1,9 +1,10 @@
+import {createLiveArrivals} from './village-arrivals.js?v=106';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=105';
+import {createVillageRendererAsync} from './village-renderer.js?v=106';
 import {createDistricts} from './village-districts.js?v=105';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
@@ -28,9 +29,9 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
 }
 if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';shell.classList.add('village-unavailable');});
 async function startVillage(){
-  const pedestrianSpacing=createPedestrianSpacing();
+  const pedestrianSpacing=createPedestrianSpacing(),arrivals=createLiveArrivals();
   let ready=false,pendingChapterUpdate=null;
-  const queueChapterUpdate=event=>{pendingChapterUpdate=event;};
+  const queueChapterUpdate=event=>{arrivals.enqueue(event.detail.arrivals);pendingChapterUpdate=event;};
   document.addEventListener('chapters:update',queueChapterUpdate);
   const flightKeys=new Set();
   let renderScale=Math.min(devicePixelRatio,quality.pixelRatio);
@@ -42,7 +43,7 @@ async function startVillage(){
   const ambient=new THREE.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
   const fill=new THREE.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
-  let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true});scene.add(village.world);
+  let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals});scene.add(village.world);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
   const pointerHover=createPointerHover(THREE,canvas,camera,blimp);
   const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
@@ -145,9 +146,9 @@ async function startVillage(){
   let chapterBuildRevision=0;
   async function updateChapters(event){
     const buildRevision=++chapterBuildRevision,previous=village;
-    const next=await createVillageRendererAsync(THREE,event.detail.chapters,{streets:previous.streets,houseFinishes:previous.houseFinishes,camera});
+    const next=await createVillageRendererAsync(THREE,event.detail.chapters,{streets:previous.streets,houseFinishes:previous.houseFinishes,camera,arrivals});
     if(buildRevision!==chapterBuildRevision){next.dispose();return;}
-    chapters=event.detail.chapters;scene.remove(previous.world);scene.add(next.world);next.world.add(next.streets);village=next;previous.dispose();
+    chapters=event.detail.chapters;arrivals.start(chapters,partyTime,reduced);scene.remove(previous.world);scene.add(next.world);next.world.add(next.streets);village=next;previous.dispose();
     // A new street opens its own Greek block, so the campus around it restreams.
     if(previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=createDistricts(THREE,next.extension,next.streetTotal,{incremental:quality.mobile});scene.add(districts.root);}
     if(previous.extension!==next.extension){
@@ -164,6 +165,7 @@ async function startVillage(){
   }
   document.removeEventListener('chapters:update',queueChapterUpdate);
   document.addEventListener('chapters:update',event=>{
+    arrivals.enqueue(event.detail.arrivals);
     // Do not dispose materials while their asynchronous compilation is pending.
     if(!ready){pendingChapterUpdate=event;return;}
     updateChapters(event).catch(showLoadingError);
@@ -379,6 +381,7 @@ async function startVillage(){
     }
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
+    arrivals.advance(partyTime);
     const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
     village.animateCrowd(partyTime,camera,pedestrianPoses);
     districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);

@@ -8,7 +8,7 @@ import {createDieGames} from './village-die.js?v=105';
 import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=105';
 import {createCompetition,houseStandings} from './village-competition.js?v=105';
 import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=105';
-import {humanPose} from './village-human-motion.js?v=80';
+import {humanPose} from './village-human-motion.js?v=106';
 import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=105';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=101';
 import {palettes,hash} from './village-district-layout.js?v=80';
@@ -22,7 +22,7 @@ import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
 export function createVillage(THREE,chapters,options={}){
   const steps=buildVillageSteps(THREE,chapters,options);let result;do{result=steps.next();}while(!result.done);return result.value;
 }
-export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={}}={}){
+export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={},arrivals=null}={}){
   // Physical addresses follow the same percentage standings as the rank badges.
   if(layout)chapters=layout.chapters;
   else {const ranked=houseStandings(chapters),rankedIds=new Set(ranked.map(c=>c.id));chapters=[...ranked,...chapters.filter(c=>!rankedIds.has(c.id)).sort((a,b)=>a.id.localeCompare(b.id))];}
@@ -184,7 +184,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   const names=['torso','pelvis','neck','head','hair','nose','armL','armR','foreL','foreR','handL','handR','legL','legR','shinL','shinR','shoeL','shoeR','cup','backpack'];
   for(const name of names){
     const geometry=roundParts.has(name)?landscapeKit.geometries.sphere:name.startsWith('shoe')?landscapeKit.geometries.shoe:name==='cup'?cylinderGeometry:name==='backpack'?landscapeKit.geometries.box:bodyGeometry;
-    const mesh=landscapeKit.instances(world,geometry,members.length*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1),39);mesh.material=mat(0xffffff);mesh.castShadow=false;mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,2,extension/2),Math.hypot(crowdReach,40+extension/2));parts[name]=mesh;
+    const mesh=landscapeKit.instances(world,geometry,members.length*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1),39);mesh.material=mat(0xffffff);mesh.castShadow=false;mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,2,extension/2),Math.hypot(crowdReach,40+extension/2)+(arrivals?40:0));parts[name]=mesh;
     members.forEach((m,i)=>{
       if(name==='backpack'){mesh.setColorAt(i*(DETAIL_COUNT+1),new THREE.Color(m.bagColor));detailColors(m).forEach((color,j)=>mesh.setColorAt(i*(DETAIL_COUNT+1)+j+1,new THREE.Color(color)));return;}
       if(name==='hair'){for(let j=0;j<2;j++)mesh.setColorAt(i*2+j,new THREE.Color(j===0&&m.cap?palettes.shirts[m.shirt]:palettes.hair[m.hair]));return;}
@@ -228,9 +228,11 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   function animateCrowd(time,camera,sharedPoses=null){
     const poses=(sharedPoses||spacing.update(time,pedestrians)).get(pedestrian),posesChanged=poses!==previousPoses;previousPoses=poses;
     let updated=0;
+    for(const batch of crowdVisibility.batches){const airborne=arrivals?.has(batch.chapter);batch.bounds.center.y=airborne?18:4;batch.bounds.radius=airborne?42:24;}
+    const arrivalPose=(member,state)=>arrivals?arrivals.pose(member,state,time):state;
     const allVisible=crowdVisibility.visible(camera,world.matrixWorld),visibleBatches=allVisible.filter(batch=>!distantCrowd?.distant(batch,camera,world.matrixWorld));
     const key=visibleBatches.map(b=>b.chapter).join('|'),repack=compactCrowd&&key!==visibleKey;
-    if(distantCrowd){distantCrowd.begin(time);for(const batch of allVisible)if(batch.distant)for(let i=batch.start;i<batch.start+batch.count;i++){const member=members[i];distantCrowd.add(member,poses[i]);}distantCrowd.finish();}
+    if(distantCrowd){distantCrowd.begin(time);for(const batch of allVisible)if(batch.distant)for(let i=batch.start;i<batch.start+batch.count;i++){const member=members[i];distantCrowd.add(member,arrivalPose(member,poses[i]));}distantCrowd.finish();}
     visibleKey=key;let packedStart=0;
     if(compactCrowd){const count=visibleBatches.reduce((n,b)=>n+b.count,0);for(const [name,mesh] of Object.entries(parts))mesh.count=count*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1);}
     for(const batch of visibleBatches){
@@ -239,7 +241,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
       if(repack)for(const [name,mesh] of Object.entries(parts)){const stride=name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1;if(partColors[name]){mesh.instanceColor.array.set(partColors[name].subarray(batch.start*stride*3,(batch.start+batch.count)*stride*3),start*stride*3);mesh.instanceColor.needsUpdate=true;}}
       for(let i=batch.start;i<batch.start+batch.count;i++){
         const m=members[i],slot=start+i-batch.start;
-        const state=poses[i],rig=humanPose(m,state,time),angle=state.rotation,h=m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
+        const state=arrivalPose(m,poses[i]),rig=humanPose(m,state,time),angle=state.rotation,h=m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
         const transform=([x,y,z])=>[state.x+(x*cos+z*sin)*h,y*h+(state.ground??m.ground??0),state.z+(-x*sin+z*cos)*h];
         const part=(name,point,x,y,z,yaw=0,pitch=0)=>posePart(name,slot*(name==='hair'?2:name==='backpack'?DETAIL_COUNT+1:1),...transform(point),x*h,y*h,z*h,angle+yaw,pitch);
         part('torso',rig.chest,.40*w,.52,.25*w,rig.twist,rig.lean);
@@ -262,7 +264,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
           limb('leg'+side,slot,transform(leg.hip),transform(leg.knee),.155*h*w);
           limb('shin'+side,slot,transform(leg.knee),transform(leg.ankle),.11*h*w);
           part('shoe'+side,[leg.ankle[0],leg.ankle[1]-.055+Math.abs(Math.sin(leg.pitch))*.145,leg.ankle[2]+.045],.15,.13,.29,0,leg.pitch);
-          if(j)part('cup',[arm.hand[0],arm.hand[1]+.04,arm.hand[2]+.025],.065,!state.walking&&!['pong','die','build'].includes(m.action)&&hash(m.chapter,m.member,'cup')>.86?.13:0,.065);
+          if(j)part('cup',[arm.hand[0],arm.hand[1]+.04,arm.hand[2]+.025],.065,!state.arrival&&!state.walking&&!['pong','die','build'].includes(m.action)&&hash(m.chapter,m.member,'cup')>.86?.13:0,.065);
         }
       }
       // Keep pending ranges until Three.js uploads them, including updates made

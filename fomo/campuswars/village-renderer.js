@@ -1,5 +1,5 @@
 import {villageQuality} from './village-quality.js?v=97';
-import {createVillage,buildVillageSteps} from './village-world.js?v=105';
+import {createVillage,buildVillageSteps} from './village-world.js?v=106';
 import {houseStandings} from './village-competition.js?v=105';
 import {rankedHouseSizes} from './village-house-sizing.js?v=105';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
@@ -38,7 +38,7 @@ export function createVillageRenderer(T,chapters,options={}){
   if(chapters.length<=STREAMING_THRESHOLD)return createVillage(T,chapters,{compactCrowd:villageQuality().mobile,...options});
   const layout=villageRenderLayout(T,chapters,options.houseFinishes),indices=startingIndices(T,layout,options);
   const active=createVillage(T,layout.chapters,{...options,layout,indices,compactCrowd:true});
-  return streamedRenderer(T,layout,active,indices);
+  return streamedRenderer(T,layout,active,indices,true,options.arrivals);
 }
 export async function createVillageRendererAsync(T,chapters,options={}){
   const streaming=chapters.length>STREAMING_THRESHOLD;
@@ -50,9 +50,9 @@ export async function createVillageRendererAsync(T,chapters,options={}){
     const start=performance.now();do{result=steps.next();}while(!result.done&&performance.now()-start<4);
     if(!result.done)await new Promise(resolve=>requestAnimationFrame(resolve));
   }while(!result.done);
-  return streaming?streamedRenderer(T,layout,result.value,indices,options.attachStreet??false):result.value;
+  return streaming?streamedRenderer(T,layout,result.value,indices,options.attachStreet??false,options.arrivals):result.value;
 }
-function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true){
+function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arrivals){
   const world=new T.Group();world.name='streamed-greek-village';world.add(initial.world);if(attachStreet)world.add(initial.streets);
   const streets=initial.streets;
   let active=initial,resident=initialIndices,pending=null,night=false,disposed=false,revision=0,focusPending=null,lastViewCheck=-Infinity;
@@ -62,7 +62,7 @@ function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true){
   function request(indices){
     if(pending&&contains(pending.indices,indices))return;
     discard();const control={};
-    pending={indices,control,steps:buildVillageSteps(T,layout.chapters,{streets,layout,indices,attachStreet:false,compactCrowd:true,control})};
+    pending={indices,control,steps:buildVillageSteps(T,layout.chapters,{streets,layout,indices,attachStreet:false,compactCrowd:true,control,arrivals})};
   }
   function advance(budget=4){
     if(!pending||disposed)return false;
