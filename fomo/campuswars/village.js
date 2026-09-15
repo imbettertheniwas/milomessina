@@ -8,7 +8,7 @@ import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
 import {createVillageRendererAsync} from './village-renderer.js?v=120';
-import {createDistricts} from './village-districts.js?v=124';
+import {createDistricts} from './village-districts.js?v=125';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=111';

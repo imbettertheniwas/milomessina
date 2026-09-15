@@ -1,6 +1,6 @@
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=106';
-import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=80';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=107';
+import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=101';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
 import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=113';
@@ -12,10 +12,22 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
   const stadium=createStadium(T,extension);root.add(stadium.root);
   const {box,mesh,cylinder,bar,tree:plantTree,bench,lamp,table,path,sign}=kit;
+  // The court straddles two district blocks. Keep landscaping from either
+  // block outside its footprint, including when those blocks stream again.
+  function overlapsCourt(p,x,z,halfX=0,halfZ=halfX){
+    for(let parent=p;parent;parent=parent.parent){x+=parent.position.x;z+=parent.position.z;}
+    const column=Math.round((x+51)/BLOCK);
+    return greekColumn(column,streets)&&Math.abs(x-(column*BLOCK-51))<10+halfX&&Math.abs(z-10)<15+halfZ;
+  }
+  function hedge(p,x,z,length=5,turn=0){
+    if(!overlapsCourt(p,x,z,Math.abs(Math.cos(turn))*length/2+.8,Math.abs(Math.sin(turn))*length/2+.8))kit.hedge(p,x,z,length,turn);
+  }
   function tree(p,x,z,seed,size){
+    if(overlapsCourt(p,x,z,3*(size||1)))return;
     const blocked=(p.userData.specs||[]).some(s=>{const dx=x-(s.x-p.position.x),dz=z-(s.z-p.position.z),a=s.rotation;return Math.abs(dx*Math.cos(a)-dz*Math.sin(a))<s.width/2+2&&Math.abs(dx*Math.sin(a)+dz*Math.cos(a))<s.depth/2+3;});
     if(!blocked)plantTree(p,x,z,seed,size);
   }
+  const plantingKit=Object.assign(Object.create(kit),{hedge,tree(p,x,z,seed,size){if(!overlapsCourt(p,x,z,3*(size||1)))plantTree(p,x,z,seed,size);}});
   const traffic=createCampusTraffic(T,kit,extension);root.add(traffic.root);
   function bikeRack(p,x,z){
     for(let i=0;i<5;i++){
@@ -96,15 +108,15 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     for(const side of [-1,1]){
       if(core){
         const x=side*23;
-        kit.hedge(p,x,-42,12);kit.hedge(p,side*34,-35,10,Math.PI/2);
+        hedge(p,x,-42,12);hedge(p,side*34,-35,10,Math.PI/2);
         box(p,x,.25,-36,12,.35,6,0xbcb7a7);for(const dx of [-3,3]){table(p,x+dx,-36);bench(p,x+dx,-34.3);}
         kit.streetFurniture(p,side*14,-39,side);
         cylinder(p,side*32,3.3,-32,.06,6.6,0x687575);box(p,side*32+.44,5.3,-32,.78,1.7,.045,0x7b83ac);box(p,side*32+.44,5.3,-31.97,.035,1.4,.015,0xd9d4bd);
         for(const dx of [-5,5])tree(p,x+dx,-38,Math.floor(hash(x,dx)*10000),.8);
         kit.parkedCar(p,side*43,-37,0,side,false);kit.parkedCar(p,side*47,-37,0,side+8,true);
-        kit.bins(p,side*31,30);kit.hedge(p,side*26,40,11);
+        kit.bins(p,side*31,30);hedge(p,side*26,40,11);
       }else{
-        kit.hedge(p,side*35,42,15);kit.hedge(p,side*46,20,11,Math.PI/2);
+        hedge(p,side*35,42,15);hedge(p,side*46,20,11,Math.PI/2);
         kit.streetFurniture(p,side*15,37,cx*71+cz);
         for(const x of [side*22,side*36]){box(p,x,.34,41,5,.5,.45,0xb1ae9d);for(let i=0;i<3;i++)mesh(p,'leaf',x-1.4+i*1.4,.8,41,.65,.48,.6,pick([0x748363,0x7b8059,0x88785d],cx,cz,x,i));}
         if(!spine)for(let i=0;i<6;i++)kit.parkedCar(p,side*(18+i*4.8),-40,side>0?Math.PI/2:-Math.PI/2,Math.floor(hash(cx,cz,side,i)*10000),i%2===1);
@@ -140,7 +152,7 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     const kind=districtKind(cx,cz,streets),specs=districtSpecs(cx,cz,streets);p.userData.specs=specs;
     for(const spec of specs){const building=kit.building(p,spec,cx*BLOCK,cz*BLOCK);if(isCampusHill(cx,cz))building.position.y=CAMPUS_HILL_HEIGHT;}
     if(isCampusHill(cx,cz))createCampusHill(T,kit,p);
-    else {landscape(p,kind,cx,cz);fillDetails(p,kind,cx,cz);dressNeighborhood(T,kit,p,kind,cx,cz);}
+    else {landscape(p,kind,cx,cz);fillDetails(p,kind,cx,cz);dressNeighborhood(T,plantingKit,p,kind,cx,cz);}
     const activity=createCampusPeople(T,kit,kind,cx,cz,streets,extension);p.add(activity.root);
     if(extension){
       if(cz>0)p.position.z+=extension;

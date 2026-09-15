@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Campus hill preview</title>
 <style>@font-face{font-family:Aeonik;src:url(../assets/aeonik-700.ttf);font-weight:700}body{margin:0;background:#98a7ba;font:14px Arial;color:white}nav{position:fixed;top:16px;left:16px;right:16px;z-index:2;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid #ffffff55;background:#182435;color:white;padding:12px;border-radius:8px;cursor:pointer}output{position:fixed;bottom:16px;left:16px;background:#182435;padding:12px;border-radius:8px}</style>
-<nav><button id="quad">Campus quad</button><button id="street">From Greek Row</button><button id="overhead">Overhead</button><button id="prize">National prize</button><button id="population">Population sign</button><button id="night">Day / night</button><button id="pause">Pause students</button></nav><output id="stats">Loading campus…</output>
+<nav><button id="quad">Campus quad</button><button id="street">From Greek Row</button><button id="overhead">Overhead</button><button id="prize">National prize</button><button id="population">Population sign</button><button id="court">Basketball court</button><button id="night">Day / night</button><button id="pause">Pause students</button></nav><output id="stats">Loading campus…</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createDistricts} from '../village-districts.js?v=124';
+import {createDistricts} from '../village-districts.js?v=125';
 import {createVillage} from '../village-world.js?v=97';
 import {createVillagePopulation} from '../village-population.js?v=4';
 import {startChapterFeed} from '../chapter-feed.js?v=120';
@@ -14,6 +14,7 @@ const chapters=await fetch('../chapters.json').then(r=>r.json());const village=c
 const population=createVillagePopulation(T,chapters.chapters,{live:false,updatedAt:chapters.updatedAt});scene.add(population.root);
 startChapterFeed({initialSnapshot:chapters,onUpdate:s=>population.setChapters(s.chapters),onStatus:s=>population.setStatus(s)});
 document.getElementById('population').onclick=()=>view(-31,12,-61,-31,9,-84.7);
+document.getElementById('court').onclick=()=>view(-76,31,43,-51,1,10);
 function view(x,y,z,tx,ty,tz){camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);camera.updateMatrixWorld();districts.update(tx,tz);renderer.shadowMap.needsUpdate=true;}
 document.getElementById('quad').onclick=()=>view(68,54,-35,0,7,-101);document.getElementById('street').onclick=()=>view(0,4,-43,0,13,-111);document.getElementById('overhead').onclick=()=>view(0,113,-44,0,0,-102);let night=false,paused=false;
 document.getElementById('night').onclick=()=>{night=!night;scene.background.set(night?0x25233f:0x98a7ba);scene.fog.color.copy(scene.background);ambient.intensity=night?.83:1.55;sun.intensity=night?.42:2.6;districts.setNight(night);village.nightLife.setNight(night);renderer.shadowMap.needsUpdate=true;};document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume students':'Pause students';};
