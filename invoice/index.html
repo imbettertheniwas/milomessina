@@ -2387,7 +2387,7 @@ document.getElementById("t-hours-csv").addEventListener("click", function(){
    What it therefore cannot see: commits in repos that are still private,
    and commits pushed to somebody else's repository. */
 var GH_WEEKS = 13, GH_CACHE = "fomo.github.cache", GH_LOGINS = "fomo.github.logins";
-var GH_FRESH = 15 * 60 * 1000, GH_MAX_REPOS = 6, GH_MAX_PAGES = 3;
+var GH_FRESH = 15 * 60 * 1000, GH_MAX_REPOS = 6, GH_MAX_PAGES = 20, GH_MAX_READS = 40;
 var GH_SEEDED = "fomo.github.seeded";
 var GH_DEFAULTS = {
   "Milo": "koolkid696969",
@@ -2395,7 +2395,7 @@ var GH_DEFAULTS = {
   "Jesse": "jsebaiz, jessebaiz",
   "Luchi": "ouchip"
 };
-var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false;
+var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false, ghReads = 0;
 
 function dayKey(d){
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -2508,6 +2508,8 @@ function ghFetch(names, nameSet){
     });
   }, Promise.resolve()).then(function(){
     var live = repos.slice(0, GH_MAX_REPOS);
+    /* more active repos than one read covers: the count is a floor, and says so */
+    if (repos.length > live.length) truncated = true;
     if (!live.length) return {days:days, truncated:false, repos:0};
     return live.reduce(function(chain, repo){
       return chain.then(function(){ return ghRepoCommits(repo.full_name, nameSet, since, days); })
@@ -2518,10 +2520,17 @@ function ghFetch(names, nameSet){
   });
 }
 
-/* One page holds 100 commits; a busy repo needs a few, and past the cap
-   the number is a floor rather than a total. */
+/* One page holds 100 commits, and a page is only asked for once the one
+   before it came back full — so the cost follows how much was actually
+   pushed, not the cap. The cap was three pages, which is 300 commits, and
+   a quarter's work in one repo runs past that: the page showed 300+ while
+   the real number sat just above it. Twenty pages covers 2000 commits per
+   repo, and GH_MAX_READS bounds a whole refresh however many repos there
+   are, since none of this carries a token and the hourly allowance for an
+   anonymous caller is small. Hitting either cap is what puts the + back. */
 function ghRepoCommits(fullName, nameSet, since, days){
   function page(n){
+    ghReads++;
     return ghJson("https://api.github.com/repos/" + fullName + "/commits?since=" +
                   encodeURIComponent(since) + "&per_page=100&page=" + n)["catch"](function(e){
       /* an empty repo answers 409; that is not a failure worth reporting */
@@ -2538,7 +2547,7 @@ function ghRepoCommits(fullName, nameSet, since, days){
         days[dayKey(new Date(when))] = (days[dayKey(new Date(when))] || 0) + 1;
       });
       if (list.length < 100) return false;
-      if (n >= GH_MAX_PAGES) return true;
+      if (n >= GH_MAX_PAGES || ghReads >= GH_MAX_READS) return true;
       return page(n + 1);
     });
   }
@@ -2552,6 +2561,7 @@ function refreshGh(force){
   if (ghBusy) return Promise.resolve();
 
   ghBusy = true;
+  ghReads = 0;
   document.getElementById("gh-status").textContent = "Counting commits on GitHub…";
   /* one person at a time: four people fanned out at once is a quick way to
      spend an unauthenticated hour's worth of requests */

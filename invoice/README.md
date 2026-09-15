@@ -494,8 +494,15 @@ than papered over:
   login while every commit in it is authored by another, so either name alone
   counts nothing. Separate them with a comma and both are read: repositories are
   taken from all of them, and a commit counts when its author is any of them.
-- **Very long histories are a floor.** Six repos per account, three pages of
-  commits each; past that the number carries a `+` and the footer says why.
+- **Very long histories are a floor.** Six repos per account, twenty pages of
+  commits each — two thousand per repo — and a ceiling on the reads any single
+  refresh may spend, whatever it finds. A page is only asked for once the one
+  before it came back full, so the cost follows what was actually pushed rather
+  than the cap. Past any of the three the number carries a `+` and the footer
+  says why, and more active repos than six does the same: a seventh left out of
+  the count is a floor like any other. It was three pages until recently, which
+  is three hundred commits, and a quarter's work in a single repo runs past
+  that — the panel read `300+` while the true figure sat five commits above it.
 
 Unauthenticated GitHub allows 60 requests an hour **per viewer's IP**, not per
 site, so everyone has their own budget. A refresh costs a few requests per
