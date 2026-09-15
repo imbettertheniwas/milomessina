@@ -1,5 +1,27 @@
 # fomo Campus Wars
 
+## Mobile rendering and visual polish
+
+Daylight uses a clearer blue sky, cooler fill light and warmer ground bounce
+through the existing lights. Controls and chapter cards use opaque navy surfaces,
+consistent borders and larger touch targets; the compact control menu now extends
+through 1280px so tablet toolbars fit. Phone sheets leave the bottom controls clear.
+These changes add no scene geometry, lights, textures or rendering passes, and
+remove backdrop blur from the remaining control and dialog surfaces.
+
+Phones still begin at 1.25× resolution and target 30 rendered frames per second.
+Sustained missed frames reduce resolution in 0.125 steps down to 1×; sustained
+headroom restores detail up to 1.5×, bounded by device pixel ratio. Recovery waits
+15 seconds after a reduction, and skips intro playback, dragging, overlays and
+scene construction. Desktop resolution remains unchanged. Tests cover CPU/GPU
+pressure, severe stalls, recovery, low-density screens and hidden-view suspension.
+
+Validation: all 258 frontend tests pass on the release checkout. The development
+workspace also passed 287 project tests and the public build. Local browser checks
+covered 320×568 and 390×844 phones, 844×390 landscape, and 1440×900 desktop,
+including sheets, menus, daylight and night mode, with no console warnings or
+errors. Phone dimensions were emulated; physical-device FPS was not measured.
+
 ## Live village population sign
 
 A two-sided sign centered in front of the left academic building on the hilltop

@@ -38,7 +38,7 @@ dialog{width:580px;max-width:calc(100% - 32px);max-height:calc(100dvh - 48px);pa
 
 /* Keep phone controls to one row; secondary actions open above it. */
 .village-extra-controls{display:contents}.village-primary-controls{display:flex;gap:8px;pointer-events:auto}#village-more{display:none}
-@media(max-width:700px),(pointer:coarse){
+@media(max-width:1280px),(pointer:coarse){
   .village-bottom{flex-wrap:nowrap;gap:0}
   .village-primary-controls{width:100%;justify-content:space-between}
   .village-primary-controls button{min-height:44px;padding:10px 15px;font-size:13px}
@@ -118,3 +118,68 @@ dialog{width:580px;max-width:calc(100% - 32px);max-height:calc(100dvh - 48px);pa
   .village-drawer{touch-action:pan-x pan-y}
 }
 .village-shell:fullscreen{height:100dvh}
+
+/* Quiet, opaque surfaces stay legible without repeatedly blurring the world. */
+.village-top{gap:24px}
+.village-title{min-width:0;text-shadow:0 2px 12px #10172499}
+.village-title h1{font-size:30px;letter-spacing:-.04em;line-height:1.15}
+.village-kicker{letter-spacing:.16em;color:#f1f5ff}
+.village-home{font-size:12px;min-height:32px;margin-bottom:12px;padding:7px 11px;background:#142135;border:1px solid #d1e0ff24;border-radius:20px}
+.village-reset,.village-view-tools button,.party-tools button,.street-controls button{
+  background:linear-gradient(180deg,#24334a,#192639);backdrop-filter:none;
+  border-color:#cfddf02e;box-shadow:0 2px 5px #07101c20,inset 0 1px 0 #ffffff06;
+  font-size:13px;font-weight:500;transition:background-color .15s,border-color .15s
+}
+.village-top-actions{align-items:center}
+.village-top-actions>.button{background:#dceab4;border-color:#eaf5cd;color:#182522;box-shadow:0 3px 12px #07101c26}
+.village-reset[aria-expanded=true],#village-street[aria-pressed=true]{background:#34496b;border-color:#b0c9f377}
+.village-drawer{background:#132035;backdrop-filter:none;border-color:#bbd0ef35;box-shadow:0 12px 40px #060e1c40}
+.drawer-heading h2{letter-spacing:-.035em}
+.close-button{width:44px;height:44px;border-radius:12px}
+.house-card{background:#1b2b42;border-color:#a8c0e329;border-radius:12px}
+.house-card.selected{background:#2a3d58;border-color:#c6dc9d}
+.house-rank{color:#e1d5ad;border-color:#e1d5ad35;background:#e1d5ad08}
+.progress-track{height:4px;border-radius:4px;overflow:visible;background:#ffffff15}
+.progress-track i{background:#d0e5a5;border-radius:4px}
+.chapter-crest{background:#20334e;border-color:#b5ceef30;color:#e3efc8}
+.chapter-panel{gap:16px}
+.chapter-status strong{font-variant-numeric:tabular-nums}
+.house-label>span,.chapter-identity h3{overflow-wrap:anywhere}
+.neighborhood{scrollbar-color:#506581 transparent}
+dialog{background:#132035;border-color:#bbd0ef35}
+dialog::backdrop{backdrop-filter:none;background:#080f20b3}
+@media(hover:hover){
+  .village-reset:hover,.village-view-tools button:hover,.party-tools button:hover{background:#304460;border-color:#c8daf166}
+  .village-top-actions>.button:hover{background:#e9f4cc}
+  .house-card:hover{border-color:#b7cbe477}
+}
+@media(max-width:1280px),(pointer:coarse){
+  .village-flight-hint{display:none}
+  .village-primary-controls{width:auto;margin-left:auto;padding:5px;gap:5px;border:1px solid #c8d9f133;border-radius:18px;background:#132035;box-shadow:0 5px 18px #060e1c30}
+  .village-primary-controls button{border-radius:12px;min-height:46px;padding:10px 18px}
+  .controls-open .village-extra-controls{bottom:70px;padding:12px;gap:8px;background:#132035;border-color:#bbd0ef35;border-radius:18px}
+  .village-extra-controls button{background:#20324b;border-color:#a8c0e329;border-radius:11px;min-height:46px}
+  .village-extra-controls #village-leaderboard,.village-extra-controls #village-discord{grid-column:1 / -1}
+  .street-controls{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 74px)}
+}
+@media(max-width:700px){
+  .village-top{gap:8px}
+  .village-title h1{font-size:clamp(20px,5.8vw,24px);gap:6px}
+  .village-kicker{font-size:8px;letter-spacing:.1em}
+  .village-home{font-size:11px;margin-bottom:10px}
+  .village-top-actions{max-width:154px;gap:6px;flex-shrink:0}
+  .village-top-actions>.village-reset{font-size:12px;padding:9px 12px}
+  .village-top-actions>.button{font-size:12px;padding:10px 12px}
+  .village-primary-controls{width:100%;justify-content:space-between}
+  .village-primary-controls button{flex:1}
+  .village-drawer{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 70px);max-height:min(46svh,380px);border-radius:20px;padding:16px}
+  .village-drawer .eyebrow{letter-spacing:.1em}
+  .drawer-heading h2{font-size:24px}
+  .toast{bottom:94px}
+}
+@media(max-height:450px) and (pointer:coarse){
+  .village-drawer{bottom:86px;max-height:none}
+  .village-home{display:none}
+  .village-top-actions>.button{flex-basis:auto}
+  .village-top-actions{max-width:none;flex-wrap:nowrap}
+}

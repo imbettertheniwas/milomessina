@@ -4,7 +4,7 @@ import {createLiveArrivals} from './village-arrivals.js?v=120';
 import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
-import {villageQuality} from './village-quality.js?v=97';
+import {villageQuality,createResolutionBudget} from './village-quality.js?v=126';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
 import {createVillageRendererAsync} from './village-renderer.js?v=120';
@@ -38,15 +38,16 @@ async function startVillage(){
   const queueChapterUpdate=event=>{arrivals.enqueue(event.detail.arrivals);pendingChapterUpdate=event;};
   document.addEventListener('chapters:update',queueChapterUpdate);
   const flightKeys=new Set();
-  let renderScale=Math.min(devicePixelRatio,quality.pixelRatio);
+  const resolutionBudget=createResolutionBudget(quality,devicePixelRatio);
+  let renderScale=resolutionBudget.ratio;
   renderer.setPixelRatio(renderScale);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
   viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Use W A S D to fly the viewpoint forward, left, backward and right. Drag or use arrow keys to rotate, shift-drag to pan, or select a house. Scroll, pinch, or use plus and minus to zoom around the viewpoint. Click the FOMO blimp to join Discord, or use the Discord link in the village controls. Use Street view to click along the block. In Street view, W and S or up and down move, A and D or left and right look around. Escape resets the view.');
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x98a7ba);scene.fog=new THREE.FogExp2(0x98a7ba,.0022);
+  const scene=new THREE.Scene();scene.background=new THREE.Color(0xb6cfdf);scene.fog=new THREE.FogExp2(0xb6cfdf,.0019);
   const camera=new THREE.PerspectiveCamera(48,1,1,650);
-  const ambient=new THREE.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);
+  const ambient=new THREE.HemisphereLight(0xe0edff,0x877a61,1.55);scene.add(ambient);
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
-  const fill=new THREE.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
+  const fill=new THREE.DirectionalLight(0xb7d2f5,.6);fill.position.set(30,15,-25);scene.add(fill);
   let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals});scene.add(village.world);
   const populationSource=document.getElementById('chapters-data');
   const populationSnapshot=JSON.parse(populationSource.textContent);
@@ -63,12 +64,12 @@ async function startVillage(){
   const dusk={sky:new THREE.Color(0x25233f),ambient:new THREE.Color(0x9a9fdc),ground:new THREE.Color(0x453649),sun:new THREE.Color(0xc49ab1),fill:new THREE.Color(0x858dff)};
   let litAtNight=false;
   function applyLighting(amount){
-    scene.background.set(0x98a7ba).lerp(dusk.sky,amount);scene.fog.color.copy(scene.background);scene.fog.density=.0022+amount*.001;
+    scene.background.set(0xb6cfdf).lerp(dusk.sky,amount);scene.fog.color.copy(scene.background);scene.fog.density=.0019+amount*.0013;
     // Lift dusk's indirect light so brickwork and people retain detail at
     // street level, using the existing lights and the same daylight exposure.
-    ambient.color.set(0xd4e2ed).lerp(dusk.ambient,amount);ambient.groundColor.set(0x857768).lerp(dusk.ground,amount);ambient.intensity=1.55-amount*.72;
+    ambient.color.set(0xe0edff).lerp(dusk.ambient,amount);ambient.groundColor.set(0x877a61).lerp(dusk.ground,amount);ambient.intensity=1.55-amount*.72;
     sun.color.set(0xffe5c6).lerp(dusk.sun,amount);sun.intensity=2.6-amount*2.18;
-    fill.color.set(0xc4d2e0).lerp(dusk.fill,amount);fill.intensity=.5-amount*.07;
+    fill.color.set(0xb7d2f5).lerp(dusk.fill,amount);fill.intensity=.6-amount*.17;
     const night=amount>.45;
     if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);helipad.setNight(night);}
   }
@@ -353,7 +354,7 @@ async function startVillage(){
   },{threshold:0}).observe(shell);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)releasePointer();lastTime=0;wake();});
   const framePacer=createFramePacer(quality.frameRate);
-  let slowFrames=0,overlayOpen=quality.mobile&&(!document.getElementById('village-drawer').hidden||document.getElementById('village-more').getAttribute('aria-expanded')==='true'||Boolean(document.getElementById('about-dialog').open));
+  let overlayOpen=quality.mobile&&(!document.getElementById('village-drawer').hidden||document.getElementById('village-more').getAttribute('aria-expanded')==='true'||Boolean(document.getElementById('about-dialog').open));
   document.addEventListener('village:overlay',event=>{overlayOpen=quality.mobile&&event.detail.open;lastTime=0;viewDirty=true;wake();});
   function wake(){if(ready&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
   function frame(now){
@@ -361,9 +362,8 @@ async function startVillage(){
     if(!visible||document.hidden){lastTime=0;return;}
     const activityPaused=paused||overlayOpen;
     // Bound GPU and animation work on high-refresh phones as well as 60 Hz displays.
-    const interval=1000/quality.frameRate;
     if(!framePacer.due(now)){wake();return;}
-    const frameGap=lastRender?now-lastRender:0;
+    const frameGap=lastTime&&lastRender?now-lastRender:0;
     const frameStarted=performance.now();
     const elapsed=lastTime?Math.max(0,(now-lastTime)/1000):0;
     const dt=Math.min(elapsed,.05);lastTime=now;
@@ -427,12 +427,8 @@ async function startVillage(){
     districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);
     village.competition.animate?.(partyTime,reduced);
     renderer.render(scene,camera);lastRender=now;
-    if(quality.mobile){
-      slowFrames=performance.now()-frameStarted>interval*.8||(frameGap>interval*1.45&&frameGap<250)?slowFrames+1:Math.max(0,slowFrames-1);
-      if(slowFrames>=20&&renderScale>quality.minPixelRatio){
-        renderScale=Math.max(quality.minPixelRatio,renderScale-.25);renderer.setPixelRatio(renderScale);slowFrames=0;
-      }
-    }
+    const nextScale=resolutionBudget.sample(now,performance.now()-frameStarted,frameGap,{busy:entranceActive||activityPaused||Boolean(drag)||village.building||districts.building});
+    if(nextScale!==renderScale){renderScale=nextScale;renderer.setPixelRatio(renderScale);}
     viewDirty=false;
     const settling=(streetMode&&(Math.abs(streetZ-streetWantedZ)>.01||camera.position.distanceTo(new THREE.Vector3(0,2.6,streetWantedZ))>.01))||target.distanceTo(wantedTarget)>.01||Math.abs(radius-wantedRadius)>.01||Math.abs(theta-wantedTheta)>.001||Math.abs(phi-wantedPhi)>.001;
     if(visible&&!document.hidden&&((!activityPaused&&!(entranceActive&&entrancePaused))||flightKeys.size||settling||(entranceActive&&!entrancePaused)||village.building||districts.building))wake();
