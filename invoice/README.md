@@ -100,32 +100,36 @@ same sheet, through the same deployment, so there is no second URL.
 4. Nothing. On `'auto'` the page picks it up by itself on the next load, and
    offers to carry that browser's ledger up with it.
 
-> **The ledger, the roster and subscriptions are deployed.** The live
-> deployment (`AKfycbxDR-3zqJEQgFEY0a-…`) was moved to a new version on Sep 14,
-> 2026 and now reports `ledger`, `clock`, `shiftimport` and `subs` true with
-> Arya in `payers`.
+> **Everything is deployed, and the URL moved.** The site now calls the
+> deployment named **live** (`AKfycbyFhq…`), which serves the current script — `ledger`, `clock`,
+> `shiftimport`, `subs` and `days` all true, Arya in `payers`. `ENDPOINT` in
+> `invoice/index.html` names it.
 >
-> **`days` is not, yet.** The board was rewritten from hours to days after that
-> version went out, so the four steps above are owed one more run. Until it
-> lands:
+> **`fomo/assets/form.js` still points at the old `AKfycbxDR…`, deliberately.**
+> Both deployments belong to the same script project and write the same sheet,
+> so nothing is split by it but the URL, and the three fomo forms were working
+> where they were. If you ever consolidate, move the forms onto the new one
+> rather than the page back onto the old.
 >
-> - **A day marked on a phone stays on that phone.** The page keeps the days in
->   whichever browser pressed the button and says so, in the line above the
->   cards, naming this redeploy. Nothing is lost and nothing is silently
->   wrong — but four people each keeping their own attendance is not a board,
->   and the cards read as one device's rather than the team's.
+> **Why the URL moved is the part worth keeping.** That script project has
+> **three active deployments, all named "Untitled"**, distinguishable only by
+> the seventh character of their id — `AKfycb**x**DR…`, `AKfycb**y**Fhq…`,
+> `AKfycb**z**y4…`. Four separate attempts to cut a new version of the one the
+> site called landed on the other two instead, each time looking exactly like
+> a deploy that did nothing. The code was correct every time. In the end it
+> was easier to point `ENDPOINT` at the deployment that already had the code
+> than to keep hunting the right row.
 >
-> Nothing has to be edited or re-typed to get it. The page picks the change up
-> by itself on the next load and offers to carry that browser's days up with
-> it, and the script's own migration carries the old `hours` tab across the
-> first time it is asked for a `days` tab.
+> It is called **live** now, which is the fix. Two "Untitled" rows remain
+> beside it and neither is the one to touch. Renaming cost nothing and moved
+> nothing — description and version are separate fields in that dialog, so
+> changing the description while leaving the Version dropdown alone keeps both
+> the URL and the served code exactly as they were, which was checked against
+> the endpoint straight afterwards.
 >
-> It also took two goes, which is worth remembering. The paste had landed in
-> the right project but the **New version** went to the wrong one of *three
-> active deployments, all named "Untitled"* — so the URL this site calls went
-> on serving Sep 10's code and it looked exactly like nothing had been
-> deployed. Check the ID in **Manage deployments** against `ENDPOINT` before
-> touching anything else, and name the live one.
+> Before touching anything, still: check the ID in **Manage deployments**
+> against `ENDPOINT`. If a redeploy ever looks like it did nothing, that is
+> the first thing to look at, not the code.
 >
 > The reason it was needed is worth remembering, because it will happen again.
 > The project had **two active deployments**. Somebody pasted the ledger code
