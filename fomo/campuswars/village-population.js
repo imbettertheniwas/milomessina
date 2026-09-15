@@ -1,3 +1,5 @@
+import {campusGroundHeight} from './village-campus-hill.js?v=105';
+
 // This is the sum of chapter registrations, never the decorative campus crowd
 // or the full active-roster/qualification denominators.
 export function villagePopulation(chapters){
@@ -12,9 +14,11 @@ export function populationStatus(status={},now=Date.now()){
 
 export function createVillagePopulation(T,chapters,status={}){
   const root=new T.Group();root.name='greek-village-population';
-  // The southern entrance stays fixed when more blocks extend northward.
-  // Keep the plinth outside the boulevard and its pedestrian pavement.
-  root.position.set(13,0,-35);root.rotation.y=Math.PI;root.scale.setScalar(.85);
+  // Set the sign on the hill's left lawn beside the central stairs, facing
+  // Greek Row. Match the uphill edge of the plinth to the actual terrain.
+  const site={x:-12,z:-81},scale=.85;
+  const ground=campusGroundHeight(site.x,site.z-.9*scale)+.052;
+  root.position.set(site.x,ground,site.z);root.scale.setScalar(scale);
   const resources=new Set(),own=value=>(resources.add(value),value);
   const box=own(new T.BoxGeometry(1,1,1));
   const metal=own(new T.MeshStandardMaterial({color:0x171925,roughness:.38,metalness:.7}));
@@ -22,6 +26,8 @@ export function createVillagePopulation(T,chapters,status={}){
   const violet=own(new T.MeshBasicMaterial({color:0x8670ff,toneMapped:false}));
   function block(x,y,z,w,h,d,material){const mesh=new T.Mesh(box,material);mesh.position.set(x,y,z);mesh.scale.set(w,h,d);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;}
   block(0,.17,0,5.8,.34,1.8,metal);
+  // Sink a short foundation into the slope so the level plinth never floats.
+  block(0,-.25,0,5.8,.5,1.8,metal);
   block(0,.36,0,4.8,.045,1.3,violet);
   block(0,1.45,0,1.5,2.2,.65,metal);
   for(const side of [-1,1])block(side*.65,1.45,-.335,.045,1.7,.035,violet);

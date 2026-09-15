@@ -1,14 +1,19 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Campus hill preview</title>
 <style>@font-face{font-family:Aeonik;src:url(../assets/aeonik-700.ttf);font-weight:700}body{margin:0;background:#98a7ba;font:14px Arial;color:white}nav{position:fixed;top:16px;left:16px;right:16px;z-index:2;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid #ffffff55;background:#182435;color:white;padding:12px;border-radius:8px;cursor:pointer}output{position:fixed;bottom:16px;left:16px;background:#182435;padding:12px;border-radius:8px}</style>
-<nav><button id="quad">Campus quad</button><button id="street">From Greek Row</button><button id="overhead">Overhead</button><button id="prize">National prize</button><button id="night">Day / night</button><button id="pause">Pause students</button></nav><output id="stats">Loading campus…</output>
+<nav><button id="quad">Campus quad</button><button id="street">From Greek Row</button><button id="overhead">Overhead</button><button id="prize">National prize</button><button id="population">Population sign</button><button id="night">Day / night</button><button id="pause">Pause students</button></nav><output id="stats">Loading campus…</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
 import {createDistricts} from '../village-districts.js?v=99';
 import {createVillage} from '../village-world.js?v=97';
+import {createVillagePopulation} from '../village-population.js?v=2';
+import {startChapterFeed} from '../chapter-feed.js?v=120';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);scene.fog=new T.FogExp2(0x98a7ba,.0022);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,1,650);
 const ambient=new T.HemisphereLight(0xd4e2ed,0x857768,1.55);scene.add(ambient);const sun=new T.DirectionalLight(0xffe5c6,2.6);sun.position.set(-45,65,-65);sun.target.position.set(0,0,-100);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.normalBias=.05;Object.assign(sun.shadow.camera,{left:-75,right:75,top:65,bottom:-65,near:1,far:180});scene.add(sun,sun.target);const fill=new T.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
 const chapters=await fetch('../chapters.json').then(r=>r.json());const village=createVillage(T,chapters.chapters);scene.add(village.world);const districts=createDistricts(T,village.extension,village.streetTotal);scene.add(districts.root);
+const population=createVillagePopulation(T,chapters.chapters,{live:false,updatedAt:chapters.updatedAt});scene.add(population.root);
+startChapterFeed({initialSnapshot:chapters,onUpdate:s=>population.setChapters(s.chapters),onStatus:s=>population.setStatus(s)});
+document.getElementById('population').onclick=()=>view(-5,11,-57,-12,9,-81);
 function view(x,y,z,tx,ty,tz){camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);camera.updateMatrixWorld();districts.update(tx,tz);renderer.shadowMap.needsUpdate=true;}
 document.getElementById('quad').onclick=()=>view(68,54,-35,0,7,-101);document.getElementById('street').onclick=()=>view(0,4,-43,0,13,-111);document.getElementById('overhead').onclick=()=>view(0,113,-44,0,0,-102);let night=false,paused=false;
 document.getElementById('night').onclick=()=>{night=!night;scene.background.set(night?0x25233f:0x98a7ba);scene.fog.color.copy(scene.background);ambient.intensity=night?.83:1.55;sun.intensity=night?.42:2.6;districts.setNight(night);village.nightLife.setNight(night);renderer.shadowMap.needsUpdate=true;};document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume students':'Pause students';};

@@ -1,3 +1,4 @@
+import {campusGroundHeight} from '../village-campus-hill.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
@@ -43,7 +44,8 @@ test('the sign ages honestly and reuses one shared texture for both directions',
   const texture=faces[0].material.map,version=texture.version;
   assert.equal(sign.refresh(now),false);assert.equal(texture.version,version);
   sign.refresh(now+90001);assert.equal(sign.root.userData.status,'LAST KNOWN REGISTRATIONS');assert.equal(texture.version,version+1);
-  const bounds=new T.Box3().setFromObject(sign.root);assert(bounds.min.x>8.1,'sign clears the pedestrian pavement');assert(bounds.min.z>-41.7,'sign clears the entrance intersection');
+  const bounds=new T.Box3().setFromObject(sign.root);assert(bounds.max.x<-6.5,'sign clears the central stairs');assert(bounds.min.x>-22,'sign clears the humanities hall');assert(bounds.max.z<-79,'sign sits on the upper hillside');
+  for(const dx of [-2.4,2.4])for(const dz of [-.76,.76]){const ground=campusGroundHeight(sign.root.position.x+dx,sign.root.position.z+dz)+.052;assert(ground>=bounds.min.y&&ground<=sign.root.position.y+.01,'foundation intersects the hillside without floating');}
   assert.equal(populationStatus({},now),'CONNECTING · SAVED REGISTRATIONS');
   let disposed=0;texture.addEventListener('dispose',()=>disposed++);sign.dispose();assert.equal(disposed,1);
 });

@@ -1,5 +1,5 @@
 import {backyardUnlocked} from './village-backyards.js?v=112';
-import {createVillagePopulation} from './village-population.js?v=1';
+import {createVillagePopulation} from './village-population.js?v=2';
 import {createLiveArrivals} from './village-arrivals.js?v=120';
 import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
@@ -89,10 +89,7 @@ async function startVillage(){
   }
   let introRoll=0,introNight=0;
   function applyIntroView(){
-    const home=restingView(),view=reduced?home:introViewAt(entranceTime);
-    // Ease the last intro beat into the phone framing, leaving space for the
-    // physical welcome sign beside the boulevard in a portrait viewport.
-    if(!reduced&&viewport.clientWidth<650){const t=Math.max(0,Math.min(1,(entranceTime-(INTRO_DURATION-2))/(2))),blend=t*t*(3-2*t);view.target[0]+=(home.target[0]-openingView.target[0])*blend;view.radius+=(home.radius-openingView.radius)*blend;}
+    const view=reduced?openingView:introViewAt(entranceTime);
     target.set(...view.target);theta=view.theta;phi=view.phi;radius=view.radius;
     wantedTarget.copy(target);wantedTheta=theta;wantedPhi=phi;wantedRadius=radius;
     introRoll=view.roll||0;introNight=view.night||0;
@@ -145,9 +142,8 @@ async function startVillage(){
   // rebuild the sign, and the texture changes only when its wording changes.
   const populationFreshness=setInterval(()=>{if(!document.hidden&&population.refresh()){describePopulation();viewDirty=true;wake();}},15000);
   addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(populationFreshness);});
-  function restingView(){return viewport.clientWidth<650?{...openingView,target:[8,2,-8.101],radius:60}:openingView;}
-  const target=new THREE.Vector3(...restingView().target),wantedTarget=target.clone(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
-  let {theta,phi,radius}=restingView();let wantedTheta=theta,wantedPhi=phi,wantedRadius=radius;
+  const target=new THREE.Vector3(...openingView.target),wantedTarget=target.clone(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+  let {theta,phi,radius}=openingView;let wantedTheta=theta,wantedPhi=phi,wantedRadius=radius;
   if(!reduced)applyIntroView();
   const nightToggle=document.getElementById('night-toggle');
   nightToggle.addEventListener('click',()=>{
@@ -156,7 +152,7 @@ async function startVillage(){
     applyLighting(night?1:0);viewDirty=true;wake();
   });
   function snapLongJump(){if(target.distanceTo(wantedTarget)>180){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=restingView();wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
+  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=openingView;wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
   function choose(id,focus=false,emit=true){
     const anchor=village.anchors.find(a=>a.id===id);if(!anchor)return;selected=id;viewDirty=true;
     // Frame the house from its own street's centre line, whichever street that is.

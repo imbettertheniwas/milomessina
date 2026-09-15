@@ -53,16 +53,6 @@ test('taking control cancels the descent immediately and reset remains usable',a
 test('reduced motion opens directly on the row',async()=>{
   const h=await cameraHarness(true);h.show(true);const a=h.step(.02);assert(a.y<14);assert(a.distanceTo(h.step(5))<.001);
 });
-test('portrait opening frames the entire population sign beside the street',async()=>{
-  const h=await cameraHarness(true,'',false,true,{width:390,height:844});h.show(true);h.step(.05);
-  const sign=createVillagePopulation(THREE,[]),bounds=new THREE.Box3().setFromObject(sign.root);
-  for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
-    const projected=new THREE.Vector3(x,y,z).project(h.camera());
-    assert(Math.abs(projected.x)<1,'population sign fits the phone width');
-    assert(projected.y>-.85&&projected.y<.75,'sign clears the top and bottom controls');
-  }
-  sign.dispose();
-});
 test('startup preserves a new chapter deep link while waiting for live registrations',async()=>{
   const h=await cameraHarness(false,'#chapter=chapter-new');h.show(true);h.step(4);
   assert.deepEqual(h.selections,[],'fallback selection must not overwrite the requested live chapter');
