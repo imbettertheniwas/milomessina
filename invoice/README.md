@@ -2,8 +2,8 @@
 
 `/invoice` is the internal tool for arya's fomo bootcamp.
 Milo, Bijan, Jesse and Luchi log what they front — lunches, API credits, coffee
-— and clock in and out; the page totals what's been spent, who is still owed,
-where the money went, and how many hours each of them has worked. Anything that
+— and mark the days they were in; the page totals what's been spent, who is
+still owed, where the money went, and how many days each of them has been here. Anything that
 goes out every month, a subscription rather than a one-off, is set up once and
 puts itself on the ledger from then on.
 
@@ -17,20 +17,20 @@ It works the moment it loads. Nothing to deploy, nothing to configure.
 private, and the catch is in the name: **the ledger lives on whichever computer
 it was typed on.** Arya's laptop and Milo's laptop hold different ledgers, and
 clearing site data clears it. This is also why **nobody sees anybody else's
-clock** on device storage: a shift clocked on one laptop is a row in that
+attendance** on device storage: a day marked on one laptop is a row in that
 browser and has never left it. Treat the CSV exports as the way anything leaves
 one machine.
 
 **`'sheet'`** is the shared version: one ledger in a Google Sheet that everyone
-reads and writes, surviving any one browser. It is what makes the clock cards
-mean *who is working right now* rather than *who is working on this laptop*. It
+reads and writes, surviving any one browser. It is what makes the cards mean
+*who has been in* rather than *who has been in on this laptop*. It
 costs one deploy — see below.
 
 **`'auto'`**, the default, is both in the only order that is safe. The page
-opens on this browser's own store — never blank, never waiting, an open shift
-still ticking — and then asks the endpoint whether the version actually deployed
-behind it carries the ledger. If it does, the page moves itself over and the
-clocks go live for everyone. If it does not, it stays on device storage and says
+opens on this browser's own store — never blank, never waiting — and then asks
+the endpoint whether the version actually deployed behind it carries the
+ledger. If it does, the page moves itself over and the board goes live for
+everyone. If it does not, it stays on device storage and says
 so in a banner naming the fix, rather than breaking on a URL that cannot answer
 it.
 
@@ -38,7 +38,7 @@ That last part is the point. Apps Script serves the last *deployed* version, so
 `'sheet'` set before the redeploy is a page that loads to an error; `'sheet'`
 set after means someone has to edit and ship this file at exactly the right
 moment. `'auto'` removes the ordering: deploy the page whenever, deploy the
-script whenever, and the clocks come on by themselves on the next load.
+script whenever, and the board comes on by itself on the next load.
 
 Nothing else changes. All three answer the same calls, so every button on the
 page behaves identically either way.
@@ -54,10 +54,9 @@ the screen. The page notices, counts it, and offers one button:
 > Still saved here either way — send them up and everyone sees them.
 
 Nothing goes up until that is pressed, and nothing local is deleted either way.
-A shift that is still running arrives still running, **carrying the time it
-actually started** — this is why the Apps Script needs a `shiftimport` action
-rather than reusing `clockin`, which stamps the server's own clock and would
-turn an hour already worked into an hour of nothing. Anything already on the
+A day carries **its own date** — this is why the Apps Script needs a
+`dayimport` action rather than reusing `daymark`, which is about today and
+would turn a Tuesday marked three weeks ago into a day nobody was here. Anything already on the
 sheet is skipped rather than written twice, so pressing it again after a
 half-finished send costs nothing. Receipt photos stay behind, since the sheet
 holds a 500-character cell and not an image; the page says how many.
@@ -66,10 +65,10 @@ holds a 500-character cell and not an image; the page says how many.
 
 The ledger starts empty and only ever holds what someone actually logs. Nothing
 is seeded, so the totals and charts stay at zero until the first spend goes in
-and the first shift is clocked.
+and the first day is marked.
 
 Every control writes straight through: adding a spend, marking one paid, settling
-a whole person, clocking in and out, and both deletes — which ask once before they
+a whole person, marking a day and taking it back, and both deletes — which ask once before they
 go, so a mis-click costs nothing. **Refresh** re-reads the store, which matters
 when the page is open in more than one tab on the same browser.
 
@@ -85,14 +84,14 @@ it to `''` to drop the gate entirely.
 `INVOICE_KEY` in the Apps Script is set to the same string, so the **endpoint**
 turns away requests that don't carry it, not just the page. That matters more
 than it looks: the `/exec` URL is open to anyone who has it, and without the key
-a stranger could read the ledger and clock people in and out without ever
+a stranger could read the ledger and mark people in and out without ever
 loading `/invoice`. Change one and change the other, or the page locks itself
 out of its own sheet.
 
 ## Switching on the shared sheet
 
 The ledger endpoint lives in `fomo/setup/apps-script.gs`, alongside the receiver
-the fomo forms already use. It writes an `invoice` tab and an `hours` tab in the
+the fomo forms already use. It writes an `invoice` tab and a `days` tab in the
 same sheet, through the same deployment, so there is no second URL.
 
 1. Open the sheet → **Extensions → Apps Script**.
@@ -101,29 +100,32 @@ same sheet, through the same deployment, so there is no second URL.
 4. Nothing. On `'auto'` the page picks it up by itself on the next load, and
    offers to carry that browser's ledger up with it.
 
-> **The ledger and the clock are already deployed.** The live deployment
-> (`AKfycbxDR-3zqJEQgFEY0a-…`) was moved to a new version on Sep 10, 2026 and
-> the endpoint reports `ledger`, `clock` and `shiftimport` all true.
+> **The ledger, the roster and subscriptions are deployed.** The live
+> deployment (`AKfycbxDR-3zqJEQgFEY0a-…`) was moved to a new version on Sep 14,
+> 2026 and now reports `ledger`, `clock`, `shiftimport` and `subs` true with
+> Arya in `payers`.
 >
-> **`payers` and `subs` are not, yet** — checked again on Sep 14, 2026, and the
-> endpoint still answers without either. Both went into the script after that
-> Sep 10 version, so the four steps above are owed one more run, and between
-> them they are what the four of them are actually hitting:
+> **`days` is not, yet.** The board was rewritten from hours to days after that
+> version went out, so the four steps above are owed one more run. Until it
+> lands:
 >
-> - **Arya cannot log a spend.** The roster that deployment enforces is the
->   four interns, so a line Arya fronts is refused by the sheet. The page now
->   reads the roster on load and greys the name out with the reason rather than
->   taking a whole line and losing it, but greyed out is still Arya unable to
->   put a coffee run on the ledger from any device.
-> - **Monthly subscriptions stay on whichever device set them up.** Everything
->   else on the page is the team's, and these look identical and are not:
->   nobody else can see the rule, pause it, or delete it, and clearing site
->   data takes it. The lines it writes do land on the shared ledger, so the
->   money is not lost — the rule is.
+> - **A day marked on a phone stays on that phone.** The page keeps the days in
+>   whichever browser pressed the button and says so, in the line above the
+>   cards, naming this redeploy. Nothing is lost and nothing is silently
+>   wrong — but four people each keeping their own attendance is not a board,
+>   and the cards read as one device's rather than the team's.
 >
-> The redeploy fixes both at once, and nothing has to be edited or re-typed to
-> get it: the page picks the change up by itself on the next load and offers to
-> carry that browser's rules up with it.
+> Nothing has to be edited or re-typed to get it. The page picks the change up
+> by itself on the next load and offers to carry that browser's days up with
+> it, and the script's own migration carries the old `hours` tab across the
+> first time it is asked for a `days` tab.
+>
+> It also took two goes, which is worth remembering. The paste had landed in
+> the right project but the **New version** went to the wrong one of *three
+> active deployments, all named "Untitled"* — so the URL this site calls went
+> on serving Sep 10's code and it looked exactly like nothing had been
+> deployed. Check the ID in **Manage deployments** against `ENDPOINT` before
+> touching anything else, and name the live one.
 >
 > The reason it was needed is worth remembering, because it will happen again.
 > The project had **two active deployments**. Somebody pasted the ledger code
@@ -144,15 +146,17 @@ serving the old code, which looks exactly like nothing happened.
 
 Open the `/exec` URL itself in a browser:
 
-    {"ok":true,"hint":"fomo campus form receiver is live","ledger":true,"clock":true,"shiftimport":true,"subs":true,"payers":["Milo","Bijan","Jesse","Luchi","Arya"]}
+    {"ok":true,"hint":"fomo campus form receiver is live","ledger":true,"clock":true,"shiftimport":true,"subs":true,"days":true,"payers":["Milo","Bijan","Jesse","Luchi","Arya"]}
 
-`ledger` and `clock` are the two halves of this tool, `shiftimport` is the
-carry-over described above, `subs` is monthly subscriptions, and `payers` is
-the roster that deployment will actually put on a line. **All four `true` and
-Arya in `payers` means the deployed version is the current one** — and every
-one of them is read by the page itself on each load, which is how it knows to
-grey a name out instead of losing a line to it. If any is missing or `false`,
-that URL is still serving older code. Either you ended up with a second deployment, or
+`ledger` is the money half and `clock` is the attendance half, `shiftimport` is
+the carry-over described above, `subs` is monthly subscriptions, `days` is the
+attendance board counting days rather than hours, and `payers` is the roster
+that deployment will actually put on a line. **All five `true` and Arya in
+`payers` means the deployed version is the current one** — and every one of
+them is read by the page itself on each load, which is how it knows to grey a
+name out instead of losing a line to it, and to keep days in the browser
+instead of pretending they are shared. If any is missing or `false`, that URL
+is still serving older code. Either you ended up with a second deployment, or
 the paste went into a different script project than the one this URL belongs to.
 
 If you do end up with a new URL, paste it into `ENDPOINT` in both
@@ -191,19 +195,27 @@ The `subs` tab — one row per monthly subscription, and none of them a spend:
 | `active` | `yes`, or `no` while it is paused |
 | `last` | the day of the last line it wrote |
 
-The `hours` tab:
+The `days` tab — one row per person per day they were here:
 
 | Column | Holds |
 | --- | --- |
 | `id` | 8 characters, generated server-side |
 | `who` | which intern |
-| `day` | the local date the shift started, for reading the tab |
-| `start`, `end` | UTC stamps — `end` is blank while someone is still on the clock |
-| `minutes` | filled in on clock-out |
+| `day` | the day they were in, `YYYY-MM-DD` |
+| `marked` | when the row was written — the same day, or later if it was filled in afterwards |
 
-Start and end are stored in UTC on purpose: the elapsed time is worked out in
-whatever timezone the person pressing the button is in, and it has to agree with
-what the sheet says. The `day` column sits alongside so the tab still reads well.
+There is no start, no end and no duration, which is the point of the whole tab:
+a day either happened or it didn't. `marked` is not a second opinion about when
+somebody arrived, it is the audit trail — a Tuesday written down on Thursday
+says `marked` Thursday, and the table shows it as *added sep 17* rather than
+letting it pass for a Tuesday marked on Tuesday.
+
+The old `hours` tab is left exactly where it is. It is the archive of the clock
+this replaced — `start`, `end` and `minutes` per shift — and nothing reads it
+any more. The first time the script is asked for a `days` tab that does not
+exist yet, it creates one and carries every distinct person-and-day in `hours`
+across, so the history survives the change. That runs once, on the tab's
+creation, and cannot double up.
 
 Edit either tab by hand if you like — the page re-reads them every 30 seconds.
 Just leave the `id` columns alone; the page uses them to find rows.
@@ -258,9 +270,8 @@ money back, but Arya fronts spends too and they belong on the ledger the same
 way. **who it was for** is a row of toggles underneath, because a good deal
 of what gets bought is bought for Arya.
 
-The clock is the one place the roster is shorter: **on the clock**, the hours
-table and the GitHub panel are the four interns only. Arya is not on a
-timesheet.
+The board is the one place the roster is shorter: **days here**, the days
+table and the GitHub panel are the four interns only. Arya is not on it.
 
 Whoever is paying starts ticked, since the usual case is buying your own along
 with everyone else's. Untick yourself and the line reads as bought purely for
@@ -333,35 +344,70 @@ too old to hold it — could write the same month twice. It doesn't: a line
 already on the ledger for the same person, day, description and amount *is*
 that line, and the rule steps over it.
 
-## The clock
+## The days
 
-Press a name in when they arrive and out when they leave. The card runs a live
-timer while someone is on the clock, and the hours panel below totals the week
-and all time. Hours export to CSV separately from the money.
+Press your name on a day you were in. That is the whole of it — the card turns
+green, the count goes up, and pressing it again takes it back off.
 
-On the shared sheet these are everybody's clocks: the page re-reads them every
-30 seconds, so a name pressed in on somebody else's laptop turns green here
-without anyone reloading. A tab in the background stops both the ticking and
-the re-reading — neither is worth doing to a screen nobody is looking at — and
-does both the instant it comes back to the front, so what you are looking at
-when you look at it is current rather than up to half a minute old.
+**It records days, not hours, and that is deliberate.** This used to be a clock:
+a start, an end, and the minutes between. It measured the wrong thing. Nobody
+here is paid by the hour, the ends were guessed at by whoever remembered to
+press the button, and a shift left open overnight turned an ordinary day into
+sixteen red hours that then had to be explained to somebody. What anyone
+actually wanted off this board was who has been in, and on which days. A day is
+the unit now, and the only unit: there is nothing finer to get wrong, and the
+record cannot drift just because a tab got closed.
+
+The card shows that person's days **this week**, always — the old board flipped
+the same figure between a running timer and a weekly total depending on whether
+somebody happened to be clocked in, so the number in that spot meant two
+different things an hour apart. Underneath it is their all-time count. The
+table below lists every day on record, newest first, and exports to CSV
+separately from the money.
+
+### Missed a day
+
+**Missed a day?** under the cards takes a name and a date and marks it. With
+hours this was impossible — you had to be at the keyboard to record anything —
+but a day is different: you notice on Thursday that Tuesday was never marked,
+and Tuesday is not in dispute. Without it the only fix is hand-editing the
+sheet, which is how attendance stops being trustworthy.
+
+The date cannot be in the future, and a day already marked says so rather than
+writing a second row for it.
+
+### Everybody's, or this browser's
+
+On the shared sheet these are everybody's days: the page re-reads them every 30
+seconds, so a name pressed in on somebody else's laptop turns green here without
+anyone reloading. A tab in the background stops the re-reading — not worth doing
+to a screen nobody is looking at — and catches up the instant it comes back to
+the front.
 
 On device storage they are only that browser's, and the line above the cards
-says so rather than letting four empty cards read as four people not working.
+says so rather than letting four empty cards read as four people who haven't
+been in. The same line appears on a *shared* sheet whose deployed script is too
+old to keep days, because that case looks identical and isn't: everything else
+on the page is the team's, and these would silently be one phone's. It names the
+redeploy that ends it.
 
-Someone can only be clocked in once at a time — a second press is refused. On
-four devices reading one sheet thirty seconds apart that is routine, not a
-fault: a name pressed in on a phone still reads as off the clock on a laptop
-that has not polled yet, and pressing it there is refused. **A refusal leaves
-the board live.** It says which press was turned down and why, holds the synced
-stamp where it was, and re-reads the sheet so the card that was out of date
-corrects itself. Only an endpoint that cannot be reached at all takes the
-status light down and puts up the connection banner — the two used to look
-identical, which made one refused press read as the whole clock being broken.
+Nothing ticks. There is no running number to move, so the only thing on a timer
+is the date itself, checked once a minute — a page left open overnight would
+otherwise go on offering to mark yesterday.
 
-A shift nobody closed shows up in red after 16 hours, saying so rather than
-quietly counting as a very long day; close it by clocking out, or delete the
-row from the table.
+### When the sheet says no
+
+Marking a day is idempotent on both sides: two people pressing the same name on
+the same morning are not in conflict, they agree, and the answer either way is
+that the day is recorded. Unmarking a day that isn't marked is the same.
+
+What the sheet can still refuse is a name it doesn't carry or a date that hasn't
+happened. **A refusal leaves the board live.** It says which press was turned
+down and why, holds the synced stamp where it was, and re-reads the sheet so
+anything out of date corrects itself. Only an endpoint that cannot be reached at
+all takes the status light down and puts up the connection banner — the two used
+to look identical, which made one refused press read as the whole board being
+broken.
 
 ## What everyone's pushing
 
@@ -426,4 +472,4 @@ If the limit is hit the panel says so and names the minute it resets.
 
 `PEOPLE` at the top of the page's script, and `INVOICE_PEOPLE` in the Apps
 Script, are the same four names. Change both — the endpoint refuses a name it
-doesn't recognise, on a spend and on a clock-in alike.
+doesn't recognise, on a spend and on a day alike.

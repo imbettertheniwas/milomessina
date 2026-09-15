@@ -97,6 +97,7 @@ function doGet() {
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
     subs: typeof subsRoll === 'function',
+    days: typeof dayMark === 'function',
     /* The roster this deployment will actually put on a line. The page
        carries its own copy of the same list, and the two agree only while
        the script behind the URL is current — so it is named here rather
@@ -288,6 +289,19 @@ function invoiceApi(body) {
     var srow = shiftFind(ssh, body.id);
     if (srow) ssh.deleteRow(srow);
 
+  } else if (action === 'daymark' || action === 'dayclear') {
+    var dayErr = action === 'daymark' ? dayMark(body.who, body.day) : dayClear(body.who, body.day);
+    if (dayErr) return reply(false, dayErr);
+
+  } else if (action === 'dayimport') {
+    var dimpErr = dayImport(body.days);
+    if (dimpErr) return reply(false, dimpErr);
+
+  } else if (action === 'daydelete') {
+    var ddsh = daySheet();
+    var ddrow = dayFind(ddsh, body.id);
+    if (ddrow) ddsh.deleteRow(ddrow);
+
   } else if (action === 'subadd') {
     var rule = subClean(body);
     if (rule.error) return reply(false, rule.error);
@@ -322,7 +336,7 @@ function invoiceApi(body) {
      the sheet actually holds rather than what it hoped it did. */
   return reply(true, null, {
     rows: invoiceRead(sh).map(invoicePublic),
-    shifts: shiftRead(shiftSheet()).map(shiftPublic),
+    days: dayRead(daySheet()).map(dayPublic),
     subs: subRead(subSheet()).map(subPublic)
   });
 }
@@ -600,6 +614,194 @@ function subsRoll(insh) {
     }
   }
   return made;
+}
+
+/* ── the days people were here ───────────────────────────────
+
+   The clock used to record when a shift started and when it ended, and
+   totalled the minutes between. That was the wrong shape for what this
+   actually is: four people who come in on a day or don't. Nobody was
+   paid by the hour, half the shifts were closed by whoever noticed, and
+   a forgotten clock-out turned a normal day into sixteen red hours.
+
+   So a day is the unit. One row per person per day they were here,
+   nothing finer. There is no start, no end and no duration to get wrong,
+   and the only way to be inaccurate is to mark a day you weren't in.
+
+   `hours` is left exactly where it is. It is the archive of the old
+   system and nothing reads it after the migration below, which runs once
+   — the first time this script is asked for a `days` tab that does not
+   exist yet — and carries every distinct person-and-day across. */
+var DAY_TAB = 'days';
+var DAY_COLS = ['id', 'who', 'day', 'marked'];
+
+function daySheet() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID)
+                           : SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('no spreadsheet — set SHEET_ID, or run this script from inside the sheet');
+
+  var sh = ss.getSheetByName(DAY_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(DAY_TAB);
+    sh.getRange(1, 1, sh.getMaxRows(), DAY_COLS.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, DAY_COLS.length).setValues([DAY_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    /* Only ever on the tab's first creation, so it cannot run twice and
+       cannot double up. Wrapped because an unreadable archive is not a
+       reason to refuse the team a working clock today. */
+    try { dayMigrate(ss, sh); } catch (migErr) {}
+  }
+  return sh;
+}
+
+/* Every distinct person-and-day in the old `hours` tab becomes one row
+   here. Shifts crossing midnight count as the day they started, which is
+   the day the person turned up — and is already what the tab's own `day`
+   column says, so that is read in preference to re-deriving it from a
+   UTC stamp in some other timezone. */
+function dayMigrate(ss, sh) {
+  var hrs = ss.getSheetByName(SHIFT_TAB);
+  if (!hrs) return;
+
+  var all = shiftRead(hrs), seen = {}, add = [];
+  for (var i = 0; i < all.length; i++) {
+    var who = String(all[i].who || '');
+    if (INVOICE_PEOPLE.indexOf(who) === -1) continue;
+
+    var day = dayText(all[i].day);
+    if (!isDayString(day)) day = dayFromStamp(all[i].start);
+    if (!isDayString(day)) continue;
+
+    var key = who + '|' + day;
+    if (seen[key]) continue;
+    seen[key] = true;
+    add.push([Utilities.getUuid().slice(0, 8), who, day, invoiceStamp()]);
+  }
+  if (add.length) sh.getRange(2, 1, add.length, DAY_COLS.length).setValues(add);
+}
+
+function isDayString(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')); }
+
+/* A hand-edit turns the text back into a real date, the same way it does
+   on every other tab here, so both shapes are handed back as text. */
+function dayText(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  return String(v || '').trim();
+}
+
+function dayFromStamp(iso) {
+  var t = new Date(iso);
+  if (isNaN(t.getTime())) return '';
+  return Utilities.formatDate(t, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
+function dayShift(days) {
+  var d = new Date();
+  d.setDate(d.getDate() + days);
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
+/* Marking is idempotent on purpose. Two laptops can press the same name
+   on the same morning, and the second one is not a mistake worth an
+   error — the day is already recorded and that is the whole of what was
+   being asked for. */
+function dayMark(who, day) {
+  who = String(who || '');
+  day = dayText(day);
+
+  if (INVOICE_PEOPLE.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  if (!isDayString(day)) return 'that day does not look right';
+  /* Tomorrow, not today, because the person pressing the button may be
+     hours ahead of whatever timezone this script thinks in — but a week
+     out is somebody filling in a month they have not worked. */
+  if (day > dayShift(1)) return 'that day has not happened yet';
+
+  var sh = daySheet();
+  if (dayRowFor(sh, who, day)) return null;
+
+  sh.appendRow([Utilities.getUuid().slice(0, 8), who, day, invoiceStamp()]);
+  return null;
+}
+
+/* Unmarking an unmarked day is not an error either: the request and the
+   sheet already agree about what is true. */
+function dayClear(who, day) {
+  who = String(who || '');
+  day = dayText(day);
+  if (!isDayString(day)) return 'that day does not look right';
+
+  var sh = daySheet();
+  var row = dayRowFor(sh, who, day);
+  if (row) sh.deleteRow(row);
+  return null;
+}
+
+/* A browser that was keeping its own attendance, handing it over. Same
+   shape as the ledger's carry-over: the roster is checked, a day already
+   on the tab is stepped over rather than written twice, and anything
+   unreadable is skipped rather than taking the whole send down. */
+function dayImport(list) {
+  if (!list || !list.length) return 'nothing to import';
+
+  var sh = daySheet();
+  var have = dayRead(sh), seen = {}, add = [];
+  for (var i = 0; i < have.length; i++) seen[have[i].who + '|' + have[i].day] = true;
+
+  for (var j = 0; j < list.length; j++) {
+    var v = list[j] || {};
+    var who = String(v.who || '');
+    if (INVOICE_PEOPLE.indexOf(who) === -1) continue;
+
+    var day = dayText(v.day);
+    if (!isDayString(day) || day > dayShift(1)) continue;
+
+    var key = who + '|' + day;
+    if (seen[key]) continue;
+    seen[key] = true;
+    add.push([Utilities.getUuid().slice(0, 8), who, day, invoiceStamp()]);
+  }
+
+  if (!add.length) return null;
+  sh.getRange(sh.getLastRow() + 1, 1, add.length, DAY_COLS.length).setValues(add);
+  return null;
+}
+
+function dayRead(sh) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, DAY_COLS.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var raw = vals[i];
+    if (!String(raw[0])) continue;
+    var o = { _row: i + 2 };
+    for (var j = 0; j < DAY_COLS.length; j++) o[DAY_COLS[j]] = raw[j];
+    o.id = String(o.id);
+    o.who = String(o.who);
+    o.day = dayText(o.day);
+    out.push(o);
+  }
+  return out;
+}
+
+function dayRowFor(sh, who, day) {
+  var all = dayRead(sh);
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].who === who && all[i].day === day) return all[i]._row;
+  }
+  return null;
+}
+
+function dayFind(sh, id) {
+  id = String(id || '');
+  if (!id) return null;
+  var all = dayRead(sh);
+  for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]._row;
+  return null;
+}
+
+function dayPublic(d) {
+  return { id: d.id, who: d.who, day: d.day };
 }
 
 /* ── the clock, behind the same /invoice page ────────────────── */

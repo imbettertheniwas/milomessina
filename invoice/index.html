@@ -325,6 +325,14 @@ footer .sep{opacity:.4}
 .clock-card.on .clock-btn:hover{filter:brightness(1.08)}
 .clock-btn:disabled{opacity:.5;cursor:default;transform:none}
 .clock-card .wk{font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;color:var(--muted-2)}
+.backfill{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px 18px;
+  border-top:1px solid var(--line);background:var(--surface)}
+.backfill .bf-lbl{font-size:.78rem;color:var(--muted-2)}
+.backfill select,.backfill input[type=date]{background:var(--bg);border:1px solid var(--line);
+  color:var(--ink);border-radius:9px;padding:7px 10px;font:inherit;font-size:.82rem}
+.backfill select:focus,.backfill input[type=date]:focus{outline:none;border-color:var(--violet)}
+.backfill .bf-hint{font-size:.75rem;color:var(--muted-2)}
+.backfill .bf-hint.bad{color:var(--owed)}
 @media(max-width:900px){.clock-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:470px){.clock-grid{grid-template-columns:1fr}}
 td.tnum{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.83rem;white-space:nowrap}
@@ -470,8 +478,15 @@ td.tnum.run{color:var(--good)}
 
   <section>
     <div class="panel">
-      <div class="panel-h"><h2>on the clock</h2><span class="note" id="clock-note">Press a name in when they arrive, out when they leave.</span></div>
+      <div class="panel-h"><h2>days here</h2><span class="note" id="clock-note">Press your name on a day you were in.</span></div>
       <div class="clock-grid" id="clock-grid"></div>
+      <div class="backfill">
+        <span class="bf-lbl">Missed a day?</span>
+        <select id="bf-who" aria-label="Who was here"></select>
+        <input type="date" id="bf-date" aria-label="Which day">
+        <button type="button" class="mini" id="bf-add">Mark that day</button>
+        <span class="bf-hint" id="bf-hint"></span>
+      </div>
     </div>
   </section>
 
@@ -562,20 +577,20 @@ td.tnum.run{color:var(--good)}
 
   <section>
     <div class="panel">
-      <div class="panel-h"><h2>hours logged</h2><span class="note" id="hours-note"></span></div>
+      <div class="panel-h"><h2>days on record</h2><span class="note" id="hours-note"></span></div>
       <div class="tools">
         <span class="lbl" id="hours-week"></span>
         <span class="push">
-          <button class="mini" id="t-hours-csv">Export hours CSV</button>
+          <button class="mini" id="t-hours-csv">Export days CSV</button>
         </span>
       </div>
       <div class="tbl-scroll">
         <table>
-          <thead><tr><th>who</th><th>day</th><th>in</th><th>out</th><th style="text-align:right">length</th><th></th></tr></thead>
+          <thead><tr><th>who</th><th>day</th><th style="text-align:right">when it was marked</th><th></th></tr></thead>
           <tbody id="shift-body"></tbody>
         </table>
       </div>
-      <div class="empty" id="shift-empty" hidden>No shifts yet. Clock someone in above.</div>
+      <div class="empty" id="shift-empty" hidden>No days marked yet. Press a name above.</div>
     </div>
   </section>
 
@@ -659,7 +674,7 @@ var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxDR-3zqJEQgFEY0a-f7RR_K
 var PASSCODE = 'monkey';
 
 /* The interns. This is the roster for the things that are only ever theirs:
-   shifts on the clock, hours on the timesheet, commits counted on GitHub. */
+   days on the board, the days table, commits counted on GitHub. */
 var PEOPLE = ["Milo","Bijan","Jesse","Luchi"];
 
 /* Everyone a line can be attached to — as the person who fronted it, or as
@@ -681,7 +696,7 @@ var CATS = [
 ];
 var CAT = {}; CATS.forEach(function(c){ CAT[c.id] = c; });
 
-var rows = [], shifts = [], subs = [], armed = {}, picked = null, busy = false, poll = null, tick = null;
+var rows = [], days = [], subs = [], armed = {}, picked = null, busy = false, poll = null, tick = null;
 var filters = {who:"", cat:"", status:"", q:""};
 
 /* ---------- helpers ---------- */
@@ -696,8 +711,9 @@ function niceDate(iso){
   return m + " " + Number(p[2]);
 }
 /* Wall-clock times read the way anybody here would say them out loud —
-   "9:15am", "4:05pm" — rather than as 24-hour time. Durations are a
-   different thing and stay with hm(): "7h 20m" is not a time of day. */
+   "9:15am", "4:05pm" — rather than as 24-hour time. All that is left
+   needing one is the sync stamp in the header and the marked-at column;
+   the board itself no longer deals in times of day at all. */
 function hhmm12(d){
   var h = d.getHours(), m = d.getMinutes(), ap = h < 12 ? "am" : "pm";
   h = h % 12; if (!h) h = 12;
@@ -769,6 +785,14 @@ var mode = BACKEND === 'sheet' ? 'sheet' : 'device';
    they write still land on the shared ledger like any other spend. */
 var sheetSubs = false;
 
+/* Whether the deployment behind ENDPOINT keeps the days people were here.
+   Asked and answered exactly like sheetSubs: the clock was rewritten from
+   hours to days after the script last went out, so a page can be current
+   while the sheet behind it still only knows about shifts. Until it is
+   redeployed the days stay in this browser, which is honest and usable,
+   rather than the page refusing to record attendance at all. */
+var sheetDays = false;
+
 /* The names the deployment behind ENDPOINT will actually accept on a line.
    PAYERS below is what this file believes; this is what the sheet enforces,
    and the two only agree while the deployed script is current. Apps Script
@@ -782,7 +806,10 @@ var sheetPayers = null;
 /* what this browser was holding at the moment it moved to the sheet */
 var carried = null;
 
-var LS_ROWS = "fomo.ledger.rows", LS_SHIFTS = "fomo.ledger.shifts", LS_SUBS = "fomo.ledger.subs";
+var LS_ROWS = "fomo.ledger.rows", LS_DAYS = "fomo.ledger.days", LS_SUBS = "fomo.ledger.subs";
+/* what the clock wrote before it counted days rather than hours — read
+   once, converted, and then left alone */
+var LS_SHIFTS = "fomo.ledger.shifts";
 
 function lsGet(k){
   try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }
@@ -791,7 +818,7 @@ function lsGet(k){
 function saveAll(){
   try {
     localStorage.setItem(LS_ROWS, JSON.stringify(rows));
-    localStorage.setItem(LS_SHIFTS, JSON.stringify(shifts));
+    localStorage.setItem(LS_DAYS, JSON.stringify(days));
     return true;
   } catch(e){
     /* a full or locked store must not look like a save that worked */
@@ -819,19 +846,61 @@ function saveSubs(){
 
 function loadLocal(){
   rows = lsGet(LS_ROWS) || [];
-  shifts = lsGet(LS_SHIFTS) || [];
+  var savedDays = lsGet(LS_DAYS);
+  if (savedDays) {
+    days = savedDays;
+  } else {
+    /* First load since the clock started counting days. Convert, and
+       write the result down straight away rather than re-deriving it
+       from the old shifts on every load: an unsaved conversion is one
+       the carry-over cannot offer to send up, and it would vanish the
+       moment anybody tidied the old key out of this browser. */
+    days = carriedFromShifts();
+    if (days.length) saveAll();
+  }
   if (subsMode() !== "sheet") subs = lsGet(LS_SUBS) || [];
   /* An earlier build seeded a week of made-up spends and shifts, and they
      were written into this browser's store — dropping the seeding code
      does not reach data already saved. Anything it planted goes on sight;
      real lines typed alongside it are untouched. */
-  var planted = rows.filter(wasSeeded).length + shifts.filter(wasSeeded).length;
+  var planted = rows.filter(wasSeeded).length + days.filter(wasSeeded).length;
   if (planted) {
     rows = rows.filter(function(r){ return !wasSeeded(r); });
-    shifts = shifts.filter(function(v){ return !wasSeeded(v); });
+    days = days.filter(function(v){ return !wasSeeded(v); });
     saveAll();
     toast("Cleared " + planted + " made-up " + (planted === 1 ? "line" : "lines") + ".");
   }
+}
+
+/* This browser's own shifts, converted the once.
+
+   The clock used to store a start and an end and count the minutes
+   between; it now stores the days somebody was here. A browser that was
+   keeping its own ledger still holds the old shape, and throwing it away
+   at the version boundary would lose days that were actually worked. So
+   it is read exactly once — only when no days have been saved yet — and
+   every distinct person-and-day in it comes across. The old key is left
+   where it is rather than deleted, because a conversion that turns out
+   wrong should still have something to go back to.
+
+   The sheet does the identical thing to its `hours` tab, on the first
+   call that asks it for a `days` tab. Same rule, applied in both places,
+   so the two agree about what the history was. */
+function carriedFromShifts(){
+  var old = lsGet(LS_SHIFTS);
+  if (!old || !old.length) return [];
+  var seen = {}, out = [];
+  old.forEach(function(v){
+    var who = String(v && v.who || "");
+    if (PEOPLE.indexOf(who) === -1) return;
+    var day = dayKeyOf(v && v.start);
+    if (!day) return;
+    var key = who + "|" + day;
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push({id:newId(), who:who, day:day, marked:new Date().toISOString()});
+  });
+  return out;
 }
 
 /* Same call signature as the sheet version, so every button above is
@@ -864,19 +933,19 @@ function apiLocal(action, p){
       });
       if (!n) return reject(new Error("nothing is owed to " + p.who));
 
-    } else if (action === "clockin") {
+    } else if (action === "daymark") {
       if (PEOPLE.indexOf(p.who) === -1) return reject(new Error("that name is not on the bootcamp"));
-      if (openShift(p.who)) return reject(new Error(p.who + " is already on the clock"));
-      shifts.push({id:newId(), who:p.who, start:now, end:"", minutes:0});
+      if (!isDay(p.day)) return reject(new Error("that day does not look right"));
+      if (p.day > tomorrow()) return reject(new Error("that day hasn't happened yet"));
+      /* pressing a day that is already marked is not a mistake — it is
+         two people agreeing, and the answer either way is the same day */
+      if (!markedOn(p.who, p.day)) days.push({id:newId(), who:p.who, day:p.day, marked:now});
 
-    } else if (action === "clockout") {
-      var open = openShift(p.who);
-      if (!open) return reject(new Error(p.who + " is not on the clock"));
-      open.end = now;
-      open.minutes = Math.max(0, Math.round((Date.parse(now) - Date.parse(open.start)) / 60000));
+    } else if (action === "dayclear") {
+      days = days.filter(function(d){ return !(d.who === p.who && d.day === p.day); });
 
-    } else if (action === "shiftdelete") {
-      shifts = shifts.filter(function(s){ return s.id !== p.id; });
+    } else if (action === "daydelete") {
+      days = days.filter(function(d){ return d.id !== p.id; });
     }
 
     if (!saveAll()) {
@@ -941,9 +1010,16 @@ function apiSheet(action, payload){
           logged: r.logged
         };
       });
-      shifts = (out.shifts || []).map(function(v){
-        return {id:String(v.id), who:String(v.who), start:v.start, end:v.end, minutes:Number(v.minutes)||0};
-      });
+      /* Same reasoning as `subs` below: a deployment too old to keep
+         days answers without the key at all rather than with an empty
+         list, and an empty list would wipe attendance this browser is
+         still the only keeper of. Absence leaves it where it is. */
+      if (out.days) {
+        sheetDays = true;
+        days = out.days.map(function(v){
+          return {id:String(v.id), who:String(v.who), day:String(v.day||""), marked:String(v.marked||"")};
+        });
+      }
       /* A deployment old enough not to know about subscriptions answers
          without the key at all — not with an empty list. The difference
          matters: an empty list would wipe rules this browser is still the
@@ -1148,6 +1224,11 @@ document.getElementById("f-date").addEventListener("input", function(){
 
 function refreshDate(){
   var el = document.getElementById("f-date"), now = today();
+  /* The backfill picker has the same ceiling for the same reason, and no
+     exception: a subscription can start next week, but nobody was here
+     on a day that has not happened. */
+  var bf = document.getElementById("bf-date");
+  if (bf && bf.max !== now) { bf.max = now; if (!bf.value) bf.value = now; }
   /* a spend cannot be logged into next week, but a subscription can
      perfectly well start there — the ceiling comes off with the toggle */
   if (repeat) return;
@@ -1923,80 +2004,97 @@ function render(){
 }
 function cMaxOf(rank){ return rank.length ? rank[0].v : 1; }
 
-/* ---------- the clock ---------- */
-function openShift(who){
-  for (var i = 0; i < shifts.length; i++) if (shifts[i].who === who && !shifts[i].end) return shifts[i];
+/* ---------- the days people were here ----------
+
+   This used to be a clock: a start, an end, and the minutes between.
+   That measured the wrong thing. Nobody here is paid by the hour, the
+   ends were guessed at by whoever remembered, and a shift left open
+   overnight turned an ordinary day into sixteen red hours that had to be
+   explained. What anybody actually wanted off this board was who has
+   been in, and on which days.
+
+   So a day is the unit and the only unit. Either somebody was here on a
+   given day or they weren't, there is nothing finer to get wrong, and
+   the record cannot drift just because a tab was closed. */
+function isDay(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")); }
+function tomorrow(){
+  var d = new Date(); d.setDate(d.getDate() + 1);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+/* the local day an old shift began — the day that person turned up */
+function dayKeyOf(iso){
+  var t = Date.parse(iso);
+  if (!t) return "";
+  var d = new Date(t);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function markedOn(who, day){
+  for (var i = 0; i < days.length; i++) if (days[i].who === who && days[i].day === day) return days[i];
   return null;
 }
-function shiftMs(s, now){
-  var st = Date.parse(s.start);
-  if (!st) return Math.max(0, (Number(s.minutes) || 0) * 60000);
-  var en = s.end ? Date.parse(s.end) : now;
-  if (!en || en < st) return 0;
-  return en - st;
-}
-function hm(ms){
-  var m = Math.round(ms / 60000), h = Math.floor(m / 60);
-  return h ? h + "h " + String(m % 60).padStart(2, "0") + "m" : m + "m";
-}
-function clockOf(iso){
-  var t = Date.parse(iso);
-  if (!t) return "—";
-  return hhmm12(new Date(t));
-}
-function dayOf(iso){
-  var t = Date.parse(iso);
-  if (!t) return "—";
-  var d = new Date(t);
-  return niceDate(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"));
-}
+function hereToday(who){ return markedOn(who, today()); }
 /* the working week starts Monday */
 function weekStart(){
   var d = new Date(); d.setHours(0,0,0,0);
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return d.getTime();
 }
-function hoursFor(who, since, now){
-  var total = 0;
-  for (var i = 0; i < shifts.length; i++){
-    var s = shifts[i];
-    if (s.who !== who) continue;
-    var st = Date.parse(s.start);
-    if (since && (!st || st < since)) continue;
-    total += shiftMs(s, now);
+function weekStartDay(){
+  var d = new Date(weekStart());
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+/* how many days this person has on record, optionally since a day */
+function daysCount(who, since){
+  var n = 0;
+  for (var i = 0; i < days.length; i++){
+    if (days[i].who !== who) continue;
+    if (since && days[i].day < since) continue;
+    n++;
   }
-  return total;
+  return n;
+}
+function dayCountText(n){ return n + (n === 1 ? " day" : " days"); }
+
+/* Where the days are kept, asked the same way `mode` and subsMode() are:
+   the sheet only holds them once the endpoint has said it can. */
+function daysMode(){ return (mode === "sheet" && sheetDays) ? "sheet" : "device"; }
+function dayApi(action, p){
+  return daysMode() === "sheet" ? apiSheet(action, p) : apiLocal(action, p);
 }
 
 function renderClock(){
-  var now = Date.now(), wk = weekStart(), box = document.getElementById("clock-grid"), onNow = 0;
+  var wkDay = weekStartDay(), box = document.getElementById("clock-grid"), inToday = 0;
   box.innerHTML = "";
   PEOPLE.forEach(function(p){
-    var open = openShift(p), card = document.createElement("div");
-    card.className = "clock-card" + (open ? " on" : "");
-    if (open) onNow++;
+    var here = !!hereToday(p), card = document.createElement("div");
+    card.className = "clock-card" + (here ? " on" : "");
+    if (here) inToday++;
 
     var nm = document.createElement("div");
     nm.className = "nm2";
     nm.innerHTML = '<span class="st"></span>' + esc(p);
 
+    /* The number is the week, always. On the old board it flipped between
+       a running timer and a weekly total depending on whether somebody
+       was clocked in, so the same figure in the same place meant two
+       different things an hour apart. */
     var el = document.createElement("div");
     el.className = "el"; el.id = "el-" + p;
-    el.textContent = open ? hm(shiftMs(open, now)) : hm(hoursFor(p, wk, now));
+    el.textContent = dayCountText(daysCount(p, wkDay));
 
     var since = document.createElement("div");
     since.className = "since"; since.id = "since-" + p;
-    since.textContent = open ? "since " + clockOf(open.start) : "this week";
+    since.textContent = here ? "here today" : "this week";
 
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "clock-btn";
     btn.setAttribute("data-clock", p);
-    btn.textContent = open ? "Clock out" : "Clock in";
+    btn.textContent = here ? "Here today ✓" : "Mark today";
 
     var wkline = document.createElement("div");
     wkline.className = "wk";
-    wkline.textContent = "week " + hm(hoursFor(p, wk, now)) + " · all " + hm(hoursFor(p, 0, now));
+    wkline.textContent = "all " + dayCountText(daysCount(p, ""));
 
     card.appendChild(nm); card.appendChild(el); card.appendChild(since);
     card.appendChild(btn); card.appendChild(wkline);
@@ -2004,79 +2102,125 @@ function renderClock(){
   });
   /* The cards look identical either way, and reading them as the team's
      when they are only this browser's is the mistake worth a sentence. */
-  document.getElementById("clock-note").textContent = mode === "sheet"
-    ? (onNow ? onNow + (onNow === 1 ? " intern is" : " interns are") + " on the clock right now"
-             : "Press a name in when they arrive, out when they leave.")
-    : (onNow ? onNow + (onNow === 1 ? " shift is" : " shifts are") + " running on this browser — nobody else's clock reaches this page"
-             : "This browser's clock only — nobody else's reaches this page.");
+  document.getElementById("clock-note").textContent = daysMode() === "sheet"
+    ? (inToday ? inToday + (inToday === 1 ? " intern has" : " interns have") + " been in today"
+               : "Press your name on a day you were in.")
+    : mode === "sheet"
+      ? "Kept on this device, not the shared sheet — nobody else sees these. Redeploy fomo/setup/apps-script.gs (Deploy → Manage deployments → New version) and they move to the sheet."
+      : (inToday ? inToday + (inToday === 1 ? " day is" : " days are") + " marked on this browser — nobody else's reaches this page"
+                 : "This browser's record only — nobody else's reaches this page.");
 }
 
-/* Only the numbers move between renders, so the ticking touches nothing else. */
+/* Nothing ticks any more — there is no running number to move. What is
+   still worth catching is midnight: a page left open overnight would go
+   on offering to mark yesterday, and colour a card for a day that has
+   already gone. So the only thing on a timer is the date itself. */
+var shownDay = today();
 function tickClock(){
   if (document.hidden) return;
-  var now = Date.now(), wk = weekStart();
-  PEOPLE.forEach(function(p){
-    var open = openShift(p), el = document.getElementById("el-" + p);
-    if (!el) return;
-    if (!open) { el.textContent = hm(hoursFor(p, wk, now)); return; }
-    var ms = shiftMs(open, now);
-    el.textContent = hm(ms);
-    var since = document.getElementById("since-" + p);
-    if (!since) return;
-    /* a shift nobody closed reads as a mistake, not as a long day */
-    if (ms > 16 * 3600000) {
-      since.className = "since stale";
-      since.textContent = "open since " + dayOf(open.start) + " " + clockOf(open.start) + " — clock out or delete it";
-    } else {
-      since.className = "since";
-      since.textContent = "since " + clockOf(open.start);
-    }
-  });
+  var now = today();
+  if (now === shownDay) return;
+  shownDay = now;
+  refreshDate();
+  render();
 }
 
 document.getElementById("clock-grid").addEventListener("click", function(ev){
   var btn = ev.target.closest("button[data-clock]"); if (!btn) return;
   var who = btn.getAttribute("data-clock");
-  var open = openShift(who);
-  var length = open ? hm(shiftMs(open, Date.now())) : "";
+  var day = today();
+  var here = !!markedOn(who, day);
   btn.disabled = true; busy = true;
-  api(open ? "clockout" : "clockin", {who: who}).then(function(){
-    toast(open ? who + " clocked out — " + length + " logged." : who + " is on the clock.");
+  dayApi(here ? "dayclear" : "daymark", {who: who, day: day}).then(function(){
+    toast(here ? who + " unmarked for today." : who + " is down for today.");
   })["catch"](function(e){ toast(fail(e), true); btn.disabled = false; })
    .then(function(){ busy = false; });
 });
 
+/* ---------- a day somebody forgot to mark ----------
+
+   With hours you had to be at the keyboard to record anything, so there
+   was no such thing as filling one in later. A day is different: you
+   notice on Thursday that Tuesday was never marked, and Tuesday is not
+   in dispute. Without this the only fix is hand-editing the sheet, which
+   is how attendance stops being trustworthy. */
+var bfWho = document.getElementById("bf-who");
+PEOPLE.forEach(function(p){
+  var o = document.createElement("option");
+  o.value = p; o.textContent = p;
+  bfWho.appendChild(o);
+});
+function bfHint(msg, bad){
+  var el = document.getElementById("bf-hint");
+  el.textContent = msg || "";
+  el.className = "bf-hint" + (bad ? " bad" : "");
+}
+document.getElementById("bf-add").addEventListener("click", function(){
+  var who = bfWho.value, day = document.getElementById("bf-date").value;
+  if (!isDay(day)) { bfHint("Pick the day first.", true); return; }
+  if (day > today()) { bfHint("That day hasn't happened yet.", true); return; }
+  if (markedOn(who, day)) { bfHint(who + " is already down for " + niceDate(day) + ".", true); return; }
+  var btn = this;
+  btn.disabled = true; busy = true;
+  dayApi("daymark", {who: who, day: day}).then(function(){
+    bfHint("");
+    toast(who + " marked for " + niceDate(day) + ".");
+  })["catch"](function(e){ bfHint(fail(e), true); })
+   .then(function(){ btn.disabled = false; busy = false; });
+});
+
 function renderShifts(){
-  var now = Date.now(), wk = weekStart();
-  var list = shifts.slice().sort(function(a,b){
-    return (Date.parse(b.start) || 0) - (Date.parse(a.start) || 0);
+  var wkDay = weekStartDay();
+  /* newest first, and a person's name breaks a tie so two people on the
+     same day always read in the same order rather than shuffling */
+  var list = days.slice().sort(function(a, b){
+    if (a.day !== b.day) return a.day < b.day ? 1 : -1;
+    return a.who < b.who ? -1 : a.who > b.who ? 1 : 0;
   });
-  var weekTotal = 0, allTotal = 0;
-  shifts.forEach(function(s){
-    var st = Date.parse(s.start);
-    allTotal += shiftMs(s, now);
-    if (st && st >= wk) weekTotal += shiftMs(s, now);
-  });
+  var weekTotal = 0;
+  days.forEach(function(d){ if (d.day >= wkDay) weekTotal++; });
 
   document.getElementById("hours-note").textContent = list.length
-    ? list.length + (list.length === 1 ? " shift" : " shifts") + " on record" : "";
+    ? list.length + (list.length === 1 ? " day" : " days") + " on record" : "";
+  /* Two different counts, so both are named. The left is person-days —
+     four people in on one day is four — and the right is how many
+     separate days the bootcamp has run at all. */
+  var distinct = {};
+  days.forEach(function(d){ distinct[d.day] = true; });
   document.getElementById("hours-week").textContent =
-    "this week " + hm(weekTotal) + "  ·  all time " + hm(allTotal);
+    "this week " + dayCountText(weekTotal) + "  ·  all time " + dayCountText(list.length) +
+    " across " + Object.keys(distinct).length + " dates";
 
   var shown = list.slice(0, 20);
-  document.getElementById("shift-body").innerHTML = shown.map(function(s){
-    var running = !s.end;
+  document.getElementById("shift-body").innerHTML = shown.map(function(d){
+    var isToday = d.day === today();
     return "<tr>" +
-      '<td class="who">' + esc(s.who) + "</td>" +
-      '<td class="date">' + esc(dayOf(s.start)) + "</td>" +
-      '<td class="tnum">' + esc(clockOf(s.start)) + "</td>" +
-      '<td class="tnum">' + (running ? "—" : esc(clockOf(s.end))) + "</td>" +
-      '<td class="tnum' + (running ? " run" : "") + '" style="text-align:right">' +
-        esc(hm(shiftMs(s, now))) + (running ? " so far" : "") + "</td>" +
-      '<td><div class="acts"><button class="mini danger" data-shift="' + esc(s.id) + '">Delete</button></div></td>' +
+      '<td class="who">' + esc(d.who) + "</td>" +
+      '<td class="date' + (isToday ? " run" : "") + '">' + esc(niceDate(d.day)) + (isToday ? " · today" : "") + "</td>" +
+      '<td class="tnum" style="text-align:right">' + esc(markedAt(d)) + "</td>" +
+      '<td><div class="acts"><button class="mini danger" data-shift="' + esc(d.id) + '">Delete</button></div></td>' +
     "</tr>";
   }).join("");
   document.getElementById("shift-empty").hidden = shown.length > 0;
+}
+
+/* When the row was written, not when the person was here — the day
+   column already says that. It is the audit trail for a day filled in
+   afterwards, which is the one thing here worth being able to see: a
+   Tuesday marked on Thursday should not be able to pass for a Tuesday
+   marked on Tuesday.
+
+   So a row marked on its own day shows the time and nothing else, and a
+   row marked on any other day is named as what it is. A bare "2:51pm"
+   sitting against a date four days earlier would read as the time
+   somebody arrived — which is the one thing this board has stopped
+   claiming to know. */
+function markedAt(rec){
+  var t = Date.parse(rec && rec.marked);
+  if (!t) return "—";
+  var d = new Date(t);
+  var key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  return key === rec.day ? hhmm12(d) : "added " + niceDate(key);
 }
 
 document.getElementById("shift-body").addEventListener("click", function(ev){
@@ -2084,29 +2228,27 @@ document.getElementById("shift-body").addEventListener("click", function(ev){
   var id = btn.getAttribute("data-shift");
   arm("sh" + id, btn, "Delete?", function(){
     busy = true;
-    api("shiftdelete", {id:id}).then(function(){ toast("Shift deleted."); })
+    dayApi("daydelete", {id:id}).then(function(){ toast("Day removed."); })
       ["catch"](function(e){ toast(fail(e), true); })
       .then(function(){ busy = false; });
   });
 });
 
 document.getElementById("t-hours-csv").addEventListener("click", function(){
-  if (!shifts.length) { toast("No shifts to export yet.", true); return; }
-  var now = Date.now();
+  if (!days.length) { toast("No days to export yet.", true); return; }
   var q = function(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; };
-  var list = shifts.slice().sort(function(a,b){ return (Date.parse(a.start)||0) - (Date.parse(b.start)||0); });
-  var csv = ["who","day","clock_in","clock_out","hours","minutes"].join(",") + "\r\n" +
-    list.map(function(s){
-      var ms = shiftMs(s, now);
-      return [s.who, dayOf(s.start), clockOf(s.start), s.end ? clockOf(s.end) : "still on the clock",
-        (ms/3600000).toFixed(2), Math.round(ms/60000)].map(q).join(",");
-    }).join("\r\n") + "\r\n";
+  var list = days.slice().sort(function(a, b){
+    if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+    return a.who < b.who ? -1 : a.who > b.who ? 1 : 0;
+  });
+  var csv = ["who","day","marked"].join(",") + "\r\n" +
+    list.map(function(d){ return [d.who, d.day, d.marked || ""].map(q).join(","); }).join("\r\n") + "\r\n";
   var url = URL.createObjectURL(new Blob(["﻿" + csv], {type:"text/csv;charset=utf-8"}));
   var a = document.createElement("a");
-  a.href = url; a.download = "fomo-hours-" + today() + ".csv";
+  a.href = url; a.download = "fomo-days-" + today() + ".csv";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-  toast("Hours exported.");
+  toast("Days exported.");
 });
 
 /* ---------- pushing ----------
@@ -2567,6 +2709,11 @@ function probeSheet(){
          way rather than optimistically. */
       sheetPayers = (out.payers && out.payers.length)
         ? out.payers.map(String) : PEOPLE.slice();
+      /* Named here as well as inferred from the list reply, so the first
+         render after the switch already knows whether these cards are
+         everybody's days or only this browser's, rather than saying one
+         and then the other a second later. */
+      sheetDays = out.days === true;
       return "shared";
     }
     return "old";
@@ -2614,12 +2761,11 @@ function onSheetSub(b){
   }
   return false;
 }
-/* a shift is the same shift if it is the same person starting the same
-   minute — the sheet regenerates ids, so they cannot be compared */
-function onSheetShift(v){
-  var st = Date.parse(v.start) || 0;
-  for (var i = 0; i < shifts.length; i++){
-    if (shifts[i].who === v.who && Math.abs((Date.parse(shifts[i].start)||0) - st) < 60000) return true;
+/* a day is the same day if it is the same person on the same date —
+   the sheet regenerates ids, so they cannot be compared */
+function onSheetDay(v){
+  for (var i = 0; i < days.length; i++){
+    if (days[i].who === v.who && days[i].day === v.day) return true;
   }
   return false;
 }
@@ -2629,47 +2775,48 @@ function offerCarry(retry){
   /* recomputed against whatever the sheet holds right now, so a retry
      after a half-finished send picks up only what is still missing */
   var extraRows = carried.rows.filter(function(r){ return !onSheetRow(r); });
-  var extraShifts = carried.shifts.filter(function(v){ return !onSheetShift(v); });
+  /* Only worth offering once the sheet actually keeps days. On a
+     deployment that doesn't they stay here and go on working from here,
+     the same way the monthly rules do. */
+  var extraDays = sheetDays ? carried.days.filter(function(v){ return !onSheetDay(v); }) : [];
   /* Only worth offering if the sheet keeps rules at all. On a deployment
      that doesn't, they stay in this browser and go on working from here —
      there is nowhere to send them and nothing broken about that. */
   var extraSubs = sheetSubs ? carried.subs.filter(function(b){ return !onSheetSub(b); }) : [];
 
-  if (!extraRows.length && !extraShifts.length && !extraSubs.length) {
+  if (!extraRows.length && !extraDays.length && !extraSubs.length) {
     carried = null;
     if (retry) { hideBanner(true); toast("Everything on this browser is on the sheet."); }
     return;
   }
 
   var bits = [];
-  if (extraShifts.length) bits.push(extraShifts.length + (extraShifts.length === 1 ? " shift" : " shifts"));
+  if (extraDays.length) bits.push(extraDays.length + (extraDays.length === 1 ? " day" : " days"));
   if (extraRows.length) bits.push(extraRows.length + (extraRows.length === 1 ? " spend" : " spends"));
   if (extraSubs.length) bits.push(extraSubs.length + (extraSubs.length === 1 ? " subscription" : " subscriptions"));
-  var running = extraShifts.filter(function(v){ return !v.end; }).length;
-  var count = extraRows.length + extraShifts.length + extraSubs.length;
+  var count = extraRows.length + extraDays.length + extraSubs.length;
 
-  showBanner("<b>The clocks are shared from now on.</b> " + bits.join(" and ") +
+  showBanner("<b>The days are shared from now on.</b> " + bits.join(" and ") +
     " logged on this browser " + (bits.length > 1 || count > 1 ? "are" : "is") +
     " not on the shared sheet yet" +
-    (running ? ", including " + (running === 1 ? "a shift that is still running" : running + " shifts still running") : "") +
     ". Still saved here either way — send " + (count === 1 ? "it" : "them") +
     " up and everyone sees " + (count === 1 ? "it" : "them") + ".",
     retry ? "Try again" : "Send them up",
-    function(){ sendCarry(extraRows, extraShifts, extraSubs); });
+    function(){ sendCarry(extraRows, extraDays, extraSubs); });
 }
 
-function sendCarry(extraRows, extraShifts, extraSubs){
-  var count = extraRows.length + extraShifts.length + extraSubs.length;
+function sendCarry(extraRows, extraDays, extraSubs){
+  var count = extraRows.length + extraDays.length + extraSubs.length;
   var btn = document.getElementById("banner-do");
   btn.disabled = true; btn.textContent = "Sending…";
   busy = true;
 
   var shots = extraRows.filter(function(r){ return /^data:/.test(r.receipt || ""); }).length;
 
-  /* Spends go up through the ordinary add. Shifts cannot: clockin stamps
-     the server's own clock, so a shift that started an hour ago would
-     arrive as one that started now and read as an hour nobody worked.
-     shiftimport carries its own start and end instead. */
+  /* Spends go up through the ordinary add. Days cannot go up one press
+     at a time: daymark is about today, and a Tuesday marked on this
+     laptop three weeks ago has to arrive as that Tuesday. dayimport
+     carries each one's own date instead. */
   var chain = Promise.resolve();
   extraRows.forEach(function(r){
     chain = chain.then(function(){
@@ -2684,10 +2831,10 @@ function sendCarry(extraRows, extraShifts, extraSubs){
       return apiSheet("add", up);
     });
   });
-  if (extraShifts.length) {
+  if (extraDays.length) {
     chain = chain.then(function(){
-      return apiSheet("shiftimport", {shifts: extraShifts.map(function(v){
-        return {who:v.who, start:v.start, end:v.end || ""};
+      return apiSheet("dayimport", {days: extraDays.map(function(v){
+        return {who:v.who, day:v.day};
       })});
     });
   }
@@ -2723,6 +2870,9 @@ function open_(){
   document.getElementById("gate").style.display = "none";
   document.getElementById("app").hidden = false;
   if (BACKEND === "sheet") {
+    /* the sheet may be too old to keep days, in which case these are the
+       only ones there are — read them before the first paint */
+    days = lsGet(LS_DAYS) || carriedFromShifts();
     render();
     goSheet();
   } else {
@@ -2743,7 +2893,7 @@ function open_(){
           if (verdict === "shared") {
             /* hold what this browser has before the sheet's copy replaces
                it on screen — it is the only chance to offer to send it up */
-            carried = {rows: rows.slice(), shifts: shifts.slice(), subs: subs.slice()};
+            carried = {rows: rows.slice(), days: days.slice(), subs: subs.slice()};
             goSheet();
             return;
           }
@@ -2753,9 +2903,9 @@ function open_(){
                while the endpoint was still being asked about would be
                written again by the sheet a second later */
             runSubs();
-            showBanner("<b>The clocks aren't shared yet.</b> This browser is keeping its own ledger, so these " +
-              "cards are the shifts clocked <em>here</em> and nobody else's — someone clocking in on their own " +
-              "laptop cannot show up on this page. The endpoint answers, but the version deployed behind it is " +
+            showBanner("<b>The days aren't shared yet.</b> This browser is keeping its own ledger, so these " +
+              "cards are the days marked <em>here</em> and nobody else's — someone marking themselves in on their " +
+              "own laptop cannot show up on this page. The endpoint answers, but the version deployed behind it is " +
               "the forms-only one. Redeploy <b>fomo/setup/apps-script.gs</b> — Deploy → Manage deployments → " +
               "New version — and this page moves itself over, on its own, next time it loads.");
             return;
@@ -2782,7 +2932,10 @@ function open_(){
   buildGhLink();
   renderGh();
   refreshGh(false);
-  tick = setInterval(tickClock, 1000);
+  /* Once a minute, and only to notice the date has rolled over. The
+     old board moved a running number every second; there is no running
+     number now. */
+  tick = setInterval(tickClock, 60000);
 
   /* A hidden tab stops ticking and stops polling, which is right — neither
      is worth doing to a screen nobody is looking at. What it leaves behind
