@@ -310,7 +310,7 @@ footer{margin-top:44px;padding:22px 0 0;border-top:1px solid var(--line);display
 
   <section>
     <div class="panel">
-      <div class="panel-h"><h2>every chapter</h2><span class="note" id="tbl-note"></span></div>
+      <div class="panel-h"><h2>every house</h2><span class="note" id="tbl-note"></span></div>
       <div class="tbl-scroll">
         <table>
           <thead><tr><th>chapter</th><th>school</th><th>st</th><th style="text-align:right">roster</th><th style="text-align:right">target</th><th style="text-align:right">joined</th><th>progress</th><th style="text-align:right">age</th><th></th></tr></thead>
@@ -457,26 +457,42 @@ function unitsFrom(rows){
   });
   return order.map(function(k){
     var u = by[k];
-    /* One chapter, several submissions that disagree about its size.
-       The largest is taken and the disagreement is shown rather than
-       averaged into a number nobody typed. */
+    /* Pick one row and keep it whole.
+
+       These are repeat registrations of one house, and each row carries a
+       joined count and an actives count that belong together — they were
+       entered by the same person about the same roster. Taking the largest
+       joined from one row and the largest actives from another built a
+       chapter nobody ever registered: Ohio University's rows say 80 of 100
+       and 0 of 110, and pairing 80 with 110 moved its target from 80 to 88
+       and turned a house that had finished into one that had not.
+
+       So the furthest-along row wins outright, and its own actives come
+       with it. Ties go to the fuller roster, then to the later date. */
+    u.rows.sort(function(a, b){
+      return (Number(b.joined)||0) - (Number(a.joined)||0) ||
+             (Number(b.active)||0) - (Number(a.active)||0) ||
+             String(b.registered||"").localeCompare(String(a.registered||""));
+    });
+    var best = u.rows[0];
+    u.size    = Number(best.active) || 0;
+    u.joined  = Number(best.joined) || 0;
     var claims = u.rows.map(function(r){ return Number(r.active)||0; });
-    u.size    = Math.max.apply(null, claims);
     u.sizeMin = Math.min.apply(null, claims);
-    /* Repeat submissions do not always agree about how big the house is,
-       and the target is four fifths of that number — so the disagreement
-       can decide whether a house counts as finished. The largest claim is
-       taken, because it is the one that makes the target hardest to hit
-       and success should not be an artefact of picking the kind number.
-       Where the claims differ the row says so rather than hiding it. */
-    u.disputed = u.sizeMin !== u.size;
-    u.joined  = Math.max.apply(null, u.rows.map(function(r){ return Number(r.joined)||0; }));
-    u.first   = u.rows.map(function(r){ return String(r.registered||""); }).sort()[0];
+    u.sizeMax = Math.max.apply(null, claims);
+    /* The other rows' roster claims are still worth showing where they
+       disagree — it is the clearest sign a house registered more than
+       once — but they no longer decide anything. */
+    u.disputed = u.sizeMin !== u.sizeMax;
+    /* The earliest of the rows — when this house first came through,
+       not when whichever row won was filed. */
+    u.first   = u.rows.map(function(r){ return String(r.registered||""); })
+                      .filter(Boolean).sort()[0] || "";
     u.dupes   = u.rows.length;
     u.goal    = goalOf(u.size);
     u.pct     = u.goal ? Math.round(u.joined / u.goal * 100) : 0;
     u.atGoal  = u.goal > 0 && u.joined >= u.goal;
-    u.wouldHit = !u.atGoal && u.disputed && u.joined >= goalOf(u.sizeMin);
+    u.wouldHit = false;
     u.started = u.joined > 0;
     u.age     = daysSince(u.first);
     var s = SCHOOLS[u.school];
@@ -515,8 +531,8 @@ function render(){
 
   /* ---- the six numbers ---- */
   var stats = [
-    {l:"chapters", v:units.length,
-     s:dupRows ? raw.length + " rows · " + plural(dupRows,"repeat","repeats") : raw.length + " rows"},
+    {l:"houses", v:units.length,
+     s:dupRows ? raw.length + " registrations · " + plural(dupRows,"repeat","repeats") : raw.length + " registrations"},
     {l:"schools",  v:Object.keys(schools).length, s:plural(Object.keys(states).length,"state","states")},
     {l:"roster reach", v:reach.toLocaleString("en-US"), s:"actives across every house"},
     {l:"the target", v:goal.toLocaleString("en-US"), s:"80% of the roster"},
@@ -748,20 +764,14 @@ function renderFindings(d){
 
   var disputed = d.units.filter(function(u){ return u.disputed; });
   if (disputed.length) {
-    var swing = disputed.filter(function(u){ return u.wouldHit; });
-    f.push({warn:true, ic:"!",
+    f.push({ic:"!",
       t:"<b>" + (disputed.length === 1
           ? "One house's repeat rows disagree about how big it is"
           : disputed.length + " houses' repeat rows disagree about how big they are") + ".</b>",
       s:esc(disputed.map(function(u){
-          return (u.shortSchool||u.school) + " says " + u.sizeMin + " and " + u.size;
-        }).join("; ")) + ". The target is 80% of that number, so the disagreement moves it. " +
-        (swing.length
-          ? "It decides the answer for " + esc(swing.map(function(u){ return u.name + " at " + (u.shortSchool||u.school); }).join(" and ")) +
-            " — at the smaller roster " + (swing.length === 1 ? "it is" : "they are") +
-            " at target, at the larger " + (swing.length === 1 ? "it is not" : "they are not") +
-            ". The larger is used here, so the count above is the cautious one."
-          : "It does not change who is at target today.")});
+          return (u.shortSchool||u.school) + " says " + u.sizeMin + " and " + u.sizeMax;
+        }).join("; ")) + ". Each row's joined count and roster belong together, so the furthest-along " +
+        "row is used whole rather than the largest of each — the other claims are shown but decide nothing."});
   }
 
   /* the near-misses are the cheapest wins on the page */
