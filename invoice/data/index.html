@@ -70,6 +70,65 @@ section{margin-top:clamp(20px,3.4vw,30px)}
 @media(max-width:980px){.stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
 
+/* the funnel ------------------------------------------------------- */
+.funnel{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+.fstep{background:var(--surface);padding:15px 18px 16px;position:relative}
+.fstep .fv{font-family:var(--mono);font-size:1.75rem;letter-spacing:-.04em;line-height:1;margin:7px 0 6px}
+.fstep .fs{font-size:.74rem;color:var(--muted-2)}
+.fstep .fbar{height:5px;border-radius:99px;background:var(--raise);overflow:hidden;margin-top:11px}
+.fstep .fbar i{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.3,1)}
+.fstep.s1 .fv{color:var(--text)}      .fstep.s1 .fbar i{background:var(--muted-2)}
+.fstep.s2 .fv{color:var(--violet-hi)} .fstep.s2 .fbar i{background:var(--violet)}
+.fstep.s3 .fv{color:var(--gold)}      .fstep.s3 .fbar i{background:var(--gold)}
+.fstep .drop{position:absolute;top:15px;right:16px;font-family:var(--mono);font-size:.66rem;
+  color:var(--muted-2);letter-spacing:.04em}
+@media(max-width:620px){.funnel{grid-template-columns:1fr}}
+
+/* every house, one row each --------------------------------------- */
+.port{padding:6px 0 10px}
+.prow{display:grid;grid-template-columns:minmax(0,15em) 1fr auto;gap:12px;align-items:center;
+  padding:6px 18px;transition:background .15s;cursor:pointer}
+.prow:hover{background:var(--raise)}
+.prow.on{background:var(--violet-soft)}
+.prow .pn{font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pn b{font-weight:500}
+.prow .pn span{color:var(--muted-2);font-size:.75rem;margin-left:6px}
+.prow .pb{height:12px;border-radius:4px;background:var(--raise);overflow:hidden;position:relative;min-width:60px}
+.prow .pb i{display:block;height:100%;border-radius:4px;background:var(--violet);
+  transition:width .55s cubic-bezier(.2,.8,.3,1)}
+.prow .pb i.g{background:linear-gradient(90deg,var(--gold),#FFD98A)}
+.prow .pb i.z{background:var(--none);opacity:.35}
+.prow .pv{font-family:var(--mono);font-size:.78rem;color:var(--muted);min-width:5.6em;text-align:right;white-space:nowrap}
+.prow .pv b{color:var(--gold);font-weight:500}
+@media(max-width:620px){
+  .prow{grid-template-columns:1fr auto;gap:4px 10px;padding:8px 16px}
+  .prow .pb{grid-column:1/-1;order:3}
+}
+/* chip clouds ------------------------------------------------------ */
+.cloud{display:flex;flex-wrap:wrap;gap:7px;padding:15px 18px 18px}
+.chip2{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;
+  padding:5px 11px 5px 10px;font-size:.81rem;background:var(--surface-2);transition:border-color .15s,transform .15s}
+.chip2:hover{border-color:var(--violet);transform:translateY(-1px)}
+.chip2 u{font-family:var(--mono);font-size:.7rem;text-decoration:none;color:var(--muted-2);
+  background:var(--raise);border-radius:99px;padding:1px 6px}
+.chip2.multi{border-color:rgba(81,106,246,.45)}
+.chip2.multi u{color:var(--violet-hi)}
+.chip2.gold{border-color:rgba(242,193,78,.45)}
+.chip2.gold u{color:var(--gold)}
+.cloud .lead-in{width:100%;font-size:.76rem;color:var(--muted-2);margin-bottom:2px}
+/* callout cards ---------------------------------------------------- */
+.calls{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+.call{background:var(--surface);padding:15px 17px 17px;display:flex;flex-direction:column;gap:6px}
+.call .cv{font-family:var(--mono);font-size:1.5rem;letter-spacing:-.04em;line-height:1}
+.call .ct{font-size:.85rem;font-weight:500}
+.call .cs{font-size:.78rem;color:var(--muted-2);line-height:1.45}
+.call.gold .cv{color:var(--gold)}
+.call.warn .cv{color:var(--owed)}
+.call.good .cv{color:var(--good)}
+.call.violet .cv{color:var(--violet-hi)}
+@media(max-width:860px){.calls{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.calls{grid-template-columns:1fr}}
+
 /* progress distribution ------------------------------------------ */
 .dist{display:flex;flex-direction:column;gap:9px;padding:15px 18px 18px}
 .dist .d{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:.83rem}
@@ -279,38 +338,35 @@ footer{margin-top:44px;padding:22px 0 0;border-top:1px solid var(--line);display
     </div>
   </section>
 
-  <section class="two">
+  <section>
     <div class="panel">
-      <div class="panel-h"><h2>how far along</h2><span class="note" id="dist-note"></span></div>
-      <div class="dist" id="dist"></div>
-    </div>
-    <div class="panel">
-      <div class="panel-h"><h2>closest to target</h2><span class="note" id="lead-note"></span></div>
-      <div class="lead" id="lead"></div>
+      <div class="panel-h"><h2>every house</h2><span class="note" id="port-note"></span></div>
+      <div class="funnel" id="funnel"></div>
+      <div class="port" id="port"></div>
     </div>
   </section>
 
   <section class="two">
     <div class="panel">
-      <div class="panel-h"><h2>which fraternities</h2><span class="note" id="frat-note"></span></div>
-      <div class="bars" id="frats"></div>
+      <div class="panel-h"><h2>who they are</h2><span class="note" id="frat-note"></span></div>
+      <div class="cloud" id="frats"></div>
     </div>
     <div class="panel">
       <div class="panel-h"><h2>where they are</h2><span class="note" id="state-note"></span></div>
-      <div class="bars" id="states"></div>
+      <div class="cloud" id="states"></div>
     </div>
   </section>
 
   <section>
     <div class="panel">
-      <div class="panel-h"><h2>what they have in common</h2><span class="note">Recomputed from the feed, not written down.</span></div>
-      <div id="findings"></div>
+      <div class="panel-h"><h2>what stands out</h2><span class="note">Recomputed from the feed on every load.</span></div>
+      <div class="calls" id="findings"></div>
     </div>
   </section>
 
   <section>
     <div class="panel">
-      <div class="panel-h"><h2>every house</h2><span class="note" id="tbl-note"></span></div>
+      <div class="panel-h"><h2>the full table</h2><span class="note" id="tbl-note"></span></div>
       <div class="tbl-scroll">
         <table>
           <thead><tr><th>chapter</th><th>school</th><th>st</th><th style="text-align:right">roster</th><th style="text-align:right">target</th><th style="text-align:right">joined</th><th>progress</th><th style="text-align:right">age</th><th></th></tr></thead>
@@ -652,171 +708,151 @@ function render(){
       '<div class="track"><i style="width:' + (s.n/smax*100) + '%"></i></div></div>';
   }).join("");
 
-  /* ---- how far along ---- */
-  var BUCKETS = [
-    {k:"not started", test:function(u){ return !u.started; },                 c:"var(--none)"},
-    {k:"under a quarter", test:function(u){ return u.started && u.pct < 25; }, c:"var(--s1)"},
-    {k:"a quarter to half", test:function(u){ return u.pct >= 25 && u.pct < 50; }, c:"var(--violet)"},
-    {k:"half to target", test:function(u){ return u.pct >= 50 && !u.atGoal; }, c:"var(--violet-hi)"},
-    {k:"at target", test:function(u){ return u.atGoal; },                     c:"var(--gold)"}
+  /* ---- the funnel: registered, started, finished ----
+     Three numbers people actually track, and each one is a subset of the
+     one before it, so the bar widths are the story on their own. */
+  var steps = [
+    {c:"s1", v:units.length, l:"registered", s:raw.length + " registrations in", w:100},
+    {c:"s2", v:live,   l:"someone has joined", s:pct(live, units.length) + "% of them",
+     w:units.length ? live/units.length*100 : 0},
+    {c:"s3", v:atGoal, l:"hit the 80% target", s:pct(atGoal, units.length) + "% of them",
+     w:units.length ? atGoal/units.length*100 : 0}
   ];
-  var bmax = 1;
-  var buckets = BUCKETS.map(function(b){
-    var n = units.filter(b.test).length;
-    if (n > bmax) bmax = n;
-    return {k:b.k, c:b.c, n:n};
-  });
-  el("dist-note").textContent = pct(atGoal, units.length) + "% there";
-  el("dist").innerHTML = buckets.map(function(b){
-    return '<div class="d"><span class="sw" style="background:' + b.c + '"></span>' +
-      '<span>' + esc(b.k) + '</span><span class="n">' + b.n + '</span>' +
-      '<span class="sw" style="visibility:hidden"></span>' +
-      '<span class="tr"><i style="width:' + (b.n/bmax*100) + '%;background:' + b.c + '"></i></span>' +
-      '<span class="n"></span></div>';
+  el("funnel").innerHTML = steps.map(function(st, i){
+    var drop = i ? "&minus;" + (steps[i-1].v - st.v) : "";
+    return '<div class="fstep ' + st.c + '">' +
+      '<div class="lbl">' + esc(st.l) + '</div>' +
+      (drop ? '<div class="drop">' + drop + '</div>' : "") +
+      '<div class="fv">' + st.v + '</div>' +
+      '<div class="fs">' + esc(st.s) + '</div>' +
+      '<div class="fbar"><i style="width:' + st.w + '%"></i></div></div>';
   }).join("");
 
-  /* ---- closest to target ---- */
-  var lead = units.slice().filter(function(u){ return u.started; })
-    .sort(function(a,b){ return b.pct - a.pct || b.joined - a.joined; }).slice(0, 9);
-  el("lead-note").textContent = lead.length ? plural(units.length - lead.length, "other", "others") + " not shown" : "nobody has joined yet";
-  el("lead").innerHTML = lead.length ? lead.map(function(u){
-    return '<div class="l"><div class="nm">' + esc(u.letters ? u.letters + " " : "") + esc(u.name) +
-      '<small>' + esc(u.shortSchool || u.school) + '</small></div>' +
-      '<div class="v">' + (u.atGoal ? "<b>" + u.pct + "%</b>" : u.pct + "%") +
-      ' <span style="color:var(--muted-2)">' + u.joined + "/" + u.goal + '</span></div>' +
-      '<div class="tr"><i class="' + (u.atGoal?"g":"") + '" style="width:' + Math.min(100,u.pct) + '%"></i><u></u></div></div>';
-  }).join("") : '<div class="empty" style="padding:14px 0">Nobody has joined at any house yet.</div>';
+  /* ---- every house, one row, sorted by how far along it is ----
+     This replaced a five-band histogram and a top-nine board. Neither
+     showed you the house you were looking for, and between them they
+     said less than twenty-one bars in a column do. */
+  var port = units.slice().sort(function(a,b){
+    return b.pct - a.pct || b.joined - a.joined || (a.name < b.name ? -1 : 1);
+  });
+  el("port-note").textContent = plural(units.length,"house","houses") + " · sorted by progress";
+  el("port").innerHTML = port.map(function(u){
+    var w = Math.max(u.pct > 0 ? 2 : 100, Math.min(100, u.pct));
+    var cls = u.atGoal ? "g" : (u.started ? "" : "z");
+    return '<div class="prow" data-house="' + esc(houseKey(u)) + '">' +
+      '<div class="pn"><b>' + esc(u.name) + '</b><span>' + esc(u.shortSchool || u.school) + '</span></div>' +
+      '<div class="pb"><i class="' + cls + '" style="width:' + w + '%"></i></div>' +
+      '<div class="pv">' + (u.atGoal ? "<b>" + u.pct + "%</b>" : u.pct + "%") +
+        ' <span style="color:var(--muted-2)">' + u.joined + "/" + u.goal + '</span></div></div>';
+  }).join("");
+
+  /* ---- who they are ---- */
+  var frats = {};
+  units.forEach(function(u){
+    var f = frats[u.name] || (frats[u.name] = {name:u.name, letters:u.letters, n:0, schools:{}, atGoal:0});
+    f.n++; f.schools[u.school] = true; if (u.atGoal) f.atGoal++;
+  });
+  var fl = Object.keys(frats).map(function(k){ return frats[k]; })
+    .sort(function(a,b){ return b.n - a.n || b.atGoal - a.atGoal || (a.name<b.name?-1:1); });
+  var multi = fl.filter(function(f){ return f.n > 1; });
+  el("frat-note").textContent = plural(fl.length,"organisation","organisations");
+  el("frats").innerHTML =
+    '<div class="lead-in">' + (multi.length
+      ? plural(multi.length,"national has","nationals have") + " more than one house — the cheapest growth there is"
+      : "every organisation has exactly one house so far") + '</div>' +
+    fl.map(function(f){
+      var cls = f.atGoal ? "gold" : (f.n > 1 ? "multi" : "");
+      return '<span class="chip2 ' + cls + '" title="' + esc(plural(Object.keys(f.schools).length,"school","schools")) + '">' +
+        esc(f.letters ? f.letters + " " : "") + esc(f.name) + '<u>' + f.n + '</u></span>';
+    }).join("");
+
+  /* ---- where they are ---- */
+  var sl = Object.keys(states).map(function(k){ return {st:k, n:states[k]}; })
+    .sort(function(a,b){ return b.n - a.n || (a.st<b.st?-1:1); });
+  var regions = {};
+  units.forEach(function(u){ if (u.state) { var r = regionOf(u.state); regions[r] = (regions[r]||0)+1; } });
+  var topRegion = Object.keys(regions).sort(function(a,b){ return regions[b]-regions[a]; })[0] || "";
+  var goldStates = {};
+  units.forEach(function(u){ if (u.atGoal && u.state) goldStates[u.state] = true; });
+  el("state-note").textContent = topRegion
+    ? pct(regions[topRegion], units.length) + "% in the " + topRegion : "";
+  el("states").innerHTML =
+    '<div class="lead-in">' + esc(Object.keys(regions).sort(function(a,b){ return regions[b]-regions[a]; })
+      .map(function(r){ return regions[r] + " " + r; }).join(" · ")) + '</div>' +
+    sl.map(function(x){
+      return '<span class="chip2 ' + (goldStates[x.st] ? "gold" : (x.n > 1 ? "multi" : "")) + '">' +
+        esc(STATE_NAME[x.st] || x.st) + '<u>' + x.n + '</u></span>';
+    }).join("");
 
   renderFindings({units:units, atGoal:atGoal, goal:goal, medPct:medPct, dupRows:dupRows, reach:reach, joined:joined, live:live,
                   frats:fl, regions:regions, topRegion:topRegion, missing:missing, states:states});
   renderTable();
 }
 
-/* ---------- what they have in common ----------
+/* ---------- what stands out ----------
 
-   Every line here is derived from the feed on this load. None of
-   it is written down, because a finding written down is a finding
-   that goes quietly wrong the week after somebody reads it. */
+   Six cards, each a number and one sentence about it. This was ten
+   paragraphs of prose, which nobody reads standing at a whiteboard —
+   and the numbers were buried inside the sentences rather than being
+   the thing you see. Every value is computed on the load that shows it. */
 function renderFindings(d){
   var f = [];
 
+  if (d.atGoal) {
+    var winners = d.units.filter(function(u){ return u.atGoal; }).sort(function(a,b){ return b.pct - a.pct; });
+    f.push({cls:"gold", v:d.atGoal, t:"at the 80% target",
+      /* escaped per name, then joined — escaping the joined string
+         would turn the separators into visible text */
+      s:winners.map(function(u){
+          return esc(u.name) + ' <span style="color:var(--muted-2)">' + esc(u.shortSchool||u.school) + "</span>";
+        }).join("<br>")});
+  } else {
+    f.push({cls:"warn", v:"0", t:"at the 80% target", s:"Median house is " + d.medPct + "% of the way there."});
+  }
+
+  var dead = d.units.length - d.live;
+  f.push({cls:dead > d.units.length/2 ? "warn" : "", v:dead, t:"haven't started at all",
+    s:"Onboarded, nobody joined. " + d.live + " of " + d.units.length + " have at least one sign-up."});
+
+  var close = d.units.filter(function(u){ return !u.atGoal && u.pct >= 50; })
+    .sort(function(a,b){ return b.pct - a.pct; });
+  if (close.length) {
+    var need = close.reduce(function(n,u){ return n + (u.goal - u.joined); }, 0);
+    f.push({cls:"violet", v:need, t:"sign-ups from " + plural(close.length,"more house","more houses"),
+      s:"That is all that stands between " + plural(close.length,"this house","these houses") +
+        " and a finished target: " + esc(close.slice(0,3).map(function(u){
+          return (u.shortSchool||u.school) + " needs " + (u.goal - u.joined); }).join(", ")) + "."});
+  }
+
   if (d.dupRows) {
     var worst = d.units.slice().sort(function(a,b){ return b.dupes - a.dupes; })[0];
-    f.push({warn:true, ic:"!", t:"<b>" + plural(d.dupRows,"row is a repeat submission","rows are repeat submissions") +
-      ", not " + (d.dupRows === 1 ? "a house" : "houses") + ".</b>",
-      s:"The feed lists registrations, and the same house can register more than once. " +
-        esc(worst.name) + " at " + esc(worst.shortSchool || worst.school) + " sent " + worst.dupes +
-        ". Counting rows would make it " + (d.units.length + d.dupRows) + " houses; there are " + d.units.length + "."});
+    f.push({cls:"warn", v:d.dupRows, t:"repeat registrations",
+      s:"The feed lists registrations, not houses. " + esc(worst.name) + " at " +
+        esc(worst.shortSchool||worst.school) + " sent " + worst.dupes + ". " +
+        d.units.length + " real houses behind " + (d.units.length + d.dupRows) + " rows."});
+  }
+
+  if (d.topRegion) {
+    f.push({v:pct(d.regions[d.topRegion], d.units.length) + "%", t:"in the " + d.topRegion,
+      s:"Across " + plural(Object.keys(d.states).length,"state","states") + ". Whole regions are still empty."});
   }
 
   var types = {};
   d.units.forEach(function(u){ types[u.type || "unknown"] = (types[u.type||"unknown"]||0) + 1; });
   var tk = Object.keys(types);
   if (tk.length === 1) {
-    f.push({ic:"1", t:"<b>Every single one is a " + esc(tk[0].toLowerCase()) + ".</b>",
-      s:"Not one sorority or co-ed chapter has come through onboarding yet. That is the clearest gap in the roster."});
+    f.push({v:d.units.length, t:"fraternities, no sororities",
+      s:"Not one sorority or co-ed chapter has come through onboarding. The clearest gap in the roster."});
   } else {
-    f.push({ic:"2", t:"<b>" + esc(tk.map(function(k){ return types[k] + " " + k.toLowerCase(); }).join(", ")) + ".</b>",
-      s:"Mixed roster."});
-  }
-
-  if (d.topRegion) {
-    var second = Object.keys(d.regions).sort(function(a,b){ return d.regions[b]-d.regions[a]; })[1];
-    f.push({ic:"3", t:"<b>They cluster in the " + esc(d.topRegion) + " — " +
-      pct(d.regions[d.topRegion], d.units.length) + "% of the houses.</b>",
-      s:second ? "Next is the " + esc(second) + " at " + pct(d.regions[second], d.units.length) +
-        "%. Whole regions are still empty, which is where the next ones are cheapest to find."
-        : "Nothing anywhere else yet."});
-  }
-
-  var multi = d.frats.filter(function(x){ return x.n > 1; });
-  if (multi.length) {
-    f.push({ic:"4", t:"<b>" + esc(multi[0].name) + " is the most repeated — " +
-      plural(multi[0].n,"chapter","chapters") + " at " +
-      plural(Object.keys(multi[0].schools).length,"school","schools") + ".</b>",
-      s:plural(multi.length,"organisation has","organisations have") + " more than one house on board, which is the" +
-        " cheapest kind of growth here: a national that already knows the product."});
-  } else {
-    f.push({ic:"5", t:"<b>No organisation has two houses yet.</b>",
-      s:"Every chapter came in on its own. A second house inside a national that already said yes is the easier ask."});
-  }
-
-  var dead = d.units.length - d.live;
-  f.push({warn:dead > d.units.length / 2, ic:"6",
-    t:"<b>" + dead + " of " + d.units.length + " houses have nobody joined at all.</b>",
-    s:"Onboarding a chapter and activating one are different events, and the gap between them is where this " +
-      "actually stands: " + d.joined.toLocaleString("en-US") + " joined against a target of " +
-      d.goal.toLocaleString("en-US") + " — " + pct(d.joined, d.goal) + "% of the way there, " +
-      pct(d.joined, d.reach) + "% of the full roster."});
-
-  if (d.atGoal) {
-    var winners = d.units.filter(function(u){ return u.atGoal; })
-      .sort(function(a,b){ return b.pct - a.pct; });
-    f.push({ic:"\u2605",
-      t:"<b>" + plural(d.atGoal,"house has","houses have") + " hit the 80% target: " +
-        esc(winners.map(function(u){ return u.name + " at " + (u.shortSchool || u.school); }).join(", ")) + ".</b>",
-      s:"They are gold on the map. Median house sits at " + d.medPct + "% of its target, so these are not " +
-        "the middle of the pack — they are what a finished house looks like, and the only examples there are."});
-  } else {
-    f.push({warn:true, ic:"\u2605", t:"<b>No house has hit the 80% target yet.</b>",
-      s:"Median house is at " + d.medPct + "% of its target."});
-  }
-
-  var disputed = d.units.filter(function(u){ return u.disputed; });
-  if (disputed.length) {
-    f.push({ic:"!",
-      t:"<b>" + (disputed.length === 1
-          ? "One house's repeat rows disagree about how big it is"
-          : disputed.length + " houses' repeat rows disagree about how big they are") + ".</b>",
-      s:esc(disputed.map(function(u){
-          return (u.shortSchool||u.school) + " says " + u.sizeMin + " and " + u.sizeMax;
-        }).join("; ")) + ". Each row's joined count and roster belong together, so the furthest-along " +
-        "row is used whole rather than the largest of each — the other claims are shown but decide nothing."});
-  }
-
-  /* the near-misses are the cheapest wins on the page */
-  var close = d.units.filter(function(u){ return !u.atGoal && u.pct >= 50; })
-    .sort(function(a,b){ return b.pct - a.pct; });
-  if (close.length) {
-    var need = close.reduce(function(n,u){ return n + (u.goal - u.joined); }, 0);
-    f.push({ic:"\u2192",
-      t:"<b>" + plural(close.length,"house is","houses are") + " over halfway and short of target.</b>",
-      s:esc(close.slice(0,3).map(function(u){
-          return u.name + " at " + (u.shortSchool||u.school) + " needs " + (u.goal - u.joined);
-        }).join("; ")) + ". " + need + " more sign-ups across " + plural(close.length,"house","houses") +
-        " would finish every one of them."});
-  }
-
-  var byDate = d.units.slice().filter(function(u){ return u.first; })
-    .sort(function(a,b){ return a.first < b.first ? -1 : 1; });
-  if (byDate.length >= 6) {
-    var half = Math.floor(byDate.length / 2);
-    var early = byDate.slice(0, half), late = byDate.slice(-half);
-    var eJ = early.reduce(function(n,u){ return n+u.joined; },0), eS = early.reduce(function(n,u){ return n+u.size; },0);
-    var lJ = late.reduce(function(n,u){ return n+u.joined; },0), lS = late.reduce(function(n,u){ return n+u.size; },0);
-    if (pct(eJ,eS) !== pct(lJ,lS)) {
-      var better = pct(eJ,eS) > pct(lJ,lS);
-      f.push({ic:"7", t:"<b>The " + (better ? "earliest" : "newest") + " houses are the ones actually using it.</b>",
-        s:"The " + half + " registered first sit at " + pct(eJ,eS) + "% joined; the " + half +
-          " registered most recently, " + pct(lJ,lS) + "%. " +
-          (better ? "Either the early ones were hand-picked, or activation simply takes the weeks the new ones have not had yet."
-                  : "The newer cohort is converting better than the old one.")});
-    }
-  }
-
-  var sizes = d.units.map(function(u){ return u.size; }).sort(function(a,b){ return a-b; });
-  /* renumber the icons so they still read 1..n after the goal findings
-     were spliced in above */
-  if (sizes.length) {
-    var med = sizes[Math.floor(sizes.length/2)];
-    f.push({ic:"8", t:"<b>The median house is about " + med + " members.</b>",
-      s:"Smallest " + sizes[0] + ", largest " + sizes[sizes.length-1] +
-        ". Worth knowing before a feature is designed around the big ones."});
+    f.push({v:tk.length, t:"kinds of chapter",
+      s:esc(tk.map(function(k){ return types[k] + " " + k.toLowerCase(); }).join(", ")) + "."});
   }
 
   el("findings").innerHTML = f.map(function(x){
-    return '<div class="finding' + (x.warn ? " warn" : "") + '"><div class="ic">' + esc(x.ic) + '</div>' +
-           '<div class="tx">' + x.t + '<span>' + x.s + '</span></div></div>';
+    return '<div class="call ' + (x.cls||"") + '">' +
+      '<div class="cv">' + esc(String(x.v)) + '</div>' +
+      '<div class="ct">' + esc(x.t) + '</div>' +
+      '<div class="cs">' + x.s + '</div></div>';
   }).join("");
 }
 
@@ -907,6 +943,11 @@ function applySelection(){
   Array.prototype.forEach.call(svg.querySelectorAll("path.st"), function(pth){
     pth.classList.toggle("sel", !!selected && selected.kind === "state" &&
       pth.getAttribute("data-state") === selected.key);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".prow"), function(r){
+    var u = units.filter(function(x){ return houseKey(x) === r.getAttribute("data-house"); })[0];
+    r.classList.toggle("on", !!selected && !!u && inSelection(u));
   });
 
   var chip = el("selchip");
@@ -1013,6 +1054,12 @@ document.addEventListener("keydown", function(ev){
 
 /* ---------- the dot tooltip ---------- */
 var tip = el("tip");
+/* a row in the portfolio picks the same house its dot would */
+document.getElementById("port").addEventListener("click", function(ev){
+  var row = ev.target.closest(".prow"); if (!row) return;
+  select("house", row.getAttribute("data-house"));
+});
+
 document.addEventListener("mouseover", function(ev){
   var c = ev.target.closest && ev.target.closest("circle.dot");
   if (!c) return;
