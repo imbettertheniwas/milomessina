@@ -272,7 +272,8 @@ footer{margin-top:44px;padding:22px 0 0;border-top:1px solid var(--line);display
         <span class="k"><i></i> onboarded, nobody joined</span>
         <span class="k"><i class="prog"></i> joining, under the 80% target</span>
         <span class="k"><i class="goal"></i> hit the target</span>
-        <span class="k"><i class="sz"></i> bigger dot = more chapters there</span>
+        <span class="k"><i class="sz"></i> bigger dot = bigger roster</span>
+        <span class="k">one dot per house — a school can have several</span>
         <span class="k" id="unmapped"></span>
       </div>
     </div>
@@ -534,6 +535,11 @@ function render(){
   }).join("");
 
   /* ---- the map ---- */
+  /* One dot per house, not per school. A school can have more than one —
+     Tampa has two — and rolling them into a single dot meant one house at
+     target painted the whole campus gold while the other had not started.
+     Houses at the same school are fanned around its point instead, each
+     carrying its own colour. */
   var bySchool = {};
   placed.forEach(function(u){
     var b = bySchool[u.school] || (bySchool[u.school] = {school:u.school, units:[], size:0, joined:0, goal:0, atGoal:0});
@@ -550,28 +556,37 @@ function render(){
   }).join("");
 
   var keys = Object.keys(bySchool).sort(function(a,b){ return bySchool[b].size - bySchool[a].size; });
-  /* Each school is one group so the dot, its halo and its pulse move,
-     fade and animate as a single thing rather than three that have to be
-     kept in step. */
-  var marks = keys.map(function(s, i){
+  /* Radius reads the roster now that a dot is one house: a 200-active
+     house should not look the same as a 15-active one. Square root, so
+     area rather than width tracks the number. */
+  function radiusFor(size){ return Math.max(4.5, Math.min(13, Math.sqrt(size || 1) * 0.95)); }
+
+  var marks = [], n = 0;
+  keys.forEach(function(s){
     var b = bySchool[s], c = SCHOOLS[s], p = project(c[1], c[0]);
-    var r = 5 + Math.min(9, (b.units.length - 1) * 3.2);
-    /* Gold only for a school where a house has actually hit the target —
-       the pulse and the ring go with it and nothing else gets them, so
-       the four that made it are findable at a glance across the map. */
-    var cls = b.atGoal ? "goal" : (b.joined > 0 ? "prog" : "");
-    var x = p[0].toFixed(1), y = p[1].toFixed(1);
-    var ping = b.atGoal ? '<circle class="ping" cx="' + x + '" cy="' + y + '" r="' + r +
-      '" style="--r0:' + r + 'px;--r1:' + (r + 18) + 'px"></circle>' : "";
-    var ring = b.atGoal ? '<circle class="ring" cx="' + x + '" cy="' + y + '" r="' + (r + 4.5).toFixed(1) + '"></circle>' : "";
-    return '<g style="animation-delay:' + (i * 34) + 'ms" data-school="' + esc(s) + '">' +
-      '<circle class="halo ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + (r+7).toFixed(1) + '"></circle>' +
-      ping + ring +
-      '<circle class="dot ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) + '"' +
-      ' tabindex="0" role="button" data-school="' + esc(s) + '"' +
-      ' aria-label="' + esc(s) + ', ' + plural(b.units.length,"chapter","chapters") +
-      (b.atGoal ? ", at target" : "") + '"></circle></g>';
-  }).join("");
+    var many = b.units.length;
+    b.units.forEach(function(u, j){
+      var r = radiusFor(u.size);
+      /* fan the houses of one school around its point so neither hides
+         the other; a lone house sits exactly on it */
+      var off = 0, ang = 0;
+      if (many > 1) { off = r + 3.5; ang = (Math.PI * 2 * j / many) - Math.PI / 2; }
+      var x = (p[0] + Math.cos(ang) * off).toFixed(1);
+      var y = (p[1] + Math.sin(ang) * off).toFixed(1);
+      var cls = u.atGoal ? "goal" : (u.started ? "prog" : "");
+      var ping = u.atGoal ? '<circle class="ping" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) +
+        '" style="--r0:' + r.toFixed(1) + 'px;--r1:' + (r + 18).toFixed(1) + 'px"></circle>' : "";
+      var ring = u.atGoal ? '<circle class="ring" cx="' + x + '" cy="' + y + '" r="' + (r + 4.5).toFixed(1) + '"></circle>' : "";
+      marks.push('<g style="animation-delay:' + (n++ * 30) + 'ms">' +
+        '<circle class="halo ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + (r+6).toFixed(1) + '"></circle>' +
+        ping + ring +
+        '<circle class="dot ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) + '"' +
+        ' tabindex="0" role="button" data-house="' + esc(u.name + "|" + u.school) + '"' +
+        ' aria-label="' + esc(u.name + " at " + s) + ', ' + u.joined + ' of ' + u.goal +
+        (u.atGoal ? ", at target" : "") + '"></circle></g>');
+    });
+  });
+  marks = marks.join("");
 
   el("mapwrap").innerHTML = '<svg class="usmap" id="usmap" viewBox="0 0 ' + MAP.width + ' ' + MAP.height +
     '" role="img" aria-label="Map of the United States showing where chapters have onboarded">' +
@@ -837,14 +852,21 @@ var selected = null;          /* {kind:'school'|'state', key:string} */
 var view = {k:1, x:0, y:0};   /* scale and translation of the whole scene */
 var VIEW_MIN = 1, VIEW_MAX = 7;
 
+function houseKey(u){ return u.name + "|" + u.school; }
 function inSelection(u){
   if (!selected) return true;
+  if (selected.kind === "house")  return houseKey(u) === selected.key;
   if (selected.kind === "school") return u.school === selected.key;
   return u.state === selected.key;
 }
 
 function selectionLabel(){
   if (!selected) return "";
+  if (selected.kind === "house") {
+    var p = selected.key.split("|");
+    var u = units.filter(function(x){ return houseKey(x) === selected.key; })[0];
+    return p[0] + " · " + (u ? (u.shortSchool || u.school) : p[1]);
+  }
   if (selected.kind === "school") return selected.key;
   return STATE_NAME[selected.key] || selected.key;
 }
@@ -862,23 +884,16 @@ function applySelection(){
   var marks = svg.querySelector(".marks");
   if (marks) marks.classList.toggle("dim", !!selected);
 
+  /* A dot is lit when the house it stands for is in the selection, so a
+     state lights every house inside it and a house lights just itself. */
   Array.prototype.forEach.call(svg.querySelectorAll("circle.dot"), function(d){
-    var on = !!selected && selected.kind === "school" && d.getAttribute("data-school") === selected.key;
+    var key = d.getAttribute("data-house") || "";
+    var u = units.filter(function(x){ return houseKey(x) === key; })[0];
+    var on = !!selected && !!u && inSelection(u);
     d.classList.toggle("sel", on);
     var halo = d.parentNode.querySelector("circle.halo");
     if (halo) halo.classList.toggle("sel", on);
-    if (on) { d.parentNode.classList.remove("dimmed"); }
   });
-  /* a state selection lights every dot inside it, not one */
-  if (selected && selected.kind === "state") {
-    Array.prototype.forEach.call(svg.querySelectorAll("circle.dot"), function(d){
-      var sc = SCHOOLS[d.getAttribute("data-school")];
-      if (sc && sc[2] === selected.key) {
-        d.classList.add("sel");
-        var h = d.parentNode.querySelector("circle.halo"); if (h) h.classList.add("sel");
-      }
-    });
-  }
   Array.prototype.forEach.call(svg.querySelectorAll("path.st"), function(pth){
     pth.classList.toggle("sel", !!selected && selected.kind === "state" &&
       pth.getAttribute("data-state") === selected.key);
@@ -928,7 +943,7 @@ function bindMap(){
   svg.addEventListener("click", function(ev){
     if (dragged) return;
     var dot = ev.target.closest("circle.dot");
-    if (dot) { select("school", dot.getAttribute("data-school")); return; }
+    if (dot) { select("house", dot.getAttribute("data-house")); return; }
     var st = ev.target.closest("path.st[data-state]");
     if (st) { select("state", st.getAttribute("data-state")); return; }
     clearSelection();
@@ -936,7 +951,7 @@ function bindMap(){
   svg.addEventListener("keydown", function(ev){
     var dot = ev.target.closest && ev.target.closest("circle.dot");
     if (dot && (ev.key === "Enter" || ev.key === " ")) {
-      ev.preventDefault(); select("school", dot.getAttribute("data-school"));
+      ev.preventDefault(); select("house", dot.getAttribute("data-house"));
     }
   });
 
@@ -991,14 +1006,16 @@ var tip = el("tip");
 document.addEventListener("mouseover", function(ev){
   var c = ev.target.closest && ev.target.closest("circle.dot");
   if (!c) return;
-  var school = c.getAttribute("data-school");
-  var here = units.filter(function(u){ return u.school === school; });
-  var size = here.reduce(function(n,u){ return n+u.size; },0);
-  var join = here.reduce(function(n,u){ return n+u.joined; },0);
-  tip.innerHTML = "<b>" + esc(school) + "</b>" +
-    esc(here.map(function(u){ return u.name; }).join(", ")) +
-    "<span>" + plural(here.length,"chapter","chapters") + " · " + size + " members · " +
-    join + " joined (" + pct(join,size) + "%)</span>";
+  var key = c.getAttribute("data-house");
+  var u = units.filter(function(x){ return houseKey(x) === key; })[0];
+  if (!u) return;
+  var sibs = units.filter(function(x){ return x.school === u.school && houseKey(x) !== key; });
+  tip.innerHTML = "<b>" + esc(u.letters ? u.letters + " " : "") + esc(u.name) + "</b>" +
+    esc(u.shortSchool || u.school) +
+    "<span>" + u.joined + " of " + u.goal + " target · " + u.pct + "%" +
+    (u.atGoal ? " · at target" : "") + " · " + u.size + " actives</span>" +
+    (sibs.length ? "<span>" + plural(sibs.length,"other house","other houses") + " here: " +
+       esc(sibs.map(function(x){ return x.name; }).join(", ")) + "</span>" : "");
   tip.className = "on";
 });
 document.addEventListener("mouseout", function(ev){
