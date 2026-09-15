@@ -195,7 +195,7 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village.js?v=110').catch(error => {
+  import('./village.js?v=111').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
@@ -236,7 +236,7 @@
     selectChapter(selectedId,{writeHash:false,emit:false});
     if (focusedChapter) cards.find(card => card.dataset.chapter === focusedChapter)?.focus({preventScroll:true});
   }
-  Promise.all([import('./chapter-feed.js?v=106'),import('./village-competition.js?v=110')]).then(([{startChapterFeed},{houseStandings}]) => {
+  Promise.all([import('./chapter-feed.js?v=106'),import('./village-competition.js?v=111')]).then(([{startChapterFeed},{houseStandings}]) => {
     rankChapters=houseStandings;
     updateChapters(savedSnapshot);
     chapterFeed=startChapterFeed({

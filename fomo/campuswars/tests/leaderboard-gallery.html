@@ -3,7 +3,7 @@
 <nav><button id="rear">Show graffiti back</button><button id="pause">Pause scroll</button><button id="reduced">Reduced motion</button><select id="count" aria-label="Chapter count"><option value="12">12 chapters / top 10</option><option value="5">5 chapters</option><option value="1">1 chapter</option><option value="0">No chapters</option></select><button id="advance">Advance 20 seconds</button></nav><output id="status"></output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createCompetition} from '../village-competition.js?v=110';
+import {createCompetition} from '../village-competition.js?v=111';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color('#171923');scene.add(new T.HemisphereLight(0xffffff,0x808090,3));
 const camera=new T.PerspectiveCamera(40,1,.1,100);let competition,back=false,paused=false,reduced=false,time=0,last=0;
