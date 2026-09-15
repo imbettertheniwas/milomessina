@@ -201,7 +201,7 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village.js?v=120').catch(error => {
+  import('./village.js?v=121').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
@@ -251,6 +251,10 @@
     onUpdate:updateChapters,
     onStatus(status) {
       if (status.updatedAt) lastUpdated = status.updatedAt;
+      const source=document.getElementById('chapters-data');
+      source.dataset.feedLive=String(status.live);
+      source.dataset.feedUpdatedAt=lastUpdated||'';
+      document.dispatchEvent(new CustomEvent('chapters:status',{detail:{live:status.live,updatedAt:lastUpdated}}));
       const time = lastUpdated ? new Date(lastUpdated).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : '';
       document.getElementById('chapter-sync').textContent = status.live ? `Live onboarding · Updated ${time} · Refreshes every 30 seconds` : lastUpdated ? `Updates reconnecting · Showing data from ${time}` : 'Connecting to live onboarding · Showing saved registrations';
     }

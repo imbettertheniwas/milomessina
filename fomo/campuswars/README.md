@@ -1,5 +1,19 @@
 # fomo Campus Wars
 
+## Live village population sign
+
+A two-sided welcome sign beside the southern Greek Row entrance shows total
+**members joined** and the number of registered chapters. It sums every chapter
+from the existing `/api/campuswars` feed, whose server adapter reads Arya's admin;
+it does not count active-roster denominators or decorative campus visitors.
+The existing 30–33-second refresh updates one shared sign texture independently
+of house rebuilding and scene streaming. Saved or disconnected data is labeled
+as last known, and the live label expires after 90 seconds without fresh data.
+The phone opening view includes the sign, and the canvas description exposes
+the total to assistive technology. `tests/population.test.mjs` covers count
+corrections, additions/removals, unchanged-count recovery, freshness and resource
+reuse.
+
 ## Backyard pool reward
 
 Every chapter unlocks a furnished backyard when joined members reach `ceil(active * 0.8)`. The original house styles and rank-based sizes remain. The rejected campus-house replicas and address catalog have been removed. Already-qualified chapters receive their pool on the first snapshot; live changes add or remove it with current eligibility. A small chapter reaching its goal before 15 members receives its completed house too.

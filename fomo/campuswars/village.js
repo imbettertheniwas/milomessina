@@ -1,4 +1,5 @@
 import {backyardUnlocked} from './village-backyards.js?v=112';
+import {createVillagePopulation} from './village-population.js?v=1';
 import {createLiveArrivals} from './village-arrivals.js?v=120';
 import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
@@ -47,6 +48,9 @@ async function startVillage(){
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
   const fill=new THREE.DirectionalLight(0xc4d2e0,.5);fill.position.set(30,15,-25);scene.add(fill);
   let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals});scene.add(village.world);
+  const populationSource=document.getElementById('chapters-data');
+  const populationSnapshot=JSON.parse(populationSource.textContent);
+  const population=createVillagePopulation(THREE,populationSnapshot.chapters,{live:populationSource.dataset.feedLive==='true',updatedAt:populationSource.dataset.feedUpdatedAt||populationSnapshot.updatedAt});scene.add(population.root);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
   const helipad=createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true');
   const pointerHover=createPointerHover(THREE,canvas,camera,blimp);
@@ -85,7 +89,10 @@ async function startVillage(){
   }
   let introRoll=0,introNight=0;
   function applyIntroView(){
-    const view=reduced?openingView:introViewAt(entranceTime);
+    const home=restingView(),view=reduced?home:introViewAt(entranceTime);
+    // Ease the last intro beat into the phone framing, leaving space for the
+    // physical welcome sign beside the boulevard in a portrait viewport.
+    if(!reduced&&viewport.clientWidth<650){const t=Math.max(0,Math.min(1,(entranceTime-(INTRO_DURATION-2))/(2))),blend=t*t*(3-2*t);view.target[0]+=(home.target[0]-openingView.target[0])*blend;view.radius+=(home.radius-openingView.radius)*blend;}
     target.set(...view.target);theta=view.theta;phi=view.phi;radius=view.radius;
     wantedTarget.copy(target);wantedTheta=theta;wantedPhi=phi;wantedRadius=radius;
     introRoll=view.roll||0;introNight=view.night||0;
@@ -130,8 +137,17 @@ async function startVillage(){
   document.addEventListener('village:replay',beginIntro);
   document.addEventListener('village:artwork',()=>{viewDirty=true;wake();});
   let selected='sigma-chi-sdsu',paused=reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true',visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,stadiumView=false,helipadView=false;
-  const target=new THREE.Vector3(...openingView.target),wantedTarget=new THREE.Vector3(...openingView.target),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
-  let {theta,phi,radius}=openingView;let wantedTheta=theta,wantedPhi=phi,wantedRadius=radius;
+  function describePopulation(){const data=population.root.userData;canvas.setAttribute('aria-description',`${data.members.toLocaleString('en-US')} members joined across ${data.chapters} chapters. ${data.status.toLowerCase()}.`);}
+  describePopulation();
+  document.addEventListener('chapters:update',event=>{population.setChapters(event.detail.chapters);describePopulation();viewDirty=true;wake();});
+  document.addEventListener('chapters:status',event=>{population.setStatus(event.detail);describePopulation();viewDirty=true;wake();});
+  // Check freshness even while activity is paused; this does not animate or
+  // rebuild the sign, and the texture changes only when its wording changes.
+  const populationFreshness=setInterval(()=>{if(!document.hidden&&population.refresh()){describePopulation();viewDirty=true;wake();}},15000);
+  addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(populationFreshness);});
+  function restingView(){return viewport.clientWidth<650?{...openingView,target:[8,2,-8.101],radius:60}:openingView;}
+  const target=new THREE.Vector3(...restingView().target),wantedTarget=target.clone(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+  let {theta,phi,radius}=restingView();let wantedTheta=theta,wantedPhi=phi,wantedRadius=radius;
   if(!reduced)applyIntroView();
   const nightToggle=document.getElementById('night-toggle');
   nightToggle.addEventListener('click',()=>{
@@ -140,7 +156,7 @@ async function startVillage(){
     applyLighting(night?1:0);viewDirty=true;wake();
   });
   function snapLongJump(){if(target.distanceTo(wantedTarget)>180){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{wantedTarget.set(...openingView.target);wantedRadius=openingView.radius;wantedPhi=openingView.phi;wantedTheta=openingView.theta;snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
+  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=restingView();wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
   function choose(id,focus=false,emit=true){
     const anchor=village.anchors.find(a=>a.id===id);if(!anchor)return;selected=id;viewDirty=true;
     // Frame the house from its own street's centre line, whichever street that is.

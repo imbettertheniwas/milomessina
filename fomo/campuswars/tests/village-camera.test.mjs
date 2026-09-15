@@ -1,3 +1,4 @@
+import {createVillagePopulation} from '../village-population.js';
 import {backyardUnlocked} from '../village-backyards.js';
 import {createHelipad} from '../village-helipad.js';
 import {createLiveArrivals} from '../village-arrivals.js';
@@ -18,7 +19,7 @@ import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from '../village-
 
 async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650},initialChapters=[]){
   const elements=new Map(),events=new Map(),selections=[],lighting=[],builds=[],pixelRatios=[];let intersection,frame,camera,finishWarmup,blimp,helipad,mockVillage,renders=0;
-  function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
+  function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,dataset:{},style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
   element('village-drawer').hidden=true;
   element('chapters-data').textContent=JSON.stringify({chapters:initialChapters});
   Object.assign(element('village-viewport'),{clientWidth:screen.width,clientHeight:screen.height});
@@ -26,7 +27,7 @@ async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobi
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
   sandbox.createVillageRendererAsync=async (...args)=>sandbox.createVillage(...args);
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
@@ -51,6 +52,16 @@ test('taking control cancels the descent immediately and reset remains usable',a
 });
 test('reduced motion opens directly on the row',async()=>{
   const h=await cameraHarness(true);h.show(true);const a=h.step(.02);assert(a.y<14);assert(a.distanceTo(h.step(5))<.001);
+});
+test('portrait opening frames the entire population sign beside the street',async()=>{
+  const h=await cameraHarness(true,'',false,true,{width:390,height:844});h.show(true);h.step(.05);
+  const sign=createVillagePopulation(THREE,[]),bounds=new THREE.Box3().setFromObject(sign.root);
+  for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
+    const projected=new THREE.Vector3(x,y,z).project(h.camera());
+    assert(Math.abs(projected.x)<1,'population sign fits the phone width');
+    assert(projected.y>-.85&&projected.y<.75,'sign clears the top and bottom controls');
+  }
+  sign.dispose();
 });
 test('startup preserves a new chapter deep link while waiting for live registrations',async()=>{
   const h=await cameraHarness(false,'#chapter=chapter-new');h.show(true);h.step(4);
