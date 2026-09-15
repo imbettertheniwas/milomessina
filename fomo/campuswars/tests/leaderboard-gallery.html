@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Leaderboard review</title>
+<style>@font-face{font-family:Aeonik;src:url('../assets/aeonik-700.ttf');font-weight:700}@font-face{font-family:Aeonik;src:url('../assets/aeonik-500.ttf');font-weight:500}*{box-sizing:border-box}body{margin:0;background:#171923;color:#fff;font-family:Aeonik,Arial}nav{padding:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}button,select{padding:10px;background:#333b55;border:1px solid #697493;border-radius:6px;color:#fff}canvas{display:block;width:100%;height:calc(100vh - 110px)}output{display:block;padding:8px 16px}</style>
+<nav><button id="rear">Show graffiti back</button><button id="pause">Pause scroll</button><button id="reduced">Reduced motion</button><select id="count" aria-label="Chapter count"><option value="12">12 chapters / top 10</option><option value="5">5 chapters</option><option value="1">1 chapter</option><option value="0">No chapters</option></select><button id="advance">Advance 20 seconds</button></nav><output id="status"></output>
+<script type="module">
+import * as T from '../vendor/three.module.min.js';
+import {createCompetition} from '../village-competition.js?v=109';
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));document.body.append(renderer.domElement);
+const scene=new T.Scene();scene.background=new T.Color('#171923');scene.add(new T.HemisphereLight(0xffffff,0x808090,3));
+const camera=new T.PerspectiveCamera(40,1,.1,100);let competition,back=false,paused=false,reduced=false,time=0,last=0;
+const names=['Sigma Chi','Kappa Sigma','Phi Delta Theta','Phi Kappa Psi','Tau Kappa Epsilon','Sigma Alpha Epsilon','Alpha Tau Omega','Delta Tau Delta','Sigma Nu','Beta Theta Pi','Pi Kappa Alpha','Delta Chi'];
+function rebuild(){competition?.root.removeFromParent();competition?.root.traverse(o=>{o.geometry?.dispose();o.material?.map?.dispose();o.material?.dispose();});competition=createCompetition(T,names.slice(0,Number(document.getElementById('count').value)).map((name,i)=>({id:name.toLowerCase().replaceAll(' ','-'),name,shortSchool:'Example University',active:200-i*10,joined:Math.round((200-i*10)*(.8-i*.035))})),[]);competition.board.position.set(0,0,0);competition.board.rotation.y=0;scene.add(competition.root);time=0;}
+function resize(){const w=innerWidth,h=innerHeight-110;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
+document.getElementById('rear').onclick=e=>{back=!back;e.target.textContent=back?'Show leaderboard front':'Show graffiti back';};
+document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume scroll':'Pause scroll';};
+document.getElementById('reduced').onclick=e=>{reduced=!reduced;e.target.textContent=reduced?'Enable motion':'Reduced motion';};
+document.getElementById('count').onchange=rebuild;document.getElementById('advance').onclick=()=>time+=20;addEventListener('resize',resize);rebuild();resize();
+renderer.setAnimationLoop(now=>{if(!paused)time+=last?Math.min((now-last)/1000,.05):0;last=now;competition.animate(time,reduced);const distance=Math.max(15,7.2/camera.aspect/Math.tan(camera.fov*Math.PI/360));camera.position.set(0,5,back?-distance:distance);camera.lookAt(0,5,0);renderer.render(scene,camera);document.getElementById('status').textContent=`${competition.topChapters.length} displayed / ${competition.standings.length} registered · ${reduced?'Static top 10':paused?'Paused':'Scrolling'} · ${time.toFixed(1)}s`;});
+</script></html>

@@ -5,12 +5,12 @@ import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=106';
+import {createVillageRendererAsync} from './village-renderer.js?v=109';
 import {createDistricts} from './village-districts.js?v=108';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
-import {createMoneyRain} from './village-money-rain.js?v=105';
-import {prewarmVillage} from './village-prewarm.js?v=105';
+import {createMoneyRain} from './village-money-rain.js?v=109';
+import {prewarmVillage} from './village-prewarm.js?v=109';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
@@ -397,6 +397,7 @@ async function startVillage(){
     const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
     village.animateCrowd(partyTime,camera,pedestrianPoses);
     districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);
+    village.competition.animate?.(partyTime,reduced);
     renderer.render(scene,camera);lastRender=now;
     if(quality.mobile){
       slowFrames=performance.now()-frameStarted>interval*.8||(frameGap>interval*1.45&&frameGap<250)?slowFrames+1:Math.max(0,slowFrames-1);

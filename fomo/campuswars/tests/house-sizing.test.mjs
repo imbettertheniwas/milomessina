@@ -33,7 +33,7 @@ test('live promotions exchange the size hierarchy while preserving colors and ex
   before.dispose();next.dispose();
 });
 test('equal displayed ranks have equal sizes and source ordering does not change sizing',()=>{
-  const tied=chapters.map(c=>c.id===chapters[0].id?{...c,joined:18}:c),sizes=rankedHouseSizes(tied),reordered=rankedHouseSizes([...tied].reverse());
+  const tied=chapters.map(c=>c.id===chapters[0].id?{...c,joined:90,active:100}:c),sizes=rankedHouseSizes(tied),reordered=rankedHouseSizes([...tied].reverse());
   for(const c of tied)assert.deepEqual(sizes.get(c.id),reordered.get(c.id));
   for(const key of ['rank','footprint','roofline','depthScale'])assert.equal(sizes.get(tied[0].id)[key],sizes.get(tied[1].id)[key]);
 });

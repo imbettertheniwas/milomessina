@@ -1,11 +1,11 @@
-import {bannerIdentity} from './village-banner-art.js?v=105';
+import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=109';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){
   const rows=chapters.filter(c=>c.active>0).map(c=>({...c,progress:c.joined/c.active}));
   const score=c=>metric==='members'?c.joined:c.progress;
   rows.sort((a,b)=>score(b)-score(a)||b.joined-a.joined||a.id.localeCompare(b.id));
-  rows.forEach((row,i)=>{row.rank=i&&score(row)===score(rows[i-1])?rows[i-1].rank:i+1;});
+  rows.forEach((row,i)=>{row.rank=i&&score(row)===score(rows[i-1])&&row.joined===rows[i-1].joined?rows[i-1].rank:i+1;});
   return rows;
 }
 function canvasTexture(T,w,h,paint){
@@ -46,27 +46,25 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors){
   box(0,.13,0,12,.26,1.7,new T.MeshStandardMaterial({color:0xb6b3a3,roughness:1}));
   for(const x of [-4.5,4.5])box(x,3.7,-.08,.3,7.3,.35);
   box(0,5.0,0,11.4,7.8,.40);box(0,9.01,0,11.7,.20,.65);
-  const map=canvasTexture(T,2048,1376,(ctx,w,h)=>{
-    ctx.fillStyle='#101D29';ctx.fillRect(0,0,w,h);ctx.textBaseline='middle';ctx.textAlign='left';
-    ctx.fillStyle='#E9C873';ctx.fillRect(0,0,w,12);ctx.font='700 47px Aeonik, Arial, sans-serif';ctx.fillText('FOMO / GREEK WARS',100,91);
-    ctx.fillStyle='#FFFFFF';ctx.font='700 121px Aeonik, Arial, sans-serif';ctx.fillText('LEADERBOARD',100,211);
-    ctx.fillStyle='#AFC0CD';ctx.font='500 40px Aeonik, Arial, sans-serif';ctx.fillText('CHAPTER',105,315);
-    ctx.textAlign='right';ctx.fillText('80% TARGET',w-327,315);ctx.fillText('% ACTIVE',w-110,315);
-    standings.slice(0,5).forEach((row,i)=>{
-      const y=382+i*166,first=i===0;
-      ctx.fillStyle=first?'#263A39':i%2?'#152632':'#12212E';ctx.fillRect(66,y,w-132,148);
-      ctx.fillStyle=bannerIdentity(row).primary;ctx.fillRect(66,y,13,148);
-      ctx.fillStyle=first?'#E9C873':'#AFC0CD';ctx.textAlign='left';ctx.font='700 67px Aeonik, Arial, sans-serif';ctx.fillText(`#${row.rank}`,107,y+75);
-      ctx.fillStyle='#FFFFFF';ctx.font='700 55px Aeonik, Arial, sans-serif';ctx.fillText(row.name.toUpperCase(),260,y+54,1040);
-      ctx.fillStyle='#ACBDC8';ctx.font='500 34px Aeonik, Arial, sans-serif';ctx.fillText(row.shortSchool.toUpperCase(),260,y+106,1040);
-      ctx.textAlign='right';ctx.fillStyle='#D0DCE4';ctx.font='500 58px Aeonik, Arial, sans-serif';ctx.fillText(`${row.joined} / ${Math.ceil(row.active*.8)}`,w-328,y+76);
-      ctx.fillStyle=first?'#E9C873':'#FFFFFF';ctx.font='700 75px Aeonik, Arial, sans-serif';ctx.fillText(`${Math.round(row.progress*100)}%`,w-111,y+76);
-    });
-    ctx.textAlign='left';ctx.fillStyle='#AFC0CD';ctx.font='500 32px Aeonik, Arial, sans-serif';ctx.fillText(`TOP ${Math.min(5,standings.length)} OF ${standings.length} CHAPTERS · Open Chapters for the full list.`,100,h-74);
-    ctx.fillStyle='#E9C873';ctx.font='700 27px Aeonik, Arial, sans-serif';ctx.textAlign='right';ctx.fillText('80% TO QUALIFY',w-100,h-27);
-  });
+  const topChapters=standings.slice(0,LEADERBOARD_LIMIT);
+  const map=canvasTexture(T,2048,1376,(ctx,w,h)=>paintLeaderboardFrame(ctx,w,h,standings.length));
   const face=new T.Mesh(new T.PlaneGeometry(11,7.4),new T.MeshStandardMaterial({color:map?0xffffff:0x152632,map,roughness:.8,emissive:0xffffff,emissiveMap:map,emissiveIntensity:map?.4:0}));
   face.name='leaderboard-display';face.position.set(0,5,.215);face.userData.ownedTexture=true;board.add(face);
+  // Scroll UV coordinates on a prepainted strip, avoiding canvas uploads per frame.
+  const rowMap=topChapters.length?canvasTexture(T,2048,topChapters.length*ROW_HEIGHT,(ctx,w,h)=>paintLeaderboardRows(ctx,w,h,topChapters)):null;
+  if(rowMap){rowMap.wrapT=T.RepeatWrapping;rowMap.generateMipmaps=false;rowMap.minFilter=T.LinearFilter;}
+  const rowFace=new T.Mesh(new T.PlaneGeometry(11,7.4*ROWS_HEIGHT/1376),new T.MeshStandardMaterial({color:rowMap?0xffffff:0x101d29,map:rowMap,roughness:.8,emissive:0xffffff,emissiveMap:rowMap,emissiveIntensity:rowMap?.4:0}));
+  rowFace.name='leaderboard-scrolling-rows';rowFace.position.set(0,5+7.4*(.5-(ROWS_TOP+ROWS_HEIGHT/2)/1376),.222);rowFace.userData.ownedTexture=true;rowFace.visible=topChapters.length>0;board.add(rowFace);
+  function animate(time,reducedMotion=false){
+    if(!rowMap)return;
+    const visibleRows=reducedMotion?topChapters.length:Math.min(5,topChapters.length);
+    rowMap.repeat.y=visibleRows/topChapters.length;
+    rowMap.offset.y=1-rowMap.repeat.y-(reducedMotion||topChapters.length<2?0:(time/4/topChapters.length)%1);
+  }
+  animate(0);
+  const backMap=canvasTexture(T,2048,1376,paintLeaderboardGraffiti);
+  const back=new T.Mesh(new T.PlaneGeometry(11,7.4),new T.MeshStandardMaterial({color:backMap?0xffffff:0x626cf3,map:backMap,roughness:.95}));
+  back.name='leaderboard-fomo-graffiti';back.position.set(0,5,-.27);back.rotation.y=Math.PI;back.userData.ownedTexture=true;board.add(back);
   const gold=new T.MeshStandardMaterial({color:0xdcc47a,roughness:.4,metalness:.6});for(const x of [-4.5,0,4.5]){box(x,9.2,.4,.15,.15,1.1);box(x,9.13,.95,1.05,.09,.33,gold);}
-  return {root,standings,badges,spotlight,board,leaderId:leader?.id||null};
+  return {root,standings,topChapters,badges,spotlight,board,animate,leaderId:leader?.id||null};
 }

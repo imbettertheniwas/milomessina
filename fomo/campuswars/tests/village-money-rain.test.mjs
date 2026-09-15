@@ -13,7 +13,7 @@ test('rain follows actual onboarding ranks, excludes construction below its goal
   const rows=moneyRecipients(chapters,anchors);
   assert.deepEqual(rows.map(row=>row.id),['first','second','third']);
   assert(rows[0].count>rows[1].count&&rows[1].count>rows[2].count);
-  const tied=moneyRecipients([{...chapters[0],joined:50},{...chapters[1],joined:25,active:50}],anchors);
+  const tied=moneyRecipients([{...chapters[0],joined:50},{...chapters[1],joined:50,active:100}],anchors);
   assert.equal(tied[0].rank,tied[1].rank);assert.equal(tied[0].count,tied[1].count);
 });
 test('clouds and bills exist only during the reward beat, stay over eligible lots, and freeze with time',()=>{
