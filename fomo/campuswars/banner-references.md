@@ -12,6 +12,10 @@ Researched September 9, 2026. These are original Campus Wars compositions inspir
 
 Phi Kappa Psi's current toolkit says a brand refresh is underway; the colors above are the published palette available at the research date. The lettering uses existing Aeonik and system Georgia; it does not claim to reproduce licensed national brand typefaces.
 
+## FOMO redesign — September 15, 2026
+
+The current house banners use a shared near-black scorecard, the original eyes mark and large Greek letters. Each fraternity’s own colors fill the identity panel, diagonal accent and progress bar. Member counts stay visible alongside the existing $500 paid status after qualification. A progress bar measures the 80% target; roster percentages are omitted. The gallery includes a clearly labeled paid-state preview.
+
 ## Implementation and review
 
 `village-banner-art.js` draws all five designs into local canvas textures. The production scene makes no requests to fraternity websites. Cloth geometry, hanging hardware, texture resolution, member totals, selection behavior and banner proportions are preserved. Phi Kappa Psi and TKE show their individual artwork on their construction-site banners as well.

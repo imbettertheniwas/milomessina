@@ -1,4 +1,4 @@
-import {bannerIdentity} from './village-banner-art.js?v=55';
+import {bannerIdentity} from './village-banner-art.js?v=104';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){

@@ -1,5 +1,5 @@
-import {houseStandings} from './village-competition.js?v=87';
-import {bannerIdentity} from './village-banner-art.js?v=55';
+import {houseStandings} from './village-competition.js?v=104';
+import {bannerIdentity} from './village-banner-art.js?v=104';
 import {hash} from './village-district-layout.js?v=80';
 
 function houseStyle(chapter){

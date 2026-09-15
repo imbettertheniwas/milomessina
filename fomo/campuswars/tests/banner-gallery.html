@@ -2,11 +2,12 @@
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Greek village — banner designs</title>
 <link rel="stylesheet" href="../styles.css">
 <style>body{background:#e8e6e1;color:#222e37;padding:32px;margin:0;min-width:0}main{max-width:1100px;margin:auto}h1{font:500 30px Georgia,serif;margin-bottom:8px}p{font:14px Arial,sans-serif;color:#58616b}section{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:28px}figure{margin:0}canvas{width:100%;display:block;box-shadow:0 6px 16px #1112}figcaption{font:13px Arial,sans-serif;margin-top:10px}a{color:#344876}@media(max-width:680px){section{grid-template-columns:1fr}body{padding:18px}}</style>
-<main><h1>Five houses. Five identities.</h1><p>Original village banners informed by each fraternity’s real colors and visual traditions.</p><section id="banners"></section><p><a href="../">Back to the Greek village →</a></p></main>
+<main><h1>Your letters. FOMO energy.</h1><p>FOMO house banners with live member targets, chapter colors and paid status.</p><section id="banners"></section><p><a href="../">Back to the Greek village →</a></p></main>
 <script type="module">
-import {paintChapterBanner,bannerIdentity} from '../village-banner-art.js?v=54';
-const {chapters}=await (await fetch('../chapters.json')).json();await document.fonts.ready;
+import {paintChapterBanner,bannerIdentity} from '../village-banner-art.js?v=104';
+const {chapters}=await (await fetch('../chapters.json')).json();await document.fonts.load('700 90px Aeonik');await document.fonts.ready;
+chapters.push({...chapters[0],joined:80,name:'Goal reached · preview',id:'paid-preview'});
 for(const [i,chapter] of chapters.entries()){
- const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption');canvas.width=2048;const widths=[5.2275,6.8,5.2275,4.8,4.8];canvas.height=Math.round(2048*2.17/widths[i]);paintChapterBanner(canvas.getContext('2d'),chapter,canvas.width,canvas.height);canvas.setAttribute('aria-label',`${chapter.name}: ${chapter.joined} of ${chapter.active} members`);caption.textContent=chapter.name+' · '+chapter.shortSchool;figure.dataset.design=bannerIdentity(chapter).key;figure.append(canvas,caption);document.getElementById('banners').append(figure);
+ const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption');canvas.width=2048;const widths=[5.2275,6.8,5.2275,4.8,4.8];canvas.height=Math.round(2048*2.17/(widths[i]||5.2275));paintChapterBanner(canvas.getContext('2d'),chapter,canvas.width,canvas.height);canvas.setAttribute('aria-label',`${chapter.name}: ${chapter.joined} of ${chapter.active} members`);caption.textContent=chapter.name+' · '+chapter.shortSchool;figure.dataset.design=bannerIdentity(chapter).key;figure.append(canvas,caption);document.getElementById('banners').append(figure);
 }
 </script></html>

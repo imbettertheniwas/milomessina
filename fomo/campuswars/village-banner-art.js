@@ -1,3 +1,4 @@
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
 import {chapterGoalReached} from './village-rewards.js?v=55';
 // Original chapter compositions informed by public fraternity brand references.
 // Color provenance and design notes: banner-references.md. These are not official flags.
@@ -11,105 +12,51 @@ const identities={
 const fallback={key:'chapter-classic',primary:'#252A51',secondary:'#C6BD9F',ink:'#FFFFFF',paper:'#FFFFFF'};
 export function bannerIdentity(chapter){return identities[chapter.id]||Object.entries(identities).find(([id])=>id.startsWith(chapter.name.toLowerCase().replaceAll(" ","-")+"-"))?.[1]||fallback;}
 
+// Shared FOMO campaign layout in each fraternity’s own colors.
 export function paintChapterBanner(ctx,chapter,w,h){
-  const b=bannerIdentity(chapter),serif='Georgia, serif',sans='Aeonik, Arial, sans-serif';
-  ctx.save();ctx.clearRect(0,0,w,h);ctx.textBaseline='middle';ctx.lineJoin='round';
-  const rect=(x,y,width,height,color)=>{ctx.fillStyle=color;ctx.fillRect(x*w,y*h,width*w,height*h);};
-  const line=(points,color,width=2)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x*w,y*h):ctx.moveTo(x*w,y*h));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();};
-  const polygon=(points,color)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x*w,y*h):ctx.moveTo(x*w,y*h));ctx.closePath();ctx.fillStyle=color;ctx.fill();};
-  const text=(value,x,y,size,color,maxWidth=.85,font=sans,weight='700',spacing=0)=>{
-    ctx.textAlign='center';ctx.letterSpacing=`${spacing}px`;let px=size*h;ctx.font=`${weight} ${px}px ${font}`;
-    while(ctx.measureText(value).width>maxWidth*w&&px>12){px-=1;ctx.font=`${weight} ${px}px ${font}`;}
+  const b=bannerIdentity(chapter),sans='Aeonik, Arial, sans-serif';
+  const white='#FFFFFF',muted='#BFC1D8',black='#12111A';
+  const target=Math.ceil(chapter.active*.8),reached=chapterGoalReached(chapter);
+  const progress=target>0?Math.max(0,Math.min(1,chapter.joined/target)):0;
+  ctx.save();ctx.clearRect(0,0,w,h);ctx.textBaseline='middle';
+  const rect=(x,y,sw,sh,color)=>{ctx.fillStyle=color;ctx.fillRect(x*w,y*h,sw*w,sh*h);};
+  const text=(value,x,y,size,color,width,align='left',weight=700)=>{
+    ctx.textAlign=align;ctx.letterSpacing='0px';let px=size*h;
+    ctx.font=`${weight} ${px}px ${sans}`;
+    while(ctx.measureText(value).width>width*w&&px>1){px-=.5;ctx.font=`${weight} ${px}px ${sans}`;}
     ctx.fillStyle=color;ctx.fillText(value,x*w,y*h);
   };
-  const star=(x,y,r,color)=>{ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,s=(i%2?.42:1)*r*h;const px=x*w+Math.cos(a)*s,py=y*h+Math.sin(a)*s;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fillStyle=color;ctx.fill();};
-  const reached=chapterGoalReached(chapter),targetLabel=reached?'80% GOAL REACHED':'80% MEMBER TARGET';
-  const count=(x,y,size,color,width=.4)=>text(reached?'$500 PAID':`${chapter.joined} / ${Math.ceil(chapter.active*.8)}`,x,y,size,color,width,sans,'700');
-  const name=chapter.name.toUpperCase(),school=chapter.shortSchool.toUpperCase();
-  rect(0,0,1,1,b.primary);
-  switch(b.key){
-    case 'blue-and-gold': {
-      // The flag's horizontal blue/gold division becomes a collegiate house cloth.
-      rect(0,.78,1,.22,b.secondary);
-      line([[.025,.06],[.975,.06],[.975,.94],[.025,.94],[.025,.06]],b.secondary,3);
-      line([[.43,.2],[.43,.67]],'#FFFFFF80',2);
-      for(let i=0;i<7;i++)star(.132+i*.033,.19,.018,b.secondary);
-      text(chapter.letters,.23,.47,.49,b.paper,.35,serif);
-      text(name,.695,.24,.12,b.ink,.49,serif);
-      count(.695,.49,.30,b.paper,.48);
-      text(targetLabel,.695,.68,.058,b.ink,.48,sans,'700',3);
-      text(school,.5,.88,.084,b.ink,.86,sans,'700',3);
-      break;
-    }
-    case 'star-and-crescent': {
-      // Scarlet diagonal, white piping and a simple celestial emblem on emerald.
-      polygon([[0,0],[.50,0],[.33,1],[0,1]],b.secondary);
-      polygon([[.50,0],[.512,0],[.342,1],[.33,1]],b.paper);
-      ctx.save();ctx.translate(.20*w,.21*h);ctx.rotate(-.35);ctx.beginPath();ctx.arc(0,0,.066*h,0,Math.PI*2);ctx.arc(.032*h,-.018*h,.061*h,0,Math.PI*2,true);ctx.fillStyle=b.gold;ctx.fill('evenodd');ctx.restore();
-      star(.235,.18,.042,b.paper);
-      text(chapter.letters,.21,.50,.42,b.paper,.32,serif);
-      text('KAPPA SIGMA',.71,.20,.105,b.paper,.43,serif);
-      line([[.52,.31],[.90,.31]],b.gold,4);
-      count(.71,.51,.29,b.paper,.44);
-      text(targetLabel,.71,.73,.055,b.paper,.42,sans,'700',3);
-      text(school,.71,.88,.062,b.paper,.44);
-      line([[.035,.08],[.035,.92]],b.gold,3);
-      break;
-    }
-    case 'azure-academic': {
-      // A light, centered academic standard; six stars echo the heraldic field.
-      rect(0,0,1,1,b.paper);rect(0,0,.045,1,b.primary);rect(.955,0,.045,1,b.primary);
-      rect(.055,0,.012,1,b.secondary);rect(.933,0,.012,1,b.secondary);
-      text(name,.5,.145,.105,b.primary,.82,serif);
-      text(chapter.letters,.5,.395,.32,b.primary,.58,serif);
-      for(const side of [-1,1])for(let i=0;i<3;i++)star(.5+side*(.30+i*.055),.395,.026,b.secondary);
-      line([[.22,.565],[.78,.565]],b.silver,3);
-      count(.5,.70,.26,b.primary,.65);
-      rect(.067,.86,.866,.14,b.secondary);
-      text(`${school}  /  ${targetLabel}`,.5,.922,.05,b.primary,.80,sans,'700',2);
-      break;
-    }
-    case 'cardinal-rose': {
-      // Cardinal wings and a hunter-green center echo the fraternity's flag.
-      rect(0,0,.19,1,b.secondary);rect(.81,0,.19,1,b.secondary);
-      for(const x of [.19,.81])line([[x,.0],[x,1]],b.gold,4);
-      for(const side of [-1,1]){
-        const x=side<0?.094:.906,y=.48;
-        // Original stitched rose linework, inspired by Phi Psi's Jacqueminot rose.
-        ctx.save();ctx.translate(x*w,y*h);ctx.strokeStyle='#FFFFFF80';ctx.lineWidth=3;
-        for(let i=0;i<6;i++){ctx.rotate(Math.PI/3);ctx.beginPath();ctx.ellipse(.021*h,0,.055*h,.028*h,0,0,Math.PI*2);ctx.stroke();}
-        ctx.beginPath();ctx.arc(0,0,.025*h,0,Math.PI*2);ctx.stroke();ctx.restore();
-        line([[x,.57],[x,.79]],'#FFFFFF80',3);line([[x,.71],[x-.025,.65]],'#FFFFFF80',3);line([[x,.75],[x+.025,.68]],'#FFFFFF80',3);
-      }
-      text(name,.5,.17,.091,b.paper,.55,serif);
-      text(chapter.letters,.5,.40,.30,b.paper,.52,serif);
-      rect(.30,.585,.40,.205,b.paper);
-      count(.5,.69,.21,b.primary,.36);
-      text(targetLabel,.5,.865,.054,b.paper,.53,sans,'700',2);
-      text(school,.5,.95,.041,b.paper,.5);
-      break;
-    }
-    case 'cherry-varsity': {
-      // An athletic houseplate with oversized block letters and a clipped gray end.
-      polygon([[.66,0],[1,0],[1,1],[.52,1]],b.secondary);
-      polygon([[.645,0],[.675,0],[.535,1],[.505,1]],b.paper);
-      rect(.05,.09,.47,.016,b.paper);rect(.05,.125,.37,.008,'#FFFFFF90');
-      text('TAU KAPPA EPSILON',.285,.245,.092,b.paper,.45,sans,'700',1);
-      text(chapter.letters,.285,.52,.40,b.paper,.46,sans,'900');
-      text(school,.265,.84,.067,b.paper,.39,sans,'700',2);
-      count(.795,.42,.29,'#151515',.33);
-      text(reached?'GOAL REACHED':'80% TARGET',.785,.66,.069,'#151515',.32,sans,'900',2);
-      text('ON FOMO',.77,.78,.069,'#151515',.32,sans,'900',2);
-      rect(.70,.90,.24,.017,b.primary);
-      break;
-    }
-    default:
-      text(name,.5,.18,.1,b.paper);text(chapter.letters,.27,.49,.38,b.paper,.36,serif);count(.70,.5,.3,b.paper,.43);text(`${school} / ${targetLabel}`,.5,.83,.065,b.paper);
+  rect(0,0,1,1,black);
+  // The left identity panel reads from across the street; the right is a scorecard.
+  rect(0,0,.40,1,b.primary);
+  ctx.beginPath();ctx.moveTo(.29*w,0);ctx.lineTo(.40*w,0);ctx.lineTo(.40*w,h);ctx.lineTo(.13*w,h);ctx.closePath();
+  ctx.fillStyle=b.secondary;ctx.globalAlpha=.26;ctx.fill();ctx.globalAlpha=1;
+  ctx.save();ctx.beginPath();ctx.rect(0,0,.40*w,h);ctx.clip();
+  ctx.strokeStyle='#FFFFFF12';ctx.lineWidth=h*.026;
+  for(let i=-4;i<8;i++){ctx.beginPath();ctx.moveTo(i*h*.25,0);ctx.lineTo(i*h*.25-h*.5,h);ctx.stroke();}
+  ctx.restore();
+  rect(0,0,.40,.018,b.secondary);
+  rect(.02,.018,.010,.964,b.secondary);
+  // Use the existing original FOMO mark, never an approximation of it.
+  if(typeof Path2D!=='undefined'){
+    ctx.save();const size=h*.39;ctx.translate(w*.21-size*.5,-h*.017);ctx.scale(size/100,size/100);ctx.fillStyle=white;
+    for(const path of FOMO_MARK_PATHS)ctx.fill(new Path2D(path));ctx.restore();
   }
-  // Fine fibers, recessed hems and edge stitching unify the physical cloth only.
-  for(let y=0;y<h;y+=5){ctx.fillStyle=y%10?'#FFFFFF09':'#10182007';ctx.fillRect(0,y,w,1);}
-  for(let x=0;x<w;x+=9){ctx.fillStyle='#FFFFFF05';ctx.fillRect(x,0,1,h);}
-  ctx.strokeStyle='#FFFFFF65';ctx.lineWidth=2;ctx.setLineDash([7,6]);ctx.strokeRect(17,17,w-34,h-34);ctx.setLineDash([]);
-  ctx.strokeStyle='#07101F30';ctx.lineWidth=7;ctx.strokeRect(4,4,w-8,h-8);
+  text(chapter.letters,.21,.49,.36,white,.32,'center');
+  text(chapter.name.toUpperCase(),.21,.742,.065,white,.32,'center');
+  text((chapter.shortSchool||chapter.school||'').toUpperCase(),.21,.851,.049,white,.32,'center',500);
+
+  text('GREEK WARS',.45,.135,.068,muted,.24);
+  const status=reached?'$500 PAID':'ROAD TO $500';
+  rect(.744,.075,.211,.12,reached?'#CAFF83':'#29273D');
+  text(status,.8495,.138,.060,reached?black:'#DAD9FF',.19,'center');
+  text(`${chapter.joined} / ${target}`,.45,.425,.28,white,.50);
+  text('MEMBERS ONBOARDED',.453,.614,.059,muted,.49);
+  rect(.45,.73,.505,.028,'#343245');
+  if(progress>0)rect(.45,.73,.505*progress,.028,reached?'#CAFF83':b.secondary);
+  text(reached?'80% GOAL REACHED':'80% MEMBER TARGET',.45,.862,.054,reached?'#CAFF83':muted,.32);
+  // Quiet stitching keeps the cloth tangible without muddying the typography.
+  ctx.strokeStyle='#FFFFFF38';ctx.lineWidth=Math.max(.5,h*.002);ctx.setLineDash([h*.01,h*.008]);
+  ctx.strokeRect(w*.009,h*.027,w*.982,h*.946);ctx.setLineDash([]);
   ctx.restore();
 }

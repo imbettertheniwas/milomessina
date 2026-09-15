@@ -3,12 +3,12 @@ import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=103';
-import {createDistricts} from './village-districts.js?v=103';
+import {createVillageRendererAsync} from './village-renderer.js?v=104';
+import {createDistricts} from './village-districts.js?v=104';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
-import {createMoneyRain} from './village-money-rain.js?v=72';
-import {prewarmVillage} from './village-prewarm.js?v=89';
+import {createMoneyRain} from './village-money-rain.js?v=104';
+import {prewarmVillage} from './village-prewarm.js?v=104';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
