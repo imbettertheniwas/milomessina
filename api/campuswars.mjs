@@ -1,3 +1,4 @@
+import {recordArrivalHistory} from '../fomo/campuswars/chapter-arrival-history.js';
 import {createHash} from 'node:crypto';
 import {fetchChapterSnapshot,chapterSourceErrorCode} from '../server/campuswars-source.mjs';
 
@@ -9,6 +10,7 @@ export function createChapterHandler({load=fetchChapterSnapshot,now=Date.now,env
   let latest=null,pending=null,retryAt=0,failures=0,lastCode='SOURCE_CONNECTION';
   function refresh(){
     pending ??= Promise.resolve().then(()=>load({password:env.CAMPUSWARS_ADMIN_PASSWORD,username:env.CAMPUSWARS_ADMIN_USERNAME||'village'})).then(snapshot=>{
+      snapshot=recordArrivalHistory(snapshot,latest?.snapshot);
       const body=JSON.stringify(snapshot);
       latest={snapshot,body,etag:`W/"${createHash('sha256').update(body).digest('base64url')}"`,at:now()};
       failures=0;retryAt=0;

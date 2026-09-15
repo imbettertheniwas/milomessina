@@ -34,12 +34,12 @@ test('only new member slots fall, touch the grass, bounce and resume their norma
   const member=village.members.find(m=>m.member===21),state={...toWorld(member.lot,3,10),ground:lawnGround(3,10),rotation:member.rotation};
   const start=arrivals.pose(member,state,10),mid=arrivals.pose(member,state,11),land=arrivals.pose(member,state,10+ARRIVAL_FALL);
   assert.equal(start.ground,state.ground+ARRIVAL_HEIGHT);assert(mid.ground<start.ground&&mid.ground>state.ground);
-  assert(Math.abs(land.ground-state.ground)<1e-10);assert(arrivals.pose(member,state,12.45).ground>state.ground);
+  assert(Math.abs(land.ground-state.ground)<1e-10);assert(arrivals.pose(member,state,10+ARRIVAL_FALL+.25).ground>state.ground);
   assert.deepEqual(arrivals.pose(village.members[0],state,10),state);
   assert.deepEqual(arrivals.pose(member,state,10),start,'frozen clock keeps the airborne pose');
-  assert.deepEqual(arrivals.pose(member,state,20),state);
+  assert.deepEqual(arrivals.pose(member,state,30),state);
   const rig=humanPose(member,start,10);assert(rig.arms.every(a=>a.hand[1]>a.shoulder[1]));
-  arrivals.advance(20);assert.equal(arrivals.has('test'),false);village.dispose();
+  arrivals.advance(30);assert.equal(arrivals.has('test'),false);village.dispose();
 });
 
 test('arrivals survive replacement, use the new chapter lawn, and keep exact crowd totals',()=>{

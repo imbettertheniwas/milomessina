@@ -16,11 +16,13 @@ The **Helipad** control visits a new stop beside the stadium and replays their M
 
 ## Live member arrivals
 
-Fresh increases in the public joined counts from Arya’s admin now drop one anonymous avatar per added member from the sky onto that chapter’s front lawn. Arrivals raise their arms, stagger briefly, bounce on touchdown, and rejoin the existing crowd. The first network snapshot establishes a baseline; saved rosters, stale responses, unchanged counts and decreases do not trigger arrivals. No registrant names or other personal records are fetched by the browser.
+Fresh increases in the public joined counts from Arya’s admin bring one anonymous avatar per added member down under a large purple-and-ivory parachute. The descent takes nine seconds, with gentle sway and staggered arrivals. Suspension lines connect the canopy to raised hands; the canopy collapses after touchdown and the person joins the existing crowd. Exact member counts remain unchanged.
 
-Arrivals use the existing 30–33-second polling feed, so they appear on the next fresh update rather than through an instant push connection. They share the village activity clock, pause with the scene, skip motion for reduced-motion visitors, and retain their progress through house reranking and streamed scene replacement. They reuse the existing member instances, preserving exact totals.
+On entry, the browser replays recorded arrivals from the previous five minutes, including when the first live counts match the saved village. The replay waits for the intro to finish or be skipped. Repeated polls do not replay the same arrivals; stale responses, expired history and count decreases cannot create arrivals. Pausing and reduced-motion settings apply.
 
-`tests/arrivals-gallery.html` previews staggered falls, touchdown and settled crowds without submitting registrations. `tests/arrivals.test.mjs` checks feed baselines/deltas, grass touchdown, construction, reduced motion, exact totals and scene replacement.
+The source exposes totals, not individual signup timestamps. History therefore records when a count increase was observed. The legacy endpoint keeps this history within each warm server instance; a cold instance cannot reconstruct earlier arrivals. Saved browser history also supports reloads. Gaps of five minutes or more establish a new baseline instead of treating older registrations as recent. No member identities are exposed.
+
+The existing polling interval is 30–33 seconds. `tests/arrivals-gallery.html` previews airborne, touchdown, settled and night views without submitting registrations. Arrival and history tests cover initial replay, freshness, deduplication, lawn touchdown, exact totals, pause, reduced motion, construction and scene replacement.
 
 ## Large villages and road hover
 

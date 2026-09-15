@@ -1,3 +1,4 @@
+import {recentArrivalHistory,arrivalRanges} from './chapter-arrival-history.js?v=120';
 export function validateSnapshot(value) {
   if (!value || !Array.isArray(value.chapters) || value.live !== true || !Number.isFinite(Date.parse(value.updatedAt))) throw new Error('Invalid chapter update');
   const ids = new Set();
@@ -14,12 +15,13 @@ function browserStorage(){try{return globalThis.localStorage;}catch{return null;
 export function startChapterFeed({initialSnapshot,storageRef=browserStorage(),onUpdate, onStatus, fetchImpl=fetch, documentRef=document, interval=30000, schedule=setTimeout, cancel=clearTimeout,random=Math.random,now=Date.now}) {
   let timer, stopped=false, running=false, controller, failures=0,refreshOnResume=false;
   let signature=initialSnapshot?.chapters?JSON.stringify(initialSnapshot.chapters):'';
-  let observedCounts=null;
+  let observedCounts=null,cachedHistory=[],replayedRecent=false;
   let latestAt=Date.parse(initialSnapshot?.updatedAt)||0,lastSaved='';
   // Restore public chapter aggregates before the first network request. Storage
   // is optional: Safari private mode and quota failures must not stop the feed.
   try{
     const cached=validateSnapshot(JSON.parse(storageRef?.getItem(SNAPSHOT_KEY)||'null'));
+    cachedHistory=recentArrivalHistory(cached.recentArrivals,cached.chapters,now());
     if(!initialSnapshot?.updatedAt||Date.parse(cached.updatedAt)>Date.parse(initialSnapshot.updatedAt)){
       onUpdate({...cached,live:false});signature=JSON.stringify(cached.chapters);
       latestAt=Date.parse(cached.updatedAt);lastSaved=JSON.stringify(cached);
@@ -46,15 +48,19 @@ export function startChapterFeed({initialSnapshot,storageRef=browserStorage(),on
       if(updatedAt<latestAt)throw new Error('Older chapter update');
       const next=JSON.stringify(snapshot.chapters);
       const live=snapshot.stale!==true&&now()-updatedAt<=90000;
-      // Establish a network baseline first: saved/initial rosters are not joins.
-      const arrivals=live&&observedCounts?snapshot.chapters.flatMap(c=>{
+      // On entry replay only timestamped observations from the last five minutes.
+      const first=!replayedRecent;
+      const changes=live&&observedCounts?snapshot.chapters.flatMap(c=>{
         const from=observedCounts.get(c.id)??0;
         return c.joined>from?[{chapter:c.id,from,to:c.joined}]:[];
       }):[];
+      const arrivals=first&&live?arrivalRanges([...recentArrivalHistory([...(Array.isArray(snapshot.recentArrivals)?snapshot.recentArrivals:[]),...cachedHistory],snapshot.chapters,now()),...changes]):changes;
+      if(live)replayedRecent=true;
       observedCounts=new Map(snapshot.chapters.map(c=>[c.id,c.joined]));
-      if (next!==signature) {onUpdate({...snapshot,arrivals}); signature=next;}
+      if (next!==signature||arrivals.length) {onUpdate({...snapshot,arrivals,replayArrivals:first}); signature=next;}
       latestAt=updatedAt;
-      const saved=JSON.stringify(snapshot);
+      cachedHistory=recentArrivalHistory([...(Array.isArray(snapshot.recentArrivals)?snapshot.recentArrivals:[]),...cachedHistory,...changes.map(r=>({...r,at:snapshot.updatedAt}))],snapshot.chapters,now());
+      const saved=JSON.stringify({...snapshot,recentArrivals:cachedHistory});
       if(saved!==lastSaved)try{storageRef?.setItem(SNAPSHOT_KEY,saved);lastSaved=saved;}catch{}
       failures=live?0:failures+1;
       onStatus({live,updatedAt:snapshot.updatedAt});

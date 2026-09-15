@@ -1,10 +1,10 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live chapter arrivals preview</title>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Parachute arrivals preview</title>
 <style>body{margin:0;background:#98a7ba;font:14px Arial;color:white}nav{position:fixed;top:16px;left:16px;right:16px;z-index:2;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid #ffffff55;background:#182435;color:white;padding:12px;border-radius:8px;cursor:pointer}output{position:fixed;bottom:16px;left:16px;background:#182435;padding:12px;border-radius:8px}</style>
 <nav><button id="join">Preview 3 joins</button><button id="air">Airborne</button><button id="land">Touchdown</button><button id="settled">Settled</button><button id="night">Day / night</button><button id="pause">Pause</button></nav><output id="stats">Local preview only — no registrations are submitted.</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createVillage} from '../village-world.js?v=106';
-import {createLiveArrivals,ARRIVAL_FALL} from '../village-arrivals.js?v=106';
+import {createVillage} from '../village-world.js?v=120';
+import {createLiveArrivals,ARRIVAL_FALL} from '../village-arrivals.js?v=120';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,1,650);
 camera.position.set(10,15,12);camera.lookAt(-13,12,-18);camera.updateMatrixWorld();
@@ -14,9 +14,9 @@ let arrivals,village,time=0,last=performance.now(),paused=false,night=false;
 function reset(){if(village){scene.remove(village.world);village.dispose();}arrivals=createLiveArrivals();arrivals.enqueue([{chapter:'test',from:21,to:24}]);arrivals.start(rows,0);village=createVillage(T,rows,{arrivals});scene.add(village.world);village.nightLife.setNight(night);time=0;}
 reset();
 document.getElementById('join').onclick=()=>{reset();paused=false;};
-document.getElementById('air').onclick=()=>{reset();time=1.65;paused=true;};
+document.getElementById('air').onclick=()=>{reset();time=4.5;paused=true;};
 document.getElementById('land').onclick=()=>{reset();time=ARRIVAL_FALL;paused=true;};
-document.getElementById('settled').onclick=()=>{time=7;paused=true;};
+document.getElementById('settled').onclick=()=>{time=16;paused=true;};
 document.getElementById('pause').onclick=()=>{paused=!paused;};
 document.getElementById('night').onclick=()=>{night=!night;scene.background.set(night?0x25233f:0x98a7ba);ambient.intensity=night?.83:1.55;sun.intensity=night?.42:2.6;village.nightLife.setNight(night);};
 function draw(now){if(!paused&&!document.hidden)time+=Math.min(.05,(now-last)/1000);last=now;arrivals.advance(time);village.animateCrowd(time,camera);village.animateEffects(time);renderer.render(scene,camera);document.getElementById('stats').textContent=`Local preview · 24 members, 3 new arrivals · ${time.toFixed(2)}s${paused?' · Paused':''}`;requestAnimationFrame(draw);}requestAnimationFrame(draw);

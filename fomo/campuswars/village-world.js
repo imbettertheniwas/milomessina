@@ -1,3 +1,4 @@
+import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=113';
 import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=103';
 import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
@@ -201,6 +202,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
       mesh.setColorAt(i,new THREE.Color(color));
     });
   }
+  const parachutes=arrivals?createParachutes(THREE,members.length):null;if(parachutes)world.add(parachutes.mesh);
   const partColors=compactCrowd?Object.fromEntries(Object.entries(parts).map(([name,mesh])=>[name,mesh.instanceColor?.array.slice()])):null;
   const distantCrowd=compactCrowd?createDistantCrowd(THREE,members.length):null;
   if(distantCrowd)world.add(distantCrowd.mesh);
@@ -234,16 +236,17 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
       return true;
     }
   });
-  const pedestrians=[pedestrian],spacing=createPedestrianSpacing();let previousPoses=null;
+  const pedestrians=[pedestrian],spacing=createPedestrianSpacing();let previousPoses=null,previousArrivalRevision=-1;
   let effectsTime=NaN;
   function animateCrowd(time,camera,sharedPoses=null){
-    const poses=(sharedPoses||spacing.update(time,pedestrians)).get(pedestrian),posesChanged=poses!==previousPoses;previousPoses=poses;
+    const poses=(sharedPoses||spacing.update(time,pedestrians)).get(pedestrian),posesChanged=poses!==previousPoses||previousArrivalRevision!==arrivals?.revision;previousPoses=poses;previousArrivalRevision=arrivals?.revision;
     let updated=0;
     for(const batch of crowdVisibility.batches){const airborne=arrivals?.has(batch.chapter);batch.bounds.center.y=airborne?18:4;batch.bounds.radius=airborne?42:backyards.has(batch.chapter)?32:24;}
     const arrivalPose=(member,state)=>arrivals?arrivals.pose(member,state,time):state;
     const allVisible=crowdVisibility.visible(camera,world.matrixWorld),visibleBatches=allVisible.filter(batch=>!distantCrowd?.distant(batch,camera,world.matrixWorld));
     const key=visibleBatches.map(b=>b.chapter).join('|'),repack=compactCrowd&&key!==visibleKey;
     if(distantCrowd){distantCrowd.begin(time);for(const batch of allVisible)if(batch.distant)for(let i=batch.start;i<batch.start+batch.count;i++){const member=members[i];distantCrowd.add(member,arrivalPose(member,poses[i]));}distantCrowd.finish();}
+    if(parachutes){parachutes.begin();for(const batch of allVisible)if(arrivals.has(batch.chapter))for(let i=batch.start;i<batch.start+batch.count;i++)parachutes.add(members[i],arrivalPose(members[i],poses[i]));parachutes.finish();}
     visibleKey=key;let packedStart=0;
     if(compactCrowd){const count=visibleBatches.reduce((n,b)=>n+b.count,0);for(const [name,mesh] of Object.entries(parts))mesh.count=count*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1);}
     for(const batch of visibleBatches){
@@ -297,7 +300,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   const entrance=createVillageEntrance(THREE,extension);world.add(entrance);
   // Batch repeated architectural parts so phones draw whole sets at once.
   world.updateMatrixWorld(true);
-  const dynamic=new Set([...pickables.filter(mesh=>!compactCrowd||!mesh.name.startsWith('school-banner-')),...flags,swimWakes.mesh,...backyards.waters,...Object.values(parts),...(distantCrowd?[distantCrowd.mesh]:[]),...Object.values(construction.meshes),...pong.games.map(game=>game.ball),die.dice]);
+  const dynamic=new Set([...pickables.filter(mesh=>!compactCrowd||!mesh.name.startsWith('school-banner-')),...flags,swimWakes.mesh,...backyards.waters,...Object.values(parts),...(parachutes?[parachutes.mesh]:[]),...(distantCrowd?[distantCrowd.mesh]:[]),...Object.values(construction.meshes),...pong.games.map(game=>game.ball),die.dice]);
   const resources=new Set();
   function collect(){world.traverse(o=>{if(o===streets)return;if(o.geometry)resources.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){resources.add(m);for(const value of Object.values(m))if(value?.isTexture)resources.add(value);}if(o.isInstancedMesh)resources.add(o);});}
   collect();Object.values(landscapeKit.geometries).forEach(g=>resources.add(g));materials.forEach(m=>resources.add(m));windowMaterials.forEach(m=>resources.add(m));
@@ -313,5 +316,5 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   function animateEffects(time){backyards.animate(time);beacon?.animate(time);if(nightLife.root.visible)nightLife.animate(time);}
   collect();
   function dispose(){for(const resource of resources)if(!resource.userData?.sharedResource)resource.dispose();resources.clear();}
-  return {world,streets,lots,extension,streetTotal,backyards,swimWakes,houseFinishes,dispose,pickables,anchors,members,pedestrians,parts,distantCrowd,crowdVisibility,animateCrowd,competition,beacon,nightLife,animateEffects,pong,die,construction};
+  return {world,streets,lots,extension,streetTotal,backyards,swimWakes,houseFinishes,dispose,pickables,anchors,members,pedestrians,parts,parachutes,distantCrowd,crowdVisibility,animateCrowd,competition,beacon,nightLife,animateEffects,pong,die,construction};
 }

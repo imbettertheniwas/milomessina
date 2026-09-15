@@ -1,12 +1,12 @@
 import {backyardUnlocked} from './village-backyards.js?v=112';
-import {createLiveArrivals} from './village-arrivals.js?v=106';
+import {createLiveArrivals} from './village-arrivals.js?v=120';
 import {createHelipad} from './village-helipad.js?v=1';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality} from './village-quality.js?v=97';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=113';
+import {createVillageRendererAsync} from './village-renderer.js?v=120';
 import {createDistricts} from './village-districts.js?v=113';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
@@ -32,6 +32,7 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
 if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';shell.classList.add('village-unavailable');});
 async function startVillage(){
   const pedestrianSpacing=createPedestrianSpacing(),arrivals=createLiveArrivals();
+  arrivals.enqueue(JSON.parse(document.getElementById('chapters-data').textContent).arrivals);
   let ready=false,pendingChapterUpdate=null;
   const queueChapterUpdate=event=>{arrivals.enqueue(event.detail.arrivals);pendingChapterUpdate=event;};
   document.addEventListener('chapters:update',queueChapterUpdate);
@@ -97,6 +98,7 @@ async function startVillage(){
     moneyRain.clear();introRoll=0;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
     applyLighting(document.getElementById('night-toggle').getAttribute('aria-pressed')==='true'?1:0);
     if(['intro-skip','intro-pause','intro-join'].some(id=>document.activeElement===document.getElementById(id)))canvas.focus({preventScroll:true});
+    if(ready)arrivals.start(chapters,partyTime,reduced);
     if(wasPlaying)document.dispatchEvent(new CustomEvent('village:introend'));
   }
   function beginIntro(){
@@ -165,7 +167,7 @@ async function startVillage(){
     const buildRevision=++chapterBuildRevision,previous=village;
     const next=await createVillageRendererAsync(THREE,event.detail.chapters,{streets:previous.streets,houseFinishes:previous.houseFinishes,camera,arrivals});
     if(buildRevision!==chapterBuildRevision){next.dispose();return;}
-    chapters=event.detail.chapters;arrivals.start(chapters,partyTime,reduced);scene.remove(previous.world);scene.add(next.world);next.world.add(next.streets);village=next;previous.dispose();
+    chapters=event.detail.chapters;arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);scene.remove(previous.world);scene.add(next.world);next.world.add(next.streets);village=next;previous.dispose();
     // A new street opens its own Greek block, so the campus around it restreams.
     if(previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=createDistricts(THREE,next.extension,next.streetTotal,{incremental:quality.mobile});scene.add(districts.root);}
     if(previous.extension!==next.extension){
@@ -448,6 +450,7 @@ async function startVillage(){
     loading.hidden=true;shell.classList.remove('village-unavailable');shell.classList.add('village-ready');
     if(entranceActive)shell.classList.add('intro-playing');
     if(visible&&entrancePending){if(overlayOpen){finishIntro();resetView();}else beginIntro();}
+    if(!entrancePending&&!entranceActive)arrivals.start(chapters,partyTime,reduced);
     wake();
   });}
   function showLoadingError(error){
