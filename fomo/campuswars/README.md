@@ -2,15 +2,19 @@
 
 ## Live village population sign
 
-A two-sided sign on the far-left hilltop lawn, clear of the FOMO facade, shows total
+A two-sided sign centered in front of the left academic building on the hilltop
+shows total
 **members joined** and the number of registered chapters. It sums every chapter
 from the existing `/api/campuswars` feed, whose server adapter reads Arya's admin;
 it does not count active-roster denominators or decorative campus visitors.
 The existing 30–33-second refresh updates one shared sign texture independently
 of house rebuilding and scene streaming. Saved or disconnected data is labeled
 as last known, and the live label expires after 90 seconds without fresh data.
-The off-white sign uses black lettering and two slim metal posts embedded in
-the hillside. Its canvas description exposes the total to assistive technology. `tests/population.test.mjs` covers count
+The navy sign uses ivory lettering, a muted gold border and two slim metal posts
+embedded in the hillside. Artwork maps directly onto the solid panel to prevent
+overlapping surfaces from flickering. One foreground tree sits in the outer
+grove to keep the view from Greek Row clear. Its canvas description exposes
+the total to assistive technology. `tests/population.test.mjs` covers count
 corrections, additions/removals, unchanged-count recovery, freshness and resource
 reuse.
 

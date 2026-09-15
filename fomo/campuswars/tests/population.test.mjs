@@ -39,13 +39,15 @@ test('the sign ages honestly and reuses one shared texture for both directions',
   Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>({getContext:()=>context})}});
   t.after(()=>{if(original)Object.defineProperty(globalThis,'document',original);else delete globalThis.document;});
   const now=Date.now(),status={live:true,updatedAt:new Date(now).toISOString()};
-  const sign=createVillagePopulation(T,[chapter('one',438)],status),faces=sign.root.children.filter(o=>o.name==='population-sign-face');
-  assert.equal(faces.length,2);assert.equal(faces[0].material.map,faces[1].material.map);
-  const texture=faces[0].material.map,version=texture.version;
+  const sign=createVillagePopulation(T,[chapter('one',438)],status),board=sign.root.getObjectByName('population-sign-board');
+  assert.equal(board.material[4].map,board.material[5].map);
+  assert.equal(sign.root.children.filter(o=>o.geometry?.type==='PlaneGeometry').length,0,'solid faces need no overlapping artwork planes');
+  const texture=board.material[4].map,version=texture.version;
   assert.equal(sign.refresh(now),false);assert.equal(texture.version,version);
   sign.refresh(now+90001);assert.equal(sign.root.userData.status,'LAST KNOWN REGISTRATIONS');assert.equal(texture.version,version+1);
-  const bounds=new T.Box3().setFromObject(sign.root);assert(bounds.max.x<-39,'sign stays well to the side of the FOMO facade');assert(bounds.min.z>-86,'sign clears the front of the humanities hall');assert(sign.root.position.y>5.7,'sign stays on the hilltop');
+  const bounds=new T.Box3().setFromObject(sign.root);assert.equal(sign.root.position.x,-31,'sign is centered on the left academic building');assert(bounds.max.x<-26,'sign clears the FOMO facade and central stairs');assert(bounds.min.z>-86,'sign clears the front of the humanities hall');assert(sign.root.position.y>5.7,'sign stays on the hilltop');
   for(const dx of [-2.4,2.4])for(const dz of [-.76,.76]){const ground=campusGroundHeight(sign.root.position.x+dx,sign.root.position.z+dz)+.052;assert(ground>=bounds.min.y&&ground<=sign.root.position.y+.01,'posts extend below the hillside without floating');}
+  assert(sign.root.children.filter(o=>o!==board).every(o=>o.position.y+o.scale.y/2<=board.position.y-board.scale.y/2+.1),'posts terminate under the board instead of crossing its lettering');
   assert.equal(populationStatus({},now),'CONNECTING · SAVED REGISTRATIONS');
   let disposed=0;texture.addEventListener('dispose',()=>disposed++);sign.dispose();assert.equal(disposed,1);
 });

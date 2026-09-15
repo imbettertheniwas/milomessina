@@ -63,7 +63,7 @@ export function createCampusHill(T,kit,p){
     for(let i=0;i<5;i++)mesh(raised,'leaf',side*8.7-1.7+i*.85,.83,13,.55,.5,.55,0x61734d);
     tree(raised,side*15,10,12+side,1.1);
   }
-  for(const [x,z,size] of [[-41,-25,1.1],[42,-23,1.3],[-40,26,1.35],[-26,27,1.1],[-17,33,.9],[44,9,1.15],[43,34,1.05]]){
+  for(const [x,z,size] of [[-41,-25,1.1],[42,-23,1.3],[-40,26,1.35],[-26,27,1.1],[-47,33,.9],[44,9,1.15],[43,34,1.05]]){
     const grove=new T.Group();grove.position.y=campusHillHeight(x,z);p.add(grove);tree(grove,x,z,x+z,size);
   }
   // Three ten-riser flights with generous level landings and paired handrails.

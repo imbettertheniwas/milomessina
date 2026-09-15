@@ -1,5 +1,5 @@
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=105';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=106';
 import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=101';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';

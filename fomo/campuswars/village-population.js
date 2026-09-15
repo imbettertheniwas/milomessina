@@ -14,9 +14,9 @@ export function populationStatus(status={},now=Date.now()){
 
 export function createVillagePopulation(T,chapters,status={}){
   const root=new T.Group();root.name='greek-village-population';
-  // Keep the sign on the far-left hilltop lawn, away from the FOMO facade
-  // and central stairs. Set the posts into the actual terrain.
-  const site={x:-44,z:-83},scale=.85;
+  // Center the sign in front of the left academic building, on the upper
+  // lawn and behind the foreground trees. Keep the FOMO facade clear.
+  const site={x:-31,z:-84.7},scale=.85;
   const ground=campusGroundHeight(site.x,site.z-.9*scale)+.052;
   root.position.set(site.x,ground,site.z);root.scale.setScalar(scale);
   const resources=new Set(),own=value=>(resources.add(value),value);
@@ -25,16 +25,17 @@ export function createVillagePopulation(T,chapters,status={}){
   const rim=own(new T.MeshStandardMaterial({color:0x25272b,roughness:.75,metalness:.15}));
   function block(x,y,z,w,h,d,material){const mesh=new T.Mesh(box,material);mesh.position.set(x,y,z);mesh.scale.set(w,h,d);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;}
   // Two slim galvanized posts are embedded in the hillside, with no pedestal.
-  for(const x of [-2.7,2.7])block(x,3.3,0,.14,7.6,.14,metal);
-  block(0,4.85,0,8.4,5.3,.12,rim);
+  for(const x of [-2.7,2.7])block(x,.85,0,.16,2.9,.16,metal);
+  const board=block(0,4.85,0,8.4,5.3,.18,rim);board.name='population-sign-board';
   const canvas=typeof document==='undefined'?null:document.createElement('canvas');
   let texture=null;
   if(canvas){
     canvas.width=1536;canvas.height=960;
     texture=own(new T.CanvasTexture(canvas));texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=4;
-    const material=own(new T.MeshBasicMaterial({map:texture,toneMapped:false,alphaTest:.5}));
-    const face=own(new T.PlaneGeometry(8.2,5.125));
-    for(const side of [-1,1]){const mesh=new T.Mesh(face,material);mesh.name='population-sign-face';mesh.position.set(0,4.85,side*.071);mesh.rotation.y=side<0?Math.PI:0;root.add(mesh);}
+    const material=own(new T.MeshStandardMaterial({map:texture,roughness:.78,metalness:.08,emissive:0xffffff,emissiveMap:texture,emissiveIntensity:.1}));
+    // Print directly on both faces of the solid panel. Overlay planes and
+    // full-height posts used to sit almost coplanar and could flicker.
+    board.material=[rim,rim,rim,rim,material,material];
   }
   let totals=villagePopulation(chapters),feedStatus={...status},lastKey='';
   function refresh(now=Date.now()){
@@ -43,15 +44,18 @@ export function createVillagePopulation(T,chapters,status={}){
     root.userData={...totals,status:label,updatedAt:feedStatus.updatedAt||null};
     if(!canvas)return true;
     const c=canvas.getContext('2d'),w=canvas.width;
-    c.fillStyle='#f4f3ed';c.fillRect(0,0,w,960);
-    c.strokeStyle='#24262a';c.lineWidth=5;c.strokeRect(24,24,w-48,912);
-    c.textBaseline='middle';c.textAlign='center';c.fillStyle='#24262a';
-    c.font='700 107px Aeonik, Arial, sans-serif';c.fillText('GREEK VILLAGE',w/2,164,w-160);
-    c.fillRect(96,265,w-192,3);
-    c.font='500 57px Aeonik, Arial, sans-serif';c.fillText('POPULATION',w/2,351);
-    c.font='700 326px Aeonik, Arial, sans-serif';c.fillText(totals.members.toLocaleString('en-US'),w/2,563,w-190);
-    c.font='500 46px Aeonik, Arial, sans-serif';c.fillText(`Across ${totals.chapters.toLocaleString('en-US')} ${totals.chapters===1?'chapter':'chapters'}`,w/2,790);
-    c.fillStyle='#66676a';c.font='500 25px Aeonik, Arial, sans-serif';c.fillText(label==='LIVE REGISTRATIONS'?'LIVE MEMBER COUNT':label,w/2,890,w-160);
+    c.fillStyle='#294b68';c.fillRect(0,0,w,960);
+    c.strokeStyle='#f0e6c9';c.lineWidth=9;c.strokeRect(27,27,w-54,906);
+    c.strokeStyle='#bfa773';c.lineWidth=2;c.strokeRect(44,44,w-88,872);
+    c.textBaseline='middle';c.textAlign='center';
+    c.fillStyle='#dbcaa1';c.font='500 34px Aeonik, Arial, sans-serif';c.fillText('WELCOME TO',w/2,112);
+    c.fillStyle='#fff5db';c.font='700 107px Aeonik, Arial, sans-serif';c.fillText('GREEK VILLAGE',w/2,230,w-160);
+    c.fillStyle='#bfa773';c.fillRect(180,323,w-360,3);
+    c.fillStyle='#e2d4b1';c.font='500 50px Aeonik, Arial, sans-serif';c.fillText('POPULATION',w/2,404);
+    c.fillStyle='#fff5db';c.font='700 296px Aeonik, Arial, sans-serif';c.fillText(totals.members.toLocaleString('en-US'),w/2,599,w-190);
+    c.font='500 42px Aeonik, Arial, sans-serif';c.fillText(`${totals.chapters.toLocaleString('en-US')} ${totals.chapters===1?'chapter':'chapters'}`,w/2,805);
+    c.fillStyle='#c7cfcf';c.font='500 24px Aeonik, Arial, sans-serif';c.fillText(label==='LIVE REGISTRATIONS'?'LIVE MEMBER COUNT':label,w/2,882,w-160);
+    for(const x of [77,w-77])for(const y of [78,882]){c.fillStyle='#bac1c2';c.beginPath();c.arc(x,y,7,0,Math.PI*2);c.fill();c.fillStyle='#727e83';c.fillRect(x-4,y-1,8,2);}
     texture.needsUpdate=true;return true;
   }
   refresh();
