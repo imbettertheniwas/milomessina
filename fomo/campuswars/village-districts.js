@@ -3,7 +3,7 @@ import {BLOCK,districtSpecs,districtAt,districtKind,mod,hash,pick} from './villa
 import {createCampusKit} from './village-campus-kit.js?v=87';
 import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=99';
 import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=98';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=100';
 import {campusDistrictExists} from './village-campus-bounds.js?v=1';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
