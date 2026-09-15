@@ -9,18 +9,25 @@ through 1280px so tablet toolbars fit. Phone sheets leave the bottom controls cl
 These changes add no scene geometry, lights, textures or rendering passes, and
 remove backdrop blur from the remaining control and dialog surfaces.
 
-Phones still begin at 1.25× resolution and target 30 rendered frames per second.
-Sustained missed frames reduce resolution in 0.125 steps down to 1×; sustained
-headroom restores detail up to 1.5×, bounded by device pixel ratio. Recovery waits
-15 seconds after a reduction, and skips intro playback, dragging, overlays and
-scene construction. Desktop resolution remains unchanged. Tests cover CPU/GPU
-pressure, severe stalls, recovery, low-density screens and hidden-view suspension.
+Phones start at 2× resolution with native edge smoothing, targeting 30 rendered
+frames per second. Sustained missed frames can reduce resolution in 0.125 steps,
+but Retina phones retain a 1.5× minimum instead of falling to a pixelated 1×.
+Resolution remains bounded by the screen's own pixel ratio. Recovery waits
+15 seconds after a reduction and skips intro playback, dragging, overlays and
+scene construction. The shared road texture now matches desktop's 2048px size;
+per-house banner and shadow budgets stay at 1024px. No extra rendering passes
+or scene geometry are added. Module URLs are refreshed through the road import
+chain so Safari picks up the changed texture budget. Desktop settings are unchanged.
+Tests cover CPU/GPU pressure, severe stalls, recovery, low-density screens and
+hidden-view suspension.
 
-Validation: all 258 frontend tests pass on the release checkout. The development
-workspace also passed 287 project tests and the public build. Local browser checks
+Validation: all 259 frontend tests pass on the release checkout. The development
+workspace also passed 288 project tests and the public build. Local browser checks
 covered 320×568 and 390×844 phones, 844×390 landscape, and 1440×900 desktop,
 including sheets, menus, daylight and night mode, with no console warnings or
-errors. Phone dimensions were emulated; physical-device FPS was not measured.
+errors. A Retina test fixture also verified a 780×1688 drawing buffer for the 390×844
+phone viewport. Phone dimensions and Retina density were simulated; physical-device
+FPS was not measured.
 
 ## Live village population sign
 

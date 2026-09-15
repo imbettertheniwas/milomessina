@@ -38,8 +38,9 @@ async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobi
 test('phones lower resolution under sustained missed frames and recover when rendering is smooth',async()=>{
   const h=await cameraHarness(false,'',false,true);
   h.show(true);h.step(.1);h.fire('intro-skip:click');
-  h.step(4,20);assert.equal(h.pixelRatios.at(-1),1);
-  h.step(40,60);assert.equal(h.pixelRatios.at(-1),1.5);
+  assert.equal(h.pixelRatios[0],2);
+  h.step(5,20);assert.equal(h.pixelRatios.at(-1),1.5);
+  h.step(45,60);assert.equal(h.pixelRatios.at(-1),2);
   assert(h.pixelRatios.length<10,'buffer resizes stay infrequent');
   h.show(false);const count=h.renders();h.step(5);assert.equal(h.renders(),count);
 });

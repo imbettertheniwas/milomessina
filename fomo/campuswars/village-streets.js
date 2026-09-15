@@ -1,4 +1,4 @@
-import {villageQuality} from './village-quality.js?v=97';
+import {villageQuality} from './village-quality.js?v=127';
 import {createGrassMaterial} from './village-grass.js?v=105';
 import {hash} from './village-district-layout.js?v=80';
 import {campusBounds} from './village-campus-bounds.js?v=1';
