@@ -105,15 +105,25 @@ same sheet, through the same deployment, so there is no second URL.
 > (`AKfycbxDR-3zqJEQgFEY0a-…`) was moved to a new version on Sep 10, 2026 and
 > the endpoint reports `ledger`, `clock` and `shiftimport` all true.
 >
-> **`subs` is not, yet.** Monthly subscriptions were added to the script after
-> that, so the four steps above are owed one more run. Nothing waits on it —
-> a subscription set up before the redeploy lives in the browser it was set up
-> in and writes its lines to the shared ledger from there, exactly as it does
-> on device storage. What the redeploy buys is the rules living on the sheet
-> like everything else: visible to all four of them, editable from any laptop,
-> and rolled forward by the endpoint instead of by whoever opens the page. The
-> page picks the change up by itself and offers to carry that browser's rules
-> up with it.
+> **`payers` and `subs` are not, yet** — checked again on Sep 14, 2026, and the
+> endpoint still answers without either. Both went into the script after that
+> Sep 10 version, so the four steps above are owed one more run, and between
+> them they are what the four of them are actually hitting:
+>
+> - **Arya cannot log a spend.** The roster that deployment enforces is the
+>   four interns, so a line Arya fronts is refused by the sheet. The page now
+>   reads the roster on load and greys the name out with the reason rather than
+>   taking a whole line and losing it, but greyed out is still Arya unable to
+>   put a coffee run on the ledger from any device.
+> - **Monthly subscriptions stay on whichever device set them up.** Everything
+>   else on the page is the team's, and these look identical and are not:
+>   nobody else can see the rule, pause it, or delete it, and clearing site
+>   data takes it. The lines it writes do land on the shared ledger, so the
+>   money is not lost — the rule is.
+>
+> The redeploy fixes both at once, and nothing has to be edited or re-typed to
+> get it: the page picks the change up by itself on the next load and offers to
+> carry that browser's rules up with it.
 >
 > The reason it was needed is worth remembering, because it will happen again.
 > The project had **two active deployments**. Somebody pasted the ledger code
@@ -134,14 +144,15 @@ serving the old code, which looks exactly like nothing happened.
 
 Open the `/exec` URL itself in a browser:
 
-    {"ok":true,"hint":"fomo campus form receiver is live","ledger":true,"clock":true,"shiftimport":true,"subs":true}
+    {"ok":true,"hint":"fomo campus form receiver is live","ledger":true,"clock":true,"shiftimport":true,"subs":true,"payers":["Milo","Bijan","Jesse","Luchi","Arya"]}
 
 `ledger` and `clock` are the two halves of this tool, `shiftimport` is the
-carry-over described above, and `subs` is monthly subscriptions. **`true` on
-all four means the deployed version is the current one** — and the first two
-are the same check the page itself runs on every load before deciding whether
-to go shared. If any is missing or `false`, that URL is still serving older
-code. Either you ended up with a second deployment, or
+carry-over described above, `subs` is monthly subscriptions, and `payers` is
+the roster that deployment will actually put on a line. **All four `true` and
+Arya in `payers` means the deployed version is the current one** — and every
+one of them is read by the page itself on each load, which is how it knows to
+grey a name out instead of losing a line to it. If any is missing or `false`,
+that URL is still serving older code. Either you ended up with a second deployment, or
 the paste went into a different script project than the one this URL belongs to.
 
 If you do end up with a new URL, paste it into `ENDPOINT` in both
@@ -338,8 +349,17 @@ when you look at it is current rather than up to half a minute old.
 On device storage they are only that browser's, and the line above the cards
 says so rather than letting four empty cards read as four people not working.
 
-Someone can only be clocked in once at a time — a second press is refused. A
-shift nobody closed shows up in red after 16 hours, saying so rather than
+Someone can only be clocked in once at a time — a second press is refused. On
+four devices reading one sheet thirty seconds apart that is routine, not a
+fault: a name pressed in on a phone still reads as off the clock on a laptop
+that has not polled yet, and pressing it there is refused. **A refusal leaves
+the board live.** It says which press was turned down and why, holds the synced
+stamp where it was, and re-reads the sheet so the card that was out of date
+corrects itself. Only an endpoint that cannot be reached at all takes the
+status light down and puts up the connection banner — the two used to look
+identical, which made one refused press read as the whole clock being broken.
+
+A shift nobody closed shows up in red after 16 hours, saying so rather than
 quietly counting as a very long day; close it by clocking out, or delete the
 row from the table.
 

@@ -917,7 +917,18 @@ function apiSheet(action, payload){
         why = "the shared sheet is running an older copy of the script, which doesn't know that name yet" +
               " — redeploy fomo/setup/apps-script.gs (Deploy \u2192 Manage deployments \u2192 New version)";
       }
-      throw new Error(why);
+      /* Marked as a refusal, not a failure: this answer arrived. The
+         request reached the sheet, was read, and was turned down for a
+         reason the sheet is entitled to give — a name it does not carry,
+         a second clock-in for somebody already on. What must not follow
+         is the page announcing that it has lost the sheet. */
+      var refusal = new Error(why);
+      /* Not a plain read, though. A refused 'list' is the page being
+         turned away from the ledger itself — a passcode the endpoint no
+         longer shares, most likely — and there is nothing on screen to
+         trust afterwards. That one keeps the banner. */
+      refusal.refused = action !== "list";
+      throw refusal;
     }
     if (!out.rows) throw new Error("the endpoint answered, but not with the ledger — the Apps Script behind it is still the old version. Redeploy it: Deploy → Manage deployments → New version");
     {
@@ -961,10 +972,35 @@ function fail(err){
      saveAll has already said the useful thing about what went wrong —
      overwriting it here with connection advice would just mislead. */
   if (mode !== "sheet") return msg;
+  /* A refusal is not an outage, and the difference is the whole board.
+     Four people on one sheet read it up to thirty seconds late, so one
+     of them pressing Clock in on somebody who is already on — or Clock
+     out on a shift a phone closed a moment ago — is the ordinary way
+     this tool is used, not a fault. Answering that with "the ledger
+     isn't reaching the sheet", a dead status light and four people told
+     to check their wifi turned one refused press into the clock being
+     down. The press is refused, the sentence says why, and the board
+     stays live; the stale card that caused it is re-read below. */
+  if (err && err.refused) { resync(); return msg; }
   setLive(false, "not synced");
   showBanner("<b>The ledger isn't reaching the sheet.</b> " + esc(msg) +
     ". Nothing was lost — check your connection and hit Refresh.");
   return msg;
+}
+
+/* A refusal means this browser was looking at something the sheet has
+   moved on from, so the view that produced it is the thing to correct.
+   Quiet on purpose: whatever was refused has already said its piece, and
+   a failure here is the poll's problem thirty seconds from now.
+
+   Queued rather than called, because fail() runs inside the catch of the
+   request that was refused — `busy` is still set for another tick, and a
+   read fired underneath it would be the one thing this must not do. */
+function resync(){
+  setTimeout(function(){
+    if (mode !== "sheet" || busy) return;
+    api("list")["catch"](function(){});
+  }, 0);
 }
 
 /* ---------- build the controls ---------- */
@@ -1364,9 +1400,18 @@ function renderSubs(){
   document.getElementById("subs-note").textContent =
     (live ? live + (live === 1 ? " subscription running" : " subscriptions running") : "all paused") +
     (list.length > live ? " · " + (list.length - live) + " paused" : "");
+  /* Three states, not two. On device storage nothing here is shared and
+     the page says so everywhere, so "this browser" is no surprise. On a
+     sheet too old to keep the rules it is the opposite: everything else
+     on the page is the team's, these look the same, and they are not —
+     nobody else can see this rule, edit it, or pause it, and clearing
+     site data takes it. A rule silently belonging to one phone is worth
+     the sentence that says which redeploy ends that. */
   document.getElementById("subs-foot").textContent = subsMode() === "sheet"
     ? "Each one writes an ordinary ledger line on its day — the sheet does it, so it happens once however many people have the page open."
-    : "Each one writes an ordinary ledger line on its day, the next time this browser opens the page.";
+    : mode === "sheet"
+      ? "These are kept on this device, not the shared sheet: nobody else can see or pause them, and the lines only appear when this browser opens the page. Redeploy fomo/setup/apps-script.gs — Deploy → Manage deployments → New version — and they move to the sheet with everything else."
+      : "Each one writes an ordinary ledger line on its day, the next time this browser opens the page.";
   document.getElementById("subs-tot").textContent = money(monthly) + " a month";
 }
 
