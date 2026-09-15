@@ -577,25 +577,6 @@ td.tnum.run{color:var(--good)}
 
   <section>
     <div class="panel">
-      <div class="panel-h"><h2>days on record</h2><span class="note" id="hours-note"></span></div>
-      <div class="tools">
-        <span class="lbl" id="hours-week"></span>
-        <span class="push">
-          <button class="mini" id="t-hours-csv">Export days CSV</button>
-        </span>
-      </div>
-      <div class="tbl-scroll">
-        <table>
-          <thead><tr><th>who</th><th>day</th><th style="text-align:right">when it was marked</th><th></th></tr></thead>
-          <tbody id="shift-body"></tbody>
-        </table>
-      </div>
-      <div class="empty" id="shift-empty" hidden>No days marked yet. Press a name above.</div>
-    </div>
-  </section>
-
-  <section>
-    <div class="panel">
       <div class="panel-h"><h2>what everyone's pushing</h2><span class="note" id="gh-note">Public commits, last 13 weeks.</span></div>
       <div class="gh-top">
         <div class="gh-big"><span class="lbl">commits together</span><span class="v" id="gh-total">—</span><span class="sub2" id="gh-total-sub">across the team</span></div>
@@ -637,6 +618,25 @@ td.tnum.run{color:var(--good)}
       </div>
       <div class="empty" id="empty" hidden>Nothing logged yet. Add the first spend above.</div>
       <div class="foot"><span id="foot-note">Reimbursing someone? Mark their lines as paid — everyone sees it on their next refresh.</span><span class="tot" id="foot-tot"></span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-h"><h2>days on record</h2><span class="note" id="hours-note"></span></div>
+      <div class="tools">
+        <span class="lbl" id="hours-week"></span>
+        <span class="push">
+          <button class="mini" id="t-hours-csv">Export days CSV</button>
+        </span>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>who</th><th>day</th><th style="text-align:right">when it was marked</th><th></th></tr></thead>
+          <tbody id="shift-body"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="shift-empty" hidden>No days marked yet. Press a name above.</div>
     </div>
   </section>
 

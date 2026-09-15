@@ -366,8 +366,10 @@ The card shows that person's days **this week**, always — the old board flippe
 the same figure between a running timer and a weekly total depending on whether
 somebody happened to be clocked in, so the number in that spot meant two
 different things an hour apart. Underneath it is their all-time count. The
-table below lists every day on record, newest first, and exports to CSV
-separately from the money.
+**days on record** table at the foot of the page lists every day, newest
+first, and exports to CSV separately from the money. It sits last on purpose:
+it is the audit trail rather than the thing anybody opens the page to do, and
+the cards above already answer who has been in.
 
 ### Missed a day
 
