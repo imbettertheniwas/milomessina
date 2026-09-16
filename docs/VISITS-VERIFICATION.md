@@ -38,3 +38,14 @@ a live Google deployment is configured correctly. Mobile-device testing and
 review of the shared-password access model also remain part of owner acceptance.
 
 See VISITS-SETUP.md and VISITS-COLLABORATION.md. This is a draft, unmerged feature.
+
+
+## Concurrent collaborator change preserved
+
+Before publication, main advanced to 93ab90a09bf4ecee8a90673dc460b8fff69b2697,
+adding the Chapters view and a commits endpoint. It was merged into this feature
+branch, preserving both routes and the existing function configuration.
+The only manual merge resolution was additive Vercel configuration: the new
+commits function and visit-request function are both retained.
+The feature tests were rerun after merging. The broader test sources and their
+dependencies were unchanged by the collaborator's update.

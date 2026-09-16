@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="/fomo/assets/fonts.css">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600&display=swap">
+<!-- the chapter board, shared with the standalone page at /invoice/data/ -->
+<link rel="stylesheet" href="/invoice/chapters.css">
 <style>
 /* ══════════════════════════════════════════════════════════════
    arya's fomo bootcamp — internal ops console
@@ -679,10 +681,6 @@ td.date.run{color:var(--good)}
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="9" r="5.4"/><path d="m13.2 13.2 3.3 3.3"/></svg>
         </button>
         <span class="live"><span class="dot" id="live-dot"></span><span class="lbl" id="live-txt">loading</span></span>
-        <a class="mini ghost" href="/invoice/data/" title="The chapter map">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.8 4.1 5.9 2.4v9.5L1.8 13.6V4.1Z"/><path d="M5.9 2.4 10.1 4.1v9.5L5.9 11.9V2.4Z"/><path d="M10.1 4.1 14.2 2.4v9.5l-4.1 1.7V4.1Z"/></svg>
-          Chapters
-        </a>
         <button class="btn btn-p" id="btn-new" type="button">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 4.4v11.2M4.4 10h11.2"/></svg>
           New spend
@@ -986,6 +984,28 @@ td.date.run{color:var(--good)}
             <b>No splits recorded yet.</b>
             Tick who a spend was for when you log it, and the money shows up against their name here.
           </div>
+        </div>
+      </section>
+
+      <!-- ────────── the chapters ────────── -->
+      <!-- The board is written in by chapters.js on first open, ids prefixed
+           "ch-" so its table, banner and counts cannot collide with the
+           ledger's own. Everything inside .chapters is styled by
+           chapters.css, which is scoped to that class for the same reason. -->
+      <section class="view" data-view="chapters">
+        <div class="toolbar">
+          <span class="hint" id="ch-hint">Read live from the campus admin, not from the sheet.</span>
+          <span class="push">
+            <a class="mini ghost" href="/invoice/data/" target="_blank" rel="noopener">Open full page</a>
+            <button class="mini ghost" id="ch-refresh">Refresh</button>
+          </span>
+        </div>
+        <div class="scroller pad">
+          <div class="chapters" id="ch-board"></div>
+        </div>
+        <div class="aggbar">
+          <span class="agg" id="ch-status">Opening the chapter board…</span>
+          <span class="push"><span class="agg" id="ch-count"></span></span>
         </div>
       </section>
 
@@ -2934,17 +2954,35 @@ function ghRepoCommits(fullName, nameSet, since, days){
   return page(1);
 }
 
-function refreshGh(force){
-  var names = PEOPLE.filter(function(p){ return logins[p]; });
-  if (!names.length) { renderGh(); return Promise.resolve(); }
-  if (!force && ghAt && Date.now() - ghAt < GH_FRESH) { renderGh(); return Promise.resolve(); }
-  if (ghBusy) return Promise.resolve();
+/* ---------- where the counts come from ----------
 
-  ghBusy = true;
-  ghReads = 0;
-  document.getElementById("gh-status").textContent = "Counting commits on GitHub…";
-  /* one person at a time: four people fanned out at once is a quick way to
-     spend an unauthenticated hour's worth of requests */
+   /api/commits reads GitHub once for everybody and hands the same answer
+   to every browser. That is not a speed-up, it is the difference between
+   a panel that works for a team and one that does not: GitHub's anonymous
+   allowance is 60 requests an hour **per IP**, a full refresh costs the
+   better part of forty, and four interns on one office network share one
+   IP. The second refresh of the hour used to come back 403 for everyone,
+   which the panel showed as nothing at all.
+
+   The browser still knows how to do the reads itself, and still does in
+   the two cases the server cannot cover: somebody who has typed their own
+   username into Manage accounts, since the server only knows the roster
+   in GH_DEFAULTS, and a page whose endpoint is not answering. Both fall
+   back to the old path on this browser's own allowance, which is the
+   right size for one person asking about one name. */
+var GH_API = "/api/commits";
+var ghVia = "";
+
+function sameLogins(mine, theirs){
+  if (!theirs || !theirs.length || !mine.length) return false;
+  var a = mine.map(function(x){ return String(x).toLowerCase(); }).sort().join(",");
+  var b = theirs.map(function(x){ return String(x).toLowerCase(); }).sort().join(",");
+  return a === b;
+}
+
+/* the original path, one person at a time: four people fanned out at once
+   is a quick way to spend an unauthenticated hour's worth of requests */
+function ghReadHere(names){
   return names.reduce(function(chain, p){
     return chain.then(function(){
       return ghFetch(ghNames(p), ghNameSet(p)).then(function(got){
@@ -2953,7 +2991,42 @@ function refreshGh(force){
         ghErrors[p] = e.message; delete ghData[p];
       });
     });
-  }, Promise.resolve()).then(function(){
+  }, Promise.resolve());
+}
+
+function refreshGh(force){
+  var names = PEOPLE.filter(function(p){ return logins[p]; });
+  if (!names.length) { renderGh(); return Promise.resolve(); }
+  if (!force && ghAt && Date.now() - ghAt < GH_FRESH) { renderGh(); return Promise.resolve(); }
+  if (ghBusy) return Promise.resolve();
+
+  ghBusy = true;
+  ghReads = 0;
+  document.getElementById("gh-status").textContent = "Counting commits…";
+
+  return fetch(GH_API, {cache:"no-store"}).then(function(res){
+    if (!res.ok) throw new Error("the counter answered HTTP " + res.status);
+    return res.json();
+  }).then(function(out){
+    var people = (out && out.people) || {};
+    var mine = [];
+    names.forEach(function(p){
+      var got = people[p];
+      /* only trust a server answer that was read from this browser's own
+         names for that person — otherwise it is a count of somebody else */
+      if (!got || !sameLogins(ghNames(p), got.logins)) { mine.push(p); return; }
+      if (got.error) { ghErrors[p] = got.error; delete ghData[p]; return; }
+      ghData[p] = {days:got.days || {}, truncated:!!got.truncated, repos:got.repos || 0};
+      delete ghErrors[p];
+    });
+    ghVia = !mine.length ? "the server"
+          : mine.length === names.length ? "this browser"
+          : "the server and this browser";
+    return ghReadHere(mine);
+  })["catch"](function(){
+    ghVia = "this browser";
+    return ghReadHere(names);
+  }).then(function(){
     ghAt = Date.now(); ghBusy = false;
     saveGh(); renderGh();
   });
@@ -3096,6 +3169,7 @@ function renderGh(){
   document.getElementById("gh-status").textContent = !linked.length
     ? "Add each GitHub username to start counting."
     : ghAt ? "Public commits, as of " + clockNow() +
+             (ghVia ? " · counted by " + ghVia : "") +
              ". Private repositories don't appear here." +
              (capped ? " A + is a floor — the history ran past what one read can fetch." : "")
            : "Not fetched yet.";
@@ -3555,6 +3629,7 @@ var ICO = {
   attendance:'<rect x="3.4" y="4.8" width="13.2" height="11.8" rx="2.2"/><path d="M3.4 8.4h13.2M6.8 3.4v2.6M13.2 3.4v2.6"/><path d="M6.8 11.4h1.6M11.6 11.4h1.6M6.8 13.8h1.6"/>',
   commits:   '<circle cx="10" cy="10" r="2.6"/><path d="M3.2 10h4.2M12.6 10h4.2"/>',
   reporting: '<path d="M4.2 16.4V9.2M8.8 16.4V4.6M13.4 16.4v-4.8"/><path d="M2.8 16.4h14.4"/>',
+  chapters:  '<path d="M1.8 4.1 5.9 2.4v9.5L1.8 13.6V4.1Z"/><path d="M5.9 2.4 10.1 4.1v9.5L5.9 11.9V2.4Z"/><path d="M10.1 4.1 14.2 2.4v9.5l-4.1 1.7V4.1Z"/>',
   person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>'
 };
 function ico(k){
@@ -3571,6 +3646,7 @@ var VIEWS = {
   attendance:{label:"Attendance",     sub:"the days each of them was in"},
   commits:   {label:"Commits",        sub:"public pushes, the last 13 weeks"},
   reporting: {label:"Breakdown",      sub:"where the money went, and who it went on"},
+  chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
   person:    {label:"",               sub:""}
 };
 
@@ -3600,6 +3676,12 @@ function buildNav(){
   h += '<div class="nav-sec">Reporting</div>';
   h += '<button class="nav-i" data-go="reporting">' + ico("reporting") +
        '<span class="tx">Breakdown</span></button>';
+  /* The chapters are the one view that is not about the four of them or
+     their money — it is the campus the bootcamp is selling to, read from
+     the admin rather than from the sheet. Its own heading says so. */
+  h += '<div class="nav-sec">The campus</div>';
+  h += '<button class="nav-i" data-go="chapters">' + ico("chapters") +
+       '<span class="tx">Chapters</span></button>';
   nav.innerHTML = h;
 }
 
@@ -3611,6 +3693,50 @@ function markNav(){
     if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   });
 }
+
+/* ══════════ the chapter board ══════════
+
+   Everything the board is lives in chapters.js, shared with the standalone
+   page at /invoice/data/. It is fetched the first time somebody opens this
+   view and not before: the map data alone is most of a hundred kilobytes,
+   and the ledger — which is what the console is opened for — should not wait
+   on it to draw. A second open finds it already mounted and does nothing. */
+var chBoard = null, chLoading = false;
+
+function chStatus(txt){ var e = $("ch-status"); if (e) e.textContent = txt; }
+
+function mountChapters(){
+  if (chBoard || chLoading) return;
+  var box = $("ch-board");
+  function go(){
+    box.innerHTML = Chapters.markup("ch-");
+    chBoard = Chapters.mount({
+      prefix: "ch-",
+      root: box,
+      onLive: function(ok, txt){ chStatus((ok ? "Live" : "Offline") + " · " + txt); },
+      onSource: function(t){ $("ch-hint").textContent = "Read live from " + t + ", not from the sheet."; },
+      onCount: function(t){ $("ch-count").textContent = t; }
+    });
+  }
+  if (window.Chapters) { go(); return; }
+  chLoading = true;
+  chStatus("Loading the chapter board…");
+  var sc = document.createElement("script");
+  sc.src = "/invoice/chapters.js";
+  sc.onload = function(){ chLoading = false; go(); };
+  sc.onerror = function(){
+    chLoading = false;
+    chStatus("Couldn't load the chapter board. A reload is the whole fix.");
+    box.innerHTML = '<div class="empty"><b>The chapter board didn\'t load.</b>' +
+      'It is one file, /invoice/chapters.js, and nothing else on this page depends on it.</div>';
+  };
+  document.head.appendChild(sc);
+}
+
+$("ch-refresh").addEventListener("click", function(){
+  if (chBoard) { chStatus("Re-reading the feed…"); chBoard.reload(); }
+  else mountChapters();
+});
 
 function setView(id, who){
   if (!VIEWS[id]) id = "overview";
@@ -3631,6 +3757,7 @@ function setView(id, who){
   if (location.hash !== hash) { try { history.replaceState(null, "", hash); } catch(e){ location.hash = hash; } }
   var sc = document.querySelector('.view[data-view="' + view + '"] .scroller');
   if (sc) sc.scrollTop = 0;
+  if (view === "chapters") mountChapters();
   paint();
   window.dispatchEvent(new Event("fomo:view-change"));
 }

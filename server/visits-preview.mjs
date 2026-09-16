@@ -49,7 +49,7 @@ export function createVisitPreview({port=4187}={}) {
       let pathname=decodeURIComponent(url.pathname);
       if(pathname==='/internal'||pathname==='/internal/'||pathname==='/invoice/')pathname='/invoice/index.html';
       if(pathname==='/hqvisitform'||pathname==='/hqvisitform/')pathname='/hqvisitform/index.html';
-      const allowed=['/invoice/index.html','/invoice/visits.js','/invoice/visits.css'].includes(pathname)||pathname.startsWith('/hqvisitform/');
+      const allowed=['/invoice/index.html','/invoice/visits.js','/invoice/visits.css','/invoice/chapters.js','/invoice/chapters.css'].includes(pathname)||pathname.startsWith('/hqvisitform/');
       if(!allowed||pathname.split('/').some(p=>p.startsWith('.'))){res.writeHead(404);res.end();return;}
       const file=resolve(root,'.'+pathname);
       if(!(await realpath(file)).startsWith(root+sep) || !types[extname(file)]){res.writeHead(404);res.end();return;}
