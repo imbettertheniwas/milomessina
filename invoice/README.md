@@ -1,6 +1,8 @@
 # arya's fomo bootcamp — the internal tool
 
-`/invoice` is the internal tool for arya's fomo bootcamp.
+**`milomessina.com/internal`** is the internal tool for arya's fomo bootcamp,
+and `/invoice` is the same page under the name it started with — one file, two
+paths, so every existing link and bookmark still works.
 Milo, Bijan, Jesse and Luchi log what they front — lunches, API credits, coffee
 — and mark the days they were in; the page totals what's been spent, who is
 still owed, where the money went, and how many days each of them has been here. Anything that
@@ -27,9 +29,11 @@ anything.
 | **Attendance** | The board you press your name on, the backfill, days per week, and the full record |
 | **Commits** | The contribution map, together and one each |
 | **Breakdown** | Where the money went by category, and who it was spent on |
+| **Chapters** | Every house that has onboarded: the map, the funnel, who and where they are, and the full table — read from the campus admin, not the sheet |
 | A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
 
-The view lives in the URL — `/invoice#/ledger`, `/invoice#/person/Bijan` —
+The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
+`/internal#/person/Bijan` —
 so the back button works, a page can be bookmarked, and a link to somebody's
 page is a link to somebody's page.
 
@@ -533,9 +537,41 @@ to go — it never backfills: commits pushed while a repo was private stay missi
 from it permanently. An intern who had just made their repo public read as a
 flat zero while committing daily.
 
-Still no OAuth and no token. Public commits need neither, and a token on a page
-this public would be a liability. The limits that come with that, stated rather
-than papered over:
+### Who does the reading
+
+`/api/commits` does, and that is the whole reason the panel works for four
+people instead of one. GitHub allows an anonymous caller **60 requests an hour
+per IP** — not per site, per *network* — and one full refresh costs a repo
+listing per account plus a page of commits per repo, call it forty. Four interns
+on one office WiFi share one IP, so the second refresh of the hour came back 403
+for everybody, which the panel drew as nothing at all.
+
+The reads happen on the server now. One warm instance does them, the CDN hands
+the same JSON to every browser, and a browser spends exactly **one** request on
+the whole panel instead of forty. An office of four that used to cost 160
+requests an hour against one IP now costs one refresh against the function's.
+
+Two cases still read from the browser, on its own allowance, which is the right
+size for one person asking about one name:
+
+- **A username somebody typed into Manage accounts.** The server only knows the
+  roster in its own `ROSTER`, which mirrors `GH_DEFAULTS`. A browser compares
+  the handles it asked about against the `logins` the server says it read, and
+  where they differ it does that person itself rather than showing somebody
+  else's count under their name.
+- **An endpoint that isn't answering.** The old path is still there and still
+  correct; the panel falls back to it rather than going blank.
+
+The status line under the panel says which of the two it was.
+
+`GITHUB_TOKEN` is optional. Set it in the Vercel environment and the function's
+own ceiling goes from 60 an hour to 5,000; leave it unset and the cache alone is
+enough for a team this size. It is never sent to the browser. The panel must not
+go dark because a token expired, which is why nothing depends on it.
+
+Still no OAuth and no token in the page. Public commits need neither, and a token
+in source this public would be a liability. The limits that come with that,
+stated rather than papered over:
 
 - **Private repositories are invisible.** Nothing counts until a repo is public,
   though making it public later does bring its whole history in.
@@ -555,11 +591,53 @@ than papered over:
   is three hundred commits, and a quarter's work in a single repo runs past
   that — the panel read `300+` while the true figure sat five commits above it.
 
-Unauthenticated GitHub allows 60 requests an hour **per viewer's IP**, not per
-site, so everyone has their own budget. A refresh costs a few requests per
-account, results cache for fifteen minutes and survive a reload — failures
-included, so a mistyped username reads as a mistake rather than a quiet zero.
-If the limit is hit the panel says so and names the minute it resets.
+Results cache in the browser for fifteen minutes and survive a reload —
+failures included, so a mistyped username reads as a mistake rather than a quiet
+zero. The server keeps its own ten-minute cache in front of that. If a limit is
+hit anywhere the panel says so and names the minute it resets, rather than
+showing a zero it cannot stand behind.
+
+## The chapters
+
+**Chapters** in the rail is the campus the bootcamp is selling to: every house
+that has come through onboarding, where it is, how far it is toward the 80%
+target. It is the one view that is not about the four of them or their money,
+which is why it sits under its own heading rather than beside the ledger.
+
+It reads `/api/campuswars` — the public projection of the campus admin — and not
+the sheet. Nothing on it is typed in by hand, and nothing on it can be edited
+here; the map, the counts and the table are recomputed from the feed every time
+it loads, and again every two minutes while the tab is in front.
+
+### One board, two places
+
+The same board is also a page of its own at `/invoice/data/`, and both are the
+same code: `invoice/chapters.js` holds the projection, the feed, the counting
+and every panel, and `invoice/chapters.css` holds the styles. A host supplies
+the chrome around it and calls `Chapters.markup(prefix)` then
+`Chapters.mount(opts)`. **Fix a miscount in `chapters.js` and both are fixed.**
+
+Two details are what make one file serve both:
+
+- **Every id carries a prefix.** The console already owns a `#tbody`, a
+  `#live-txt` and a `#foot-count`, and a second set under the same names would
+  have the two boards writing into each other. The console mounts with `ch-`;
+  the standalone page, having nothing to collide with, mounts with none.
+- **Every style is scoped to `.chapters`.** The console also owns `.panel`,
+  `.pill`, `.row` and a bare `table`, and they mean different things there.
+  Unscoped, the stylesheet would repaint half the ledger.
+
+The board is fetched **the first time somebody opens the view**, not on load.
+The map data alone is most of a hundred kilobytes, and the ledger — which is
+what the console is opened for — should not wait on it to draw.
+
+### Adding a school
+
+`SCHOOLS` at the top of `chapters.js`: name, latitude, longitude, state. The
+feed names schools but does not place them, and no geocoder is called from the
+page — a map that silently drops a house because a lookup failed is worse than
+one that says which houses it could not place. Anything missing from that table
+is still counted, still in every total, and named under the map.
 
 ## Changing the team
 
