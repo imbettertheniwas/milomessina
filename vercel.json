@@ -1,5 +1,18 @@
 {
   "functions": {
     "api/campuswars.mjs": { "maxDuration": 30 }
-  }
+  },
+  "headers": [
+    {
+      "source": "/internal",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/internal", "destination": "/invoice/index.html" },
+    { "source": "/internal/", "destination": "/invoice/index.html" }
+  ]
 }
