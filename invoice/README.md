@@ -9,6 +9,53 @@ puts itself on the ledger from then on.
 
 It works the moment it loads. Nothing to deploy, nothing to configure.
 
+## How it is laid out
+
+It is a console rather than a page: a rail of views down the left, one of
+them on screen at a time, each with its own toolbar along the top and its
+own strip of totals along the foot. The rail carries a count beside each
+name, so the thing most worth knowing — how much somebody is owed, how many
+days have been marked this week — is on screen before you have opened
+anything.
+
+| View | What is on it |
+| --- | --- |
+| **Overview** | The four headline figures, what needs somebody's attention, spend by month, who has been in, and the newest activity across all three tables |
+| **Ledger** | Every line, with sub-tabs for *all / still owed / reimbursed*, filters for who, category and period, search, and CSV |
+| **Reimbursements** | A settle-up card per person, the who-fronted-it chart, and the lines that have been waiting longest |
+| **On repeat** | The monthly rules, what they cost a month and a year, and when the next one lands |
+| **Attendance** | The board you press your name on, the backfill, days per week, and the full record |
+| **Commits** | The contribution map, together and one each |
+| **Breakdown** | Where the money went by category, and who it was spent on |
+| A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
+
+The view lives in the URL — `/invoice#/ledger`, `/invoice#/person/Bijan` —
+so the back button works, a page can be bookmarked, and a link to somebody's
+page is a link to somebody's page.
+
+**Logging a spend is a drawer**, opened from **New spend** in the corner or
+by pressing `n`, and it is the same form it always was — who paid, who it
+was for, the photo, the repeat toggle. It closes itself on a line that
+actually saved and stays open on one that didn't, which is the only way to
+tell the two apart without reading the toast.
+
+**⌘K** opens a jump-to: the views, the five names, and the last forty
+spends. Picking a spend puts it in the ledger's search box rather than
+pretending to open a record that doesn't exist.
+
+The light and dark themes are both real, and the moon in the corner of the
+rail picks one; left alone it follows the system.
+
+### What the numbers on each page are counted from
+
+**Overview is always the whole ledger.** The other pages are not: the
+breakdown draws from the same filtered list the ledger is showing, because
+*where did coffee money go in the last 30 days* is a real question. What it
+must not do is answer it under a caption saying "every line" — so it names
+the filters that are narrowing it, wherever they were set, and offers to
+drop them. The ledger's own strip of totals along its foot is filtered by
+definition and says so: *N lines in view*.
+
 ## Where it saves
 
 `BACKEND` at the top of the page's script decides, and it ships as `'auto'`.
@@ -303,8 +350,9 @@ money back, but Arya fronts spends too and they belong on the ledger the same
 way. **who it was for** is a row of toggles underneath, because a good deal
 of what gets bought is bought for Arya.
 
-The board is the one place the roster is shorter: **days here**, the days
-table and the GitHub panel are the four interns only. Arya is not on it.
+The board is the one place the roster is shorter: **Attendance** and
+**Commits** are the four interns only. Arya is not on either, and their page
+says so in place of the two figures that would be blank.
 
 Whoever is paying starts ticked, since the usual case is buying your own along
 with everyone else's. Untick yourself and the line reads as bought purely for
@@ -312,8 +360,9 @@ someone else — that is how "I got Arya a coffee and nothing for me" is
 recorded rather than fudged into the note.
 
 The page then shows the per-head figure: a $14 coffee run ticked for Milo and
-Arya reads **split 2 ways · $7.00 each**, on the line and in the CSV. A panel
-called **who it was spent on** totals it per person across the ledger.
+Arya reads **2 ways · $7.00 each** in the ledger's own split column, and in
+the CSV. **Breakdown → who it was spent on** totals it per person across the
+ledger, and each person's page carries their own share of it.
 
 **None of this changes what anybody is owed.** Whoever fronted the money is
 owed all of it, split or not — the bootcamp is what reimburses them, so the
@@ -339,9 +388,9 @@ though a spend cannot have happened next week. A receipt photo is refused for
 the same reason in reverse: the rule is not one purchase, and each month's
 receipt belongs on the line that month.
 
-An **on repeat** panel appears above the charts once there is one, with the
-next date, the monthly total, and a pause and a delete for each. **Pausing
-stops the next line; deleting stops the next line.** Neither touches the
+**On repeat** in the rail is the list of them, with the next date, a pause
+and a delete for each, and along the foot what they cost a month and a year.
+**Pausing stops the next line; deleting stops the next line.** Neither touches the
 lines already written — that money was actually spent, and the ledger is
 the record of it. A rule resumed after a month off writes the month it
 missed as soon as it comes back.
@@ -394,11 +443,13 @@ record cannot drift just because a tab got closed.
 The card shows that person's days **this week**, always — the old board flipped
 the same figure between a running timer and a weekly total depending on whether
 somebody happened to be clocked in, so the number in that spot meant two
-different things an hour apart. Underneath it is their all-time count. The
-**days on record** table at the foot of the page lists every day, newest
-first, and exports to CSV separately from the money. It sits last on purpose:
-it is the audit trail rather than the thing anybody opens the page to do, and
-the cards above already answer who has been in.
+different things an hour apart. Underneath it is their all-time count, and
+under the cards a bar per week for the last eight, stacked by person.
+
+The **days on record** table is the second tab of the same view, and exports
+to CSV separately from the money. It is behind a tab rather than under the
+cards on purpose: it is the audit trail rather than the thing anybody opens
+the page to do, and the cards already answer who has been in.
 
 ### Missed a day
 
@@ -446,7 +497,7 @@ broken.
 
 ## What everyone's pushing
 
-A GitHub-style contribution map — week columns, days down, the same green ramp
+**Commits** in the rail. A GitHub-style contribution map — week columns, days down, the same green ramp
 — for the team together and then one each. Above it: the quarter's total,
 today's, and the busiest single day. Hovering a square names the day and its
 count.
