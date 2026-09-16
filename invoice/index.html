@@ -624,6 +624,7 @@ td.date.run{color:var(--good)}
 .share .bar i{display:block;height:100%;border-radius:99px}
 .share span{font-size:11px;color:var(--muted-2);font-family:var(--mono);width:30px;text-align:right}
 </style>
+<link rel="stylesheet" href="/invoice/visits.css">
 </head>
 <body>
 <div id="gate">
@@ -692,6 +693,51 @@ td.date.run{color:var(--good)}
     <div class="banner" id="banner" hidden><span aria-hidden="true">⚠</span><span id="banner-txt"></span><button type="button" class="mini" id="banner-do" hidden></button></div>
 
     <div id="views">
+
+      <section class="view" data-view="visits">
+        <div class="toolbar vr-toolbar">
+          <span class="hint">Invite someone to meet the fomo team.</span>
+          <span class="push">
+            <button class="mini ghost" id="vr-lock" hidden>Lock requests</button>
+            <button class="mini ghost" id="vr-refresh">Refresh</button>
+            <a class="mini ghost" id="vr-open" href="/hqvisitform/" target="_blank" rel="noopener">Open form</a>
+            <button class="btn btn-p" id="vr-copy">Copy form link</button>
+          </span>
+        </div>
+        <div class="scroller pad">
+          <p class="vr-message" id="vr-message" role="status" aria-live="polite"></p>
+          <div class="vr-link-wrap" id="vr-link-wrap" hidden><label for="vr-link">Form link</label><input class="vr-link" id="vr-link" readonly></div>
+          <form class="vr-panel" id="vr-login">
+            <h2>Unlock visit requests</h2>
+            <p>Guest details are shared with the team. Use the separate visit-access password supplied by the project owner.</p>
+            <label for="vr-password">Visit-access password<input id="vr-password" type="password" autocomplete="current-password" required maxlength="512"></label>
+            <button class="btn btn-p" id="vr-unlock">Unlock requests</button>
+          </form>
+          <div id="vr-workspace" hidden>
+            <div class="vr-filters">
+              <input id="vr-search" type="search" placeholder="Search guests, email or notes" aria-label="Search visit requests">
+              <select id="vr-filter" aria-label="Filter request status">
+                <option value="">All requests</option><option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="declined">Declined</option>
+              </select><span class="vr-count" id="vr-count"></span>
+            </div>
+            <div class="vr-columns">
+              <div id="vr-list" aria-label="Visit requests"></div>
+              <aside class="vr-detail" id="vr-details" hidden aria-labelledby="vr-detail-name">
+                <header><h2 id="vr-detail-name" tabindex="-1"></h2><button class="mini ghost" id="vr-close" aria-label="Close request details">Close</button></header>
+                <dl id="vr-detail-body"></dl>
+                <form id="vr-edit">
+                  <label for="vr-status">Status<select id="vr-status"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="declined">Declined</option></select></label>
+                  <label for="vr-notes">Internal team notes<textarea id="vr-notes" maxlength="3000" rows="4"></textarea></label>
+                  <button class="btn btn-p" id="vr-save">Save changes</button>
+                </form>
+                <footer>Updating status does not send an email or book a calendar event. Confirm the agreed time with the guest separately.</footer>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
       <!-- ────────── overview ────────── -->
       <section class="view" data-view="overview">
@@ -3505,6 +3551,7 @@ var ICO = {
   ledger:    '<rect x="3.4" y="3.4" width="13.2" height="13.2" rx="2.4"/><path d="M6.6 7.6h6.8M6.6 10h6.8M6.6 12.4h4.2"/>',
   settle:    '<path d="M10 3.2v13.6"/><path d="M13.4 6H8.2a2.2 2.2 0 0 0 0 4.4h3.6a2.2 2.2 0 0 1 0 4.4H6.2"/>',
   subs:      '<path d="M3.6 8.4a6.4 6.4 0 0 1 11-3.3L16.8 7.3"/><path d="M16.8 3.3v4h-4"/><path d="M16.4 11.6a6.4 6.4 0 0 1-11 3.3L3.2 12.7"/><path d="M3.2 16.7v-4h4"/>',
+  visits:    '<rect x="3" y="5" width="14" height="12" rx="2"/><path d="M6 3v4M14 3v4M3 9h14M7 12h6"/>',
   attendance:'<rect x="3.4" y="4.8" width="13.2" height="11.8" rx="2.2"/><path d="M3.4 8.4h13.2M6.8 3.4v2.6M13.2 3.4v2.6"/><path d="M6.8 11.4h1.6M11.6 11.4h1.6M6.8 13.8h1.6"/>',
   commits:   '<circle cx="10" cy="10" r="2.6"/><path d="M3.2 10h4.2M12.6 10h4.2"/>',
   reporting: '<path d="M4.2 16.4V9.2M8.8 16.4V4.6M13.4 16.4v-4.8"/><path d="M2.8 16.4h14.4"/>',
@@ -3520,6 +3567,7 @@ var VIEWS = {
   ledger:    {label:"Ledger",         sub:"every spend anyone has logged"},
   settle:    {label:"Reimbursements", sub:"who is still owed, and settling up"},
   subs:      {label:"On repeat",      sub:"the spends that write themselves each month"},
+  visits:    {label:"Visit requests", sub:"invitations to fomo HQ"},
   attendance:{label:"Attendance",     sub:"the days each of them was in"},
   commits:   {label:"Commits",        sub:"public pushes, the last 13 weeks"},
   reporting: {label:"Breakdown",      sub:"where the money went, and who it went on"},
@@ -3548,6 +3596,7 @@ function buildNav(){
     h += '<button class="nav-i" data-go="' + v[0] + '">' + ico(v[0]) +
          '<span class="tx">' + v[1] + '</span><span class="ct" data-ct="' + v[0] + '"></span></button>';
   });
+  h += '<div class="nav-sec">Guests</div><button class="nav-i" data-go="visits">' + ico("visits") + '<span class="tx">Visit requests</span></button>';
   h += '<div class="nav-sec">Reporting</div>';
   h += '<button class="nav-i" data-go="reporting">' + ico("reporting") +
        '<span class="tx">Breakdown</span></button>';
@@ -3575,12 +3624,15 @@ function setView(id, who){
     ? (PEOPLE.indexOf(personOf) > -1 ? "intern · on the attendance board" : "runs the bootcamp · not on the board")
     : VIEWS[view].sub;
   markNav();
+  $("btn-new").style.display = view === "visits" ? "none" : "";
+  document.body.dataset.consoleView = view;
   $("side").classList.remove("on");
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : "");
   if (location.hash !== hash) { try { history.replaceState(null, "", hash); } catch(e){ location.hash = hash; } }
   var sc = document.querySelector('.view[data-view="' + view + '"] .scroller');
   if (sc) sc.scrollTop = 0;
   paint();
+  window.dispatchEvent(new Event("fomo:view-change"));
 }
 
 function routeFromHash(){
@@ -4397,5 +4449,6 @@ if (!PASSCODE || pass === PASSCODE) open_();
 else document.getElementById("gate-input").focus();
 })();
 </script>
+<script type="module" src="/invoice/visits.js"></script>
 </body>
 </html>

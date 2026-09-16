@@ -1,0 +1,2 @@
+# Preserve whitespace inside bundled third-party CSS template strings.
+hqvisitform/assets/*.js whitespace=-blank-at-eol
