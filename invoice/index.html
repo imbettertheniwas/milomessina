@@ -661,6 +661,11 @@ td.date.run{color:var(--good)}
 .mbars .stk{width:100%;display:flex;flex-direction:column;border-radius:3px;overflow:hidden}
 .mbars .stk i{display:block;min-height:2px}
 .mbars .mbl{font-size:9.5px;color:var(--muted-2);white-space:nowrap}
+/* a fortnight of days rather than a handful of months: more bars, thinner,
+   and none of them wide enough to want a 72px ceiling */
+.mbars.days{gap:4px}
+.mbars.days .mb{max-width:none}
+.mbars.days .stk{border-radius:2px}
 .mbars .zero{width:100%;height:2px;background:var(--line-2);border-radius:2px}
 .stcard{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l);padding:13px 14px;
   display:flex;flex-direction:column;gap:10px}
@@ -865,8 +870,8 @@ td.date.run{color:var(--good)}
               <div class="att" id="ov-attn"></div>
             </div>
             <div class="panel">
-              <div class="panel-h"><h2>Spend by month</h2><span class="note" id="ov-mon-note"></span></div>
-              <div class="panel-b" id="ov-months"></div>
+              <div class="panel-h"><h2>Spend by day</h2><span class="note" id="ov-daily-note"></span></div>
+              <div class="panel-b" id="ov-daily"></div>
             </div>
           </div>
 
@@ -4510,11 +4515,6 @@ function paintSettle(){
 }
 
 /* ---------- overview ---------- */
-function monthKey(iso){ return String(iso || "").slice(0, 7); }
-function monthLabel(k){
-  var p = k.split("-");
-  return ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"][Number(p[1])-1] || k;
-}
 /* The commits view rolls its own 13-week window up; the overview wants the
    same three numbers off the same window, so it asks for them here rather
    than counting a second time and drifting. */
@@ -4676,36 +4676,48 @@ function paintOverview(){
     ? top.map(function(i){ return '<div class="att-i">' + i.html + "</div>"; }).join("")
     : '<div class="empty"><b>Nothing needs you.</b>Everyone is square, no rule is due this week, and everybody has a day marked.</div>';
 
-  /* ── spend by month ── */
-  var byMon = {}, order = [];
+  /* ── spend by day ──
+     Every day of the last fortnight, not only the ones with a line on
+     them: a bootcamp that spends nothing from Tuesday to Friday is the
+     thing worth seeing, and a chart of only the days money moved cannot
+     show it. Empty days draw the same flat tick a zero month did. */
+  var DAY_SPAN = 14;
+  var span = [], byDay = {}, dMax = 1;
   rows.forEach(function(r){
-    var k = monthKey(r.date); if (!k) return;
-    if (!byMon[k]) { byMon[k] = {owed:0, paid:0, n:0}; order.push(k); }
+    var k = String(r.date || "").slice(0, 10);
+    if (!k) return;
+    if (!byDay[k]) byDay[k] = {owed:0, paid:0, n:0};
     var a = Number(r.amount) || 0;
-    byMon[k].n++;
-    if (r.status === "reimbursed") byMon[k].paid += a; else byMon[k].owed += a;
+    byDay[k].n++;
+    if (r.status === "reimbursed") byDay[k].paid += a; else byDay[k].owed += a;
   });
-  order.sort();
-  var span = order.slice(-8);
-  if (!span.length) {
-    $("ov-months").innerHTML = '<div class="hint">Months show up here once the first line is logged.</div>';
-    $("ov-mon-note").textContent = "";
+  for (var i = DAY_SPAN - 1; i >= 0; i--) {
+    var dd = new Date(); dd.setDate(dd.getDate() - i);
+    var key = isoOf(dd);
+    var e = byDay[key] || {owed:0, paid:0, n:0};
+    dMax = Math.max(dMax, e.owed + e.paid);
+    span.push({k:key, d:dd.getDate(), e:e});
+  }
+  if (!rows.length) {
+    $("ov-daily").innerHTML = '<div class="hint">Days show up here once the first line is logged.</div>';
+    $("ov-daily-note").textContent = "";
   } else {
-    var mMax = 1;
-    span.forEach(function(k){ mMax = Math.max(mMax, byMon[k].owed + byMon[k].paid); });
-    $("ov-mon-note").textContent = span.length + (span.length === 1 ? " month" : " months") +
-      " · peak " + shortMoney(mMax);
-    $("ov-months").innerHTML = '<div class="mbars">' + span.map(function(k){
-      var e = byMon[k], t = e.owed + e.paid, h = Math.max(4, Math.round(t / mMax * 96));
-      return '<div class="mb" title="' + esc(monthLabel(k) + " — " + money(t) + " across " + e.n +
-          (e.n === 1 ? " line" : " lines")) + '">' +
+    var lit = span.filter(function(x){ return x.e.n; }).length;
+    $("ov-daily-note").textContent = niceDate(span[0].k) + " – " + niceDate(span[span.length - 1].k) +
+      " · " + (lit ? lit + (lit === 1 ? " day spent on" : " days spent on") : "nothing spent") +
+      " · peak " + shortMoney(dMax);
+    $("ov-daily").innerHTML = '<div class="mbars days">' + span.map(function(x){
+      var t = x.e.owed + x.e.paid, h = Math.max(4, Math.round(t / dMax * 96));
+      return '<div class="mb" title="' + esc(niceDate(x.k) + " — " +
+          (x.e.n ? money(t) + " across " + x.e.n + (x.e.n === 1 ? " line" : " lines")
+                 : "nothing logged")) + '">' +
         (t > 0
           ? '<span class="stk" style="height:' + h + 'px">' +
-              (e.owed > 0.005 ? '<i style="background:var(--owed);flex:' + e.owed + '"></i>' : "") +
-              (e.paid > 0.005 ? '<i style="background:var(--good);flex:' + e.paid + '"></i>' : "") +
+              (x.e.owed > 0.005 ? '<i style="background:var(--owed);flex:' + x.e.owed + '"></i>' : "") +
+              (x.e.paid > 0.005 ? '<i style="background:var(--good);flex:' + x.e.paid + '"></i>' : "") +
             "</span>"
           : '<span class="zero"></span>') +
-        '<span class="mbl">' + esc(monthLabel(k)) + "</span></div>";
+        '<span class="mbl">' + x.d + "</span></div>";
     }).join("") + "</div>";
   }
 
