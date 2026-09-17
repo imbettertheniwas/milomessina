@@ -1836,6 +1836,16 @@ function apiSheet(action, payload){
         why = "the shared sheet is running an older copy of the script, which doesn't know that name yet" +
               " — redeploy fomo/setup/apps-script.gs (Deploy \u2192 Manage deployments \u2192 New version)";
       }
+      /* 'unknown action' is never a fact about the request — the page only
+         ever sends actions it knows the name of, so it can only mean the
+         deployment behind the URL is older than the page asking. Left as
+         the sheet words it, the one person who can fix it reads it as
+         their own mistake and tries again more carefully. */
+      if (/unknown action/i.test(why)) {
+        why = "the shared sheet is running an older copy of the script, which doesn't know how to " +
+              (action === "edit" ? "edit a line" : "do that") + " yet" +
+              " — redeploy fomo/setup/apps-script.gs (Deploy → Manage deployments → New version)";
+      }
       /* Marked as a refusal, not a failure: this answer arrived. The
          request reached the sheet, was read, and was turned down for a
          reason the sheet is entitled to give — a name it does not carry,
