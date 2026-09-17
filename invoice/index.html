@@ -902,6 +902,11 @@ td.date.run{color:var(--good)}
             </div>
           </div>
 
+          <div class="panel">
+            <div class="panel-h"><h2>Quiet days with a spend</h2><span class="note" id="ov-quiet-note"></span></div>
+            <div class="att" id="ov-quiet"></div>
+          </div>
+
           <div class="ov-band"><span class="lbl">the campus, and guests</span><i></i><span class="hint" id="ov-campus-note"></span></div>
           <div class="rail">
             <div><span class="lbl">applications in</span><span class="v" id="k-ap">—</span><span class="sub" id="k-ap-sub">from /fomo/apply</span></div>
@@ -4533,6 +4538,58 @@ function ghSummary(){
           today:team[end] || 0, bestDay:bestDay, bestN:bestN};
 }
 
+/* ---------- a spend on a day with nothing pushed behind it ----------
+
+   A day an intern put a spend on the ledger and pushed three times or
+   fewer. It is a prompt to go and look, not a verdict: plenty of real work
+   pushes nothing, and this cannot see a private repository, a branch that
+   has not been pushed, or an afternoon spent on a call.
+
+   Which is exactly why it refuses to guess. A day is only judged when the
+   answer is actually knowable:
+
+   — an intern. Arya reimburses the ledger rather than working off it,
+     and has no account here to count.
+   — a linked account whose read came back. Without one, ghData carries
+     nothing for them, and every day would read as zero pushes.
+   — inside the 13 weeks GitHub was asked about. Older than that, nothing
+     was counted, and no count is not a count of none.
+   — a count that is not truncated. A truncated count is a floor — there
+     were at least this many — so a two could be a twenty, and flagging it
+     would be an accusation the data does not support. */
+var PUSH_MIN = 4;
+
+function quietSpendDays(){
+  var from = dayKey(calStart()), to = dayKey(new Date()), byDay = {}, out = [];
+  rows.forEach(function(r){
+    if (PEOPLE.indexOf(r.who) === -1) return;
+    if (!logins[r.who] || !ghData[r.who] || ghData[r.who].truncated) return;
+    var d = String(r.date || "");
+    if (d < from || d > to) return;
+    var k = r.who + "|" + d;
+    if (!byDay[k]) byDay[k] = {who:r.who, day:d, spend:0, lines:0};
+    byDay[k].spend += Number(r.amount) || 0;
+    byDay[k].lines++;
+  });
+  Object.keys(byDay).forEach(function(k){
+    var e = byDay[k];
+    e.commits = (ghData[e.who].days || {})[e.day] || 0;
+    if (e.commits < PUSH_MIN) out.push(e);
+  });
+  return out.sort(function(a, b){
+    return a.day === b.day ? b.spend - a.spend : (a.day < b.day ? 1 : -1);
+  });
+}
+
+/* Who could not be judged, and why — said out loud, because a panel that
+   quietly leaves somebody out reads as that person having nothing to flag. */
+function quietSkipped(){
+  var names = PEOPLE.filter(function(p){
+    return !logins[p] || !ghData[p] || ghData[p].truncated;
+  });
+  return names;
+}
+
 /* What a rule costs every month. A rule fires once a month on its day, so
    the live ones added up are the standing commitment — the one money
    number on the console nobody has spent yet. */
@@ -4739,6 +4796,35 @@ function paintOverview(){
       '<td class="amt">' + (c ? String(c.n) + (c.capped ? "+" : "") : '<span class="mut2">—</span>') + "</td>" +
       "</tr>";
   }).join("");
+
+  /* ── quiet days with a spend ── */
+  var quiet = quietSpendDays(), skipped = quietSkipped();
+  $("ov-quiet-note").textContent = quiet.length
+    ? quiet.length + (quiet.length === 1 ? " day" : " days") + " · under " + PUSH_MIN + " pushes"
+    : "under " + PUSH_MIN + " pushes";
+  $("ov-quiet").innerHTML = (quiet.length
+    ? quiet.slice(0, 8).map(function(e){
+        return '<div class="att-i">' + avatar(e.who, "") +
+          '<div class="bd"><b>' + esc(e.who) + " spent " + esc(money(e.spend)) + " on " +
+            esc(niceDate(e.day)) + "</b><span>" +
+            e.lines + (e.lines === 1 ? " line" : " lines") + " that day · " +
+            (e.commits ? commitLabel(e.commits, false) : "nothing pushed") +
+          "</span></div>" +
+          '<span class="pill' + (e.commits ? "" : " red") + '">' + e.commits +
+            (e.commits === 1 ? " push" : " pushes") + "</span></div>";
+      }).join("")
+    : '<div class="empty"><b>Nothing to look at.</b>Every day with a spend on it had ' + PUSH_MIN +
+      ' pushes or more behind it.</div>') +
+    /* Said out loud rather than left as a silent gap. */
+    (skipped.length
+      ? '<div class="att-i"><div class="bd"><span class="mut2">Not counted for ' +
+        esc(skipped.join(", ")) + " — no linked account, no read yet, or a count GitHub " +
+        "could only give as a floor. A day is not flagged on a guess.</span></div></div>"
+      : "") +
+    (quiet.length > 8
+      ? '<div class="att-i"><div class="bd"><span class="mut2">' + (quiet.length - 8) +
+        " more like this, older.</span></div></div>"
+      : "");
 
   /* ── the campus, and guests ──
      These two tables live behind their own views and their own round
@@ -5050,7 +5136,16 @@ function paint(){
 var _render = render;
 render = function(){ _render.apply(null, arguments); paint(); };
 var _renderGh = renderGh;
-renderGh = function(){ _renderGh.apply(null, arguments); paintNav(); if (view === "person") paintPerson(); };
+/* The commit read lands well after the first paint, and the overview now
+   asks a question of it — which days had a spend and almost no pushes —
+   so the overview is repainted when it arrives rather than staying on the
+   empty answer it could give before the counts existed. */
+renderGh = function(){
+  _renderGh.apply(null, arguments);
+  paintNav();
+  if (view === "person") paintPerson();
+  if (view === "overview") paintOverview();
+};
 
 /* ══════════ jump to ══════════ */
 var palItems = [], palSel = 0;

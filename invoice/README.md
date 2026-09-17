@@ -22,7 +22,7 @@ anything.
 
 | View | What is on it |
 | --- | --- |
-| **Overview** | The four headline figures, what needs somebody's attention, spend by month, who has been in, and the newest activity across all three tables |
+| **Overview** | Banded by subject: the money, the four of them, the campus and guests, and what just happened — headline figures, what needs attention, spend by month and by category, rules due, a row per person, quiet days with a spend, campus counts, and the newest activity |
 | **Ledger** | Every line, with sub-tabs for *all / still owed / reimbursed*, filters for who, category and period, search, CSV, and **Edit** on any row |
 | **Reimbursements** | A settle-up card per person, the who-fronted-it chart, and the lines that have been waiting longest |
 | **On repeat** | The monthly rules, what they cost a month and a year, and when the next one lands |
@@ -562,6 +562,33 @@ anything out of date corrects itself. Only an endpoint that cannot be reached at
 all takes the status light down and puts up the connection banner — the two used
 to look identical, which made one refused press read as the whole board being
 broken.
+
+## Quiet days with a spend
+
+On the **Overview**, under *the four of them*. It lists days an intern put a
+spend on the ledger and pushed fewer than four times that day — the spend,
+the number of lines, and the pushes behind it.
+
+It is a prompt to go and look, not a verdict. Plenty of real work pushes
+nothing: a private repository, a branch nobody has pushed yet, a day of
+calls. Which is why it will not guess, and only judges a day when the
+answer is actually knowable:
+
+- **An intern.** Arya reimburses the ledger rather than working off it, and
+  has no account here to count.
+- **A linked account whose read came back.** Without one there is no day
+  map at all, and every day would read as zero pushes.
+- **Inside the 13 weeks** GitHub was asked about. Older than that nothing
+  was counted, and no count is not a count of none.
+- **A count that is not truncated.** When somebody has more active
+  repositories than one read covers, their number is a floor — *at least*
+  this many — so a two could be a twenty. Flagging that would be an
+  accusation the data cannot support.
+
+Anybody skipped for one of those reasons is named under the list rather
+than silently left out, because a missing name reads as a clean record.
+
+The threshold is `PUSH_MIN` in `invoice/index.html`, set to 4.
 
 ## The week
 
