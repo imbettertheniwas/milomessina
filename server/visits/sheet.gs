@@ -77,6 +77,7 @@ function visitsApi(body) {
       }
       var since=Date.now()-24*60*60*1000;
       if(requests.filter(function(x){return x.email===r.email && new Date(x.created_at).getTime()>since;}).length>=5)return visitReply(false,null,'RATE_LIMIT');
+      if(!visitAllowAddress(body.addressKey))return visitReply(false,null,'RATE_LIMIT');
       var values=VISIT_COLUMNS.map(function(k){return k==='version'?1:visitText(r[k]);});
       sheet.getRange(sheet.getLastRow()+1,1,1,VISIT_COLUMNS.length).setNumberFormat('@').setValues([values]);
       return visitReply(true,{reference:r.id,status:'pending',duplicate:false});
@@ -95,6 +96,22 @@ function visitsApi(body) {
     }
     return visitReply(false,null,'INVALID');
   }catch(err){return visitReply(false,null,'UNAVAILABLE');}
+}
+/* Best-effort ceiling per sending address, so one sender cannot fill the tab by
+   varying the email. The 5-per-email rule reads committed rows and cannot see
+   this; CacheService can, but is not durable, so treat it as a speed bump
+   rather than a guarantee. Cache TTL caps the window well under a day. */
+var VISIT_IP_LIMIT=8,VISIT_IP_MINUTES=60;
+function visitAllowAddress(key) {
+  // No key means a caller that predates this check; it already holds the secret.
+  if(typeof key!=='string' || !/^[a-f0-9]{64}$/.test(key))return true;
+  var cache=CacheService.getScriptCache(),cacheKey='visit-submit:'+key;
+  var bucket=JSON.parse(cache.get(cacheKey)||'null'),now=Date.now();
+  if(!bucket || bucket.until<=now)bucket={count:0,until:now+VISIT_IP_MINUTES*60*1000};
+  if(bucket.count>=VISIT_IP_LIMIT)return false;
+  bucket.count++;
+  cache.put(cacheKey,JSON.stringify(bucket),Math.max(1,Math.ceil((bucket.until-now)/1000)));
+  return true;
 }
 function visitText(value){
   var text=String(value==null?'':value);

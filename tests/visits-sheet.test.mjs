@@ -121,3 +121,23 @@ test('a form post is never mistaken for a visit request',()=>{
   assert.equal(answer.ok,true);
   assert.equal(wrote.tab,'apply');
 });
+
+/* The 5-per-email rule reads committed rows, so varying the email walks right
+   past it. The address ceiling is what stops one sender filling the tab. */
+test('submissions from one address are capped even when the email changes',()=>{
+  const h=sheetHarness({sheetId:'x'}),key='a'.repeat(64);
+  for(let n=1;n<=8;n++)
+    assert.equal(h.call('submit',{addressKey:key,request:record(n,'guest'+n+'@example.invalid')}).ok,true);
+  assert.equal(h.call('submit',{addressKey:key,request:record(9,'guest9@example.invalid')}).code,'RATE_LIMIT');
+  // A different sender is unaffected.
+  assert.equal(h.call('submit',{addressKey:'b'.repeat(64),request:record(10,'guest10@example.invalid')}).ok,true);
+});
+test('retrying one request id does not spend the address allowance',()=>{
+  const h=sheetHarness({sheetId:'x'}),key='c'.repeat(64),first=record(1,'guest1@example.invalid');
+  assert.equal(h.call('submit',{addressKey:key,request:first}).ok,true);
+  for(let i=0;i<12;i++)assert.equal(h.call('submit',{addressKey:key,request:first}).data.duplicate,true);
+  // Seven of the eight remain, so a flaky connection retrying is not punished.
+  for(let n=2;n<=8;n++)
+    assert.equal(h.call('submit',{addressKey:key,request:record(n,'guest'+n+'@example.invalid')}).ok,true);
+  assert.equal(h.call('submit',{addressKey:key,request:record(9,'guest9@example.invalid')}).code,'RATE_LIMIT');
+});

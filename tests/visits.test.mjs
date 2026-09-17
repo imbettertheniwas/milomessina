@@ -72,6 +72,20 @@ test('shared login limiter is consulted before checking passwords',async()=>{
   for(let i=0;i<10;i++)assert.equal((await h.call('login',{password:'incorrect'})).status,401);
   assert.equal((await h.call('login',{password:env.VISITS_ADMIN_PASSWORD})).status,429);
 });
+test('public submissions carry an address key, scoped apart from login',async()=>{
+  const calls=[];
+  const h=harness({store:async(action,payload)=>{
+    calls.push({action,payload});
+    return action==='submit'?{reference:guest.requestId,status:'pending'}:{allowed:true};
+  }});
+  assert.equal((await h.call()).status,201);
+  const submit=calls.find(c=>c.action==='submit');
+  assert.match(submit.payload.addressKey,/^[a-f0-9]{64}$/);
+  await h.call('login',{password:'wrong'});
+  const throttle=calls.find(c=>c.action==='throttle');
+  // Same caller, different scope, so the two limiters cannot exhaust each other.
+  assert.notEqual(submit.payload.addressKey,throttle.payload.key);
+});
 test('storage errors or malformed receipts never report success',async()=>{
   const h=harness({store:async()=>{throw new Error('secret provider detail');}});
   const response=await h.call();assert.equal(response.status,503);

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { dateKey, nyToday, requestTimes, requestTimePattern, formatRequestTime, timeInputValue, validateRequest } from "@/lib/visits";
+import { dateKey, nyToday, requestTimes, formatRequestTime, timeInputValue, validateRequest } from "@/lib/visits";
 
 export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase?: string; submissionUrl?: string }) {
   const [today, setToday] = useState<Date>();
@@ -45,18 +45,6 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
     } catch(e) {setError(e instanceof Error?e.message:"Something went wrong. Please try again.");}
     finally {setBusy(false);}
   }
-  useEffect(()=>{
-    const context=(document as Document & {modelContext?:{registerTool:Function}}).modelContext;
-    if(!context?.registerTool)return;
-    const lifecycle=new AbortController();
-    Promise.resolve(context.registerTool({name:"stage_visit_request",title:"Choose a preferred visit time",description:"Select a preferred New York date and time and open contact details. Does not submit or confirm a booking.",inputSchema:{type:"object",properties:{date:{type:"string",description:"YYYY-MM-DD"},time:{type:"string",pattern:requestTimePattern.source,description:"Preferred New York start time, such as 10:30 AM or 2:15 PM. Any minute is allowed; availability must be confirmed."}},required:["date","time"],additionalProperties:false},annotations:{readOnlyHint:false},execute(input:unknown){
-      const value=input as {date:string;time:string};
-      const invalid=validateRequest({name:"Guest",email:"guest@example.com",social:"",notes:"",website:"",requestId:"00000000-0000-4000-8000-000000000000",...value});
-      if(invalid)throw new Error(invalid);
-      const [y,m,d]=value.date.split("-").map(Number);setDate(new Date(y,m-1,d));setTime(value.time);setStep(2);return{status:"staged",date:value.date,time:value.time,timeZone:"America/New_York"};
-    }},{signal:lifecycle.signal})).catch(()=>{});
-    return()=>lifecycle.abort();
-  },[]);
   return (
     <div className="site-shell">
       <header className="site-header">

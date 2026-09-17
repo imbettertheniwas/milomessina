@@ -38,6 +38,10 @@ export function validSession(cookie,env,now=Date.now()) {
   if(expires<=Math.floor(now/1000) || expires>Math.floor(now/1000)+SESSION_SECONDS)return false;
   return equal(sign(parts[0]+'.'+parts[1],env),parts[2]);
 }
+function addressKey(req,env,scope) {
+  const address=String(req.headers?.['x-vercel-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  return createHmac('sha256',env.VISITS_SERVICE_SECRET).update(scope+':'+address).digest('hex');
+}
 function sessionCookie(token,seconds=SESSION_SECONDS) {
   return COOKIE+'='+token+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age='+seconds;
 }
@@ -91,9 +95,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
     try {
       if(action==='login'){
         if(typeof body.password!=='string' || body.password.length>512)return fail(400,'Enter the visit-access password.');
-        const address=String(req.headers?.['x-vercel-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
-        const key=createHmac('sha256',env.VISITS_SERVICE_SECRET).update('login:'+address).digest('hex');
-        await store('throttle',{key});
+        await store('throttle',{key:addressKey(req,env,'login')});
         if(!equal(body.password,env.VISITS_ADMIN_PASSWORD))return fail(401,'That password did not match.');
         res.setHeader('Set-Cookie',sessionCookie(issueSession(env,now())));
         return res.status(200).json({authenticated:true});
@@ -117,7 +119,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       }
       const invalid=validateRequest(body,new Date(now()));
       if(invalid)return fail(400,invalid);
-      const data=await store('submit',{request:{
+      const data=await store('submit',{addressKey:addressKey(req,env,'submit'),request:{
         id:body.requestId,name:body.name.trim(),email:body.email.trim().toLowerCase(),
         social:body.social.trim(),notes:body.notes.trim(),preferred_date:body.date,
         preferred_time:body.time,time_zone:'America/New_York',status:'pending',
