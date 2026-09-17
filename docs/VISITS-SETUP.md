@@ -59,13 +59,21 @@ so it adds a branch without touching anything the receiver already answers.
    32 random characters. This is NOT CONFIG.SHARED_SECRET or INVOICE_KEY, both
    of which ride along in public page source. Guest contact details must not
    sit behind a turnstile.
-5. Deploy > Manage deployments > the existing deployment > edit > New version >
-   Deploy. Keep the same deployment so the /exec URL does not change and the
-   ledger, attendance and campus forms keep working against it.
-6. Open the /exec URL in a browser. It should now report `"visits": true`
-   alongside `"ledger": true`. If visits is false the new version is not the
-   one being served: Apps Script serves the last DEPLOYED version, not the last
-   saved one.
+5. Publish it. Deploy > Manage deployments > the existing deployment > edit >
+   New version > Deploy keeps the /exec URL unchanged, which is the tidiest
+   result when it works.
+
+   If that silently keeps serving the old code — which has happened on this
+   project, where several deployments sat pinned to different versions — use
+   Deploy > New deployment > Web app, executing as yourself, access Anyone.
+   That always publishes the code as currently saved. It produces a NEW /exec
+   URL, which is fine: VISITS_STORAGE_URL simply points at that one. The
+   console's own ENDPOINT is a separate setting for the ledger and does not
+   have to match.
+6. Open the /exec URL in a browser. It must report `"visits": true` alongside
+   `"ledger": true`. Apps Script serves the last DEPLOYED version, not the last
+   saved one, so this check is the only proof the paste actually went live.
+   Saving alone never changes what the URL serves.
 
 The visit_requests tab is created on first use. `VISITS_SHEET_ID` is an
 optional script property, needed only to put visit rows somewhere other than
@@ -101,7 +109,7 @@ Set the following server environment variables for the intended deployment:
 | Variable | Value |
 | --- | --- |
 | VISITS_PUBLIC_ORIGIN | Exact form and console origin, e.g. https://milomessina.com |
-| VISITS_STORAGE_URL | The SAME /exec URL the console already uses (ENDPOINT in invoice/index.html) |
+| VISITS_STORAGE_URL | The /exec URL of the deployment that reports "visits": true |
 | VISITS_SERVICE_SECRET | Same random secret as the VISITS_SERVICE_SECRET script property |
 | VISITS_SESSION_SECRET | A DIFFERENT random secret, at least 32 characters |
 | VISITS_ADMIN_PASSWORD | A separate strong team visit-access password, at least 16 characters |
