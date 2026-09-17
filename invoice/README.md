@@ -23,7 +23,7 @@ anything.
 | View | What is on it |
 | --- | --- |
 | **Overview** | The four headline figures, what needs somebody's attention, spend by month, who has been in, and the newest activity across all three tables |
-| **Ledger** | Every line, with sub-tabs for *all / still owed / reimbursed*, filters for who, category and period, search, and CSV |
+| **Ledger** | Every line, with sub-tabs for *all / still owed / reimbursed*, filters for who, category and period, search, CSV, and **Edit** on any row |
 | **Reimbursements** | A settle-up card per person, the who-fronted-it chart, and the lines that have been waiting longest |
 | **On repeat** | The monthly rules, what they cost a month and a year, and when the next one lands |
 | **The week** | The feed each of them posts their week into — a few lines on what they worked on, with the links and screenshots, newest week first |
@@ -329,6 +329,44 @@ The `campus_team` tab — one row per intern on a campus:
 
 Edit any of these tabs by hand if you like — the page re-reads them every 30
 seconds. Just leave the `id` columns alone; the page uses them to find rows.
+
+## Fixing a line after the fact
+
+**Edit**, in the row's actions next to *Mark paid* and *Delete*. It opens
+the same drawer the line was logged in, filled in with what is on it — who
+paid, who it was for, the description, category, amount, date and note —
+and **Save changes** writes it back.
+
+The point is that nobody has to delete a line and type it again to fix a
+typo in the amount, which is what everyone was doing, and which loses the
+receipt and the logged-at stamp along with the mistake.
+
+What editing deliberately **cannot** change is whether the line has been
+paid back. That is a fact about the money rather than a detail of the
+description, and it has its own button two columns to the left. `id`,
+`logged` and `reimbursed` are left alone too.
+
+The receipt has three states in the drawer:
+
+- **Leave it.** Fixing the amount on a line never quietly drops its proof.
+- **Replace.** Picks a new photo, shrinks it the same way, and writes the
+  new link over the old one. The old file stays in Drive.
+- **Remove.** Takes the receipt off the line when you save.
+
+On the shared sheet an existing receipt is a Drive link rather than the
+image, so it shows as **View receipt** rather than a thumbnail — the link
+is a viewer page, not an image file. On this device the photo is the image
+itself, so it shows inline.
+
+A line is re-checked on the way back exactly as hard as a new one: a bad
+amount or a name the sheet does not carry is refused, the drawer stays
+open, and nothing is lost. Closing the drawer with the X abandons the edit
+and leaves the line as it was.
+
+> Like the feed, this needs `fomo/setup/apps-script.gs` redeployed as a new
+> version before the shared sheet will take it — `edit` is a new action.
+> `doGet` reports `editline: true` once it has. On this device it works
+> straight away.
 
 ## Receipt photos
 

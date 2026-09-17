@@ -1753,6 +1753,17 @@ function apiLocal(action, p){
       if (!hit) return reject(new Error("that line is no longer on the ledger"));
       hit.status = p.status === "reimbursed" ? "reimbursed" : "pending";
 
+    } else if (action === "edit") {
+      /* The device's own copy of the sheet's edit. Same rule about what a
+         line may not change: id, logged, status and reimbursed stay put. */
+      var ed = byId(rows, p.id);
+      if (!ed) return reject(new Error("that line is no longer on the ledger"));
+      ed.who = p.who; ed.what = p.what; ed.category = p.category;
+      ed.amount = Math.round((Number(p.amount) || 0) * 100) / 100;
+      ed.date = p.date; ed.note = p.note || ""; ed.shared = p.shared || "";
+      if (p.receiptClear) ed.receipt = "";
+      else if (p.receipt) ed.receipt = p.receipt;
+
     } else if (action === "delete") {
       rows = rows.filter(function(r){ return r.id !== p.id; });
 
@@ -2097,6 +2108,7 @@ function hint(msg, bad){
   h.className = "hint" + (bad ? " err" : "");
 }
 function defaultHint(){
+  if (editing) return "Editing a line already on the ledger. Whether it has been paid back is not changed here.";
   if (!repeat) return picked ? "Logging as " + picked + "." : "Pick who paid, then add the line.";
   if (!picked) return "Pick who paid, then set the subscription up.";
   var d = document.getElementById("f-date").value || today();
@@ -2126,6 +2138,7 @@ document.getElementById("form").addEventListener("submit", function(ev){
   /* the toggle decides what this button means: one line, or the rule that
      writes one every month from here on */
   if (repeat) { startSub(what, amt, date); return; }
+  if (editing) { saveEdit(what, amt, date); return; }
   var btn = document.getElementById("f-submit");
   btn.disabled = true; busy = true; btn.textContent = "Adding…";
   var names = splitNames();
@@ -2388,7 +2401,8 @@ function setRepeat(v){
 function syncRepeat(){
   var d = document.getElementById("f-date");
   document.getElementById("f-repeat").setAttribute("aria-pressed", String(repeat));
-  document.getElementById("f-submit").textContent = repeat ? "Start the subscription" : "Add to ledger";
+  document.getElementById("f-submit").textContent = editing
+    ? "Save changes" : (repeat ? "Start the subscription" : "Add to ledger");
   document.getElementById("f-pick").disabled = repeat;
   if (repeat) {
     d.removeAttribute("max");
@@ -2427,6 +2441,109 @@ function startSub(what, amt, date){
    .then(function(){ busy = false; btn.disabled = false; syncRepeat(); });
 }
 
+/* ---------- editing a line already on the ledger ----------
+
+   Everybody was deleting a line and typing it again to fix a typo in the
+   amount, which loses the receipt and the logged-at stamp along with the
+   mistake. This opens the same drawer over the line instead.
+
+   What it deliberately cannot change is whether the line has been paid
+   back: that is a fact about the money rather than a detail of the
+   description, and it has its own button two columns to the left. */
+var editing = null, keptShot = "", dropShot = false;
+
+function openEdit(id){
+  var r = byId(rows, id);
+  if (!r) { toast("That line is no longer on the ledger.", true); return; }
+
+  editing = id;
+  keptShot = ""; dropShot = false;
+
+  /* A photo on the device is the image itself and can be shown; one on the
+     sheet is a Drive link, which is a viewer page rather than an image, so
+     it is carried as a link and only replaced or removed. */
+  if (/^data:/.test(r.receipt || "")) { pendingShot = r.receipt; }
+  else { pendingShot = null; keptShot = String(r.receipt || ""); }
+  document.getElementById("f-file").value = "";
+
+  picked = r.who;
+  Array.prototype.forEach.call(whoBox.children, function(c){
+    c.setAttribute("aria-pressed", String(c.textContent === r.who));
+  });
+  sharedWith = {};
+  String(r.shared || "").split(",").map(function(n){ return n.trim(); })
+    .forEach(function(n){ if (SHARERS.indexOf(n) > -1) sharedWith[n] = true; });
+  renderSplit();
+
+  document.getElementById("f-what").value = r.what || "";
+  document.getElementById("f-cat").value = cat(r.category).id;
+  document.getElementById("f-amt").value = (Number(r.amount) || 0).toFixed(2);
+  document.getElementById("f-note").value = r.note || "";
+  var d = document.getElementById("f-date");
+  /* the date ceiling is today, and an older line is older than today */
+  if (r.date && r.date < d.max) d.max = r.date;
+  d.value = r.date || today();
+
+  repeat = false;
+  document.getElementById("f-repeat").hidden = true;
+  document.getElementById("drawer-t").textContent = "Edit a spend";
+  syncRepeat();
+  showPicked();
+  hint("");
+  openDrawer();
+}
+
+function saveEdit(what, amt, date){
+  var btn = document.getElementById("f-submit"), id = editing;
+  btn.disabled = true; busy = true;
+  btn.textContent = (pendingShot && mode === "sheet" && pendingShot !== keptShot) ? "Uploading\u2026" : "Saving\u2026";
+
+  var names = splitNames();
+  var payload = {
+    id: id, who: picked, what: what, category: document.getElementById("f-cat").value,
+    amount: amt, date: date, note: document.getElementById("f-note").value.trim(),
+    shared: names.join(", ")
+  };
+  /* A new photo replaces; an explicit remove clears; neither leaves the
+     receipt where it is, so fixing an amount never drops the proof. */
+  if (pendingShot) {
+    if (mode === "sheet") payload.receiptFile = shotPayload(pendingShot, date);
+    else payload.receipt = pendingShot;
+  } else if (dropShot) {
+    payload.receiptClear = true;
+  }
+
+  api("edit", payload).then(function(){
+    exitEdit();
+    closeDrawer();
+    toast("Line updated \u2014 " + money(amt) + " for " + picked + ".");
+  })["catch"](function(e){ hint("That didn't save \u2014 " + fail(e) + ".", true); })
+   .then(function(){
+     btn.disabled = false; busy = false;
+     btn.textContent = editing ? "Save changes" : "Add to ledger";
+   });
+}
+
+/* Back to being the log-a-spend drawer. Called on every close, so an edit
+   abandoned with the X cannot leave the next new line prefilled. */
+function exitEdit(){
+  if (!editing) return;
+  editing = null; keptShot = ""; dropShot = false;
+  pendingShot = null;
+  document.getElementById("f-file").value = "";
+  document.getElementById("f-repeat").hidden = false;
+  document.getElementById("drawer-t").textContent = "Log a spend";
+  document.getElementById("f-what").value = "";
+  document.getElementById("f-amt").value = "";
+  document.getElementById("f-note").value = "";
+  document.getElementById("f-date").max = today();
+  resetSplit();
+  refreshDate();
+  showPicked();
+  syncRepeat();
+  hint("");
+}
+
 /* ---------- two-step confirms, no modals ---------- */
 function arm(key, btn, word, run){
   if (armed[key]) { clearTimeout(armed[key]); delete armed[key]; run(); return; }
@@ -2443,6 +2560,8 @@ document.addEventListener("click", function(ev){
     api("update", {id:id, status: act === "pay" ? "reimbursed" : "pending"})
       ["catch"](function(e){ toast(fail(e), true); btn.disabled = false; })
       .then(function(){ busy = false; });
+  } else if (act === "edit") {
+    openEdit(id);
   } else if (act === "del") {
     arm("d" + id, btn, "Delete?", function(){
       busy = true;
@@ -2558,7 +2677,35 @@ function showPicked(){
   var box = document.getElementById("f-picked");
   box.innerHTML = "";
   if (!pendingShot) {
+    /* A receipt already on the line, held on the sheet as a Drive link. It
+       cannot be shown here — the link is a viewer page, not an image — so
+       it is offered as something to open, replace or take off. */
+    if (editing && keptShot && !dropShot) {
+      var open = document.createElement("a");
+      open.className = "mini"; open.href = keptShot;
+      open.target = "_blank"; open.rel = "noopener noreferrer";
+      open.textContent = "View receipt";
+      var off = document.createElement("button");
+      off.type = "button"; off.className = "mini danger"; off.textContent = "Remove";
+      off.addEventListener("click", function(){ dropShot = true; showPicked(); });
+      box.appendChild(open); box.appendChild(off);
+      document.getElementById("f-pick").lastChild.nodeValue = "Replace";
+      document.getElementById("f-drop").textContent =
+        "A receipt is already on this line. Replacing it uploads a new photo over the old link.";
+      return;
+    }
     document.getElementById("f-pick").lastChild.nodeValue = "Add a photo";
+    if (editing && dropShot) {
+      document.getElementById("f-drop").textContent =
+        "The receipt comes off this line when you save.";
+      return;
+    }
+    if (editing) {
+      document.getElementById("f-drop").textContent = mode === "sheet"
+        ? "No receipt on this line yet — add one and it is saved to Drive with the rest."
+        : "No receipt on this line yet — add one and it is stored on this device.";
+      return;
+    }
     applyModeUi();
     return;
   }
@@ -2575,7 +2722,9 @@ function showPicked(){
   });
   box.appendChild(img); box.appendChild(size); box.appendChild(drop);
   document.getElementById("f-pick").lastChild.nodeValue = "Replace";
-  document.getElementById("f-drop").textContent = "Attached to the next line you add.";
+  document.getElementById("f-drop").textContent = editing
+    ? "Saved onto this line when you save the changes."
+    : "Attached to the next line you add.";
 }
 
 document.getElementById("f-pick").addEventListener("click", function(){
@@ -3852,6 +4001,7 @@ function ledgerRow(r, hideWho){
       (done
         ? '<button class="mini" data-act="unpay" data-id="' + esc(r.id) + '">Undo</button>'
         : '<button class="mini" data-act="pay" data-id="' + esc(r.id) + '">Mark paid</button>') +
+      '<button class="mini" data-act="edit" data-id="' + esc(r.id) + '">Edit</button>' +
       '<button class="mini danger" data-act="del" data-id="' + esc(r.id) + '">Delete</button>' +
     "</div></td></tr>";
 }
@@ -4130,12 +4280,13 @@ function openDrawer(){
   setTimeout(function(){ $("f-what").focus(); }, 180);
 }
 function closeDrawer(){
+  exitEdit();
   $("scrim").classList.remove("on"); $("drawer").classList.remove("on");
   $("drawer").setAttribute("aria-hidden", "true");
   setTimeout(function(){ $("scrim").hidden = true; }, 200);
 }
-$("btn-new").addEventListener("click", function(){ setRepeat(false); openDrawer(); });
-$("subs-new").addEventListener("click", function(){ setRepeat(true); openDrawer(); });
+$("btn-new").addEventListener("click", function(){ exitEdit(); setRepeat(false); openDrawer(); });
+$("subs-new").addEventListener("click", function(){ exitEdit(); setRepeat(true); openDrawer(); });
 $("drawer-x").addEventListener("click", closeDrawer);
 $("scrim").addEventListener("click", closeDrawer);
 
@@ -4950,7 +5101,7 @@ document.addEventListener("keydown", function(ev){
     var t = ev.target, typing = t && (t.tagName === "INPUT" || t.tagName === "SELECT" ||
       t.tagName === "TEXTAREA" || t.isContentEditable);
     if (!typing && (ev.key === "n" || ev.key === "N") && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
-      ev.preventDefault(); setRepeat(false); openDrawer();
+      ev.preventDefault(); exitEdit(); setRepeat(false); openDrawer();
     }
     return;
   }

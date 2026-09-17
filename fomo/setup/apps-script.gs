@@ -113,6 +113,7 @@ function doGet() {
     visitHours: typeof visitAvailability === 'function',
     campus: typeof campusApi === 'function',
     posts: typeof postsApi === 'function',
+    editline: /'edit'/.test(String(invoiceApi)),
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
     subs: typeof subsRoll === 'function',
@@ -279,6 +280,57 @@ function invoiceApi(body) {
     var paid = String(body.status) === 'reimbursed';
     sh.getRange(hit, statusCol).setValue(paid ? 'reimbursed' : 'pending');
     sh.getRange(hit, paidCol).setValue(paid ? invoiceStamp() : '');
+
+  } else if (action === 'edit') {
+    /* Changing a line somebody already logged, rather than deleting it and
+       typing it again — which is what everyone was doing, and which loses
+       the receipt and the logged-at stamp along with the mistake.
+
+       Its own action rather than a wider 'update' so that the pay/unpay
+       path above keeps working exactly as it did: that one is sent by a
+       button that knows nothing about the rest of the row, and a payload
+       missing every other field must never be read as clearing them.
+
+       The line is re-validated exactly as hard as a new one. What it may
+       NOT change is id, logged, status or reimbursed: whether a line has
+       been paid back is a fact about the money, not a detail of the
+       description, and it has its own button. */
+    var edit = invoiceFind(sh, body.id);
+    if (!edit) return reply(false, 'that line is no longer on the ledger');
+
+    var was = invoiceRead(sh).filter(function (r) { return String(r.id) === String(body.id); })[0];
+    var keep = was ? String(was.receipt || '') : '';
+
+    /* A new photo replaces whatever was there; an explicit clear empties
+       it; sending neither leaves the receipt alone, so editing the amount
+       on a line does not quietly drop its proof. */
+    if (body.receiptFile && body.receiptFile.data) {
+      try {
+        keep = saveReceipt(body.receiptFile);
+      } catch (shotErr) {
+        return reply(false, 'the photo could not be saved: ' +
+          (shotErr && shotErr.message ? shotErr.message : String(shotErr)));
+      }
+    } else if (body.receiptClear) {
+      keep = '';
+    } else if (body.receipt && /^https?:\/\//i.test(String(body.receipt))) {
+      keep = String(body.receipt).slice(0, 500);
+    }
+
+    var next = invoiceClean(body);
+    if (next.error) return reply(false, next.error);
+
+    var setCol = function (name, value) {
+      sh.getRange(edit, INVOICE_COLS.indexOf(name) + 1).setValue(value);
+    };
+    setCol('date', next.row.date);
+    setCol('who', next.row.who);
+    setCol('what', next.row.what);
+    setCol('category', next.row.category);
+    setCol('amount', next.row.amount);
+    setCol('note', next.row.note);
+    setCol('shared', next.row.shared);
+    setCol('receipt', keep);
 
   } else if (action === 'delete') {
     var gone = invoiceFind(sh, body.id);
