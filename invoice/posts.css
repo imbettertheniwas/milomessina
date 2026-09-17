@@ -3,6 +3,13 @@
    themed off the console's own tokens, so it follows light, dark and fomo
    without knowing which one is on. */
 
+/* ---------- the standing rule ---------- */
+.po-rule{display:flex;align-items:center;gap:9px;margin:0;padding:10px 13px;
+  border-radius:var(--r-m);border:1px solid var(--violet-soft);
+  background:var(--violet-soft);color:var(--text);font-size:12.5px;line-height:1.4}
+.po-rule svg{width:15px;height:15px;flex:none;color:var(--violet-hi)}
+.po-rule b{font-weight:600}
+
 /* ---------- writing one ---------- */
 .po-write .panel-b{display:flex;flex-direction:column;gap:10px}
 .po-who{display:flex;flex-wrap:wrap;gap:6px}

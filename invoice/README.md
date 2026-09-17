@@ -571,6 +571,10 @@ campuses talked to, the thing that took three days and produced no code. A
 few lines a week from each of them, so Arya can scroll one page instead of
 asking four people what they have been up to.
 
+The cadence is stated at the top of the page — **interns upload work on
+Sundays** — so the expectation is on screen where the writing happens
+rather than only in somebody's memory of a meeting.
+
 Writing one is the top of the page rather than a button: pick your name,
 type, press **Post the week** (or ⌘/Ctrl + Enter). Your name is remembered
 on the device afterwards.
