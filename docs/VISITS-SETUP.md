@@ -7,8 +7,9 @@
 - Copy form link and Open form at the top of the view.
 - Pending / confirmed / completed / declined filters, search, guest details and
   internal notes. Saving a status does not send mail or reserve calendar time.
-- Separate, server-protected visit storage. Existing ledger, attendance, campus
-  forms and their Apps Script deployment are unchanged.
+- Server-protected visit storage in a new visit_requests tab of the existing
+  CRM spreadsheet, behind its own deployment and secret. The ledger,
+  attendance, campus forms and their Apps Script deployment are unchanged.
 - No existing visit records are imported or moved.
 
 Nothing is connected to production in this branch. With missing settings the API
@@ -34,26 +35,57 @@ you need a clean local ledger. No test records are bundled.
 The team session uses an HttpOnly, Secure, SameSite=Strict cookie. Use localhost
 (not a LAN address) for the browser preview; production requires HTTPS.
 
-## Separate test storage first (project owner)
+## Storage setup (project owner)
 
-1. Create a NEW private Google spreadsheet specifically for visit requests.
-   Do not put guest records in the current ledger spreadsheet.
-2. From that sheet, open Extensions > Apps Script. Use the entire
-   server/visits/sheet.gs as the script.
-3. In Script Properties set VISITS_SERVICE_SECRET to a unique random secret of
-   at least 32 characters. Keep it out of source control and browser code.
-4. Deploy this standalone script as a web app, executing as the spreadsheet
+Visit records live in a `visit_requests` tab inside the EXISTING fomo CRM
+spreadsheet, alongside the ledger, subs, days and hours tabs. The script below
+is still its own deployment with its own secret; only the spreadsheet is shared.
+
+1. Open the fomo CRM spreadsheet and copy its id out of the URL: the long
+   string between `/d/` and `/edit`.
+2. Go to script.google.com and create a NEW standalone script. Do NOT use
+   Extensions > Apps Script on the spreadsheet: that opens the existing form
+   receiver, and a spreadsheet can only hold one bound script.
+3. Use the entire server/visits/sheet.gs as that script.
+4. In Script Properties set:
+   - `VISITS_SHEET_ID` to the spreadsheet id from step 1.
+   - `VISITS_SERVICE_SECRET` to a unique random secret of at least 32
+     characters. Keep it out of source control and browser code.
+5. Deploy this standalone script as a web app, executing as the spreadsheet
    owner, with invocation allowed for Anyone. The code itself requires the
    server-only secret on every operation; GET exposes no data.
    This deployment choice should be reviewed by the project owner.
-5. Copy the resulting https://script.google.com/macros/s/.../exec URL.
-   The script creates only its own visit_requests tab on first use.
-6. Restrict spreadsheet sharing to the team members who need the records.
+6. Copy the resulting https://script.google.com/macros/s/.../exec URL.
+   The script creates only the visit_requests tab on first use and reads and
+   writes only that tab. The ledger, subs, days, hours and form tabs are never
+   opened by it.
+7. Grant the script's Google account access to the spreadsheet if it is not
+   already the owner.
 
-Do NOT paste this script into the current fomo receiver. No changes to that
-deployment are needed. If the organization forbids anonymous Apps Script
-invocation even with application authentication, use a different private store
-behind createSheetStore instead.
+Do NOT paste this script into the existing fomo receiver, and do not redeploy
+that receiver. It needs no changes.
+
+### What sharing the spreadsheet means
+
+- Everyone who can open the CRM spreadsheet can read guest names, emails,
+  social links and notes directly, without the visit-access password. The
+  password gates the console, not the sheet. Keep spreadsheet sharing to the
+  team members who should see guest details.
+- The CRM form receiver writes a row, and will add a column, to whatever tab
+  name a request names. A stray post aimed at `visit_requests` therefore lands
+  in the same tab. It cannot forge a visit: the connector ignores any row whose
+  id is not a visit UUID, and tolerates extra columns appended to the right, so
+  neither the console list nor the rate limit is affected. Such a row is
+  cosmetic clutter to delete by hand.
+- Deleting or reordering the first thirteen columns of `visit_requests` by hand
+  will disable the feature until they are restored. Adding columns after them
+  is safe.
+
+If you would rather keep guest records out of the CRM spreadsheet entirely,
+create a separate spreadsheet and put its id in `VISITS_SHEET_ID` instead. No
+code changes are needed either way. If the organization forbids anonymous Apps
+Script invocation even with application authentication, use a different private
+store behind createSheetStore instead.
 
 ## Vercel configuration (project owner)
 
@@ -62,13 +94,14 @@ Set the following server environment variables for the intended deployment:
 | Variable | Value |
 | --- | --- |
 | VISITS_PUBLIC_ORIGIN | Exact form and console origin, e.g. https://milomessina.com |
-| VISITS_STORAGE_URL | New Apps Script /exec URL |
-| VISITS_SERVICE_SECRET | Same random secret as the new script property |
+| VISITS_STORAGE_URL | The visits standalone script's /exec URL |
+| VISITS_SERVICE_SECRET | Same random secret as that script's VISITS_SERVICE_SECRET property |
 | VISITS_SESSION_SECRET | A DIFFERENT random secret, at least 32 characters |
 | VISITS_ADMIN_PASSWORD | A separate strong team visit-access password, at least 16 characters |
 
-Use a separate spreadsheet, secrets and password for Preview. Set
-VISITS_PUBLIC_ORIGIN to that preview deployment's exact origin. Production
+Use a separate spreadsheet (a scratch copy, via VISITS_SHEET_ID), secrets and
+password for Preview, so preview traffic never writes into the CRM spreadsheet.
+Set VISITS_PUBLIC_ORIGIN to that preview deployment's exact origin. Production
 credentials should not be attached to unreviewed preview branches. Until these
 are set, the view and public form display the disconnected error.
 

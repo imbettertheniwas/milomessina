@@ -1,6 +1,15 @@
-// Standalone Apps Script for a NEW, private visit-request spreadsheet.
-// Set Script Properties: VISITS_SERVICE_SECRET (32+ random characters).
-// Bind this script to the NEW spreadsheet. Do not replace the existing CRM script.
+// Standalone Apps Script for the visit_requests tab.
+// Script Properties: VISITS_SERVICE_SECRET (32+ random characters), and
+// VISITS_SHEET_ID to point at an existing spreadsheet (the fomo CRM sheet).
+// Leave VISITS_SHEET_ID blank only if this script is bound to its own sheet.
+// This is a SEPARATE deployment. Do not paste it into the CRM form receiver.
+var VISIT_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function visitBook() {
+  var id=PropertiesService.getScriptProperties().getProperty('VISITS_SHEET_ID');
+  var book=id?SpreadsheetApp.openById(id):SpreadsheetApp.getActiveSpreadsheet();
+  if(!book)throw new Error('no spreadsheet - set VISITS_SHEET_ID');
+  return book;
+}
 var VISIT_COLUMNS=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
 function visitReply(ok,data,code) {
   return ContentService.createTextOutput(JSON.stringify({ok:ok,data:data||null,code:code||null})).setMimeType(ContentService.MimeType.JSON);
@@ -27,22 +36,22 @@ function doPost(e) {
       cache.put(cacheKey,JSON.stringify(bucket),Math.max(1,Math.ceil((bucket.until-now)/1000)));
       return visitReply(true,{allowed:true});
     }
-    var sheet=SpreadsheetApp.getActiveSpreadsheet().getSheetByName('visit_requests');
+    var book=visitBook(),sheet=book.getSheetByName('visit_requests');
     if(!sheet){
-      sheet=SpreadsheetApp.getActiveSpreadsheet().insertSheet('visit_requests');
+      sheet=book.insertSheet('visit_requests');
       sheet.appendRow(VISIT_COLUMNS);
       sheet.setFrozenRows(1);
     }
     var grid=sheet.getDataRange().getValues();
-    if(JSON.stringify(grid[0])!==JSON.stringify(VISIT_COLUMNS))return visitReply(false,null,'SCHEMA');
-    var requests=grid.slice(1).filter(function(row){return row[0];}).map(function(row){
+    if(JSON.stringify(grid[0].slice(0,VISIT_COLUMNS.length))!==JSON.stringify(VISIT_COLUMNS))return visitReply(false,null,'SCHEMA');
+    var requests=grid.slice(1).map(function(row){
       var result={};VISIT_COLUMNS.forEach(function(key,n){
         var value=row[n];
         // Every stored string has one invisible text marker; decode exactly one.
         result[key]=typeof value==='string' && value.charCodeAt(0)===8203?value.slice(1):value;
       });
       result.version=Number(result.version);return result;
-    });
+    }).filter(function(r){return VISIT_ID.test(String(r.id));});
     if(body.action==='list')return visitReply(true,{requests:requests.reverse()});
     if(body.action==='submit'){
       var r=body.request;
