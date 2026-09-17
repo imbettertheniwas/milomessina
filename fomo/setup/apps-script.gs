@@ -73,6 +73,11 @@ function doPost(e) {
        ledger it answers with both tables rather than a bare confirmation. */
     if (body._api === 'campus') return campusApi(body);
 
+    /* What each of them says they did that week, posted from /internal.
+       Its own namespace rather than a fourth table on the ledger's answer:
+       the feed only grows, and the ledger is read on every page open. */
+    if (body._api === 'posts') return postsApi(body);
+
     if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
 
     /* honeypot. A bot filled a field no human can see: tell it everything
@@ -107,6 +112,7 @@ function doGet() {
     visits: typeof visitsApi === 'function',
     visitHours: typeof visitAvailability === 'function',
     campus: typeof campusApi === 'function',
+    posts: typeof postsApi === 'function',
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
     subs: typeof subsRoll === 'function',
@@ -1381,6 +1387,149 @@ function campusHire(b) {
   applyWrite(hit, 'status', 'hired');
   applyWrite(hit, 'decided', campusStamp());
   return null;
+}
+
+/* ══════════ the week notes ══════════
+
+   An internal feed: one short note a week from each of them saying what
+   they actually worked on, with the links and photos to show it. It is the
+   one tab here that is writing rather than bookkeeping, so it is kept
+   deliberately thin — a body, some links, some photos, and who and when.
+
+   Photos go to Drive the way receipts do and the cell holds the link, for
+   the same reason: a sheet cell tops out at 50,000 characters and a photo
+   is past that even shrunk. Links and photos are several per post, so each
+   column holds them newline-separated rather than one column per slot. */
+var POST_TAB = 'posts';
+var POST_COLS = ['id', 'posted', 'who', 'week', 'body', 'links', 'photos'];
+var POST_MAX_BODY = 2000;
+var POST_MAX_PHOTOS = 4;
+var POST_MAX_LINKS = 8;
+
+function postsApi(body) {
+  if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+
+  var action = String(body.action || 'list'), err = null;
+  if (action === 'add')         err = postAdd(body);
+  else if (action === 'delete') err = postDelete(body);
+  else if (action !== 'list')   return reply(false, 'unknown action');
+  if (err) return reply(false, err);
+
+  return reply(true, null, { posts: postRead(postSheet()).map(postPublic) });
+}
+
+function postSheet() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID)
+                           : SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('no spreadsheet \u2014 set SHEET_ID, or run this script from inside the sheet');
+
+  var sh = ss.getSheetByName(POST_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(POST_TAB);
+    sh.getRange(1, 1, sh.getMaxRows(), POST_COLS.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, POST_COLS.length).setValues([POST_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+/* Monday of the week a note belongs to. The page sends one, but a date
+   from a browser is a date from anywhere, so it is recomputed here and the
+   sent one is only trusted as far as being a real yyyy-mm-dd. */
+function postWeek(v) {
+  var s = String(v == null ? '' : v).slice(0, 10);
+  var d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : new Date();
+  if (isNaN(d.getTime())) d = new Date();
+  var back = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - back);
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
+/* Only http(s), and only as many as the feed will show. Anything else is
+   dropped rather than refused \u2014 a mistyped link should not cost somebody
+   the note they just wrote. */
+function postLinks(list) {
+  var out = [];
+  (list && list.length ? list : []).forEach(function (u) {
+    var s = String(u == null ? '' : u).trim();
+    if (out.length >= POST_MAX_LINKS) return;
+    if (/^https?:\/\/[^\s]+$/i.test(s) && s.length <= 500) out.push(s);
+  });
+  return out;
+}
+
+function postAdd(b) {
+  var who = campusSafe(String(b.who == null ? '' : b.who).trim()).slice(0, 60);
+  if (!who) return 'say who is posting';
+
+  var text = String(b.body == null ? '' : b.body).replace(/\r\n/g, '\n').trim();
+  if (text.length > POST_MAX_BODY) text = text.slice(0, POST_MAX_BODY);
+
+  var photos = [], files = (b.photos && b.photos.length) ? b.photos : [];
+  for (var i = 0; i < files.length && photos.length < POST_MAX_PHOTOS; i++) {
+    if (!files[i] || !files[i].data) continue;
+    try {
+      /* Shared by link, like a receipt: a feed four people read is no use
+         if only the poster can open the screenshot. */
+      photos.push(saveReceipt(files[i]));
+    } catch (err) {
+      return 'a photo could not be saved: ' + (err && err.message ? err.message : String(err));
+    }
+  }
+
+  var links = postLinks(b.links);
+  if (!text && !photos.length && !links.length) return 'write something, or add a photo or a link';
+
+  postSheet().appendRow([
+    Utilities.getUuid().slice(0, 8),
+    campusStamp(),
+    who,
+    postWeek(b.week),
+    campusSafe(text),
+    links.join('\n'),
+    photos.join('\n')
+  ]);
+  return null;
+}
+
+function postDelete(b) {
+  var id = String(b.id == null ? '' : b.id);
+  if (!id) return 'no post id';
+  var sh = postSheet(), all = postRead(sh);
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].id === id) { sh.deleteRow(all[i]._row); return null; }
+  }
+  return 'that post is already gone';
+}
+
+function postRead(sh) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, POST_COLS.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    if (!String(vals[i][0])) continue;
+    var o = { _row: i + 2 };
+    for (var j = 0; j < POST_COLS.length; j++) o[POST_COLS[j]] = vals[i][j];
+    o.id = String(o.id);
+    o.posted = campusWhen(o.posted);
+    o.week = campusWhen(o.week).slice(0, 10);
+    out.push(o);
+  }
+  return out;
+}
+
+function postSplit(v) {
+  return String(v == null ? '' : v).split('\n').map(function (s) {
+    return s.trim();
+  }).filter(function (s) { return !!s; });
+}
+
+function postPublic(p) {
+  return {
+    id: p.id, posted: p.posted, who: String(p.who), week: p.week,
+    body: String(p.body), links: postSplit(p.links), photos: postSplit(p.photos)
+  };
 }
 
 function reply(ok, error, extra) {

@@ -713,6 +713,7 @@ td.date.run{color:var(--good)}
 </style>
 <link rel="stylesheet" href="/invoice/visits.css">
 <link rel="stylesheet" href="/invoice/campus.css">
+<link rel="stylesheet" href="/invoice/posts.css">
 </head>
 <body>
 <div id="gate">
@@ -1027,6 +1028,50 @@ td.date.run{color:var(--good)}
       </section>
 
       <!-- ────────── attendance ────────── -->
+      <!-- ────────── the week ──────────
+
+           Everything in here is drawn by posts.js, ids and all; this is
+           the shape it fills. The composer sits at the top rather than
+           behind a button because the whole point is that writing a note
+           should be the easiest thing on the page. -->
+      <section class="view" data-view="posts">
+        <div class="vtabs" id="po-tabs"></div>
+        <div class="toolbar">
+          <span class="hint" id="po-msg">Reading the week notes…</span>
+          <span class="push">
+            <button class="mini ghost" id="po-refresh">Refresh</button>
+          </span>
+        </div>
+        <div class="scroller pad" style="display:grid;gap:12px;align-content:start">
+
+          <div class="panel po-write">
+            <div class="panel-h">
+              <h2>What did you work on?</h2>
+              <span class="note" id="po-week">this week</span>
+            </div>
+            <div class="panel-b">
+              <div class="po-who" id="po-who" role="group" aria-label="Who is posting"></div>
+              <textarea id="po-body" rows="3" maxlength="2000"
+                placeholder="Shipped the visit form, fixed the times panel, started on the feed… Paste links straight in."></textarea>
+              <div class="po-shots" id="po-shots" hidden></div>
+              <div class="po-write-foot">
+                <label class="mini" id="po-pick-l">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.8" y="4.4" width="14.4" height="11.2" rx="2"/><circle cx="7.2" cy="8.4" r="1.3"/><path d="m3.4 13.4 3.8-3.2 3.3 2.8 2.6-2 3.5 3"/></svg>
+                  Add a photo
+                  <input type="file" id="po-pick" accept="image/*" multiple hidden>
+                </label>
+                <span class="hint" id="po-count"></span>
+                <span class="push"></span>
+                <button class="btn btn-p" id="po-send" type="button" disabled>Post the week</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="po-feed"></div>
+          <div class="empty" id="po-empty" hidden></div>
+        </div>
+      </section>
+
       <section class="view" data-view="attendance">
         <div class="vtabs" id="at-tabs">
           <button class="vtab on" data-at="board">The board</button>
@@ -1454,12 +1499,15 @@ function toast(msg, bad){
   clearTimeout(toast._t); toast._t = setTimeout(function(){ t.className = ""; }, 3200);
 }
 
-/* What campus.js is handed. The applicants and the campus roster are two
-   more tabs of this same sheet, behind this same deployment, and they are
-   its own file rather than another thousand lines down here — so the URL
-   and the passcode are passed across once here instead of being written
-   out a second time over there. */
-window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast};
+/* What campus.js and posts.js are handed. The applicants, the campus
+   roster and the week notes are more tabs of this same sheet, behind this
+   same deployment, and they are their own files rather than another
+   thousand lines down here — so the URL and the passcode are passed
+   across once here instead of being written out again over there. The
+   roster, the colour each of them is drawn in, and the photo shrinker go
+   with them for the same reason: one copy, defined where it is used most. */
+window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast,
+  people:PAYERS, tone:tone, shrink:shrinkShot};
 
 /* ---------- where it saves ----------
 
@@ -3880,7 +3928,8 @@ var ICO = {
   chapters:  '<path d="M1.8 4.1 5.9 2.4v9.5L1.8 13.6V4.1Z"/><path d="M5.9 2.4 10.1 4.1v9.5L5.9 11.9V2.4Z"/><path d="M10.1 4.1 14.2 2.4v9.5l-4.1 1.7V4.1Z"/>',
   applicants:'<rect x="4.6" y="2.8" width="10.8" height="14.4" rx="2.2"/><path d="M7.4 7h5.2M7.4 10h5.2M7.4 13h3"/>',
   campus:    '<circle cx="7.2" cy="7.4" r="2.4"/><path d="M2.9 15.6a4.4 4.4 0 0 1 8.6 0"/><circle cx="14" cy="8.6" r="1.9"/><path d="M12.6 12.6a3.5 3.5 0 0 1 4.5 3"/>',
-  person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>'
+  person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>',
+  posts:     '<path d="M16.6 12.4a2 2 0 0 1-2 2H7.3L3.4 17.2V5.6a2 2 0 0 1 2-2h9.2a2 2 0 0 1 2 2v6.8Z"/><path d="M6.8 7.6h6.4M6.8 10.6h4"/>'
 };
 function ico(k){
   return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" ' +
@@ -3893,6 +3942,7 @@ var VIEWS = {
   settle:    {label:"Reimbursements", sub:"who is still owed, and settling up"},
   subs:      {label:"On repeat",      sub:"the spends that write themselves each month"},
   visits:    {label:"Visit requests", sub:"invitations to fomo HQ"},
+  posts:     {label:"The week",       sub:"what each of them has been working on, in their own words"},
   attendance:{label:"Attendance",     sub:"the days each of them was in"},
   commits:   {label:"Commits",        sub:"public pushes, the last 13 weeks"},
   reporting: {label:"Breakdown",      sub:"where the money went, and who it went on"},
@@ -3926,7 +3976,7 @@ var NAV = [
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
   {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
-  {id:"team",   label:"The team",   items:[["attendance","Attendance",1],["commits","Commits",1]], roster:true}
+  {id:"team",   label:"The team",   items:[["posts","The week",1],["attendance","Attendance",1],["commits","Commits",1]], roster:true}
 ];
 
 /* Which groups are folded shut, remembered per device. Only the shut ones
@@ -4046,7 +4096,7 @@ function setView(id, who){
   markNav();
   /* Nothing on these three is a spend, so the one button that only ever
      logs one has no business sitting over them. */
-  $("btn-new").style.display = ["visits","applicants","campus"].indexOf(view) > -1 ? "none" : "";
+  $("btn-new").style.display = ["visits","applicants","campus","posts"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   $("side").classList.remove("on");
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : "");
@@ -5072,5 +5122,6 @@ else document.getElementById("gate-input").focus();
 </script>
 <script type="module" src="/invoice/visits.js"></script>
 <script type="module" src="/invoice/campus.js"></script>
+<script type="module" src="/invoice/posts.js"></script>
 </body>
 </html>

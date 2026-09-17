@@ -26,6 +26,7 @@ anything.
 | **Ledger** | Every line, with sub-tabs for *all / still owed / reimbursed*, filters for who, category and period, search, and CSV |
 | **Reimbursements** | A settle-up card per person, the who-fronted-it chart, and the lines that have been waiting longest |
 | **On repeat** | The monthly rules, what they cost a month and a year, and when the next one lands |
+| **The week** | The feed each of them posts their week into — a few lines on what they worked on, with the links and screenshots, newest week first |
 | **Attendance** | The board you press your name on, the backfill, days per week, and the full record |
 | **Commits** | The contribution map, together and one each |
 | **Breakdown** | Where the money went by category, and who it was spent on |
@@ -49,8 +50,10 @@ tell the two apart without reading the toast.
 spends. Picking a spend puts it in the ledger's search box rather than
 pretending to open a record that doesn't exist.
 
-The light and dark themes are both real, and the moon in the corner of the
-rail picks one; left alone it follows the system.
+There are three themes, and the button in the corner of the rail cycles
+them: dark, light, and **fomo** — the bootcamp's own colours off
+fomo.family, down to the commit map leaving GitHub's green for the brand
+indigo. Left alone it follows the system's light or dark.
 
 ### What the numbers on each page are counted from
 
@@ -521,6 +524,54 @@ anything out of date corrects itself. Only an endpoint that cannot be reached at
 all takes the status light down and puts up the connection banner — the two used
 to look identical, which made one refused press read as the whole board being
 broken.
+
+## The week
+
+**The week** in the rail, under *The team*. Commits say what was pushed;
+this is the half a commit log cannot tell you — the calls taken, the
+campuses talked to, the thing that took three days and produced no code. A
+few lines a week from each of them, so Arya can scroll one page instead of
+asking four people what they have been up to.
+
+Writing one is the top of the page rather than a button: pick your name,
+type, press **Post the week** (or ⌘/Ctrl + Enter). Your name is remembered
+on the device afterwards.
+
+- **Links** are not a separate field. Paste them into what you are writing
+  and they come out as links in the feed, stripped of their `https://www.`
+  so a note stays readable.
+- **Photos** — up to four a note. They are shrunk in the page the way a
+  receipt is, then saved to the same shared Drive folder receipts go to, and
+  the sheet holds the link. They appear as tiles rather than full-width
+  photos, because a note with four screenshots should still be one note
+  long. A Drive link is a viewer page, not an image file, which is the other
+  reason they are tiles and not thumbnails.
+- **Notes are grouped by the week they were posted into** — *This week*,
+  *Last week*, then the date — newest first, so scrolling the feed is
+  scrolling back through the weeks.
+- The tabs across the top filter to one person. The count in the rail is
+  how many have posted *this* week, out of five — the useful question on a
+  Friday.
+- Anybody in the console can delete any note, the same way anybody can
+  delete any line of the ledger. The × is on hover.
+
+The `posts` tab on the sheet:
+
+| Column | Holds |
+| --- | --- |
+| `id` | 8 characters, generated server-side |
+| `posted` | when it was written |
+| `who` | whose note it is |
+| `week` | the Monday of the week it was posted into, recomputed server-side |
+| `body` | the note, up to 2,000 characters |
+| `links` | the http(s) links found in the body, one per line |
+| `photos` | the Drive links, one per line |
+
+> **This one needs the Apps Script redeployed.** The feed is new actions on
+> the same deployment as everything else, so until `fomo/setup/apps-script.gs`
+> is pasted in again and deployed as a **new version**, the view says so in
+> as many words rather than failing quietly. Deploy → Manage deployments →
+> the pencil → New version. `doGet` reports `posts: true` once it has taken.
 
 ## What everyone's pushing
 
