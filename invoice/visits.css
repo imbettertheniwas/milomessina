@@ -2,7 +2,7 @@
 .vr-toolbar{flex-wrap:wrap;gap:10px}
 .vr-toolbar .push{display:flex;gap:8px;align-items:center}
 .vr-message{font-size:13px;color:var(--muted);min-height:18px;margin:0}
-.vr-error{color:var(--owed,#b84635)}
+.vr-error{color:var(--bad)}
 .vr-panel{padding:22px;border:1px solid var(--line);border-radius:10px;background:var(--card);max-width:480px}
 .vr-panel h2{font-size:19px;margin:0 0 8px}
 .vr-panel p{font-size:13px;line-height:1.6;color:var(--muted)}
@@ -22,6 +22,7 @@
 .vr-pending{color:var(--owed,#af7639)}
 .vr-confirmed{color:var(--violet-hi,#516af6)}
 .vr-completed{color:var(--good,#278163)}
+.vr-declined{color:var(--muted-2)}
 .vr-empty{padding:40px 12px;color:var(--muted);font-size:14px;line-height:1.6}
 .vr-detail{border:1px solid var(--line);border-radius:10px;padding:18px;background:var(--card)}
 .vr-detail header{display:flex;gap:12px;align-items:center;justify-content:space-between}

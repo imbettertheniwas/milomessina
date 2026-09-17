@@ -83,7 +83,7 @@ async function refresh(){
   try{
     const data=await api('list');if(epoch!==requestEpoch)return;state.requests=data.requests;state.loaded=true;unlock();render();
     message('Requests are up to date.');
-  }catch(error){message(error.message,true);}
+  }catch(error){message(error.message,error.status!==401);}
   finally{state.busy=false;$('vr-refresh').disabled=false;}
 }
 
