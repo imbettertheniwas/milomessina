@@ -17,7 +17,7 @@
    validates, then hands the applicant their answers and tells
    them plainly that submissions are not connected yet.
    ───────────────────────────────────────────────────────────── */
-const ENDPOINT = 'https://script.google.com/macros/s/AKfycbysuC8mMMqFYZ3YRcuwp9Vt6dXE7S8P2n73EpWS8CXyBuCDIC8Dga1TwASFvMDoDq-UIQ/exec';
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 const FORM_KEY = '';
 
 /* starfield + aurora, same as the campus page */
