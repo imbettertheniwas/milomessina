@@ -109,6 +109,40 @@
   --shadow:0 18px 44px -26px rgba(20,18,50,.3);
 }
 
+/* Night and day are the two anyone expects. This is the third: the rail
+   and the pane repainted in fomo's own colours — the indigo ground and
+   the periwinkle accent off fomo.family — so the ops console can be made
+   to look like the thing it is keeping the books for. */
+:root[data-theme="fomo"]{
+  color-scheme:dark;
+  --ink:#060510; --surface:#0A0917; --surface-2:#12111A; --raise:#1D1B2C;
+  --line:#1E1C2C; --line-2:#2C2940;
+  --text:#F7F7F7; --muted:#9899A3; --muted-2:#6B6F7B;
+  --violet:#516AF6; --violet-hi:#A2B0FF; --violet-soft:rgba(81,106,246,.2);
+  --good:#4ADE80; --good-soft:rgba(74,222,128,.14);
+  --owed:#FBA94C; --owed-soft:rgba(251,169,76,.15);
+  --bad:#F87171;
+  --s1:#7B8CFF; --s2:#FBA94C; --s3:#34D399; --s4:#FBBF24; --s5:#F472B6; --s6:#A78BFA; --s7:#8E93B5;
+  --t-blue-bg:#1A2145;   --t-blue-bd:#2A3468;   --t-blue-fg:#C4CDFF;
+  --t-green-bg:#122E28;  --t-green-bd:#1E4A3A;  --t-green-fg:#B1EBC5;
+  --t-amber-bg:#2B2618;  --t-amber-bd:#463D24;  --t-amber-fg:#FDE68A;
+  --t-purple-bg:#221C3F; --t-purple-bd:#362C63; --t-purple-fg:#C2B8F2;
+  --t-red-bg:#331823;    --t-red-bd:#4A2130;    --t-red-fg:#FEBFC6;
+  --t-orange-bg:#2C1F1E;  --t-orange-bd:#442D25; --t-orange-fg:#FED7AA;
+  --t-grey-bg:#171623;   --t-grey-bd:#282738;   --t-grey-fg:#CBD0EB;
+  /* the commit ramp leaves GitHub's green for the brand indigo */
+  --l0:#14131F; --l1:#242A5E; --l2:#3441A2; --l3:#4D5FDE; --l4:#8397FF;
+  --tint-on:#FFFFFF;
+  --caret:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 12 8%27%3E%3Cpath d=%27M1 1.4 6 6.4l5-5%27 fill=%27none%27 stroke=%27%236B6F7B%27 stroke-width=%271.7%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  --shadow:0 20px 50px -24px rgba(6,5,16,.9);
+}
+/* the one flourish: the brand's masthead glow, spilling into the pane */
+:root[data-theme="fomo"] .pane{
+  background:radial-gradient(ellipse 92% 52% at 50% -12%,rgba(81,106,246,.16) 0%,transparent 64%),var(--surface);
+}
+:root[data-theme="fomo"] .side-top .nmz b{color:var(--brand-wordmark,#CBD0EB)}
+:root[data-theme="fomo"] #theme{color:var(--violet-hi)}
+
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -146,6 +180,9 @@ svg{display:block}
 .side-scroll{flex:1;min-height:0;overflow-y:auto;padding:0 8px 10px}
 .nav-sec{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-2);
   padding:15px 8px 6px;font-weight:600}
+/* the menu now opens on a heading rather than on a button, so the first
+   one sits tight to the wordmark instead of hanging off it */
+.nav-sec:first-child{padding-top:4px}
 .nav-i{display:flex;align-items:center;gap:9px;width:100%;padding:6px 8px;border-radius:7px;
   font-size:13px;color:var(--muted);text-align:left;position:relative;transition:background .12s,color .12s}
 .nav-i+.nav-i{margin-top:1px}
@@ -659,7 +696,7 @@ td.date.run{color:var(--good)}
     <nav class="side-scroll" id="nav" aria-label="Sections"></nav>
     <div class="side-foot">
       <span class="who3"><b id="foot-count">—</b><span id="foot-where">this device</span></span>
-      <button class="icon-b" id="theme" type="button" title="Light or dark" aria-label="Switch light or dark">
+      <button class="icon-b" id="theme" type="button" title="Light, dark or fomo" aria-label="Switch the theme">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.4A6.4 6.4 0 0 1 8.6 4a6.6 6.6 0 1 0 7.4 7.4Z"/></svg>
       </button>
       <a class="icon-b" href="/" title="milomessina.com" aria-label="Back to milomessina.com">
@@ -3780,20 +3817,21 @@ var VIEWS = {
 
 var view = "overview", personOf = null;
 
+/* The rail is a menu, so every item sits under a heading that names the
+   kind of thing it is — Overview included, which used to float above the
+   first category on its own and read as a stray button rather than as the
+   first line of a menu. The four of them come last: their pages are the
+   ones you already know how to find, so they belong at the foot of the
+   rail rather than cutting the views in half. */
 function buildNav(){
   var nav = $("nav"), h = "";
+  h += '<div class="nav-sec">Start</div>';
   h += '<button class="nav-i" data-go="overview">' + ico("overview") +
        '<span class="tx">Overview</span></button>';
   h += '<div class="nav-sec">Money</div>';
   [["ledger","Ledger"],["settle","Reimbursements"],["subs","On repeat"]].forEach(function(v){
     h += '<button class="nav-i" data-go="' + v[0] + '">' + ico(v[0] === "subs" ? "subs" : v[0]) +
          '<span class="tx">' + v[1] + '</span><span class="ct" data-ct="' + v[0] + '"></span></button>';
-  });
-  h += '<div class="nav-sec">The team</div>';
-  PAYERS.forEach(function(p){
-    h += '<button class="nav-i" data-go="person" data-who="' + esc(p) + '">' +
-         '<span class="av" aria-hidden="true" style="background:var(' + tone(p) + ')">' + esc(mono(p)) + "</span>" +
-         '<span class="tx">' + esc(p) + '</span><span class="ct" data-ct="p:' + esc(p) + '"></span></button>';
   });
   h += '<div class="nav-sec">Activity</div>';
   [["attendance","Attendance"],["commits","Commits"]].forEach(function(v){
@@ -3814,6 +3852,12 @@ function buildNav(){
        '<span class="tx">Campus team</span><span class="ct" data-ct="campus"></span></button>';
   h += '<button class="nav-i" data-go="chapters">' + ico("chapters") +
        '<span class="tx">Chapters</span></button>';
+  h += '<div class="nav-sec">The team</div>';
+  PAYERS.forEach(function(p){
+    h += '<button class="nav-i" data-go="person" data-who="' + esc(p) + '">' +
+         '<span class="av" aria-hidden="true" style="background:var(' + tone(p) + ')">' + esc(mono(p)) + "</span>" +
+         '<span class="tx">' + esc(p) + '</span><span class="ct" data-ct="p:' + esc(p) + '"></span></button>';
+  });
   nav.innerHTML = h;
 }
 
@@ -3925,17 +3969,51 @@ $("subs-new").addEventListener("click", function(){ setRepeat(true); openDrawer(
 $("drawer-x").addEventListener("click", closeDrawer);
 $("scrim").addEventListener("click", closeDrawer);
 
-/* ══════════ light or dark ══════════ */
+/* ══════════ light, dark or fomo ══════════ */
 (function(){
+  /* One button, three stops. The first two are the ones an operating
+     system hands you; the third is the bootcamp's own paint. */
+  var ORDER = ["dark", "light", "fomo"];
+  var TONE  = {dark:"#111112", light:"#FAFAFB", fomo:"#060510"};
+  var GLYPH = {
+    dark: '<path d="M16 11.4A6.4 6.4 0 0 1 8.6 4a6.6 6.6 0 1 0 7.4 7.4Z"/>',
+    light:'<circle cx="10" cy="10" r="3.5"/><path d="M10 2.6v1.7M10 15.7v1.7M17.4 10h-1.7M4.3 10H2.6' +
+          'M15.2 4.8 14 6M6 14l-1.2 1.2M15.2 15.2 14 14M6 6 4.8 4.8"/>',
+    fomo: '<path d="M7.1 2.9 8.4 6l3.1 1.3L8.4 8.6 7.1 11.7 5.8 8.6 2.7 7.3 5.8 6l1.3-3.1Z"/>' +
+          '<path d="M13.9 10.1 14.8 12l1.9.9-1.9.9-.9 1.9-.9-1.9-1.9-.9 1.9-.9.9-1.9Z"/>'
+  };
+  var NAME = {dark:"dark", light:"light", fomo:"fomo"};
+  var btn = $("theme"), meta = document.querySelector('meta[name="theme-color"]');
+
+  function current(){
+    var set = document.documentElement.getAttribute("data-theme");
+    if (set && ORDER.indexOf(set) > -1) return set;
+    return matchMedia("(prefers-color-scheme:light)").matches ? "light" : "dark";
+  }
+  function paintBtn(){
+    var now = current(), next = ORDER[(ORDER.indexOf(now) + 1) % ORDER.length];
+    btn.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + GLYPH[now] + "</svg>";
+    btn.title = NAME[now] + " \u2014 switch to " + NAME[next];
+    btn.setAttribute("aria-label", "Theme: " + NAME[now] + ". Switch to " + NAME[next] + ".");
+    if (meta) meta.setAttribute("content", TONE[now]);
+  }
+
   var saved = "";
   try { saved = localStorage.getItem("fomo.theme") || ""; } catch(e){}
-  if (saved) document.documentElement.setAttribute("data-theme", saved);
-  $("theme").addEventListener("click", function(){
-    var now = document.documentElement.getAttribute("data-theme");
-    if (!now) now = matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light";
-    var next = now === "dark" ? "light" : "dark";
+  if (ORDER.indexOf(saved) > -1) document.documentElement.setAttribute("data-theme", saved);
+  paintBtn();
+
+  btn.addEventListener("click", function(){
+    var next = ORDER[(ORDER.indexOf(current()) + 1) % ORDER.length];
     document.documentElement.setAttribute("data-theme", next);
     try { localStorage.setItem("fomo.theme", next); } catch(e){}
+    paintBtn();
+  });
+  /* With nothing saved the rail follows the system, so follow it live too. */
+  var sys = matchMedia("(prefers-color-scheme:light)");
+  (sys.addEventListener ? sys.addEventListener.bind(sys, "change") : sys.addListener.bind(sys))(function(){
+    if (!document.documentElement.getAttribute("data-theme")) paintBtn();
   });
 })();
 
