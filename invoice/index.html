@@ -33,7 +33,12 @@
 
   --violet:#5B6CF6; --violet-hi:#8D9BFF; --violet-soft:rgba(91,108,246,.16);
   --good:#4ADE80; --good-soft:rgba(74,222,128,.13);
-  --owed:#FB923C; --owed-soft:rgba(251,146,60,.14);
+  /* Money waiting to be paid back is not a warning — it is the ordinary
+     state of half the ledger — so it reads in azure rather than the amber
+     it used to wear. --warn keeps that amber for the things that are
+     actually wrong: a dead feed, a stale read, an offline sheet. */
+  --owed:#56B6F5; --owed-soft:rgba(86,182,245,.14);
+  --warn:#FB923C;
   --bad:#F87171;
 
   /* the category ramp, doubling as the tag palette */
@@ -70,7 +75,8 @@
     --text:#151518; --muted:#5F5F68; --muted-2:#8A8A93;
     --violet:#4F46E5; --violet-hi:#4338CA; --violet-soft:rgba(79,70,229,.1);
     --good:#16A34A; --good-soft:rgba(22,163,74,.1);
-    --owed:#EA580C; --owed-soft:rgba(234,88,12,.1);
+    --owed:#0A7EC2; --owed-soft:rgba(10,126,194,.1);
+    --warn:#EA580C;
     --bad:#DC2626;
     --s1:#2563EB; --s2:#EA580C; --s3:#059669; --s4:#D97706; --s5:#DB2777; --s6:#7C3AED; --s7:#64748B;
     --t-blue-bg:#EFF6FF;   --t-blue-bd:#BFDBFE;   --t-blue-fg:#1D4ED8;
@@ -93,7 +99,8 @@
   --text:#151518; --muted:#5F5F68; --muted-2:#8A8A93;
   --violet:#4F46E5; --violet-hi:#4338CA; --violet-soft:rgba(79,70,229,.1);
   --good:#16A34A; --good-soft:rgba(22,163,74,.1);
-  --owed:#EA580C; --owed-soft:rgba(234,88,12,.1);
+  --owed:#0A7EC2; --owed-soft:rgba(10,126,194,.1);
+  --warn:#EA580C;
   --bad:#DC2626;
   --s1:#2563EB; --s2:#EA580C; --s3:#059669; --s4:#D97706; --s5:#DB2777; --s6:#7C3AED; --s7:#64748B;
   --t-blue-bg:#EFF6FF;   --t-blue-bd:#BFDBFE;   --t-blue-fg:#1D4ED8;
@@ -120,7 +127,8 @@
   --text:#F7F7F7; --muted:#9899A3; --muted-2:#6B6F7B;
   --violet:#516AF6; --violet-hi:#A2B0FF; --violet-soft:rgba(81,106,246,.2);
   --good:#4ADE80; --good-soft:rgba(74,222,128,.14);
-  --owed:#FBA94C; --owed-soft:rgba(251,169,76,.15);
+  --owed:#5FC2F2; --owed-soft:rgba(95,194,242,.15);
+  --warn:#FBA94C;
   --bad:#F87171;
   --s1:#7B8CFF; --s2:#FBA94C; --s3:#34D399; --s4:#FBBF24; --s5:#F472B6; --s6:#A78BFA; --s7:#8E93B5;
   --t-blue-bg:#1A2145;   --t-blue-bd:#2A3468;   --t-blue-fg:#C4CDFF;
@@ -237,7 +245,7 @@ svg{display:block}
 .live{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:99px;
   border:1px solid var(--line);font-size:11.5px;color:var(--muted)}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);flex:none}
-.dot.off{background:var(--owed);box-shadow:none}
+.dot.off{background:var(--warn);box-shadow:none}
 @media (prefers-reduced-motion:no-preference){.dot{animation:pulse 2.6s infinite}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 
@@ -391,7 +399,7 @@ tr:hover .acts,.acts:focus-within{opacity:1}
   font-size:11px;white-space:nowrap;border:1px solid var(--t-grey-bd);background:var(--t-grey-bg);color:var(--t-grey-fg)}
 .pill i{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;opacity:.9}
 .pill.good{background:var(--t-green-bg);border-color:var(--t-green-bd);color:var(--t-green-fg)}
-.pill.owed{background:var(--t-orange-bg);border-color:var(--t-orange-bd);color:var(--t-orange-fg)}
+.pill.owed{background:var(--t-blue-bg);border-color:var(--t-blue-bd);color:var(--t-blue-fg)}
 .pill.blue{background:var(--t-blue-bg);border-color:var(--t-blue-bd);color:var(--t-blue-fg)}
 .pill.purple{background:var(--t-purple-bg);border-color:var(--t-purple-bd);color:var(--t-purple-fg)}
 .pill.red{background:var(--t-red-bg);border-color:var(--t-red-bd);color:var(--t-red-fg)}
@@ -432,8 +440,8 @@ tr:hover .acts,.acts:focus-within{opacity:1}
 .row-b .amt{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px;
   letter-spacing:-.025em;text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px;justify-content:flex-end}
 .row-b .amt small{color:var(--muted-2);font-size:10.5px;font-family:var(--body)}
-.settle{font-size:10.5px;height:21px;padding:0 8px;border-radius:99px;border:1px solid var(--t-orange-bd);
-  background:var(--t-orange-bg);color:var(--t-orange-fg);white-space:nowrap;font-family:var(--body)}
+.settle{font-size:10.5px;height:21px;padding:0 8px;border-radius:99px;border:1px solid var(--t-blue-bd);
+  background:var(--t-blue-bg);color:var(--t-blue-fg);white-space:nowrap;font-family:var(--body)}
 .settle:hover{filter:brightness(1.2)}
 .settle.hold{border-color:var(--t-red-bd);background:var(--t-red-bg);color:var(--t-red-fg)}
 .scale{display:flex;justify-content:space-between;padding:2px 14px 12px;font-family:var(--mono);
@@ -469,7 +477,7 @@ tr:hover .acts,.acts:focus-within{opacity:1}
 .gh-big .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:23px;
   letter-spacing:-.04em;line-height:1;font-weight:500}
 .sub2{font-size:11.5px;color:var(--muted-2)}
-.sub2.bad{color:var(--owed)}
+.sub2.bad{color:var(--warn)}
 .gh-team{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l);padding:13px 14px}
 .gh-team-h,.gh-person-h{display:flex;align-items:baseline;gap:9px;margin-bottom:11px}
 .who2{font-size:13px;font-weight:600;letter-spacing:-.01em}
@@ -514,7 +522,7 @@ tr:hover .acts,.acts:focus-within{opacity:1}
 .field>input,.field>select{width:100%}
 .who{display:flex;flex-wrap:wrap;gap:6px}
 .split-hint{font-size:11.5px;color:var(--muted-2)}
-.stale-note{color:var(--owed)}
+.stale-note{color:var(--warn)}
 .form .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form .grid.pair{grid-template-columns:1fr}
 .form-foot{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);
@@ -675,6 +683,29 @@ td.date.run{color:var(--good)}
 .ppgrid .v.owed{color:var(--owed)}
 .ppgrid .v.good{color:var(--good)}
 .ppgrid .s{font-size:11px;color:var(--muted-2)}
+/* ---------- the overview's own furniture ---------- */
+/* A band is the hairline that says the next few panels are about one
+   subject. It is what makes a long overview scannable rather than a wall. */
+.ov-band{display:flex;align-items:center;gap:10px;margin-top:6px}
+.ov-band:first-child{margin-top:0}
+.ov-band>i{flex:1;height:1px;background:var(--line);min-width:12px}
+.ov-band .hint{flex:none}
+/* one category, one bar, one share — the breakdown's first screen, inlined */
+.ov-cat{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12.5px}
+.ov-cat+.ov-cat{border-top:1px solid var(--line)}
+.ov-cat .nm{flex:none;min-width:104px}
+.ov-cat .bar{flex:1;height:6px;background:var(--raise);border-radius:99px;overflow:hidden;min-width:40px}
+.ov-cat .bar i{display:block;height:100%;border-radius:99px;min-width:2px}
+.ov-cat .amt{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.025em;
+  white-space:nowrap;width:62px;text-align:right}
+.ov-cat .pc{font-family:var(--mono);font-size:11px;color:var(--muted-2);width:48px;text-align:right;
+  white-space:nowrap}
+/* the seven-day strip, wherever a row wants one */
+.strip7{display:flex;gap:2px}
+.strip7 i{width:9px;height:9px;border-radius:2.5px;display:block}
+/* the campus numbers arrive a beat after everything else, so they say so */
+.rail .v.wait{color:var(--muted-2)}
+
 .share{display:flex;align-items:center;gap:8px;min-width:90px}
 .share .bar{flex:1;height:5px;background:var(--raise);border-radius:99px;overflow:hidden}
 .share .bar i{display:block;height:100%;border-radius:99px}
@@ -812,12 +843,19 @@ td.date.run{color:var(--good)}
             <button class="mini ghost" id="ov-refresh">Refresh</button>
           </span>
         </div>
+        <!-- The overview answers "what is going on" in one scroll, so it is
+             banded by subject rather than run together: the money, then the
+             four of them, then the campus and the guests, then what just
+             happened. Every number on it is a number some other view is
+             built around — nothing here is computed a second way. -->
         <div class="scroller pad" style="display:grid;gap:12px;align-content:start">
+
+          <div class="ov-band"><span class="lbl">the money</span><i></i><span class="hint" id="ov-money-note"></span></div>
           <div class="rail">
             <div><span class="lbl">total spent</span><span class="v" id="k-total">$0.00</span><span class="sub" id="k-total-sub">no spends logged yet</span></div>
             <div><span class="lbl">still owed out</span><span class="v owed" id="k-owed">$0.00</span><span class="sub" id="k-owed-sub">nothing pending</span></div>
             <div><span class="lbl">reimbursed</span><span class="v good" id="k-paid">$0.00</span><span class="sub" id="k-paid-sub">nothing settled yet</span></div>
-            <div><span class="lbl">biggest line</span><span class="v" id="k-cat">—</span><span class="sub" id="k-cat-sub">by category</span></div>
+            <div><span class="lbl">every month, on repeat</span><span class="v" id="k-rep">$0.00</span><span class="sub" id="k-rep-sub">no rules set</span></div>
           </div>
 
           <div class="grid2">
@@ -833,8 +871,48 @@ td.date.run{color:var(--good)}
 
           <div class="grid2">
             <div class="panel">
-              <div class="panel-h"><h2>Who has been in</h2><span class="note" id="ov-days-note"></span></div>
-              <div class="att" id="ov-days"></div>
+              <div class="panel-h"><h2>Where the money goes</h2><span class="note" id="ov-cat-note"></span></div>
+              <div class="panel-b" id="ov-cats"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-h"><h2>On repeat, next up</h2><span class="note" id="ov-due-note"></span></div>
+              <div class="att" id="ov-due"></div>
+            </div>
+          </div>
+
+          <div class="ov-band"><span class="lbl">the four of them</span><i></i><span class="hint" id="ov-team-note"></span></div>
+          <div class="rail">
+            <div><span class="lbl">in this week</span><span class="v" id="k-wk">0</span><span class="sub" id="k-wk-sub">person-days since Monday</span></div>
+            <div><span class="lbl">days marked, all time</span><span class="v" id="k-days">0</span><span class="sub" id="k-days-sub">across the four of them</span></div>
+            <div><span class="lbl">commits, 13 weeks</span><span class="v" id="k-gh">—</span><span class="sub" id="k-gh-sub">no accounts linked yet</span></div>
+            <div><span class="lbl">busiest push day</span><span class="v" id="k-ghbest">—</span><span class="sub" id="k-ghbest-sub">of the quarter</span></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><h2>The team, line by line</h2><span class="note" id="ov-team-sub"></span></div>
+            <div class="tbl-scroll">
+              <table>
+                <thead><tr>
+                  <th>who</th><th class="amt">fronted</th><th class="amt">still owed</th>
+                  <th>share of spend</th><th>last 7 days</th><th class="amt">this wk</th><th class="amt">commits</th>
+                </tr></thead>
+                <tbody id="ov-team"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ov-band"><span class="lbl">the campus, and guests</span><i></i><span class="hint" id="ov-campus-note"></span></div>
+          <div class="rail">
+            <div><span class="lbl">applications in</span><span class="v" id="k-ap">—</span><span class="sub" id="k-ap-sub">from /fomo/apply</span></div>
+            <div><span class="lbl">still open</span><span class="v owed" id="k-apopen">—</span><span class="sub" id="k-apopen-sub">awaiting a decision</span></div>
+            <div><span class="lbl">on a campus</span><span class="v" id="k-cm">—</span><span class="sub" id="k-cm-sub">interns working a seat</span></div>
+            <div><span class="lbl">visit requests</span><span class="v" id="k-vr">—</span><span class="sub" id="k-vr-sub">invitations to HQ</span></div>
+          </div>
+
+          <div class="grid2">
+            <div class="panel">
+              <div class="panel-h"><h2>Applications, by seat</h2><span class="note" id="ov-seat-note"></span></div>
+              <div class="panel-b" id="ov-seats"></div>
             </div>
             <div class="panel">
               <div class="panel-h"><h2>Latest activity</h2><span class="note">newest first</span></div>
@@ -2565,23 +2643,15 @@ function render(){
     if (r.status === "reimbursed") byPerson[r.who].paid += a; else byPerson[r.who].owed += a;
   });
 
+  /* The overview's rail used to be written from here as well, off the
+     filtered list, and then written again a moment later by the overview
+     itself off the whole ledger. Only the second one was ever on screen,
+     so the rail is left to the view that owns it. The ranking and the
+     filtered flag stay: the category chart and the footer below this are
+     drawn from them. */
   var filtered = filters.who || filters.cat || filters.status || filters.q;
-  document.getElementById("k-total").textContent = money(total);
-  document.getElementById("k-total-sub").textContent = list.length
-    ? list.length + (list.length === 1 ? " line" : " lines") + (filtered ? " (filtered)" : " logged")
-    : "no spends logged yet";
-  document.getElementById("k-owed").textContent = money(owed);
-  var owedPeople = Object.keys(byPerson).filter(function(p){ return byPerson[p].owed > 0.005; });
-  document.getElementById("k-owed-sub").textContent = owedPeople.length
-    ? "waiting on " + owedPeople.join(", ") : "everyone is square";
-  document.getElementById("k-paid").textContent = money(paid);
-  document.getElementById("k-paid-sub").textContent = total > 0
-    ? Math.round(paid / total * 100) + "% of the ledger settled" : "nothing settled yet";
   var catRank = Object.keys(byCat).map(function(k){ return {id:k, v:byCat[k]}; })
     .sort(function(a,b){ return b.v - a.v; });
-  document.getElementById("k-cat").textContent = catRank.length ? money(catRank[0].v) : "—";
-  document.getElementById("k-cat-sub").textContent = catRank.length
-    ? cat(catRank[0].id).label + " — " + Math.round(catRank[0].v / total * 100) + "% of spend" : "by category";
 
   var pMax = Math.max.apply(null, PAYERS.map(function(p){ return byPerson[p].total; }).concat([1]));
   var pBox = document.getElementById("by-person");
@@ -3843,19 +3913,20 @@ var view = "overview", personOf = null;
 /* The rail is a menu, so it is built as one: a list of groups, each with a
    heading over it that folds the group away. Attendance, Commits and the
    breakdown used to sit under headings of their own, which read as three
-   subjects when they are one — all three are the four of them, counted a
-   different way — so they now open The team, above the roster they are
-   counting. The roster comes last, and so does the group: their pages are
-   the ones you already know how to find. */
+   subjects when they are one. The breakdown is a question about the money,
+   so it sits under Money with the ledger it reads; Attendance and Commits
+   are the four of them counted a different way, so they open The team,
+   above the roster they are counting. The roster comes last, and so does
+   the group: their pages are the ones you already know how to find. */
 var NAV = [
   {id:"start",  label:"Start",      items:[["overview","Overview",0]]},
-  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["settle","Reimbursements",1],["subs","On repeat",1]]},
+  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["settle","Reimbursements",1],["subs","On repeat",1],["reporting","Breakdown",0]]},
   {id:"guests", label:"Guests",     items:[["visits","Visit requests",0]]},
   /* The chapters are the one group that is not about the four of them or
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
   {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
-  {id:"team",   label:"The team",   items:[["attendance","Attendance",1],["commits","Commits",1],["reporting","Breakdown",0]], roster:true}
+  {id:"team",   label:"The team",   items:[["attendance","Attendance",1],["commits","Commits",1]], roster:true}
 ];
 
 /* Which groups are folded shut, remembered per device. Only the shut ones
@@ -4221,9 +4292,42 @@ function monthLabel(k){
   var p = k.split("-");
   return ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"][Number(p[1])-1] || k;
 }
-function paintOverview(){
-  var now = today(), m = owedBy();
+/* The commits view rolls its own 13-week window up; the overview wants the
+   same three numbers off the same window, so it asks for them here rather
+   than counting a second time and drifting. */
+function ghSummary(){
+  var linked = PEOPLE.filter(function(p){ return logins[p]; });
+  var team = {}, byPerson = {}, total = 0, capped = false;
+  var end = dayKey(new Date()), start = dayKey(calStart());
+  PEOPLE.forEach(function(p){
+    var got = ghData[p] || {}, dd = got.days || {};
+    if (got.truncated) capped = true;
+    byPerson[p] = 0;
+    Object.keys(dd).forEach(function(k){
+      if (k < start || k > end) return;
+      team[k] = (team[k] || 0) + dd[k];
+      byPerson[p] += dd[k]; total += dd[k];
+    });
+  });
+  var bestDay = null, bestN = 0;
+  Object.keys(team).forEach(function(k){ if (team[k] > bestN) { bestN = team[k]; bestDay = k; } });
+  return {linked:linked, byPerson:byPerson, total:total, capped:capped,
+          today:team[end] || 0, bestDay:bestDay, bestN:bestN};
+}
 
+/* What a rule costs every month. A rule fires once a month on its day, so
+   the live ones added up are the standing commitment — the one money
+   number on the console nobody has spent yet. */
+function repeatMonthly(){
+  var n = 0, v = 0;
+  subs.forEach(function(s){ if (subOn(s)) { n++; v += Number(s.amount) || 0; } });
+  return {n:n, v:v};
+}
+
+function paintOverview(){
+  var now = today(), m = owedBy(), wk = weekStartDay();
+
+  /* ── the money ── */
   var total = 0, owed = 0, paid = 0, byCat = {};
   rows.forEach(function(r){
     var a = Number(r.amount) || 0;
@@ -4234,6 +4338,8 @@ function paintOverview(){
   var catRank = Object.keys(byCat).map(function(k){ return {id:k, v:byCat[k]}; })
     .sort(function(a, b){ return b.v - a.v; });
   var owedNames = PAYERS.filter(function(p){ return m[p].owed > 0.005; });
+  var rep = repeatMonthly();
+
   $("k-total").textContent = money(total);
   $("k-total-sub").textContent = rows.length
     ? rows.length + (rows.length === 1 ? " line" : " lines") + " logged, all time"
@@ -4244,12 +4350,18 @@ function paintOverview(){
   $("k-paid").textContent = money(paid);
   $("k-paid-sub").textContent = total > 0
     ? Math.round(paid / total * 100) + "% of the ledger settled" : "nothing settled yet";
-  $("k-cat").textContent = catRank.length ? money(catRank[0].v) : "—";
-  $("k-cat-sub").textContent = catRank.length
-    ? cat(catRank[0].id).label + " — " + Math.round(catRank[0].v / total * 100) + "% of spend"
-    : "by category";
+  $("k-rep").textContent = money(rep.v);
+  $("k-rep-sub").textContent = rep.n
+    ? rep.n + (rep.n === 1 ? " rule" : " rules") + " running · " + money(rep.v * 12) + " a year"
+    : "no rules set";
 
-  /* ── needs attention ─────────────────────────────────────────
+  var avg = rows.length ? total / rows.length : 0;
+  $("ov-money-note").textContent = rows.length
+    ? money(avg) + " a line on average · biggest " + money(Math.max.apply(null,
+        rows.map(function(r){ return Number(r.amount) || 0; })))
+    : "";
+
+  /* ── needs attention ────────────────────────
      Only things somebody could act on this afternoon, newest
      problem last: money owed, a rule about to fire, a week with
      nobody marked in. A page of six real items beats a page of
@@ -4273,7 +4385,6 @@ function paintOverview(){
         "<span>due " + (d === 0 ? "today" : "in " + agoText(d)) + " on " + esc(s.who) + "'s card</span></div>" +
         '<span class="pill purple">on repeat</span>'});
   });
-  var wk = weekStartDay();
   PEOPLE.forEach(function(p){
     var n = 0; days.forEach(function(d){ if (d.who === p && d.day >= wk) n++; });
     if (!n) items.push({k:"day", w:0,
@@ -4323,29 +4434,99 @@ function paintOverview(){
     }).join("") + "</div>";
   }
 
-  /* ── who has been in ── */
-  $("ov-days-note").textContent = daysMode() === "sheet" ? "everybody's" : "this browser only";
-  $("ov-days").innerHTML = PEOPLE.map(function(p){
-    var week = 0, all = 0, last = "";
-    days.forEach(function(d){
-      if (d.who !== p) return;
-      all++; if (d.day >= wk) week++;
-      if (d.day > last) last = d.day;
-    });
-    var strip = "";
+  /* ── where the money goes ──
+     The breakdown's first screen, small enough to sit on the overview.
+     Six categories and a remainder, so a long tail cannot push the page. */
+  if (!catRank.length) {
+    $("ov-cats").innerHTML = '<div class="hint">Categories fill in as spends are logged.</div>';
+    $("ov-cat-note").textContent = "";
+  } else {
+    var shown = catRank.slice(0, 6), restV = 0;
+    catRank.slice(6).forEach(function(c){ restV += c.v; });
+    $("ov-cat-note").textContent = catRank.length +
+      (catRank.length === 1 ? " category" : " categories") + " · of " + money(total);
+    $("ov-cats").innerHTML = shown.map(function(c){
+      var meta = cat(c.id), pc = total ? c.v / total * 100 : 0;
+      return '<div class="ov-cat"><span class="nm">' + tint(meta.label, meta.v) + "</span>" +
+        '<span class="bar"><i style="width:' + pc.toFixed(1) + '%;background:var(' + meta.v + ')"></i></span>' +
+        '<span class="amt">' + esc(money(c.v)) + "</span>" +
+        '<span class="pc">' + Math.round(pc) + "%</span></div>";
+    }).join("") + (restV > 0.005
+      ? '<div class="ov-cat"><span class="nm mut2">everything else</span>' +
+        '<span class="bar"><i style="width:' + (restV / total * 100).toFixed(1) + '%;background:var(--line-2)"></i></span>' +
+        '<span class="amt mut">' + esc(money(restV)) + "</span>" +
+        '<span class="pc">' + Math.round(restV / total * 100) + "%</span></div>"
+      : "");
+  }
+
+  /* ── on repeat, next up ── */
+  var due = subs.filter(subOn).slice().sort(function(a, b){
+    return String(a.next || "9999").localeCompare(String(b.next || "9999"));
+  }).slice(0, 5);
+  $("ov-due-note").textContent = rep.n ? money(rep.v) + " a month" : "";
+  $("ov-due").innerHTML = due.length
+    ? due.map(function(s){
+        var d = daysBetween(now, s.next || "");
+        return '<div class="att-i">' + avatar(s.who, "") +
+          '<div class="bd"><b>' + esc(s.what || "a subscription") + " · " + esc(money(s.amount)) + "</b>" +
+          "<span>the " + esc(ord(s.day)) + " of the month, on " + esc(s.who) + "'s card</span></div>" +
+          '<span class="pill' + (d >= 0 && d <= 7 ? " purple" : "") + '">' +
+          (s.next ? (d === 0 ? "today" : d > 0 ? "in " + agoText(d) : esc(niceDate(s.next))) : "no date") +
+          "</span></div>";
+      }).join("")
+    : '<div class="empty"><b>Nothing on repeat.</b>A rule turns one spend into the same spend every month.</div>';
+
+  /* ── the four of them ── */
+  var wkDays = 0;
+  days.forEach(function(d){ if (d.day >= wk) wkDays++; });
+  var gh = ghSummary();
+  $("k-wk").textContent = String(wkDays);
+  $("k-wk-sub").textContent = "person-days since Monday";
+  $("k-days").textContent = String(days.length);
+  $("k-days-sub").textContent = daysMode() === "sheet"
+    ? "everybody's, off the sheet" : "marked in this browser only";
+  $("k-gh").textContent = gh.linked.length ? String(gh.total) + (gh.capped ? "+" : "") : "—";
+  $("k-gh-sub").textContent = gh.linked.length
+    ? gh.today + " today · " + gh.linked.length + (gh.linked.length === 1 ? " account" : " accounts")
+    : "no accounts linked yet";
+  $("k-ghbest").textContent = gh.bestN ? String(gh.bestN) : "—";
+  $("k-ghbest-sub").textContent = gh.bestN ? esc(niceDate(gh.bestDay)) : "of the quarter";
+  $("ov-team-note").textContent = daysMode() === "sheet" ? "attendance is everybody's" : "attendance is this browser only";
+
+  /* One row a person, carrying what their own page carries: what they have
+     fronted, what is still out, their share of the ledger, the week just
+     gone, and their pushes. */
+  $("ov-team-sub").textContent = PAYERS.length + " on the books";
+  $("ov-team").innerHTML = PAYERS.map(function(p){
+    var e = m[p], pc = total ? e.total / total * 100 : 0;
+    var week = 0, strip = "";
+    days.forEach(function(d){ if (d.who === p && d.day >= wk) week++; });
     for (var i = 0; i < 7; i++) {
       var dd = new Date(); dd.setDate(dd.getDate() - (6 - i));
       var k = isoOf(dd), on = markedOn(p, k);
-      strip += '<i style="width:9px;height:9px;border-radius:2.5px;display:block;background:' +
-        (on ? "var(--l3)" : "var(--l0)") + '" title="' + esc(niceDate(k)) + '"></i>';
+      strip += '<i style="background:' + (on ? "var(--l3)" : "var(--l0)") +
+        '" title="' + esc(niceDate(k)) + '"></i>';
     }
-    return '<div class="att-i">' + avatar(p, "") +
-      '<div class="bd"><b>' + esc(p) + "</b><span>" +
-        (all ? dayCountText(all) + " all time · last in " + esc(niceDate(last)) : "no days marked yet") +
-      "</span></div>" +
-      '<span style="display:flex;gap:2px" aria-hidden="true">' + strip + "</span>" +
-      '<span class="pill' + (week ? " good" : "") + '">' + week + " this wk</span></div>";
+    var c = ghCount(p);
+    return '<tr data-who="' + esc(p) + '">' +
+      '<td><span style="display:flex;align-items:center;gap:8px">' + avatar(p, "") +
+        "<b>" + esc(p) + "</b></span></td>" +
+      '<td class="amt">' + esc(money(e.total)) + "</td>" +
+      '<td class="amt"' + (e.owed > 0.005 ? ' style="color:var(--owed)"' : "") + ">" +
+        (e.owed > 0.005 ? esc(money(e.owed)) : '<span class="mut2">—</span>') + "</td>" +
+      '<td><span class="share"><span class="bar"><i style="width:' + pc.toFixed(1) +
+        '%;background:var(' + tone(p) + ')"></i></span><span>' + Math.round(pc) + "%</span></span></td>" +
+      '<td><span class="strip7" aria-hidden="true">' + strip + "</span></td>" +
+      '<td class="amt">' + (week ? week : '<span class="mut2">0</span>') + "</td>" +
+      '<td class="amt">' + (c ? String(c.n) + (c.capped ? "+" : "") : '<span class="mut2">—</span>') + "</td>" +
+      "</tr>";
   }).join("");
+
+  /* ── the campus, and guests ──
+     These two tables live behind their own views and their own round
+     trips, so the overview shows whatever has already been read and says
+     so plainly when it has not. Nothing here blocks the ledger. */
+  paintOvCampus();
 
   /* ── latest activity ──
      One list out of three tables. A spend carries `logged`, a day
@@ -4382,6 +4563,58 @@ function paintOverview(){
       " person-days · " + subs.length + (subs.length === 1 ? " rule" : " rules")
     : "Nothing logged yet — the first spend starts it off.";
 }
+
+/* The campus half of the overview, drawn on its own so the numbers can
+   land late without the rest of the page being repainted around them. */
+function paintOvCampus(){
+  if (!$("k-ap")) return;
+  var c = window.FOMO_CAMPUS_STATS || null, v = window.FOMO_VISIT_STATS || null;
+  var put = function(id, val, sub){
+    var el = $(id); if (!el) return;
+    el.textContent = val == null ? "—" : String(val);
+    el.classList.toggle("wait", val == null);
+    if (sub) $(id + "-sub").textContent = sub;
+  };
+  put("k-ap", c ? c.total : null, c
+    ? (c.hired ? c.hired + " hired · " : "") + (c.passed ? c.passed + " passed" : "from /fomo/apply")
+    : "reading the sheet…");
+  put("k-apopen", c ? c.open : null, c
+    ? (c.open ? "awaiting a decision" : "every one answered") : "awaiting a decision");
+  put("k-cm", c ? c.working : null, c
+    ? c.campuses + (c.campuses === 1 ? " campus" : " campuses") + " · " +
+      c.states + (c.states === 1 ? " state" : " states")
+    : "interns working a seat");
+  put("k-vr", v ? v.total : null, v
+    ? (v.pending ? v.pending + " pending · " : "") + v.confirmed + " confirmed"
+    : "sign in on Visit requests to count");
+  $("ov-campus-note").textContent = c
+    ? "read live from the sheet, not from the ledger" : "";
+
+  var box = $("ov-seats");
+  if (!box) return;
+  if (!c || !c.seats || !c.seats.length) {
+    box.innerHTML = '<div class="hint">' + (c
+      ? "No applications on the sheet yet. Everything submitted at /fomo/apply lands here."
+      : "Counting the applications…") + "</div>";
+    $("ov-seat-note").textContent = "";
+    return;
+  }
+  var mx = 1;
+  c.seats.forEach(function(x){ mx = Math.max(mx, x.n); });
+  $("ov-seat-note").textContent = c.total + (c.total === 1 ? " application" : " applications");
+  box.innerHTML = c.seats.map(function(x){
+    return '<div class="ov-cat"><span class="nm">' + tint(x.label, x.v) + "</span>" +
+      '<span class="bar"><i style="width:' + (x.n / mx * 100).toFixed(1) +
+        '%;background:var(' + x.v + ')"></i></span>' +
+      '<span class="amt">' + x.n + "</span>" +
+      '<span class="pc">' + (x.open ? x.open + " open" : "") + "</span></div>";
+  }).join("");
+}
+
+/* campus.js and visits.js publish their counts as they read them; the
+   overview redraws that half when they do, and only that half. */
+window.addEventListener("fomo:campus-stats", paintOvCampus);
+window.addEventListener("fomo:visit-stats", paintOvCampus);
 
 /* ---------- breakdown ---------- */
 function paintReporting(){

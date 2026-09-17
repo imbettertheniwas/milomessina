@@ -83,7 +83,19 @@ function text(tag,value,className){
 function dateLabel(date){
   return new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric'});
 }
+/* The overview counts visit requests too. These are behind their own
+   password, so nothing is published until somebody has actually signed in
+   here — the overview says as much until then. The counts are off the
+   whole list, never off the filter the page happens to be showing. */
+function publish(){
+  const all=state.requests||[];
+  const n=id=>all.filter(r=>r.status===id).length;
+  window.FOMO_VISIT_STATS={total:all.length,pending:n('pending'),
+    confirmed:n('confirmed'),completed:n('completed'),declined:n('declined')};
+  window.dispatchEvent(new CustomEvent('fomo:visit-stats'));
+}
 function render(){
+  publish();
   const filter=$('vr-filter').value,query=$('vr-search').value.trim().toLowerCase();
   const rows=state.requests.filter(r=>(!filter||r.status===filter)&&(!query||[r.name,r.email,r.social,r.notes].join(' ').toLowerCase().includes(query)));
   $('vr-count').textContent=rows.length+' request'+(rows.length===1?'':'s');

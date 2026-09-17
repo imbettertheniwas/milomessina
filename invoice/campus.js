@@ -204,6 +204,32 @@ function take(out){
      searching re-renders the table underneath it, and repainting the panel
      with it would throw away notes somebody was halfway through typing. */
   if (state.open) paintDetail(); else $('ap-detail').hidden = true;
+  publish();
+}
+
+/* The overview carries these two tables' headline numbers without either
+   view being opened, so the counts are published as they land. They are
+   taken off the whole tables and never off whatever the filters happen to
+   be showing, which is why they are counted here rather than in a render. */
+function publish(){
+  const all = state.applicants, team = state.team;
+  const isOpen = a => OPEN_STATES.indexOf(a.status) > -1;
+  const working = team.filter(t => t.status !== 'alumni');
+  window.FOMO_CAMPUS_STATS = {
+    total: all.length,
+    open: all.filter(isOpen).length,
+    hired: all.filter(a => a.status === 'hired').length,
+    passed: all.filter(a => a.status === 'passed').length,
+    working: working.length,
+    campuses: new Set(working.map(t => t.campus).filter(Boolean)).size,
+    states: new Set(working.map(t => t.state).filter(Boolean)).size,
+    seats: SEATS.map(s => ({
+      label: s.label, v: s.v,
+      n: all.filter(a => a.seat === s.id).length,
+      open: all.filter(a => a.seat === s.id && isOpen(a)).length
+    })).filter(x => x.n).sort((a, b) => b.n - a.n)
+  };
+  window.dispatchEvent(new CustomEvent('fomo:campus-stats'));
 }
 
 async function load(force){
@@ -636,7 +662,11 @@ $('cm-f-state').innerHTML = '<option value="">pick a state</option>' +
    a second round trip to Apps Script. */
 function activated(){
   const hash = location.hash;
-  if (hash === '#/applicants' || hash === '#/campus') load(false);
+  if (hash === '#/applicants' || hash === '#/campus') { load(false); return; }
+  /* The overview shows these numbers too, and it is the view the console
+     opens on. The read is pushed behind a beat so the ledger — which is
+     what the console is opened for — still has the network to itself. */
+  if (!hash || hash === '#/' || hash === '#/overview') setTimeout(() => load(false), 900);
 }
 window.addEventListener('hashchange', activated);
 window.addEventListener('fomo:view-change', activated);
