@@ -64,6 +64,27 @@
 .po-body a{color:var(--violet-hi);text-decoration:underline;text-underline-offset:2px}
 .po-body a:hover{text-decoration-thickness:2px}
 
+/* One photo runs the width of the note; several share the row. Capped in
+   height either way, so a tall screenshot cannot push the next note off
+   the bottom of the page. */
+.po-shots-out{display:grid;gap:7px;grid-template-columns:1fr}
+.po-shots-out.many{grid-template-columns:1fr 1fr}
+/* The box has to have a height before the picture arrives. An <img> with
+   no height attribute is zero pixels tall until it loads, which also meant
+   a lazy one was never in view to start loading — so it is not lazy, and
+   the frame holds its place. */
+.po-photo{display:block;border-radius:var(--r-m);overflow:hidden;
+  border:1px solid var(--line);background:var(--raise);line-height:0;min-height:150px}
+.po-photo img{display:block;width:100%;max-height:360px;object-fit:cover;
+  transition:transform .18s}
+.po-shots-out.many .po-photo img{height:180px;max-height:none}
+.po-photo:hover img{transform:scale(1.015)}
+/* a photo that fell back to its link sizes to the words, not the column */
+.po-shots-out .po-tile{justify-self:start}
+@media (prefers-reduced-motion:reduce){
+  .po-photo img,.po-photo:hover img{transition:none;transform:none}
+}
+
 .po-grid{display:flex;flex-wrap:wrap;gap:7px}
 .po-tile{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px 0 9px;
   border-radius:99px;border:1px solid var(--t-blue-bd);background:var(--t-blue-bg);
@@ -74,4 +95,6 @@
 @media(max-width:700px){
   .po-when{margin-left:auto}
   .po-shot{width:64px;height:64px}
+  .po-shots-out.many{grid-template-columns:1fr}
+  .po-shots-out.many .po-photo img{height:auto;max-height:300px}
 }

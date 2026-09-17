@@ -584,10 +584,18 @@ on the device afterwards.
   so a note stays readable.
 - **Photos** — up to four a note. They are shrunk in the page the way a
   receipt is, then saved to the same shared Drive folder receipts go to, and
-  the sheet holds the link. They appear as tiles rather than full-width
-  photos, because a note with four screenshots should still be one note
-  long. A Drive link is a viewer page, not an image file, which is the other
-  reason they are tiles and not thumbnails.
+  the sheet holds the link. They show in the note, under the words: one runs
+  the width, several share a row, and all of them are capped in height so a
+  tall screenshot cannot push the next note off the page. Clicking one opens
+  the full thing in Drive.
+
+  What the sheet stores is Drive's *viewer* link, which is a web page rather
+  than an image and cannot go into an `<img>`. The file id comes out of it
+  and the picture is loaded from Drive's thumbnail endpoint instead, which
+  serves the bytes for exactly the files `saveReceipt` shares with anyone
+  holding the link. If that fails — a domain that forbids link sharing, a
+  file locked down afterwards — the photo falls back to being a link, since
+  the note is worth more than the picture.
 - **Notes are grouped by the week they were posted into** — *This week*,
   *Last week*, then the date — newest first, so scrolling the feed is
   scrolling back through the weeks.

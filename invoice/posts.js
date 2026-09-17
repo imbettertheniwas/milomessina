@@ -309,11 +309,26 @@ function render(){
   }).join('');
 }
 
+/* Drive hands back a viewer page — .../file/d/<id>/view — which is a web
+   page and not an image, so it cannot go straight into an <img>. It will
+   serve the bytes from its thumbnail endpoint though, for exactly the files
+   saveReceipt shares with anyone holding the link, which is every photo
+   posted here. So the id comes out of the link and the picture goes in. */
+function driveId(url){
+  const m = String(url).match(/\/file\/d\/([-\w]{10,})/) ||
+            String(url).match(/[?&]id=([-\w]{10,})/);
+  return m ? m[1] : '';
+}
+
+function imageSrc(url){
+  if (/^data:image\//i.test(url)) return url;      /* the device's own copy */
+  const id = driveId(url);
+  if (id) return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1600';
+  return url;                                       /* already a direct image */
+}
+
 function card(p){
   const shots = (p.photos || []).filter(Boolean);
-  /* A Drive link is a viewer page, not an image, so it cannot be put in an
-     <img>. It opens in a tile instead — which is also what a note with
-     eight screenshots wants, rather than eight full-width photos. */
   return '<article class="po-card">' +
     '<div class="po-head">' +
       '<span class="av" aria-hidden="true" style="background:var(' + toneOf(p.who) + ')">' +
@@ -326,10 +341,12 @@ function card(p){
     '</div>' +
     (p.body ? '<div class="po-body">' + bodyHtml(p.body) + '</div>' : '') +
     (shots.length
-      ? '<div class="po-grid">' + shots.map((u, i) =>
-          '<a class="po-tile" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' +
-            '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.8" y="4.4" width="14.4" height="11.2" rx="2"/><circle cx="7.2" cy="8.4" r="1.3"/><path d="m3.4 13.4 3.8-3.2 3.3 2.8 2.6-2 3.5 3"/></svg>' +
-            '<span>photo ' + (i + 1) + '</span></a>').join('') +
+      ? '<div class="po-shots-out' + (shots.length > 1 ? ' many' : '') + '">' + shots.map((u, i) =>
+          '<a class="po-photo" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" ' +
+            'data-full="' + esc(u) + '" data-n="' + (i + 1) + '">' +
+            '<img src="' + esc(imageSrc(u)) + '" alt="Photo ' + (i + 1) + ' on ' + esc(p.who) +
+              '\u2019s note">' +
+          '</a>').join('') +
         '</div>'
       : '') +
   '</article>';
@@ -378,6 +395,24 @@ $('po-feed').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-kill]');
   if (b) remove(b.getAttribute('data-kill'));
 });
+
+/* Sharing can be off — a domain that forbids link sharing, or a file
+   somebody locked down in Drive afterwards — and then the thumbnail is a
+   404 rather than a picture. The note is worth more than the picture, so
+   the broken <img> becomes the link it was standing in for. `error` does
+   not bubble, hence the capture. */
+$('po-feed').addEventListener('error', ev => {
+  const img = ev.target;
+  if (!img || img.tagName !== 'IMG') return;
+  const a = img.closest('.po-photo');
+  if (!a) return;
+  a.className = 'po-tile';
+  a.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.8" y="4.4" ' +
+    'width="14.4" height="11.2" rx="2"/><circle cx="7.2" cy="8.4" r="1.3"/>' +
+    '<path d="m3.4 13.4 3.8-3.2 3.3 2.8 2.6-2 3.5 3"/></svg><span>photo ' +
+    esc(a.getAttribute('data-n') || '') + '</span>';
+}, true);
 
 /* Nothing is read until the view is actually opened — same as the campus
    tables, and for the same reason. */
