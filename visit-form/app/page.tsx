@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { dateKey, nyToday, requestTimes, formatRequestTime, timeInputValue, validateRequest, defaultAvailability, normalizeAvailability, type DayAvailability } from "@/lib/visits";
+import { dateKey, nyToday, formatRequestTime, timeInputValue, validateRequest, defaultAvailability, normalizeAvailability, type DayAvailability } from "@/lib/visits";
 
 export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase?: string; submissionUrl?: string }) {
   const [today, setToday] = useState<Date>();
@@ -53,7 +53,7 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
   useEffect(() => { if(step > 1) heading.current?.focus(); }, [step]);
   const maxDate=today ? new Date(today.getFullYear(),today.getMonth(),today.getDate()+90) : undefined;
   const closedWeekdays=availability.map((d,i)=>d.open?-1:i).filter(i=>i>=0);
-  const dayTimes=date?(availability[date.getDay()]?.times ?? []):requestTimes;
+  const dayTimes=date?(availability[date.getDay()]?.times ?? []):[];
   const isSpecificTime = !!time && !dayTimes.includes(time);
   const dateLabel=date?.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
   async function submit(event: React.FormEvent) {
@@ -105,7 +105,7 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
                     <Button type="submit" className="primary-action" disabled={!formatRequestTime(specificTime)}>Use this time</Button>
                   </form>
                 </PopoverContent>
-              </Popover><RadioGroup className="time-options" value={time} onValueChange={setTime} aria-label="Preferred start time" disabled={!date}>{dayTimes.map(t=><label className={`time-option ${time===t?"selected":""} ${!date?"unavailable":""}`} key={t}><RadioGroupItem value={t} id={`time-${t}`} /><span>{t}</span></label>)}</RadioGroup></div>
+              </Popover>{dayTimes.length>0?<RadioGroup className="time-options" value={time} onValueChange={setTime} aria-label="Preferred start time">{dayTimes.map(t=><label className={`time-option ${time===t?"selected":""}`} key={t}><RadioGroupItem value={t} id={`time-${t}`} /><span>{t}</span></label>)}</RadioGroup>:<p className="time-empty">{date?"No set times this day — use Specific time above.":"Pick a date to see its times."}</p>}</div>
             </div>
             <div className="timezone"><Globe2 size={15}/><span>All times are in New York time.</span></div>
             <Button className="primary-action" disabled={!date||!time} onClick={()=>setStep(2)}>Continue<ArrowRight size={18}/></Button>
