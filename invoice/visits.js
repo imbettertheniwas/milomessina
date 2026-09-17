@@ -20,12 +20,60 @@ async function api(action,body) {
   }
   return data;
 }
+const weekdayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+let availability=null;
+/* Accepts "2:15 PM", "2:15pm" or "14:15" so nobody has to think about format.
+   The server canonicalises too; this only keeps the field readable on save. */
+function canonicalTime(value){
+  const raw=String(value||'').trim();
+  if(!raw)return '';
+  const clock=/^(\d{1,2}):([0-5][0-9])$/.exec(raw);
+  if(clock){
+    const h=Number(clock[1]);
+    return h>23?'':(h%12||12)+':'+clock[2]+(h<12?' AM':' PM');
+  }
+  const m=/^(\d{1,2}):([0-5][0-9])\s*([AaPp])\.?[Mm]?\.?$/.exec(raw);
+  if(!m)return '';
+  const h=Number(m[1]);
+  return h<1||h>12?'':h+':'+m[2]+' '+(m[3].toLowerCase()==='a'?'AM':'PM');
+}
+function hoursRender(){
+  const rows=$('vr-hours-rows');rows.replaceChildren();
+  (availability||[]).forEach((day,index)=>{
+    const row=document.createElement('div');row.className='vr-day';
+    const label=document.createElement('label');
+    const box=document.createElement('input');box.type='checkbox';box.checked=day.open===true;
+    box.id='vr-day-'+index;box.addEventListener('change',()=>{field.disabled=!box.checked;});
+    label.append(box,text('span',weekdayNames[index]));
+    const field=document.createElement('input');field.type='text';field.id='vr-times-'+index;
+    field.value=(day.times||[]).join(', ');field.disabled=day.open!==true;
+    field.setAttribute('aria-label',weekdayNames[index]+' times');
+    field.placeholder='No times offered';
+    row.append(label,field);rows.append(row);
+  });
+}
+function hoursCollect(){
+  const bad=[];
+  const next=weekdayNames.map((name,index)=>{
+    const open=$('vr-day-'+index).checked;
+    const times=[];
+    for(const piece of $('vr-times-'+index).value.split(',')){
+      const raw=piece.trim();if(!raw)continue;
+      const time=canonicalTime(raw);
+      if(!time){bad.push(name+': "'+raw+'"');continue;}
+      if(times.indexOf(time)===-1)times.push(time);
+    }
+    return {open,times};
+  });
+  return {next,bad};
+}
 function lock(){
   requestEpoch++;
   state.authenticated=false;state.requests=[];state.selected=null;state.loaded=false;
   $('vr-login').hidden=false;$('vr-workspace').hidden=true;$('vr-lock').hidden=true;
   $('vr-details').hidden=true;$('vr-list').replaceChildren();$('vr-count').textContent='';
   $('vr-notes').value='';$('vr-detail-body').replaceChildren();
+  availability=null;$('vr-hours-rows').replaceChildren();$('vr-hours-status').textContent='';$('vr-hours').open=false;
 }
 function unlock(){state.authenticated=true;$('vr-login').hidden=true;$('vr-workspace').hidden=false;$('vr-lock').hidden=false;}
 function text(tag,value,className){
@@ -82,6 +130,14 @@ async function refresh(){
   state.busy=true;$('vr-refresh').disabled=true;message('Loading visit requests…');
   try{
     const data=await api('list');if(epoch!==requestEpoch)return;state.requests=data.requests;state.loaded=true;unlock();render();
+    try{
+      const hours=await api('availability');
+      if(epoch===requestEpoch && hours?.availability){availability=hours.availability;hoursRender();}
+    }catch{
+      // Hours are secondary: never let this hide the requests. The usual cause
+      // is a storage script that predates the settings actions.
+      hoursStatus('Visit hours could not be loaded. The storage script may need updating.',true);
+    }
     message('Requests are up to date.');
   }catch(error){message(error.message,error.status!==401);}
   finally{state.busy=false;$('vr-refresh').disabled=false;}
@@ -132,3 +188,27 @@ function activated(){
 window.addEventListener('hashchange',activated);
 window.addEventListener('fomo:view-change',activated);
 activated();
+
+function hoursStatus(message,error=false){
+  $('vr-hours-status').textContent=message;
+  $('vr-hours-status').classList.toggle('vr-error',error);
+}
+$('vr-hours-copy').addEventListener('click',()=>{
+  if(!availability)return;
+  const monday=$('vr-times-1').value;
+  for(let i=0;i<7;i++)if($('vr-day-'+i).checked)$('vr-times-'+i).value=monday;
+  hoursStatus('Copied. Nothing is saved until you press Save hours.');
+});
+$('vr-hours-save').addEventListener('click',async event=>{
+  event.preventDefault();
+  if(!availability)return;
+  const {next,bad}=hoursCollect();
+  if(bad.length){hoursStatus('Could not read '+bad.join(', ')+'. Use a time like 2:15 PM.',true);return;}
+  const button=$('vr-hours-save');button.disabled=true;hoursStatus('Saving hours…');
+  try{
+    const data=await api('saveAvailability',{availability:next});
+    availability=data.availability;hoursRender();
+    hoursStatus('Hours saved. The form picks them up within a minute.');
+  }catch(error){hoursStatus(error.message,true);}
+  finally{button.disabled=false;}
+});

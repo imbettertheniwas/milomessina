@@ -46,3 +46,50 @@ export function validateRequest(value, now = new Date()) {
         return "Your request could not be submitted.";
     return null;
 }
+export const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const maxTimesPerDay = 24;
+/* Until someone configures it, every day offers what the form always offered,
+   so switching this on changes nothing by itself. */
+export function defaultAvailability() {
+    return weekdayNames.map(() => ({ open: true, times: requestTimes.slice() }));
+}
+/* "2:15 PM", "2:15pm" and "14:15" are one slot typed three ways. Store one
+   spelling so the form and the console cannot disagree about a duplicate. */
+export function canonicalTime(value) {
+    const raw = typeof value === "string" ? value.trim() : "";
+    if (!raw)
+        return "";
+    const clock = /^(\d{1,2}):([0-5][0-9])$/.exec(raw);
+    if (clock) {
+        const hour = Number(clock[1]);
+        return hour > 23 ? "" : formatRequestTime(String(hour).padStart(2, "0") + ":" + clock[2]);
+    }
+    const meridiem = /^(\d{1,2}):([0-5][0-9])\s*([AaPp])\.?[Mm]?\.?$/.exec(raw);
+    if (!meridiem)
+        return "";
+    const hour = Number(meridiem[1]);
+    if (hour < 1 || hour > 12)
+        return "";
+    return hour + ":" + meridiem[2] + " " + (meridiem[3].toLowerCase() === "a" ? "AM" : "PM");
+}
+export function normalizeAvailability(value) {
+    if (!Array.isArray(value) || value.length !== weekdayNames.length)
+        return defaultAvailability();
+    return weekdayNames.map((_, index) => {
+        const entry = (value[index] ?? {});
+        const times = [];
+        for (const raw of Array.isArray(entry.times) ? entry.times : []) {
+            const time = canonicalTime(raw);
+            if (time && times.indexOf(time) === -1 && times.length < maxTimesPerDay)
+                times.push(time);
+        }
+        times.sort((a, b) => timeInputValue(a).localeCompare(timeInputValue(b)));
+        return { open: entry.open === true, times };
+    });
+}
+export function dayIsOpen(availability, date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+        return false;
+    const [y, m, d] = date.split("-").map(Number);
+    return availability[new Date(y, m - 1, d).getDay()]?.open === true;
+}

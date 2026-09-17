@@ -110,3 +110,51 @@ test('existing console inline scripts still parse; route and iframe-free form re
   const form=readFileSync(new URL('../hqvisitform/index.html',import.meta.url),'utf8');
   assert.doesNotMatch(form,/<iframe/);assert.match(form,/portal-config.js/);
 });
+
+import {normalizeAvailability,defaultAvailability,canonicalTime} from '../server/visits/validation.mjs';
+
+test('availability accepts the spellings a person types and stores one of them',()=>{
+  const [sunday]=normalizeAvailability([{open:true,times:['14:15','2:15pm','9:05 AM','10:00 AM','nonsense','']},
+    ...Array.from({length:6},()=>({open:false,times:[]}))]);
+  // 14:15 and 2:15pm are the same slot typed twice, and junk is dropped.
+  assert.deepEqual(sunday.times,['9:05 AM','10:00 AM','2:15 PM']);
+  assert.equal(canonicalTime('12:30'),'12:30 PM');
+  assert.equal(canonicalTime('00:30'),'12:30 AM');
+  assert.equal(canonicalTime('25:00'),'');
+  assert.equal(canonicalTime('13:00 PM'),'');
+});
+test('malformed availability falls back to the open-everything default',()=>{
+  for(const bad of [null,undefined,'x',[],[{open:true,times:[]}]])
+    assert.deepEqual(normalizeAvailability(bad),defaultAvailability());
+  assert.equal(defaultAvailability().length,7);
+  assert.equal(defaultAvailability().every(d=>d.open),true);
+});
+test('opening hours are public, but only a session may change them',async()=>{
+  const stored=Array.from({length:7},(_,i)=>({open:i===3,times:i===3?['11:00 AM']:[]}));
+  const h=harness({store:async(action,payload)=>{
+    if(action==='settings')return {availability:stored};
+    if(action==='saveSettings')return {availability:payload.availability};
+    return {allowed:true};
+  }});
+  // No cookie: a guest's form has to be able to read this before logging in.
+  const open=await h.call('availability',null,{method:'GET',cookie:undefined});
+  assert.equal(open.status,200);
+  assert.equal(open.body.availability[3].open,true);
+  assert.equal(open.body.availability[0].open,false);
+  assert.equal((await h.call('saveAvailability',{availability:stored})).status,401);
+  const login=await h.call('login',{password:env.VISITS_ADMIN_PASSWORD});
+  const cookie=login.headers['Set-Cookie'];
+  assert.equal((await h.call('saveAvailability',{availability:stored},{cookie})).status,200);
+  // A malformed payload must not normalize into "every day open".
+  assert.equal((await h.call('saveAvailability',{availability:'x'},{cookie})).status,400);
+  assert.equal((await h.call('saveAvailability',{availability:[]},{cookie})).status,400);
+});
+test('a closed day is refused with a message naming the day, not a generic outage',async()=>{
+  const h=harness({store:async action=>{
+    if(action==='submit'){const e=new Error('closed');e.code='CLOSED';throw e;}
+    return {allowed:true};
+  }});
+  const response=await h.call();
+  assert.equal(response.status,400);
+  assert.match(response.body.error,/not open for visits/);
+});

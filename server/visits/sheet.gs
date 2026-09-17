@@ -66,6 +66,12 @@ function visitsApi(body) {
       });
       result.version=Number(result.version);return result;
     }).filter(function(r){return VISIT_ID.test(String(r.id));});
+    if(body.action==='settings')return visitReply(true,{availability:visitAvailability()});
+    if(body.action==='saveSettings'){
+      if(!Array.isArray(body.availability) || body.availability.length!==7)return visitReply(false,null,'INVALID');
+      PropertiesService.getScriptProperties().setProperty('VISITS_AVAILABILITY',JSON.stringify(body.availability));
+      return visitReply(true,{availability:visitAvailability()});
+    }
     if(body.action==='list')return visitReply(true,{requests:requests.reverse()});
     if(body.action==='submit'){
       var r=body.request;
@@ -77,6 +83,7 @@ function visitsApi(body) {
       }
       var since=Date.now()-24*60*60*1000;
       if(requests.filter(function(x){return x.email===r.email && new Date(x.created_at).getTime()>since;}).length>=5)return visitReply(false,null,'RATE_LIMIT');
+      if(!visitDayOpen(r.preferred_date))return visitReply(false,null,'CLOSED');
       if(!visitAllowAddress(body.addressKey))return visitReply(false,null,'RATE_LIMIT');
       var values=VISIT_COLUMNS.map(function(k){return k==='version'?1:visitText(r[k]);});
       sheet.getRange(sheet.getLastRow()+1,1,1,VISIT_COLUMNS.length).setNumberFormat('@').setValues([values]);
@@ -96,6 +103,25 @@ function visitsApi(body) {
     }
     return visitReply(false,null,'INVALID');
   }catch(err){return visitReply(false,null,'UNAVAILABLE');}
+}
+function visitAvailability() {
+  var raw=PropertiesService.getScriptProperties().getProperty('VISITS_AVAILABILITY');
+  if(!raw)return null;
+  try{
+    var parsed=JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length===7?parsed:null;
+  }catch(err){return null;}
+}
+/* Unset or unreadable settings mean every day is open, which is how this
+   behaved before availability existed. Failing open here is deliberate: a
+   corrupted property must not silently close the form to every guest. */
+function visitDayOpen(date) {
+  var availability=visitAvailability();
+  if(!availability)return true;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date)))return false;
+  var parts=String(date).split('-');
+  var day=new Date(Number(parts[0]),Number(parts[1])-1,Number(parts[2])).getDay();
+  return !availability[day] || availability[day].open!==false;
 }
 /* Best-effort ceiling per sending address, so one sender cannot fill the tab by
    varying the email. The 5-per-email rule reads committed rows and cannot see

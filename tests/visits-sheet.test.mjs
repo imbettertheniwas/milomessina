@@ -17,7 +17,7 @@ function sheetHarness({sheetId='',seed=null}={}){
   // getProperty has to answer per key: the script reads VISITS_SHEET_ID too.
   const props={VISITS_SERVICE_SECRET:'test-service-secret-'.repeat(3),VISITS_SHEET_ID:sheetId};
   const ctx=vm.createContext({
-    PropertiesService:{getScriptProperties:()=>({getProperty:key=>props[key]||null})},
+    PropertiesService:{getScriptProperties:()=>({getProperty:key=>props[key]||null,setProperty:(key,value)=>{props[key]=value;}})},
     ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType(){return JSON.parse(body);}})},
     LockService:{getScriptLock:()=>({waitLock(){held=true;},hasLock:()=>held,releaseLock(){held=false;}})},
     CacheService:{getScriptCache:()=>({get:key=>cache.get(key),put:(key,val)=>cache.set(key,val)})},
@@ -140,4 +140,24 @@ test('retrying one request id does not spend the address allowance',()=>{
   for(let n=2;n<=8;n++)
     assert.equal(h.call('submit',{addressKey:key,request:record(n,'guest'+n+'@example.invalid')}).ok,true);
   assert.equal(h.call('submit',{addressKey:key,request:record(9,'guest9@example.invalid')}).code,'RATE_LIMIT');
+});
+
+/* Closed days are enforced where the row is written, so a caller holding the
+   secret cannot book a Sunday by skipping the form. */
+test('the sheet stores availability and refuses a closed day',()=>{
+  const h=sheetHarness({sheetId:'x'});
+  // 2026-09-27 is a Sunday, 2026-09-28 a Monday.
+  const sundayOff=Array.from({length:7},(_,i)=>({open:i!==0,times:['10:00 AM']}));
+  assert.equal(h.call('saveSettings',{availability:sundayOff}).ok,true);
+  assert.deepEqual(h.call('settings').data.availability,sundayOff);
+  const sunday={...record(1),preferred_date:'2026-09-27'};
+  assert.equal(h.call('submit',{request:sunday}).code,'CLOSED');
+  const monday={...record(2),preferred_date:'2026-09-28'};
+  assert.equal(h.call('submit',{request:monday}).ok,true);
+  assert.equal(h.call('list').data.requests.length,1);
+});
+test('unset availability leaves every day open, as before the setting existed',()=>{
+  const h=sheetHarness({sheetId:'x'});
+  assert.equal(h.call('settings').data.availability,null);
+  assert.equal(h.call('submit',{request:{...record(1),preferred_date:'2026-09-27'}}).ok,true);
 });

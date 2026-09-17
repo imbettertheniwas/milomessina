@@ -719,6 +719,18 @@ td.date.run{color:var(--good)}
                 <option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="declined">Declined</option>
               </select><span class="vr-count" id="vr-count"></span>
             </div>
+            <details class="vr-hours" id="vr-hours">
+              <summary>Visit hours <span class="vr-hours-note">which days and times the form offers</span></summary>
+              <div class="vr-hours-body">
+                <p class="vr-hours-help">Uncheck a day to grey it out on the form. List that day's times separated by commas &mdash; <code>10:00 AM, 2:15 PM</code> or <code>14:15</code> both work. Guests can still propose their own time with &ldquo;Specific time&rdquo;.</p>
+                <div id="vr-hours-rows"></div>
+                <div class="vr-hours-actions">
+                  <button class="btn btn-p" id="vr-hours-save">Save hours</button>
+                  <button class="mini ghost" id="vr-hours-copy" type="button">Copy Monday to all open days</button>
+                  <span class="vr-hours-status" id="vr-hours-status" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+            </details>
             <div class="vr-columns">
               <div id="vr-list" aria-label="Visit requests"></div>
               <aside class="vr-detail" id="vr-details" hidden aria-labelledby="vr-detail-name">

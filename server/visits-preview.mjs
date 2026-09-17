@@ -6,14 +6,20 @@ import {randomBytes} from 'node:crypto';
 import {createVisitHandler} from './visits/handler.mjs';
 
 export function memoryStore() {
-  const records=new Map(),attempts=new Map();
+  const records=new Map(),attempts=new Map();let availability=null;
   const fail=code=>{const e=new Error(code);e.code=code;throw e;};
   const store=async(action,body={})=>{
     if(action==='throttle'){const count=attempts.get(body.key)||0;if(count>=10)fail('RATE_LIMIT');attempts.set(body.key,count+1);return {allowed:true};}
+    if(action==='settings')return {availability};
+    if(action==='saveSettings'){availability=body.availability;return {availability};}
     if(action==='list')return {requests:[...records.values()].reverse().map(r=>({...r}))};
     if(action==='submit'){
       const r=body.request,old=records.get(r.id);
       if(old){if(old.email!==r.email)fail('CONFLICT');return {reference:r.id,status:'pending',duplicate:true};}
+      if(availability){
+        const [y,m,d]=String(r.preferred_date).split('-').map(Number);
+        if(availability[new Date(y,m-1,d).getDay()]?.open===false)fail('CLOSED');
+      }
       if([...records.values()].filter(row=>row.email===r.email && Date.parse(row.created_at)>Date.now()-86400000).length>=5)fail('RATE_LIMIT');
       records.set(r.id,{...r});return {reference:r.id,status:'pending',duplicate:false};
     }

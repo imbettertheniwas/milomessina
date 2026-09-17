@@ -1,5 +1,5 @@
 import {createHash, createHmac, randomBytes, timingSafeEqual} from 'node:crypto';
-import {validateRequest} from './validation.mjs';
+import {validateRequest,normalizeAvailability} from './validation.mjs';
 
 const SESSION_SECONDS = 4 * 60 * 60;
 const COOKIE = '__Host-fomo-visits';
@@ -77,7 +77,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
     // The form and console are same-origin. Cross-origin requests are never enabled.
     if(origin && origin!==env.VISITS_PUBLIC_ORIGIN)return fail(403,'Please use the visit portal.');
     const action=new URL(req.url,'https://local.invalid').searchParams.get('action')||'submit';
-    const allowed={submit:'POST',login:'POST',logout:'POST',list:'GET',update:'POST',session:'GET'};
+    const allowed={submit:'POST',login:'POST',logout:'POST',list:'GET',update:'POST',session:'GET',availability:'GET',saveAvailability:'POST'};
     if(!Object.hasOwn(allowed,action))return fail(404,'Unknown action.');
     if(req.method!==allowed[action]){res.setHeader('Allow',allowed[action]);return fail(405,'Method not allowed.');}
     if(req.method==='POST' && origin!==env.VISITS_PUBLIC_ORIGIN)return fail(403,'Please use the visit portal.');
@@ -104,8 +104,23 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         res.setHeader('Set-Cookie',sessionCookie('',0));
         return res.status(200).json({authenticated:false});
       }
+      if(action==='availability'){
+        const data=await store('settings');
+        // Opening hours are public and change rarely, so let the CDN absorb the
+        // form's traffic instead of waking Apps Script on every page load.
+        res.setHeader('Cache-Control','public, max-age=0, s-maxage=60');
+        res.setHeader('Vercel-CDN-Cache-Control','max-age=60');
+        return res.status(200).json({availability:normalizeAvailability(data?.availability)});
+      }
       if(action!=='submit' && !validSession(req.headers?.cookie,env,now()))return fail(401,'Unlock visit requests to continue.');
       if(action==='session')return res.status(200).json({authenticated:true});
+      if(action==='saveAvailability'){
+        // Reject a malformed payload rather than normalizing it into defaults,
+        // which would quietly reopen every day the team had closed.
+        if(!Array.isArray(body.availability) || body.availability.length!==7)return fail(400,'Check the availability settings.');
+        const data=await store('saveSettings',{availability:normalizeAvailability(body.availability)});
+        return res.status(200).json({availability:normalizeAvailability(data?.availability)});
+      }
       if(action==='list'){
         const data=await store('list');
         if(!Array.isArray(data?.requests))throw new Error('Invalid storage response');
@@ -132,6 +147,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       if(error.code==='RATE_LIMIT')return fail(429,'Too many requests. Please try again later.');
       if(error.code==='CONFLICT')return fail(409,'This request changed. Refresh before trying again.');
       if(error.code==='NOT_FOUND')return fail(404,'This request is no longer available.');
+      if(error.code==='CLOSED')return fail(400,'That day is not open for visits. Please choose another date.');
       // The public message stays vague on purpose, so the distinguishing detail
       // goes to the server log: an unmapped code here is a misconfiguration,
       // and UNAUTHORIZED specifically means the two secrets do not match.

@@ -8,15 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { dateKey, nyToday, requestTimes, formatRequestTime, timeInputValue, validateRequest } from "@/lib/visits";
+import { dateKey, nyToday, requestTimes, formatRequestTime, timeInputValue, validateRequest, defaultAvailability, normalizeAvailability, type DayAvailability } from "@/lib/visits";
 
 export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase?: string; submissionUrl?: string }) {
   const [today, setToday] = useState<Date>();
+  const [availability, setAvailability] = useState<DayAvailability[]>(defaultAvailability);
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState("");
   const [specificOpen, setSpecificOpen] = useState(false);
   const [specificTime, setSpecificTime] = useState("10:30");
-  const isSpecificTime = !!time && !requestTimes.includes(time);
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -25,8 +25,22 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
   const requestId = useRef("");
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { setToday(nyToday()); requestId.current=crypto.randomUUID(); }, []);
+  // Opening hours are set in the console. A failed load leaves the defaults in
+  // place, so the form stays usable rather than showing a guest an empty week.
+  useEffect(() => {
+    if(!submissionUrl)return;
+    const stop=new AbortController();
+    fetch(submissionUrl+"?action=availability",{signal:stop.signal,cache:"no-store"})
+      .then(r=>r.ok?r.json():null)
+      .then(d=>{ if(d?.availability) setAvailability(normalizeAvailability(d.availability)); })
+      .catch(()=>{});
+    return ()=>stop.abort();
+  }, [submissionUrl]);
   useEffect(() => { if(step > 1) heading.current?.focus(); }, [step]);
   const maxDate=today ? new Date(today.getFullYear(),today.getMonth(),today.getDate()+90) : undefined;
+  const closedWeekdays=availability.map((d,i)=>d.open?-1:i).filter(i=>i>=0);
+  const dayTimes=date?(availability[date.getDay()]?.times ?? []):requestTimes;
+  const isSpecificTime = !!time && !dayTimes.includes(time);
   const dateLabel=date?.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -66,7 +80,7 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
           <div className="booking-body">
           {step!==3 && <><h2 tabIndex={-1} ref={heading}>{step===1 ? "Pick a date & time" : "Your details"}</h2><p className="booking-subtitle">{step===1?"Choose a preferred time. We’ll confirm availability.":"Let us know how to reach you."}</p><div className="steps" aria-label={`Step ${step} of 2`}><span className={step===1?"active":"complete"}><i>{step===1?"1":<Check size={12}/>}</i>Date & time</span><span className="step-line"/><span className={step===2?"active":""}><i>2</i>Your details</span></div></>}
           {step===1 && <>
-            <div className="calendar-layout"><div className="calendar-wrap">{today ? <Calendar mode="single" selected={date} onSelect={setDate} defaultMonth={today} startMonth={today} endMonth={maxDate} disabled={[{before:new Date(today.getFullYear(),today.getMonth(),today.getDate()+1)},{after:maxDate!}]} showOutsideDays={false} className="visit-calendar"/>:<div className="calendar-loading">Loading calendar…</div>}</div>
+            <div className="calendar-layout"><div className="calendar-wrap">{today ? <Calendar mode="single" selected={date} onSelect={setDate} defaultMonth={today} startMonth={today} endMonth={maxDate} disabled={[{before:new Date(today.getFullYear(),today.getMonth(),today.getDate()+1)},{after:maxDate!},{dayOfWeek:closedWeekdays}]} showOutsideDays={false} className="visit-calendar"/>:<div className="calendar-loading">Loading calendar…</div>}</div>
               <div className="times"><h3>{date?date.toLocaleDateString("en-US",{month:"short",day:"numeric"}):"Preferred time"}</h3><Popover open={specificOpen} onOpenChange={open=>{setSpecificOpen(open);if(open)setSpecificTime(timeInputValue(time)||"10:30");}}>
                 <PopoverTrigger asChild><Button variant="link" className={"specific-time-trigger time-caption"+(isSpecificTime?" has-selection":"")} disabled={!date} aria-label={isSpecificTime?"Preferred time "+time+". Change specific time":"Choose a specific start time"}>{!date?"Select a date first":isSpecificTime?time+" · Edit":"Specific time"}</Button></PopoverTrigger>
                 <PopoverContent className="specific-time-popover" align="end" sideOffset={8} collisionPadding={16} aria-labelledby="specific-time-title" aria-describedby="specific-time-note">
@@ -77,7 +91,7 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
                     <Button type="submit" className="primary-action" disabled={!formatRequestTime(specificTime)}>Use this time</Button>
                   </form>
                 </PopoverContent>
-              </Popover><RadioGroup className="time-options" value={time} onValueChange={setTime} aria-label="Preferred start time" disabled={!date}>{requestTimes.map(t=><label className={`time-option ${time===t?"selected":""} ${!date?"unavailable":""}`} key={t}><RadioGroupItem value={t} id={`time-${t}`} /><span>{t}</span></label>)}</RadioGroup></div>
+              </Popover><RadioGroup className="time-options" value={time} onValueChange={setTime} aria-label="Preferred start time" disabled={!date}>{dayTimes.map(t=><label className={`time-option ${time===t?"selected":""} ${!date?"unavailable":""}`} key={t}><RadioGroupItem value={t} id={`time-${t}`} /><span>{t}</span></label>)}</RadioGroup></div>
             </div>
             <div className="timezone"><Globe2 size={15}/><span>All times are in New York time.</span></div>
             <Button className="primary-action" disabled={!date||!time} onClick={()=>setStep(2)}>Continue<ArrowRight size={18}/></Button>
