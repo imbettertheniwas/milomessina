@@ -83,6 +83,8 @@ test('storage credentials stay in the server request, not the public receipt',as
   const store=createSheetStore(env,async(url,options)=>{request={url,options};return {ok:true,json:async()=>({ok:true,data:{reference:guest.requestId,status:'pending'}})};});
   const result=await store('submit',{request:guest});
   assert.equal(JSON.parse(request.options.body).secret,env.VISITS_SERVICE_SECRET);
+  // The shared receiver routes on _api, exactly as the ledger does.
+  assert.equal(JSON.parse(request.options.body)._api,'visits');
   assert.equal(result.reference,guest.requestId);
 });
 test('existing console inline scripts still parse; route and iframe-free form remain present',()=>{

@@ -7,9 +7,10 @@
 - Copy form link and Open form at the top of the view.
 - Pending / confirmed / completed / declined filters, search, guest details and
   internal notes. Saving a status does not send mail or reserve calendar time.
-- Server-protected visit storage in a new visit_requests tab of the existing
-  CRM spreadsheet, behind its own deployment and secret. The ledger,
-  attendance, campus forms and their Apps Script deployment are unchanged.
+- Storage in a new visit_requests tab of the spreadsheet the team already
+  uses, through the Apps Script deployment it already uses. No second script,
+  no second /exec URL, no second spreadsheet. The ledger, attendance and campus
+  form tabs are untouched, and their behaviour does not change.
 - No existing visit records are imported or moved.
 
 Nothing is connected to production in this branch. With missing settings the API
@@ -37,55 +38,61 @@ The team session uses an HttpOnly, Secure, SameSite=Strict cookie. Use localhost
 
 ## Storage setup (project owner)
 
-Visit records live in a `visit_requests` tab inside the EXISTING fomo CRM
-spreadsheet, alongside the ledger, subs, days and hours tabs. The script below
-is still its own deployment with its own secret; only the spreadsheet is shared.
+Visit requests go into the spreadsheet the team already works in, through the
+form receiver already deployed from it. `server/visits/sheet.gs` is an extra
+file for that existing Apps Script project; it defines no doPost and no doGet,
+so it adds a branch without touching anything the receiver already answers.
 
-1. Open the fomo CRM spreadsheet and copy its id out of the URL: the long
-   string between `/d/` and `/edit`.
-2. Go to script.google.com and create a NEW standalone script. Do NOT use
-   Extensions > Apps Script on the spreadsheet: that opens the existing form
-   receiver, and a spreadsheet can only hold one bound script.
-3. Use the entire server/visits/sheet.gs as that script.
-4. In Script Properties set:
-   - `VISITS_SHEET_ID` to the spreadsheet id from step 1.
-   - `VISITS_SERVICE_SECRET` to a unique random secret of at least 32
-     characters. Keep it out of source control and browser code.
-5. Deploy this standalone script as a web app, executing as the spreadsheet
-   owner, with invocation allowed for Anyone. The code itself requires the
-   server-only secret on every operation; GET exposes no data.
-   This deployment choice should be reviewed by the project owner.
-6. Copy the resulting https://script.google.com/macros/s/.../exec URL.
-   The script creates only the visit_requests tab on first use and reads and
-   writes only that tab. The ledger, subs, days, hours and form tabs are never
-   opened by it.
-7. Grant the script's Google account access to the spreadsheet if it is not
-   already the owner.
+1. Open the spreadsheet, then Extensions > Apps Script. This is the existing
+   project, the one holding apps-script.gs. Do not create a new project.
+2. Add a file: + next to Files, choose Script, name it `visits`. Paste the
+   whole of server/visits/sheet.gs into it.
+3. In apps-script.gs, add the visits route beside the invoice one, directly
+   under `if (body._api === 'invoice') return invoiceApi(body);`
 
-Do NOT paste this script into the existing fomo receiver, and do not redeploy
-that receiver. It needs no changes.
+       if (body._api === 'visits') return visitsApi(body);
+
+   and, in doGet, add `visits: typeof visitsApi === 'function',` beside the
+   `ledger:` line. Both are already in this repo's copy of apps-script.gs, so
+   pasting that file over the old one does the same thing.
+4. Project Settings > Script Properties: add `VISITS_SERVICE_SECRET`, at least
+   32 random characters. This is NOT CONFIG.SHARED_SECRET or INVOICE_KEY, both
+   of which ride along in public page source. Guest contact details must not
+   sit behind a turnstile.
+5. Deploy > Manage deployments > the existing deployment > edit > New version >
+   Deploy. Keep the same deployment so the /exec URL does not change and the
+   ledger, attendance and campus forms keep working against it.
+6. Open the /exec URL in a browser. It should now report `"visits": true`
+   alongside `"ledger": true`. If visits is false the new version is not the
+   one being served: Apps Script serves the last DEPLOYED version, not the last
+   saved one.
+
+The visit_requests tab is created on first use. `VISITS_SHEET_ID` is an
+optional script property, needed only to put visit rows somewhere other than
+the spreadsheet this script already writes to.
+
+### If the redeploy goes wrong
+
+Deploy > Manage deployments > edit > Version, pick the previous version, and
+Deploy. That restores the receiver exactly as it was. Visit requests then
+answer as disconnected until you redeploy, which is their failure mode
+everywhere: nothing is lost and nothing is silently accepted.
 
 ### What sharing the spreadsheet means
 
-- Everyone who can open the CRM spreadsheet can read guest names, emails,
-  social links and notes directly, without the visit-access password. The
-  password gates the console, not the sheet. Keep spreadsheet sharing to the
-  team members who should see guest details.
-- The CRM form receiver writes a row, and will add a column, to whatever tab
-  name a request names. A stray post aimed at `visit_requests` therefore lands
-  in the same tab. It cannot forge a visit: the connector ignores any row whose
-  id is not a visit UUID, and tolerates extra columns appended to the right, so
-  neither the console list nor the rate limit is affected. Such a row is
-  cosmetic clutter to delete by hand.
+- Everyone who can open the spreadsheet can read guest names, emails, social
+  links and notes directly, without the visit-access password. That password
+  gates the console, not the sheet. Keep spreadsheet sharing to the people who
+  should see guest details.
+- The form receiver writes a row, and will add a column, to whatever tab name a
+  request names, and it is gated only by SHARED_SECRET. A stray post aimed at
+  `visit_requests` therefore lands in the same tab. It cannot forge a visit:
+  the connector ignores any row whose id is not a visit UUID and tolerates
+  extra columns appended to the right, so neither the console list nor the rate
+  limit is affected. Such a row is clutter to delete by hand.
 - Deleting or reordering the first thirteen columns of `visit_requests` by hand
-  will disable the feature until they are restored. Adding columns after them
-  is safe.
-
-If you would rather keep guest records out of the CRM spreadsheet entirely,
-create a separate spreadsheet and put its id in `VISITS_SHEET_ID` instead. No
-code changes are needed either way. If the organization forbids anonymous Apps
-Script invocation even with application authentication, use a different private
-store behind createSheetStore instead.
+  disables the feature until they are restored. Adding columns after them is
+  safe.
 
 ## Vercel configuration (project owner)
 
@@ -94,14 +101,14 @@ Set the following server environment variables for the intended deployment:
 | Variable | Value |
 | --- | --- |
 | VISITS_PUBLIC_ORIGIN | Exact form and console origin, e.g. https://milomessina.com |
-| VISITS_STORAGE_URL | The visits standalone script's /exec URL |
-| VISITS_SERVICE_SECRET | Same random secret as that script's VISITS_SERVICE_SECRET property |
+| VISITS_STORAGE_URL | The SAME /exec URL the console already uses (ENDPOINT in invoice/index.html) |
+| VISITS_SERVICE_SECRET | Same random secret as the VISITS_SERVICE_SECRET script property |
 | VISITS_SESSION_SECRET | A DIFFERENT random secret, at least 32 characters |
 | VISITS_ADMIN_PASSWORD | A separate strong team visit-access password, at least 16 characters |
 
-Use a separate spreadsheet (a scratch copy, via VISITS_SHEET_ID), secrets and
-password for Preview, so preview traffic never writes into the CRM spreadsheet.
-Set VISITS_PUBLIC_ORIGIN to that preview deployment's exact origin. Production
+For Preview, point VISITS_SHEET_ID at a scratch copy of the spreadsheet and use
+different secrets and password, so preview traffic never writes real rows. Set
+VISITS_PUBLIC_ORIGIN to that preview deployment's exact origin. Production
 credentials should not be attached to unreviewed preview branches. Until these
 are set, the view and public form display the disconnected error.
 

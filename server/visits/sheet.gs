@@ -1,31 +1,42 @@
-// Standalone Apps Script for the visit_requests tab.
-// Script Properties: VISITS_SERVICE_SECRET (32+ random characters), and
-// VISITS_SHEET_ID to point at an existing spreadsheet (the fomo CRM sheet).
-// Leave VISITS_SHEET_ID blank only if this script is bound to its own sheet.
-// This is a SEPARATE deployment. Do not paste it into the CRM form receiver.
+/* Visit requests — an ADDITIONAL file for the existing fomo form receiver.
+
+   In the spreadsheet: Extensions > Apps Script, then + > Script, name it
+   "visits", and paste this whole file in. Leave apps-script.gs alone apart
+   from the one routing line it already carries, then deploy a NEW VERSION of
+   the SAME deployment so the /exec URL never changes.
+
+   This file deliberately defines no doPost and no doGet. Apps Script puts
+   every file in one shared scope, so a second doPost here would silently
+   replace the form receiver's and break the ledger, attendance and forms.
+
+   Script Properties: VISITS_SERVICE_SECRET, 32+ random characters. This is
+   NOT CONFIG.SHARED_SECRET — guest contact details must not sit behind the
+   turnstile that rides along in the public page source.
+   VISITS_SHEET_ID is optional and only needed to put visit rows in a
+   different spreadsheet than the one this script already writes to. */
 var VISIT_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-function visitBook() {
-  var id=PropertiesService.getScriptProperties().getProperty('VISITS_SHEET_ID');
-  var book=id?SpreadsheetApp.openById(id):SpreadsheetApp.getActiveSpreadsheet();
-  if(!book)throw new Error('no spreadsheet - set VISITS_SHEET_ID');
-  return book;
-}
 var VISIT_COLUMNS=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
 function visitReply(ok,data,code) {
   return ContentService.createTextOutput(JSON.stringify({ok:ok,data:data||null,code:code||null})).setMimeType(ContentService.MimeType.JSON);
 }
-function doGet(){return visitReply(false,null,'METHOD');}
-function doPost(e) {
-  var lock=LockService.getScriptLock();
+function visitBook() {
+  /* Same spreadsheet the rest of this script writes to, unless told otherwise. */
+  var id=PropertiesService.getScriptProperties().getProperty('VISITS_SHEET_ID')
+    || (typeof CONFIG!=='undefined' && CONFIG.SHEET_ID) || '';
+  var book=id?SpreadsheetApp.openById(id):SpreadsheetApp.getActiveSpreadsheet();
+  if(!book)throw new Error('no spreadsheet - set VISITS_SHEET_ID');
+  return book;
+}
+/* Called from doPost for body._api === 'visits'. The caller already holds the
+   script lock, so this must not take or release one of its own. */
+function visitsApi(body) {
   try{
     var secret=PropertiesService.getScriptProperties().getProperty('VISITS_SERVICE_SECRET');
     if(!secret || secret.length<32)return visitReply(false,null,'UNCONFIGURED');
-    var raw=e && e.postData && e.postData.contents;
-    if(!raw || raw.length>16000)return visitReply(false,null,'INVALID');
-    var body=JSON.parse(raw),given=String(body.secret||''),different=secret.length^given.length;
+    if(!body || JSON.stringify(body).length>16000)return visitReply(false,null,'INVALID');
+    var given=String(body.secret||''),different=secret.length^given.length;
     for(var i=0;i<secret.length;i++)different|=secret.charCodeAt(i)^(given.charCodeAt(i)||0);
     if(different)return visitReply(false,null,'UNAUTHORIZED');
-    lock.waitLock(15000);
     if(body.action==='throttle'){
       if(!/^[a-f0-9]{64}$/.test(body.key))return visitReply(false,null,'INVALID');
       var cache=CacheService.getScriptCache(),cacheKey='visit-login:'+body.key;
@@ -43,6 +54,9 @@ function doPost(e) {
       sheet.setFrozenRows(1);
     }
     var grid=sheet.getDataRange().getValues();
+    /* Only the columns this feature owns have to match. The form receiver in
+       this same project appends a column to whatever tab a request names, and
+       that must not take visit requests down. */
     if(JSON.stringify(grid[0].slice(0,VISIT_COLUMNS.length))!==JSON.stringify(VISIT_COLUMNS))return visitReply(false,null,'SCHEMA');
     var requests=grid.slice(1).map(function(row){
       var result={};VISIT_COLUMNS.forEach(function(key,n){
@@ -81,7 +95,6 @@ function doPost(e) {
     }
     return visitReply(false,null,'INVALID');
   }catch(err){return visitReply(false,null,'UNAVAILABLE');}
-  finally{if(lock.hasLock())lock.releaseLock();}
 }
 function visitText(value){
   var text=String(value==null?'':value);

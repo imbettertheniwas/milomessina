@@ -63,6 +63,11 @@ function doPost(e) {
        form tabs below. */
     if (body._api === 'invoice') return invoiceApi(body);
 
+    /* Visit requests from /hqvisitform go the same way, into visits.gs and its
+       own visit_requests tab. They carry their own 32-character service secret
+       instead of SHARED_SECRET, because the rows hold guest contact details. */
+    if (body._api === 'visits') return visitsApi(body);
+
     if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
 
     /* honeypot. A bot filled a field no human can see: tell it everything
@@ -94,6 +99,7 @@ function doGet() {
   return reply(true, null, {
     hint: 'fomo campus form receiver is live',
     ledger: typeof invoiceApi === 'function',
+    visits: typeof visitsApi === 'function',
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
     subs: typeof subsRoll === 'function',

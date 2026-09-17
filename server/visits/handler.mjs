@@ -45,7 +45,7 @@ export function createSheetStore(env,fetchImpl=fetch) {
   return async (action,payload={})=>{
     const response=await fetchImpl(env.VISITS_STORAGE_URL,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action,secret:env.VISITS_SERVICE_SECRET,...payload}),
+      body:JSON.stringify({_api:'visits',action,secret:env.VISITS_SERVICE_SECRET,...payload}),
       signal:AbortSignal.timeout(15000)
     });
     if(!response.ok)throw new Error('Storage unavailable');

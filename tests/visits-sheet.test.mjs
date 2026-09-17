@@ -24,7 +24,7 @@ function sheetHarness({sheetId='',seed=null}={}){
     SpreadsheetApp:{getActiveSpreadsheet:()=>book,openById(id){openedById=id;return book;}}
   });
   vm.runInContext(fs.readFileSync(new URL('../server/visits/sheet.gs',import.meta.url),'utf8'),ctx);
-  const call=(action,payload={},secret='test-service-secret-'.repeat(3))=>ctx.doPost({postData:{contents:JSON.stringify({action,secret,...payload})}});
+  const call=(action,payload={},secret='test-service-secret-'.repeat(3))=>ctx.visitsApi({action,secret,...payload});
   return {call,rows,getWrites:()=>writes,openedById:()=>openedById};
 }
 const VISIT_HEADER=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
@@ -82,4 +82,42 @@ test('an extra column appended by the CRM receiver does not trip the schema chec
   assert.equal(h.call('list').data.requests.length,1);
   assert.equal(h.call('update',{id:record().id,status:'confirmed',version:1,internalNotes:'','now':new Date().toISOString()}).ok,true);
   assert.equal(h.call('list').data.requests[0].status,'confirmed');
+});
+
+/* Visits ride on the existing form receiver's deployment, so both files share
+   one global scope in Apps Script. The visits file must add a branch without
+   replacing anything the receiver already answers with. */
+function receiverHarness(){
+  const ctx=vm.createContext({
+    ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType(){return JSON.parse(body);}})},
+    LockService:{getScriptLock:()=>({waitLock(){},hasLock:()=>true,releaseLock(){}})},
+    PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})}
+  });
+  const read=name=>fs.readFileSync(new URL(name,import.meta.url),'utf8');
+  vm.runInContext(read('../fomo/setup/apps-script.gs'),ctx);
+  const before={doPost:ctx.doPost,doGet:ctx.doGet,reply:ctx.reply,writeRow:ctx.writeRow};
+  vm.runInContext(read('../server/visits/sheet.gs'),ctx);
+  return {ctx,before};
+}
+test('the visits file adds to the receiver without replacing any of it',()=>{
+  const {ctx,before}=receiverHarness();
+  for(const name of Object.keys(before))
+    assert.equal(ctx[name],before[name],name+' was overwritten by the visits file');
+  assert.equal(typeof ctx.visitsApi,'function');
+});
+test('the receiver routes _api visits, and reports it as deployed',()=>{
+  const {ctx}=receiverHarness();
+  // Reaching visitsApi is what UNCONFIGURED proves: only it answers that code.
+  const routed=ctx.doPost({postData:{contents:JSON.stringify({_api:'visits',action:'list',secret:'x'})}});
+  assert.deepEqual(routed,{ok:false,data:null,code:'UNCONFIGURED'});
+  assert.equal(ctx.doGet().visits,true);
+  assert.equal(ctx.doGet().ledger,true);
+});
+test('a form post is never mistaken for a visit request',()=>{
+  const {ctx}=receiverHarness();
+  let wrote=null;
+  ctx.writeRow=(tab,row)=>{wrote={tab,row};};
+  const answer=ctx.doPost({postData:{contents:JSON.stringify({_page:'/fomo/apply/',name:'Someone'})}});
+  assert.equal(answer.ok,true);
+  assert.equal(wrote.tab,'apply');
 });
