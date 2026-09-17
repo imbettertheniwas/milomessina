@@ -12,7 +12,16 @@ import { dateKey, nyToday, requestTimes, formatRequestTime, timeInputValue, vali
 
 export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase?: string; submissionUrl?: string }) {
   const [today, setToday] = useState<Date>();
-  const [availability, setAvailability] = useState<DayAvailability[]>(defaultAvailability);
+  /* Last known hours, so a storage hiccup shows the days the team actually
+     chose rather than reopening the whole week. Opening hours are public, so
+     nothing here is guest data. */
+  const [availability, setAvailability] = useState<DayAvailability[]>(() => {
+    try {
+      const cached = localStorage.getItem("fomo-visit-hours");
+      if (cached) return normalizeAvailability(JSON.parse(cached));
+    } catch { /* private mode, or storage blocked */ }
+    return defaultAvailability();
+  });
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState("");
   const [specificOpen, setSpecificOpen] = useState(false);
@@ -32,7 +41,12 @@ export default function Home({ assetBase = "", submissionUrl = "" }: { assetBase
     const stop=new AbortController();
     fetch(submissionUrl+"?action=availability",{signal:stop.signal,cache:"no-store"})
       .then(r=>r.ok?r.json():null)
-      .then(d=>{ if(d?.availability) setAvailability(normalizeAvailability(d.availability)); })
+      .then(d=>{
+        if(!d?.availability)return;
+        const hours=normalizeAvailability(d.availability);
+        setAvailability(hours);
+        try{ localStorage.setItem("fomo-visit-hours",JSON.stringify(hours)); }catch{ /* not essential */ }
+      })
       .catch(()=>{});
     return ()=>stop.abort();
   }, [submissionUrl]);
