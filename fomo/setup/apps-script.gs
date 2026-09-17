@@ -105,6 +105,7 @@ function doGet() {
     hint: 'fomo campus form receiver is live',
     ledger: typeof invoiceApi === 'function',
     visits: typeof visitsApi === 'function',
+    visitHours: typeof visitAvailability === 'function',
     campus: typeof campusApi === 'function',
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
