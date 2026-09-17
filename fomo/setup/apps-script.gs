@@ -68,6 +68,11 @@ function doPost(e) {
        instead of SHARED_SECRET, because the rows hold guest contact details. */
     if (body._api === 'visits') return visitsApi(body);
 
+    /* The campus applicants and the roster of interns running a campus,
+       read and written by /internal through this same deployment. Like the
+       ledger it answers with both tables rather than a bare confirmation. */
+    if (body._api === 'campus') return campusApi(body);
+
     if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
 
     /* honeypot. A bot filled a field no human can see: tell it everything
@@ -100,6 +105,7 @@ function doGet() {
     hint: 'fomo campus form receiver is live',
     ledger: typeof invoiceApi === 'function',
     visits: typeof visitsApi === 'function',
+    campus: typeof campusApi === 'function',
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
     subs: typeof subsRoll === 'function',
@@ -992,6 +998,388 @@ function shiftFind(sh, id) {
 
 function shiftPublic(s) {
   return { id: s.id, who: s.who, start: s.start, end: s.end, minutes: s.minutes };
+}
+
+/* ── the campus team, behind /internal ───────────────────────────
+
+   Two tables read as one section of the console. `apply` is the tab
+   /fomo/apply already writes into, read here rather than copied, so an
+   application is on the board the moment it lands. `campus_team` is the
+   roster of people actually running a campus: a row appears there when
+   somebody is hired out of the apply tab, or is typed in by hand.
+
+   The apply tab's columns belong to the form and grow with it, so
+   nothing below reads that tab positionally — every cell is matched to
+   the header above it by name. The four columns the console owns are
+   appended if the tab has not got them yet, and rows that predate them
+   are given an id on the next read. A form that gains a question still
+   needs no hand-editing of the sheet: the new column simply arrives on
+   the application as one more line. */
+
+var APPLY_TAB = 'apply';
+/* Written by the console, not by the form. `decided` is when the status
+   was last moved, which is the only date the apply tab does not already
+   hold — `received` is the applicant's own. */
+var APPLY_OWN = ['id', 'status', 'team notes', 'decided'];
+var APPLY_STATES = ['new', 'reviewing', 'interview', 'offer', 'hired', 'passed'];
+
+/* The header the form writes, and what the console calls it. Anything
+   not named here still reaches the page — see applyPublic — it just
+   arrives as an extra line rather than in a field of its own. */
+var APPLY_FIELDS = {
+  'seat': 'seat', 'full name': 'name', 'email': 'email', 'phone': 'phone',
+  'university': 'school', 'grad year': 'grad', 'tiktok': 'tiktok',
+  'instagram': 'instagram', 'portfolio': 'portfolio', 'why you': 'why',
+  'role answer': 'answer', 'hours': 'hours'
+};
+
+var TEAM_TAB = 'campus_team';
+var TEAM_COLS = ['id', 'added', 'name', 'email', 'phone', 'seat', 'campus',
+                 'state', 'status', 'started', 'notes', 'from'];
+var TEAM_STATES = ['active', 'paused', 'alumni'];
+/* The five seats on the apply form, by the value the form submits. The
+   page carries the readable labels; the sheet keeps the short codes so
+   an application and the roster row it becomes say the same thing. */
+var TEAM_SEATS = ['pres', 'growth', 'partner', 'content', 'culture'];
+
+/* Every action answers with both tables, the way the ledger answers with
+   the whole ledger: the page re-renders what came back rather than
+   guessing what its own change did to the sheet. */
+function campusApi(body) {
+  if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+
+  var action = String(body.action || 'list'), err = null;
+
+  if (action === 'applicant')       err = applySet(body);
+  else if (action === 'hire')       err = campusHire(body);
+  else if (action === 'teamadd')    err = teamAdd(body);
+  else if (action === 'teamupdate') err = teamUpdate(body);
+  else if (action === 'teamdelete') err = teamDelete(body);
+  else if (action !== 'list')       return reply(false, 'unknown action');
+  if (err) return reply(false, err);
+
+  return reply(true, null, {
+    applicants: applyList(),
+    team: teamRead(teamSheet()).map(teamPublic)
+  });
+}
+
+function campusBook() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID)
+                           : SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('no spreadsheet — set SHEET_ID, or run this script from inside the sheet');
+  return ss;
+}
+
+/* A cell that starts with = + or @ is a formula to Sheets, and everything
+   written below arrives from a browser. Leading apostrophe keeps it text. */
+function campusSafe(v) {
+  var s = String(v == null ? '' : v);
+  return /^[=+@]/.test(s) ? "'" + s : s;
+}
+
+function campusStamp() {
+  return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+/* A date typed into the sheet by hand comes back as a Date; one written
+   by the script comes back as the string it wrote. Hand back both as text. */
+function campusWhen(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+  return String(v == null ? '' : v);
+}
+
+/* ---------- the apply tab ---------- */
+
+/* null when nobody has applied yet: the form builds the tab on its first
+   submission, and the console must not build an empty one in front of it. */
+function applySheet() {
+  return campusBook().getSheetByName(APPLY_TAB);
+}
+
+/* The header row, with the console's own columns appended if they are
+   missing. Trailing blanks are dropped so a column's position in this
+   array is its position in the sheet. */
+function applyHeaders(sh) {
+  var width = Math.max(sh.getLastColumn(), 1);
+  var headers = sh.getRange(1, 1, 1, width).getValues()[0].map(function (h) { return String(h); });
+  while (headers.length && !headers[headers.length - 1]) headers.pop();
+
+  var missing = APPLY_OWN.filter(function (h) { return headers.indexOf(h) === -1; });
+  if (missing.length) {
+    headers = headers.concat(missing);
+    /* An id like 00123456 is a number to Sheets, and comes back as 123456
+       — a row the console would then never find again. */
+    sh.getRange(1, headers.indexOf('id') + 1, sh.getMaxRows()).setNumberFormat('@');
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return headers;
+}
+
+/* Every row as {_row, cells:{header: value}}. Blank rows — a hand-deleted
+   application leaves one behind — are skipped rather than counted. */
+function applyRows(sh, headers) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, headers.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var any = false, cells = {};
+    for (var j = 0; j < headers.length; j++) {
+      if (!headers[j]) continue;
+      cells[headers[j]] = vals[i][j];
+      if (String(vals[i][j] || '') !== '') any = true;
+    }
+    if (any) out.push({ _row: i + 2, cells: cells });
+  }
+  return out;
+}
+
+/* Rows that predate the id column, and every row the form writes, arrive
+   without one. They are filled in here, in a single write, because an
+   application with no id is one the console can read but never answer. */
+function applyIds(sh, headers, rows) {
+  if (!rows.length) return;
+  var col = headers.indexOf('id') + 1, need = false;
+  var ids = rows.map(function (r) {
+    if (!String(r.cells.id || '')) { r.cells.id = Utilities.getUuid().slice(0, 8); need = true; }
+    r.cells.id = String(r.cells.id);
+    return [r.cells.id];
+  });
+  if (!need) return;
+  /* The rows are contiguous from row 2, but a blank row in the middle was
+     skipped above — so write each run rather than the whole block. */
+  var start = 0;
+  while (start < rows.length) {
+    var end = start;
+    while (end + 1 < rows.length && rows[end + 1]._row === rows[end]._row + 1) end++;
+    sh.getRange(rows[start]._row, col, end - start + 1, 1).setValues(ids.slice(start, end + 1));
+    start = end + 1;
+  }
+}
+
+function applyList() {
+  var sh = applySheet();
+  if (!sh) return [];
+  var headers = applyHeaders(sh);
+  var rows = applyRows(sh, headers);
+  applyIds(sh, headers, rows);
+  return rows.map(function (r) { return applyPublic(r, headers); });
+}
+
+function applyPublic(r, headers) {
+  var c = r.cells, out = { extra: [] };
+  Object.keys(APPLY_FIELDS).forEach(function (h) {
+    out[APPLY_FIELDS[h]] = String(c[h] == null ? '' : c[h]);
+  });
+  out.id = String(c['id'] || '');
+  out.received = campusWhen(c['received']);
+  out.status = APPLY_STATES.indexOf(String(c['status'])) > -1 ? String(c['status']) : 'new';
+  out.notes = String(c['team notes'] || '');
+  out.decided = campusWhen(c['decided']);
+  /* Whatever else the form sent, in the order the sheet holds it: a
+     question added to /fomo/apply reaches the console without a
+     redeploy of anything. */
+  headers.forEach(function (h) {
+    if (!h || APPLY_FIELDS[h] || APPLY_OWN.indexOf(h) > -1 || h === 'page' || h === 'received') return;
+    var v = String(c[h] == null ? '' : c[h]);
+    if (v !== '') out.extra.push({ k: h, v: v });
+  });
+  return out;
+}
+
+function applyFind(id) {
+  var sh = applySheet();
+  if (!sh) return null;
+  var headers = applyHeaders(sh);
+  var rows = applyRows(sh, headers);
+  applyIds(sh, headers, rows);
+  id = String(id || '');
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].cells.id === id) return { sh: sh, headers: headers, row: rows[i] };
+  }
+  return null;
+}
+
+function applyWrite(hit, header, value) {
+  var col = hit.headers.indexOf(header) + 1;
+  if (col > 0) hit.sh.getRange(hit.row._row, col).setValue(value);
+}
+
+function applySet(b) {
+  var hit = applyFind(b.id);
+  if (!hit) return 'that application is not on the sheet any more';
+  var status = String(b.status || '');
+  if (APPLY_STATES.indexOf(status) === -1) return 'that is not one of the statuses';
+
+  /* An untouched row has no status cell at all, and that is 'new' — so
+     re-marking it 'new' is not a decision and does not get stamped. */
+  var was = String(hit.row.cells['status'] || 'new');
+  if (status !== was) {
+    applyWrite(hit, 'status', status);
+    applyWrite(hit, 'decided', campusStamp());
+  }
+  if (b.notes !== undefined) applyWrite(hit, 'team notes', campusSafe(String(b.notes).slice(0, 2000)));
+  return null;
+}
+
+/* ---------- the roster ---------- */
+
+/* Built on the first hire, the same way the ledger's tab is built on the
+   first spend. Every column is text: a start date must come back as the
+   string it went in as, and a phone number must keep its + and its
+   leading zero. */
+function teamSheet() {
+  var ss = campusBook();
+  var sh = ss.getSheetByName(TEAM_TAB);
+  if (sh && sh.getLastColumn() < TEAM_COLS.length) {
+    var have = sh.getLastColumn();
+    sh.getRange(1, have + 1, sh.getMaxRows(), TEAM_COLS.length - have).setNumberFormat('@');
+    sh.getRange(1, 1, 1, TEAM_COLS.length).setValues([TEAM_COLS]).setFontWeight('bold');
+  }
+  if (!sh) {
+    sh = ss.insertSheet(TEAM_TAB);
+    sh.getRange(1, 1, sh.getMaxRows(), TEAM_COLS.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, TEAM_COLS.length).setValues([TEAM_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function teamRead(sh) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, TEAM_COLS.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    if (!String(vals[i][0])) continue;
+    var o = { _row: i + 2 };
+    for (var j = 0; j < TEAM_COLS.length; j++) o[TEAM_COLS[j]] = vals[i][j];
+    o.id = String(o.id);
+    o.status = TEAM_STATES.indexOf(String(o.status)) > -1 ? String(o.status) : 'active';
+    o.added = campusWhen(o.added);
+    o.started = campusWhen(o.started).slice(0, 10);
+    out.push(o);
+  }
+  return out;
+}
+
+function teamPublic(t) {
+  return {
+    id: t.id, added: t.added, name: String(t.name), email: String(t.email),
+    phone: String(t.phone), seat: String(t.seat), campus: String(t.campus),
+    state: String(t.state), status: t.status, started: t.started,
+    notes: String(t.notes), from: String(t.from || '')
+  };
+}
+
+function teamFind(sh, id) {
+  id = String(id || '');
+  if (!id) return null;
+  var all = teamRead(sh);
+  for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]._row;
+  return null;
+}
+
+/* Nothing reaches the sheet unchecked — the endpoint is open to the web. */
+function teamClean(b) {
+  var name = String(b.name || '').trim().slice(0, 80);
+  var campus = String(b.campus || '').trim().slice(0, 90);
+  var state = String(b.state || '').trim().toUpperCase();
+  var seat = String(b.seat || '').trim();
+  var status = String(b.status || 'active').trim();
+  var started = String(b.started || '').trim();
+
+  if (!name) return { error: 'that row needs a name' };
+  if (!campus) return { error: 'say which campus they run' };
+  if (!/^[A-Z]{2}$/.test(state)) return { error: 'the state has to be its two-letter code' };
+  if (TEAM_SEATS.indexOf(seat) === -1) return { error: 'that is not one of the five seats' };
+  if (TEAM_STATES.indexOf(status) === -1) status = 'active';
+  if (started && !/^\d{4}-\d{2}-\d{2}$/.test(started)) return { error: 'that start date does not look right' };
+
+  return { row: {
+    name: campusSafe(name),
+    email: campusSafe(String(b.email || '').trim().slice(0, 120)),
+    phone: campusSafe(String(b.phone || '').trim().slice(0, 40)),
+    seat: seat,
+    campus: campusSafe(campus),
+    state: state,
+    status: status,
+    started: started,
+    notes: campusSafe(String(b.notes || '').slice(0, 500))
+  }};
+}
+
+function teamAdd(b) {
+  var clean = teamClean(b);
+  if (clean.error) return clean.error;
+  return teamAppend(teamSheet(), clean.row, String(b.from || ''));
+}
+
+function teamAppend(sh, row, from) {
+  row.id = Utilities.getUuid().slice(0, 8);
+  row.added = campusStamp();
+  row.from = from;
+  sh.appendRow(TEAM_COLS.map(function (c) { return row[c] === undefined ? '' : row[c]; }));
+  return null;
+}
+
+function teamUpdate(b) {
+  var sh = teamSheet();
+  var at = teamFind(sh, b.id);
+  if (!at) return 'that person is not on the roster any more';
+  var clean = teamClean(b);
+  if (clean.error) return clean.error;
+  /* id, added and from are the row's history and are never rewritten. */
+  TEAM_COLS.forEach(function (c, i) {
+    if (clean.row[c] === undefined) return;
+    sh.getRange(at, i + 1).setValue(clean.row[c]);
+  });
+  return null;
+}
+
+function teamDelete(b) {
+  var sh = teamSheet();
+  var at = teamFind(sh, b.id);
+  if (!at) return 'that person is not on the roster any more';
+  sh.deleteRow(at);
+  return null;
+}
+
+/* An applicant becomes a campus intern in one call, because the two
+   halves must not be able to half-happen: a roster row whose application
+   still reads "interview", or an application marked hired with nobody on
+   the roster, is worse than a refusal. */
+function campusHire(b) {
+  var hit = applyFind(b.id);
+  if (!hit) return 'that application is not on the sheet any more';
+
+  var sh = teamSheet();
+  var already = teamRead(sh);
+  for (var i = 0; i < already.length; i++) {
+    if (String(already[i].from) === String(b.id)) return 'they are already on the campus team';
+  }
+
+  var clean = teamClean({
+    name: b.name || hit.row.cells['full name'],
+    email: b.email || hit.row.cells['email'],
+    phone: b.phone || hit.row.cells['phone'],
+    seat: b.seat || hit.row.cells['seat'],
+    campus: b.campus || hit.row.cells['university'],
+    state: b.state,
+    status: 'active',
+    started: b.started,
+    notes: b.notes
+  });
+  if (clean.error) return clean.error;
+
+  var err = teamAppend(sh, clean.row, String(b.id));
+  if (err) return err;
+
+  applyWrite(hit, 'status', 'hired');
+  applyWrite(hit, 'decided', campusStamp());
+  return null;
 }
 
 function reply(ok, error, extra) {

@@ -79,6 +79,13 @@ Every row starts with `received` (server time) and `page`. Add a field to any
 form's HTML and the script adds the column on the next submission — you never
 edit the sheet by hand.
 
+The internal console at `/internal` reads the `apply` tab as its **Applicants**
+view, and adds four columns of its own on the far right of it — `id`, `status`,
+`team notes` and `decided` — without touching the form's own. Hiring somebody
+there writes them into a `campus_team` tab, which the script builds on the first
+hire. Both are the same deployment as the forms: nothing extra to set up, but a
+script pasted without a redeploy leaves those two views saying so.
+
 Report uploads go to a Drive folder called **fomo campus — report uploads**,
 private to your account. The sheet stores the link, not the file.
 

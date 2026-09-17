@@ -627,6 +627,7 @@ td.date.run{color:var(--good)}
 .share span{font-size:11px;color:var(--muted-2);font-family:var(--mono);width:30px;text-align:right}
 </style>
 <link rel="stylesheet" href="/invoice/visits.css">
+<link rel="stylesheet" href="/invoice/campus.css">
 </head>
 <body>
 <div id="gate">
@@ -999,6 +1000,110 @@ td.date.run{color:var(--good)}
         </div>
       </section>
 
+      <!-- ────────── applicants ──────────
+           The `apply` tab of the same sheet the ledger is on — the tab
+           /fomo/apply already writes into, read here rather than copied.
+           Everything in both these views is drawn by campus.js, ids
+           prefixed "ap-" and "cm-" so nothing can collide with the
+           ledger's own table. -->
+      <section class="view" data-view="applicants">
+        <div class="vtabs" id="ap-tabs">
+          <button class="vtab on" data-ap="">Everyone<span class="n" id="ap-n-all"></span></button>
+          <button class="vtab" data-ap="open">Still open<span class="n" id="ap-n-open"></span></button>
+          <button class="vtab" data-ap="hired">Hired<span class="n" id="ap-n-hired"></span></button>
+          <button class="vtab" data-ap="passed">Passed<span class="n" id="ap-n-passed"></span></button>
+        </div>
+        <div class="toolbar">
+          <select id="ap-seat" aria-label="Seat applied for"></select>
+          <select id="ap-campus" aria-label="Campus"><option value="">Every campus</option></select>
+          <label class="srch">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.4"/><path d="m13.2 13.2 3.3 3.3"/></svg>
+            <input id="ap-q" type="search" placeholder="Search name, email or answers" aria-label="Search the applications">
+          </label>
+          <span class="tsep"></span>
+          <span class="hint" id="ap-showing"></span>
+          <span class="cm-msg" id="ap-msg" role="status" aria-live="polite"></span>
+          <span class="push">
+            <a class="mini ghost" href="/fomo/apply/" target="_blank" rel="noopener">Open the form</a>
+            <button class="mini ghost" id="ap-refresh" type="button">Refresh</button>
+            <button class="mini" id="ap-csv" type="button">Export</button>
+          </span>
+        </div>
+        <div class="scroller">
+          <div class="cm-cols">
+            <div class="tbl-scroll">
+              <table>
+                <thead><tr><th>Applied</th><th>Who</th><th>Campus</th><th>Seat</th><th>Hours</th><th>Status</th></tr></thead>
+                <tbody id="ap-body"></tbody>
+              </table>
+              <div class="empty" id="ap-empty" hidden></div>
+            </div>
+            <aside class="cm-detail" id="ap-detail" hidden aria-label="The open application"></aside>
+          </div>
+        </div>
+        <div class="aggbar" id="ap-agg"></div>
+      </section>
+
+      <!-- ────────── the campus team ──────────
+           The `campus_team` tab: the interns actually running a campus,
+           grouped the way the question is usually asked — which states are
+           we on, and who is on which campus. A row lands here when somebody
+           is hired out of Applicants, or is typed in below. -->
+      <section class="view" data-view="campus">
+        <div class="toolbar">
+          <select id="cm-state" aria-label="State"><option value="">Every state</option></select>
+          <select id="cm-seat" aria-label="Seat"></select>
+          <select id="cm-status" aria-label="Who to show">
+            <option value="working">On a campus now</option>
+            <option value="active">Active only</option>
+            <option value="paused">Paused</option>
+            <option value="alumni">Alumni</option>
+            <option value="">Everyone ever</option>
+          </select>
+          <label class="srch">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.4"/><path d="m13.2 13.2 3.3 3.3"/></svg>
+            <input id="cm-q" type="search" placeholder="Search name, campus or notes" aria-label="Search the campus team">
+          </label>
+          <span class="tsep"></span>
+          <span class="hint" id="cm-showing"></span>
+          <span class="cm-msg" id="cm-msg" role="status" aria-live="polite"></span>
+          <span class="push">
+            <button class="mini ghost" id="cm-refresh" type="button">Refresh</button>
+            <button class="mini" id="cm-csv" type="button">Export</button>
+            <button class="btn btn-g" id="cm-new" type="button">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 4.4v11.2M4.4 10h11.2"/></svg>
+              Add an intern
+            </button>
+          </span>
+        </div>
+        <div class="scroller pad" style="display:grid;gap:12px;align-content:start">
+          <div class="rail" id="cm-rail"></div>
+          <form class="panel cm-form" id="cm-form" hidden novalidate>
+            <h2 id="cm-form-t">Add a campus intern</h2>
+            <div class="fields">
+              <label for="cm-f-name">Name<input id="cm-f-name" type="text" maxlength="80" placeholder="Maya Rodriguez"></label>
+              <label for="cm-f-email">Email<input id="cm-f-email" type="text" maxlength="120" placeholder="maya@school.edu"></label>
+              <label for="cm-f-phone">Phone<input id="cm-f-phone" type="text" maxlength="40" placeholder="(555) 123-4567"></label>
+              <label for="cm-f-campus">Campus<input id="cm-f-campus" type="text" maxlength="90" placeholder="University of Michigan"></label>
+              <label for="cm-f-state">State<select id="cm-f-state"></select></label>
+              <label for="cm-f-seat">Seat<select id="cm-f-seat"></select></label>
+              <label for="cm-f-status">Status<select id="cm-f-status"></select></label>
+              <label for="cm-f-started">Started<input id="cm-f-started" type="date"></label>
+              <label class="wide" for="cm-f-notes">Notes<textarea id="cm-f-notes" maxlength="500" placeholder="Anything the rest of the team should know."></textarea></label>
+            </div>
+            <div class="acts">
+              <button class="btn btn-p" type="submit">Save</button>
+              <button class="mini ghost" id="cm-cancel" type="button">Cancel</button>
+              <span class="hint" id="cm-f-hint"></span>
+              <span class="push"><button class="mini danger" id="cm-delete" type="button" hidden>Take off the roster</button></span>
+            </div>
+          </form>
+          <div id="cm-groups"></div>
+          <div class="empty" id="cm-empty" hidden></div>
+        </div>
+        <div class="aggbar" id="cm-agg"></div>
+      </section>
+
       <!-- ────────── the chapters ────────── -->
       <!-- The board is written in by chapters.js on first open, ids prefixed
            "ch-" so its table, banner and counts cannot collide with the
@@ -1216,6 +1321,13 @@ function toast(msg, bad){
   t.textContent = msg; t.className = "on" + (bad ? " bad" : "");
   clearTimeout(toast._t); toast._t = setTimeout(function(){ t.className = ""; }, 3200);
 }
+
+/* What campus.js is handed. The applicants and the campus roster are two
+   more tabs of this same sheet, behind this same deployment, and they are
+   its own file rather than another thousand lines down here — so the URL
+   and the passcode are passed across once here instead of being written
+   out a second time over there. */
+window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast};
 
 /* ---------- where it saves ----------
 
@@ -3642,6 +3754,8 @@ var ICO = {
   commits:   '<circle cx="10" cy="10" r="2.6"/><path d="M3.2 10h4.2M12.6 10h4.2"/>',
   reporting: '<path d="M4.2 16.4V9.2M8.8 16.4V4.6M13.4 16.4v-4.8"/><path d="M2.8 16.4h14.4"/>',
   chapters:  '<path d="M1.8 4.1 5.9 2.4v9.5L1.8 13.6V4.1Z"/><path d="M5.9 2.4 10.1 4.1v9.5L5.9 11.9V2.4Z"/><path d="M10.1 4.1 14.2 2.4v9.5l-4.1 1.7V4.1Z"/>',
+  applicants:'<rect x="4.6" y="2.8" width="10.8" height="14.4" rx="2.2"/><path d="M7.4 7h5.2M7.4 10h5.2M7.4 13h3"/>',
+  campus:    '<circle cx="7.2" cy="7.4" r="2.4"/><path d="M2.9 15.6a4.4 4.4 0 0 1 8.6 0"/><circle cx="14" cy="8.6" r="1.9"/><path d="M12.6 12.6a3.5 3.5 0 0 1 4.5 3"/>',
   person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>'
 };
 function ico(k){
@@ -3658,6 +3772,8 @@ var VIEWS = {
   attendance:{label:"Attendance",     sub:"the days each of them was in"},
   commits:   {label:"Commits",        sub:"public pushes, the last 13 weeks"},
   reporting: {label:"Breakdown",      sub:"where the money went, and who it went on"},
+  applicants:{label:"Applicants",     sub:"everyone who has asked to run a campus"},
+  campus:    {label:"Campus team",    sub:"who is on which campus, and in which state"},
   chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
   person:    {label:"",               sub:""}
 };
@@ -3692,6 +3808,10 @@ function buildNav(){
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
   h += '<div class="nav-sec">The campus</div>';
+  h += '<button class="nav-i" data-go="applicants">' + ico("applicants") +
+       '<span class="tx">Applicants</span><span class="ct" data-ct="applicants"></span></button>';
+  h += '<button class="nav-i" data-go="campus">' + ico("campus") +
+       '<span class="tx">Campus team</span><span class="ct" data-ct="campus"></span></button>';
   h += '<button class="nav-i" data-go="chapters">' + ico("chapters") +
        '<span class="tx">Chapters</span></button>';
   nav.innerHTML = h;
@@ -3762,7 +3882,9 @@ function setView(id, who){
     ? (PEOPLE.indexOf(personOf) > -1 ? "intern · on the attendance board" : "runs the bootcamp · not on the board")
     : VIEWS[view].sub;
   markNav();
-  $("btn-new").style.display = view === "visits" ? "none" : "";
+  /* Nothing on these three is a spend, so the one button that only ever
+     logs one has no business sitting over them. */
+  $("btn-new").style.display = ["visits","applicants","campus"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   $("side").classList.remove("on");
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : "");
@@ -4589,5 +4711,6 @@ else document.getElementById("gate-input").focus();
 })();
 </script>
 <script type="module" src="/invoice/visits.js"></script>
+<script type="module" src="/invoice/campus.js"></script>
 </body>
 </html>

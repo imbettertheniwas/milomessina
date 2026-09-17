@@ -30,6 +30,8 @@ anything.
 | **Commits** | The contribution map, together and one each |
 | **Breakdown** | Where the money went by category, and who it was spent on |
 | **Chapters** | Every house that has onboarded: the map, the funnel, who and where they are, and the full table — read from the campus admin, not the sheet |
+| **Applicants** | Everyone who has applied to run a campus at `/fomo/apply`: the table, the whole application beside it, and where each one has got to |
+| **Campus team** | The interns actually running a campus, grouped by state and then by campus |
 | A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
 
 The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
@@ -301,8 +303,29 @@ exist yet, it creates one and carries every distinct person-and-day in `hours`
 across, so the history survives the change. That runs once, on the tab's
 creation, and cannot double up.
 
-Edit either tab by hand if you like — the page re-reads them every 30 seconds.
-Just leave the `id` columns alone; the page uses them to find rows.
+The `apply` tab is the form's, not the console's: `/fomo/apply` writes a
+column per question it asks and adds one whenever it gains a question. The
+console appends four of its own on the far right and touches nothing else —
+`id` (8 characters, filled in on the first read of a row that has none),
+`status`, `team notes`, and `decided`, the day the status was last moved.
+
+The `campus_team` tab — one row per intern on a campus:
+
+| Column | Holds |
+| --- | --- |
+| `id` | 8 characters, generated server-side |
+| `added` | when the row was written |
+| `name`, `email`, `phone` | how to reach them |
+| `seat` | `pres`, `growth`, `partner`, `content` or `culture` — the same five the form offers |
+| `campus` | the school they run, as it is written on their application |
+| `state` | the two-letter code. It is what the roster is grouped by |
+| `status` | `active`, `paused` or `alumni` |
+| `started` | the day they started, `YYYY-MM-DD` |
+| `notes` | optional |
+| `from` | the `id` of the application they were hired out of, or blank if they were typed in by hand |
+
+Edit any of these tabs by hand if you like — the page re-reads them every 30
+seconds. Just leave the `id` columns alone; the page uses them to find rows.
 
 ## Receipt photos
 
@@ -638,6 +661,43 @@ feed names schools but does not place them, and no geocoder is called from the
 page — a map that silently drops a house because a lookup failed is worse than
 one that says which houses it could not place. Anything missing from that table
 is still counted, still in every total, and named under the map.
+
+## Applicants, and who is on which campus
+
+Two views under **The campus**, and two tabs of the same sheet the ledger is
+on. They are read through the same Apps Script deployment, so there is nothing
+new to deploy and nothing new to configure — but the script does have to be the
+*current* one. A deployment that predates them answers a list without the
+campus tables in it, and both views say so in as many words, naming the redeploy
+rather than sitting there empty.
+
+**Applicants** is the `apply` tab, read rather than copied: an application is on
+the board the moment it lands. Sub-tabs for *everyone / still open / hired /
+passed*, filters for seat and campus, and a search that reaches into the long
+answers as well as the names. Clicking a row opens the whole application beside
+the table — both essay answers, the socials, the portfolio link, and anything
+the form has gained since — with the two things the team writes back: where it
+has got to, and what the team thinks. Nobody is emailed by any of it.
+
+**Campus team** is the `campus_team` tab, grouped the way the question is
+usually asked: which states are we on, which campuses in them, and who is on
+each. The rail across the top counts the interns, the campuses, the states and
+the seats filled out of five per campus. **Add an intern** writes a row by hand;
+the filter defaults to the people on a campus *now*, so alumni stay on the sheet
+without crowding the board.
+
+### Hiring somebody off an application
+
+**Put them on a campus →**, on an open application, takes you to the roster form
+with their name, email, phone, seat and campus already in it — and the state
+guessed from the campus where the name is one the board already knows. Saving it
+is **one call**: the roster row and the `hired` on their application are written
+together or not at all. A roster row nobody is running, or an application
+reading *hired* with nobody on the campus, is worse than a refusal.
+
+The row remembers which application it came from, so the same person cannot be
+hired onto a second campus by accident, and taking them off the roster later
+leaves their application exactly as it was.
 
 ## Changing the team
 
