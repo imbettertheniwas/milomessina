@@ -178,11 +178,28 @@ svg{display:block}
 .side-top .nmz b{font-size:13px;font-weight:600;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side-top .nmz span{font-size:11px;color:var(--muted-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side-scroll{flex:1;min-height:0;overflow-y:auto;padding:0 8px 10px}
-.nav-sec{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-2);
-  padding:15px 8px 6px;font-weight:600}
-/* the menu now opens on a heading rather than on a button, so the first
-   one sits tight to the wordmark instead of hanging off it */
-.nav-sec:first-child{padding-top:4px}
+/* Every heading is the button that folds its own group, so it carries a
+   chevron on the left and, when the group is shut on the page you are
+   looking at, a dot on the right saying the page is in there. */
+.nav-sec{display:flex;align-items:center;gap:6px;width:100%;text-align:left;
+  font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-2);
+  padding:15px 8px 6px;font-weight:600;border-radius:7px;transition:color .12s}
+.nav-sec:hover{color:var(--muted)}
+.nav-sec .cv{width:9px;height:9px;flex:none;opacity:.85;transition:transform .18s}
+.nav-sec[aria-expanded="false"] .cv{transform:rotate(-90deg)}
+.nav-sec>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-sec .spot{width:5px;height:5px;flex:none;border-radius:50%;background:var(--violet-hi);
+  opacity:0;transition:opacity .12s}
+.nav-sec[aria-expanded="false"].has-on .spot{opacity:1}
+/* 1fr to 0fr rolls the group up without anyone having to measure it */
+.nav-fold{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.nav-sec[aria-expanded="false"]+.nav-fold{grid-template-rows:0fr}
+.nav-fold>.nav-in{min-height:0;overflow:hidden}
+/* the menu opens on a heading, so the first sits tight to the wordmark */
+.nav-grp:first-child .nav-sec{padding-top:4px}
+@media (prefers-reduced-motion:reduce){
+  .nav-fold,.nav-sec .cv{transition:none}
+}
 .nav-i{display:flex;align-items:center;gap:9px;width:100%;padding:6px 8px;border-radius:7px;
   font-size:13px;color:var(--muted);text-align:left;position:relative;transition:background .12s,color .12s}
 .nav-i+.nav-i{margin-top:1px}
@@ -3823,50 +3840,80 @@ var view = "overview", personOf = null;
    first line of a menu. The four of them come last: their pages are the
    ones you already know how to find, so they belong at the foot of the
    rail rather than cutting the views in half. */
-function buildNav(){
-  var nav = $("nav"), h = "";
-  h += '<div class="nav-sec">Start</div>';
-  h += '<button class="nav-i" data-go="overview">' + ico("overview") +
-       '<span class="tx">Overview</span></button>';
-  h += '<div class="nav-sec">Money</div>';
-  [["ledger","Ledger"],["settle","Reimbursements"],["subs","On repeat"]].forEach(function(v){
-    h += '<button class="nav-i" data-go="' + v[0] + '">' + ico(v[0] === "subs" ? "subs" : v[0]) +
-         '<span class="tx">' + v[1] + '</span><span class="ct" data-ct="' + v[0] + '"></span></button>';
-  });
-  h += '<div class="nav-sec">Activity</div>';
-  [["attendance","Attendance"],["commits","Commits"]].forEach(function(v){
-    h += '<button class="nav-i" data-go="' + v[0] + '">' + ico(v[0]) +
-         '<span class="tx">' + v[1] + '</span><span class="ct" data-ct="' + v[0] + '"></span></button>';
-  });
-  h += '<div class="nav-sec">Guests</div><button class="nav-i" data-go="visits">' + ico("visits") + '<span class="tx">Visit requests</span></button>';
-  h += '<div class="nav-sec">Reporting</div>';
-  h += '<button class="nav-i" data-go="reporting">' + ico("reporting") +
-       '<span class="tx">Breakdown</span></button>';
-  /* The chapters are the one view that is not about the four of them or
+/* The rail is a menu, so it is built as one: a list of groups, each with a
+   heading over it that folds the group away. Attendance, Commits and the
+   breakdown used to sit under headings of their own, which read as three
+   subjects when they are one — all three are the four of them, counted a
+   different way — so they now open The team, above the roster they are
+   counting. The roster comes last, and so does the group: their pages are
+   the ones you already know how to find. */
+var NAV = [
+  {id:"start",  label:"Start",      items:[["overview","Overview",0]]},
+  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["settle","Reimbursements",1],["subs","On repeat",1]]},
+  {id:"guests", label:"Guests",     items:[["visits","Visit requests",0]]},
+  /* The chapters are the one group that is not about the four of them or
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
-  h += '<div class="nav-sec">The campus</div>';
-  h += '<button class="nav-i" data-go="applicants">' + ico("applicants") +
-       '<span class="tx">Applicants</span><span class="ct" data-ct="applicants"></span></button>';
-  h += '<button class="nav-i" data-go="campus">' + ico("campus") +
-       '<span class="tx">Campus team</span><span class="ct" data-ct="campus"></span></button>';
-  h += '<button class="nav-i" data-go="chapters">' + ico("chapters") +
-       '<span class="tx">Chapters</span></button>';
-  h += '<div class="nav-sec">The team</div>';
-  PAYERS.forEach(function(p){
-    h += '<button class="nav-i" data-go="person" data-who="' + esc(p) + '">' +
-         '<span class="av" aria-hidden="true" style="background:var(' + tone(p) + ')">' + esc(mono(p)) + "</span>" +
-         '<span class="tx">' + esc(p) + '</span><span class="ct" data-ct="p:' + esc(p) + '"></span></button>';
+  {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
+  {id:"team",   label:"The team",   items:[["attendance","Attendance",1],["commits","Commits",1],["reporting","Breakdown",0]], roster:true}
+];
+
+/* Which groups are folded shut, remembered per device. Only the shut ones
+   are written down, so a group added later opens by default. */
+var navShut = {};
+try { navShut = JSON.parse(localStorage.getItem("fomo.nav") || "{}") || {}; } catch(e){ navShut = {}; }
+
+var CHEV = '<svg class="cv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" ' +
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4"/></svg>';
+
+function buildNav(){
+  var nav = $("nav"), h = "";
+  NAV.forEach(function(g){
+    var shut = !!navShut[g.id], gid = "nav-g-" + g.id;
+    h += '<div class="nav-grp" data-grp="' + g.id + '">';
+    h += '<button class="nav-sec" type="button" aria-expanded="' + (shut ? "false" : "true") +
+         '" aria-controls="' + gid + '">' + CHEV + "<span>" + esc(g.label) + "</span>" +
+         '<i class="spot" aria-hidden="true"></i></button>';
+    h += '<div class="nav-fold" id="' + gid + '"><div class="nav-in"' + (shut ? " inert" : "") + ">";
+    g.items.forEach(function(v){
+      h += '<button class="nav-i" data-go="' + v[0] + '">' + ico(v[0]) +
+           '<span class="tx">' + v[1] + "</span>" +
+           (v[2] ? '<span class="ct" data-ct="' + v[0] + '"></span>' : "") + "</button>";
+    });
+    if (g.roster) PAYERS.forEach(function(p){
+      h += '<button class="nav-i" data-go="person" data-who="' + esc(p) + '">' +
+           '<span class="av" aria-hidden="true" style="background:var(' + tone(p) + ')">' + esc(mono(p)) + "</span>" +
+           '<span class="tx">' + esc(p) + '</span><span class="ct" data-ct="p:' + esc(p) + '"></span></button>';
+    });
+    h += "</div></div></div>";
   });
   nav.innerHTML = h;
 }
 
+/* Folding is the heading's own job, so it never runs a view. */
+function foldGrp(id, shut){
+  var grp = $("nav").querySelector('.nav-grp[data-grp="' + id + '"]');
+  if (!grp) return;
+  grp.querySelector(".nav-sec").setAttribute("aria-expanded", shut ? "false" : "true");
+  var inner = grp.querySelector(".nav-in");
+  /* inert keeps a folded group off the tab order and out of the reading
+     order, which height alone would not do. */
+  if (inner) { if (shut) inner.setAttribute("inert", ""); else inner.removeAttribute("inert"); }
+  if (shut) navShut[id] = 1; else delete navShut[id];
+  try { localStorage.setItem("fomo.nav", JSON.stringify(navShut)); } catch(e){}
+}
+
 function markNav(){
-  [].forEach.call($("nav").querySelectorAll(".nav-i"), function(b){
+  var nav = $("nav");
+  [].forEach.call(nav.querySelectorAll(".nav-i"), function(b){
     var on = b.getAttribute("data-go") === view &&
       (view !== "person" || b.getAttribute("data-who") === personOf);
     b.classList.toggle("on", on);
     if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  /* A folded group still has to say the page you are on is inside it. */
+  [].forEach.call(nav.querySelectorAll(".nav-grp"), function(g){
+    g.querySelector(".nav-sec").classList.toggle("has-on", !!g.querySelector(".nav-i.on"));
   });
 }
 
@@ -3947,6 +3994,8 @@ function routeFromHash(){
 }
 
 $("nav").addEventListener("click", function(ev){
+  var s = ev.target.closest("button.nav-sec");
+  if (s) { foldGrp(s.parentNode.getAttribute("data-grp"), s.getAttribute("aria-expanded") === "true"); return; }
   var b = ev.target.closest("button[data-go]"); if (!b) return;
   setView(b.getAttribute("data-go"), b.getAttribute("data-who"));
 });
