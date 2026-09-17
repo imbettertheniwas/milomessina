@@ -130,6 +130,10 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       if(error.code==='RATE_LIMIT')return fail(429,'Too many requests. Please try again later.');
       if(error.code==='CONFLICT')return fail(409,'This request changed. Refresh before trying again.');
       if(error.code==='NOT_FOUND')return fail(404,'This request is no longer available.');
+      // The public message stays vague on purpose, so the distinguishing detail
+      // goes to the server log: an unmapped code here is a misconfiguration,
+      // and UNAUTHORIZED specifically means the two secrets do not match.
+      console.error('visits: storage rejected '+action+' with '+(error.code||'no code'));
       return fail(503,'We could not save or load requests right now. Please try again.');
     }
   };
