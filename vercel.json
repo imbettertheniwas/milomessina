@@ -5,6 +5,9 @@
     },
     "api/commits.mjs": {
       "maxDuration": 30
+    },
+    "api/visits.mjs": {
+      "maxDuration": 30
     }
   },
   "headers": [
@@ -20,6 +23,19 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
+    },
+    {
+      "source": "/hqvisitform/(.*)",
+      "headers": [
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -30,6 +46,10 @@
     {
       "source": "/internal/",
       "destination": "/invoice/index.html"
+    },
+    {
+      "source": "/hqvisitform",
+      "destination": "/hqvisitform/index.html"
     }
   ]
 }

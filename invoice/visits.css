@@ -1,0 +1,40 @@
+/* Scoped styles: existing console views keep their current rules. */
+.vr-toolbar{flex-wrap:wrap;gap:10px}
+.vr-toolbar .push{display:flex;gap:8px;align-items:center}
+.vr-message{font-size:13px;color:var(--muted);min-height:18px;margin:0}
+.vr-error{color:var(--owed,#b84635)}
+.vr-panel{padding:22px;border:1px solid var(--line);border-radius:10px;background:var(--card);max-width:480px}
+.vr-panel h2{font-size:19px;margin:0 0 8px}
+.vr-panel p{font-size:13px;line-height:1.6;color:var(--muted)}
+.vr-panel label,.vr-detail label{display:grid;gap:7px;font-size:13px;margin:16px 0}
+.vr-panel input,.vr-detail input,.vr-detail textarea,.vr-detail select,.vr-filters input,.vr-filters select,.vr-link{border:1px solid var(--line);border-radius:6px;padding:9px 11px;font:inherit;background:var(--bg);color:var(--text);min-width:0}
+.vr-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+.vr-filters input{flex:1;min-width:160px}
+.vr-filters select{max-width:180px}
+.vr-count{font-size:12px;color:var(--muted);white-space:nowrap}
+.vr-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,360px);gap:20px;align-items:start}
+.vr-columns:has(.vr-detail[hidden]){grid-template-columns:1fr}
+.vr-row{width:100%;display:grid;grid-template-columns:minmax(150px,1fr) minmax(130px,190px) 85px;gap:14px;text-align:left;align-items:center;padding:15px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font:inherit}
+.vr-row:hover,.vr-row[aria-pressed=true]{background:var(--raise)}
+.vr-row strong,.vr-row span span{font-size:13px;display:block}
+.vr-row small{display:block;font-size:12px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.vr-status{font-size:11px;padding:5px 8px;border:1px solid var(--line);border-radius:20px;text-align:center}
+.vr-pending{color:var(--owed,#af7639)}
+.vr-confirmed{color:var(--violet-hi,#516af6)}
+.vr-completed{color:var(--good,#278163)}
+.vr-empty{padding:40px 12px;color:var(--muted);font-size:14px;line-height:1.6}
+.vr-detail{border:1px solid var(--line);border-radius:10px;padding:18px;background:var(--card)}
+.vr-detail header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.vr-detail h2{font-size:18px;margin:0;overflow-wrap:anywhere}
+.vr-detail dt{color:var(--muted);font-size:11px;margin:15px 0 4px}
+.vr-detail dd{font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 10px}
+.vr-detail textarea{resize:vertical;min-height:100px}
+.vr-detail footer{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
+.vr-link-wrap{margin:10px 0}
+.vr-link{width:100%;max-width:550px}
+[data-view=visits] [hidden]{display:none!important}
+@media(max-width:1100px){.vr-columns{grid-template-columns:1fr}.vr-row{grid-template-columns:minmax(0,1fr) minmax(130px,170px) 85px}}
+@media(max-width:600px){.vr-toolbar .push{flex-wrap:wrap;margin-left:0}.vr-row{grid-template-columns:1fr 1fr;gap:10px}.vr-row .vr-status{grid-column:2;justify-self:start}.vr-panel{padding:18px}}
+
+[data-console-view=visits] .topbar .live{display:none}
+.vr-filters select,.vr-detail select{height:auto;min-height:36px;line-height:1.3;padding:7px 25px 7px 10px}

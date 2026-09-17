@@ -2,3 +2,7 @@
 .env.*
 !.env.example
 .vercel/
+
+# Local visit form dependencies and preview state
+visit-form/node_modules/
+visit-form/*.tsbuildinfo
