@@ -1,19 +1,8 @@
-/* Visit requests — an ADDITIONAL file for the existing fomo form receiver.
-
-   In the spreadsheet: Extensions > Apps Script, then + > Script, name it
-   "visits", and paste this whole file in. Leave apps-script.gs alone apart
-   from the one routing line it already carries, then deploy a NEW VERSION of
-   the SAME deployment so the /exec URL never changes.
-
-   This file deliberately defines no doPost and no doGet. Apps Script puts
-   every file in one shared scope, so a second doPost here would silently
-   replace the form receiver's and break the ledger, attendance and forms.
-
-   Script Properties: VISITS_SERVICE_SECRET, 32+ random characters. This is
-   NOT CONFIG.SHARED_SECRET — guest contact details must not sit behind the
-   turnstile that rides along in the public page source.
-   VISITS_SHEET_ID is optional and only needed to put visit rows in a
-   different spreadsheet than the one this script already writes to. */
+/* Visit-request module, retained for existing separate-file deployments.
+   For a new deployment or recovery, paste fomo/setup/apps-script.gs instead:
+   it now includes this module plus all ledger, attendance, profile, campus,
+   and post features. Do not replace the main script with this module.
+   Script Properties and existing spreadsheet records must be preserved. */
 var VISIT_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 var VISIT_COLUMNS=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
 function visitReply(ok,data,code) {

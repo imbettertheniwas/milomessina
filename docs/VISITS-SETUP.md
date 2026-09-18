@@ -23,57 +23,31 @@ build and local preview server can run without installing dependencies.
 
     node server/visits-preview.mjs
 
-Open http://localhost:4187/internal#/visits and
-http://localhost:4187/hqvisitform/ in the same browser.
-Use local-preview-only-visit-pass to unlock the visit list.
-
-The preview uses memory, has no production credentials and makes no production
-storage requests. Restarting clears its test requests. It serves the console
-with its old gate removed and ledger in device mode for preview ONLY; the
-committed console's existing gate is unchanged. Use a fresh browser profile if
-you need a clean local ledger. No test records are bundled.
-
-The team session uses an HttpOnly, Secure, SameSite=Strict cookie. Use localhost
-(not a LAN address) for the browser preview; production requires HTTPS.
+Open http://localhost:4187/hqvisitform/ to preview the public form.
+The preview uses memory and has no production credentials. Internal guest-list
+access is disabled in this standalone preview. Restarting clears test requests;
+no test records are bundled or sent to the real spreadsheet.
 
 ## Storage setup (project owner)
 
-Visit requests go into the spreadsheet the team already works in, through the
-form receiver already deployed from it. `server/visits/sheet.gs` is an extra
-file for that existing Apps Script project; it defines no doPost and no doGet,
-so it adds a branch without touching anything the receiver already answers.
+Use the complete **`fomo/setup/apps-script.gs`** file. It includes visit requests
+and hours alongside the ledger, approvals, Undo, attendance, profiles, campus,
+and posts. A separate visits file is no longer needed.
 
-1. Open the spreadsheet, then Extensions > Apps Script. This is the existing
-   project, the one holding apps-script.gs. Do not create a new project.
-2. Add a file: + next to Files, choose Script, name it `visits`. Paste the
-   whole of server/visits/sheet.gs into it.
-3. In apps-script.gs, add the visits route beside the invoice one, directly
-   under `if (body._api === 'invoice') return invoiceApi(body);`
+1. Open the existing spreadsheet → Extensions → Apps Script.
+2. Preserve any custom `CONFIG` values, then replace the main script contents
+   with the entire `fomo/setup/apps-script.gs` file and restore those values.
+   If a separate `visits.gs` exists containing only the old visit module,
+   remove that duplicate code after saving a copy. Keep unrelated script files.
+3. Keep all existing Script Properties, including `VISITS_SERVICE_SECRET` and
+   any `VISITS_SHEET_ID`. The service secret must match the existing Vercel
+   configuration; do not generate a new secret when restoring the code.
+4. Deploy → Manage deployments → select the existing deployment → edit →
+   New version → Deploy. Keep the existing /exec URL.
+5. Open that /exec URL. It must report `"visits": true`, `"visitHours": true`,
+   and `"ledger": true`. Saving alone does not publish a new version.
 
-       if (body._api === 'visits') return visitsApi(body);
-
-   and, in doGet, add `visits: typeof visitsApi === 'function',` beside the
-   `ledger:` line. Both are already in this repo's copy of apps-script.gs, so
-   pasting that file over the old one does the same thing.
-4. Project Settings > Script Properties: add `VISITS_SERVICE_SECRET`, at least
-   32 random characters. This is NOT CONFIG.SHARED_SECRET or INVOICE_KEY, both
-   of which ride along in public page source. Guest contact details must not
-   sit behind a turnstile.
-5. Publish it. Deploy > Manage deployments > the existing deployment > edit >
-   New version > Deploy keeps the /exec URL unchanged, which is the tidiest
-   result when it works.
-
-   If that silently keeps serving the old code — which has happened on this
-   project, where several deployments sat pinned to different versions — use
-   Deploy > New deployment > Web app, executing as yourself, access Anyone.
-   That always publishes the code as currently saved. It produces a NEW /exec
-   URL, which is fine: VISITS_STORAGE_URL simply points at that one. The
-   console's own ENDPOINT is a separate setting for the ledger and does not
-   have to match.
-6. Open the /exec URL in a browser. It must report `"visits": true` alongside
-   `"ledger": true`. Apps Script serves the last DEPLOYED version, not the last
-   saved one, so this check is the only proof the paste actually went live.
-   Saving alone never changes what the URL serves.
+This restores code only. Do not clear or recreate spreadsheet tabs.
 
 The visit_requests tab is created on first use. `VISITS_SHEET_ID` is an
 optional script property, needed only to put visit rows somewhere other than

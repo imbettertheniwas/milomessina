@@ -23,7 +23,7 @@ function sheetHarness({sheetId='',seed=null}={}){
     CacheService:{getScriptCache:()=>({get:key=>cache.get(key),put:(key,val)=>cache.set(key,val)})},
     SpreadsheetApp:{getActiveSpreadsheet:()=>book,openById(id){openedById=id;return book;}}
   });
-  vm.runInContext(fs.readFileSync(new URL('../server/visits/sheet.gs',import.meta.url),'utf8'),ctx);
+  vm.runInContext(fs.readFileSync(new URL('../fomo/setup/apps-script.gs',import.meta.url),'utf8'),ctx);
   const call=(action,payload={},secret='test-service-secret-'.repeat(3))=>ctx.visitsApi({action,secret,...payload});
   return {call,rows,getWrites:()=>writes,openedById:()=>openedById};
 }
@@ -160,4 +160,17 @@ test('unset availability leaves every day open, as before the setting existed',(
   const h=sheetHarness({sheetId:'x'});
   assert.equal(h.call('settings').data.availability,null);
   assert.equal(h.call('submit',{request:{...record(1),preferred_date:'2026-09-27'}}).ok,true);
+});
+
+// The file handed to the owner must work on its own, without a second paste.
+test('the complete main script includes visits and every existing service',()=>{
+  const ctx=vm.createContext({ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType(){return JSON.parse(body);}})}});
+  const main=fs.readFileSync(new URL('../fomo/setup/apps-script.gs',import.meta.url),'utf8');
+  vm.runInContext(main,ctx);
+  for(const key of ['visits','visitHours','ledger','campus','posts','identity','moneyUndo','purchaseApproval'])
+    assert.equal(ctx.doGet()[key],true,key+' is missing from the combined deployment');
+  for(const name of ['doPost','doGet','invoiceApi','campusApi','postsApi','internalSessionApi'])
+    assert.equal(typeof ctx[name],'function');
+  const module=fs.readFileSync(new URL('../server/visits/sheet.gs',import.meta.url),'utf8');
+  assert.equal(main.slice(main.indexOf('var VISIT_ID=')),module.slice(module.indexOf('var VISIT_ID=')));
 });
