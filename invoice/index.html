@@ -3318,6 +3318,7 @@ document.getElementById("t-hours-csv").addEventListener("click", function(){
 var GH_WEEKS = 13, GH_CACHE = "fomo.github.cache", GH_LOGINS = "fomo.github.logins";
 var GH_FRESH = 15 * 60 * 1000, GH_MAX_REPOS = 6, GH_MAX_PAGES = 20, GH_MAX_READS = 40;
 var GH_SEEDED = "fomo.github.seeded";
+var GH_NO_USER = "no GitHub user by that name";
 var GH_DEFAULTS = {
   "Milo": "imbettertheniwas",
   "Bijan": "Code-Atreides",
@@ -3440,7 +3441,7 @@ function saveGh(){
 
 function ghJson(url){
   return fetch(url, {headers:{"Accept":"application/vnd.github+json"}}).then(function(res){
-    if (res.status === 404) throw new Error("no GitHub user by that name");
+    if (res.status === 404) throw new Error(GH_NO_USER);
     if (res.status === 403 || res.status === 429) {
       var reset = Number(res.headers.get("x-ratelimit-reset")) * 1000;
       var mins = reset ? Math.max(1, Math.ceil((reset - Date.now()) / 60000)) : null;
@@ -3549,13 +3550,27 @@ function sameLogins(mine, theirs){
 function ghReadHere(names){
   return names.reduce(function(chain, p){
     return chain.then(function(){
-      return ghFetch(ghNames(p), ghNameSet(p)).then(function(got){
-        ghData[p] = got; delete ghErrors[p];
+      return readOne(p)["catch"](function(e){
+        /* A name GitHub has never heard of counts nothing, and the browser
+           holding it goes on counting nothing until somebody retypes it by
+           hand — a renamed account leaves every browser stuck that way. The
+           roster still knows the person, so take its name back and read once
+           more. A name GitHub does answer for is somebody's own choice and
+           is left alone. */
+        if (e.message !== GH_NO_USER || !GH_DEFAULTS[p] || logins[p] === GH_DEFAULTS[p]) throw e;
+        logins[p] = GH_DEFAULTS[p];
+        try { localStorage.setItem(GH_LOGINS, JSON.stringify(logins)); } catch(_){}
+        return readOne(p);
       })["catch"](function(e){
         ghErrors[p] = e.message; delete ghData[p];
       });
     });
   }, Promise.resolve());
+}
+function readOne(p){
+  return ghFetch(ghNames(p), ghNameSet(p)).then(function(got){
+    ghData[p] = got; delete ghErrors[p];
+  });
 }
 
 function refreshGh(force){
