@@ -3383,7 +3383,12 @@ function applyDefaults(){
   var changed = false;
   PEOPLE.forEach(function(p){
     if (!GH_DEFAULTS[p] || applied[p] === GH_DEFAULTS[p]) return;
-    if (!logins[p]) logins[p] = GH_DEFAULTS[p];
+    /* A slot still holding the default it was seeded with is one nobody has
+       touched, so a renamed account follows the roster through to browsers
+       that already have one. A slot holding anything else was typed by hand,
+       and a seeded slot now empty was deliberately cleared: both stay. Only a
+       browser that has never seen p is filled from an empty slot. */
+    if (p in applied ? logins[p] === applied[p] : !logins[p]) logins[p] = GH_DEFAULTS[p];
     applied[p] = GH_DEFAULTS[p];
     changed = true;
   });
