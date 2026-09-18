@@ -19,6 +19,7 @@ function lift(re, what){
 
 /* the roster, the storage keys and the function under test, as shipped */
 const PEOPLE    = lift(/var PEOPLE = \[[^\]]*\];/,               'PEOPLE');
+const GH_PEOPLE = lift(/var GH_PEOPLE = PEOPLE\.concat\(\[[^\]]*\]\);/, 'GH_PEOPLE');
 const KEYS      = lift(/var GH_WEEKS = [\s\S]*?GH_LOGINS = "[^"]*";/, 'the storage keys');
 const SEEDED    = lift(/var GH_SEEDED = "[^"]*";/,               'GH_SEEDED');
 const DEFAULTS  = lift(/var GH_DEFAULTS = \{[\s\S]*?\};/,        'GH_DEFAULTS');
@@ -36,7 +37,7 @@ function run({stored = {}, seeded = null, defaults = null} = {}){
     },
     JSON, console
   });
-  vm.runInContext([PEOPLE, KEYS, SEEDED, DEFAULTS].join('\n'), ctx);
+  vm.runInContext([PEOPLE, GH_PEOPLE, KEYS, SEEDED, DEFAULTS].join('\n'), ctx);
   if (defaults) vm.runInContext('GH_DEFAULTS = ' + JSON.stringify(defaults) + ';', ctx);
   store[ctx.GH_LOGINS] = JSON.stringify(stored);
   if (seeded) store[ctx.GH_SEEDED] = JSON.stringify(seeded);
@@ -46,7 +47,8 @@ function run({stored = {}, seeded = null, defaults = null} = {}){
     logins: JSON.parse(store[ctx.GH_LOGINS]),
     seeded: JSON.parse(store[ctx.GH_SEEDED] || '{}'),
     cacheDropped: ctx.ghAt === 0,
-    shipped: ctx.GH_DEFAULTS
+    shipped: ctx.GH_DEFAULTS,
+    roster: ctx.GH_PEOPLE
   };
 }
 
@@ -105,4 +107,38 @@ test('nothing is written and the cache is kept when the roster is current', () =
 test('the shipped roster points at the account that exists today', () => {
   const {shipped} = run();
   assert.equal(shipped.Milo, 'imbettertheniwas');
+});
+
+test('Arya is on the commit roster and gets seeded like anyone else', () => {
+  const {logins, roster, shipped} = run();
+  assert.ok(roster.includes('Arya'), 'the GitHub panel covers Arya');
+  assert.equal(shipped.Arya, 'aryatoufanian');
+  assert.equal(logins.Arya, 'aryatoufanian');
+});
+
+/* Arya runs the bootcamp and is not on the clock, so the commit cards cover
+   Arya while the quiet spend check does not. The two lists are the whole of
+   that distinction, and swapping one for the other in either place is the
+   mistake worth catching — hence a read of the source rather than a run. */
+test('the timesheet roster stays free of Arya', () => {
+  const people = SRC.match(/var PEOPLE = \[[^\]]*\];/)[0];
+  assert.ok(!people.includes('Arya'), 'PEOPLE drives shifts and the ledger');
+});
+
+test('the quiet spend check judges only people on the clock', () => {
+  const fn = SRC.match(/function quietSpendDays\(\)\{[\s\S]*?\n\}/)[0];
+  assert.ok(fn.includes('PEOPLE.indexOf(r.who)'), 'still filtered to PEOPLE');
+  assert.ok(!fn.includes('GH_PEOPLE'), 'Arya must not be flagged for a slow commit day');
+});
+
+test('every GitHub reader uses the commit roster, not the timesheet', () => {
+  const strays = [];
+  for (const name of ['applyDefaults', 'refreshGh', 'renderGh', 'buildGhLink', 'ghTeam', 'ghSummary']) {
+    const m = SRC.match(new RegExp('function ' + name + '\\([^)]*\\)\\{[\\s\\S]*?\\n\\}'));
+    assert.ok(m, 'invoice/index.html no longer contains ' + name);
+    m[0].split('\n').forEach(line => {
+      if (/(?<!GH_)\bPEOPLE\b/.test(line)) strays.push(name + ': ' + line.trim());
+    });
+  }
+  assert.deepEqual(strays, [], 'a GitHub path left on PEOPLE would silently drop Arya');
 });

@@ -1443,6 +1443,13 @@ var PEOPLE = ["Milo","Bijan","Jesse","Luchi"];
    them should say so rather than reading as one intern drinking two coffees.
    Kept apart from PEOPLE because Arya is not on the clock or the timesheet. */
 var PAYERS = PEOPLE.concat(["Arya"]);
+
+/* The GitHub panel is not the timesheet. It reports what was pushed, and
+   Arya pushes too, so the commit cards read from this list. The quiet
+   spend check stays on PEOPLE: flagging the person who reimburses the
+   card for a slow commit day would be noise, not a question worth
+   asking. */
+var GH_PEOPLE = PEOPLE.concat(["Arya"]);
 var SHARERS = PAYERS;
 var identity = null, profiles = [], profileEditing = false, profileSaving = false;
 function isAdmin(){ return !!identity && identity.who === "Arya"; }
@@ -3316,7 +3323,8 @@ var GH_DEFAULTS = {
   "Milo": "imbettertheniwas",
   "Bijan": "Code-Atreides",
   "Jesse": "jsebaiz, jessebaiz",
-  "Luchi": "ouchip"
+  "Luchi": "ouchip",
+  "Arya": "aryatoufanian"
 };
 var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false, ghReads = 0;
 
@@ -3381,7 +3389,7 @@ function applyDefaults(){
   var applied = {};
   try { applied = JSON.parse(localStorage.getItem(GH_SEEDED) || "{}") || {}; } catch(e){}
   var changed = false;
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     if (!GH_DEFAULTS[p] || applied[p] === GH_DEFAULTS[p]) return;
     /* A slot still holding the default it was seeded with is one nobody has
        touched, so a renamed account follows the roster through to browsers
@@ -3528,7 +3536,7 @@ function ghReadHere(names){
 }
 
 function refreshGh(force){
-  var names = PEOPLE.filter(function(p){ return logins[p]; });
+  var names = GH_PEOPLE.filter(function(p){ return logins[p]; });
   if (!names.length) { renderGh(); return Promise.resolve(); }
   if (!force && ghAt && Date.now() - ghAt < GH_FRESH) { renderGh(); return Promise.resolve(); }
   if (ghBusy) return Promise.resolve();
@@ -3627,11 +3635,11 @@ function legend(){
 }
 
 function renderGh(){
-  var linked = PEOPLE.filter(function(p){ return logins[p]; });
+  var linked = GH_PEOPLE.filter(function(p){ return logins[p]; });
   var team = {}, byPerson = {}, total = 0, capped = false;
   var today = dayKey(new Date()), start = dayKey(calStart());
 
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     var got = ghData[p] || {}, days = got.days || {};
     if (got.truncated) capped = true;
     byPerson[p] = 0;
@@ -3671,7 +3679,7 @@ function renderGh(){
 
   var people = document.getElementById("gh-people");
   people.innerHTML = "";
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     var card = document.createElement("div");
     card.className = "gh-person";
     var head = document.createElement("div");
@@ -3711,7 +3719,7 @@ function renderGh(){
 function buildGhLink(){
   var box = document.getElementById("gh-link");
   box.innerHTML = "";
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     var lab = document.createElement("label");
     var span = document.createElement("span");
     span.className = "lbl"; span.textContent = p + "'s github";
@@ -3727,7 +3735,7 @@ function buildGhLink(){
 }
 document.getElementById("gh-save").addEventListener("click", function(){
   var changed = false;
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     if(!own(p)) return;
     /* people paste the profile URL as often as the name; take either */
     /* a profile or repo URL pastes as readily as a name, and a person may
@@ -4264,7 +4272,7 @@ function ghCount(p){
 }
 function ghTeam(){
   var n = 0, capped = false, any = false;
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     var c = ghCount(p); if (!c) return;
     any = true; n += c.n; if (c.capped) capped = true;
   });
@@ -4719,10 +4727,10 @@ function paintSettle(){
    same three numbers off the same window, so it asks for them here rather
    than counting a second time and drifting. */
 function ghSummary(){
-  var linked = PEOPLE.filter(function(p){ return logins[p]; });
+  var linked = GH_PEOPLE.filter(function(p){ return logins[p]; });
   var team = {}, byPerson = {}, total = 0, capped = false;
   var end = dayKey(new Date()), start = dayKey(calStart());
-  PEOPLE.forEach(function(p){
+  GH_PEOPLE.forEach(function(p){
     var got = ghData[p] || {}, dd = got.days || {};
     if (got.truncated) capped = true;
     byPerson[p] = 0;

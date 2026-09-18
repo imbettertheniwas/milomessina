@@ -37,7 +37,8 @@ const ROSTER = {
   Milo:  ['imbettertheniwas'],
   Bijan: ['Code-Atreides'],
   Jesse: ['jsebaiz', 'jessebaiz'],
-  Luchi: ['ouchip']
+  Luchi: ['ouchip'],
+  Arya:  ['aryatoufanian']
 };
 
 function dayKey(d){
