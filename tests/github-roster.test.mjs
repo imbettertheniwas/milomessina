@@ -142,3 +142,24 @@ test('every GitHub reader uses the commit roster, not the timesheet', () => {
   }
   assert.deepEqual(strays, [], 'a GitHub path left on PEOPLE would silently drop Arya');
 });
+
+/* Which number a card shows. The calendar covers private work but counts
+   pull requests and reviews too, and misses commits off a default branch —
+   so a real commit count always wins, and the calendar only speaks where
+   there is nothing public to say. */
+test('a commit count always beats a contribution count', () => {
+  const fn = lift(/function ghCalendar\(p\)\{[\s\S]*?\n\}/, 'ghCalendar');
+  const call = state => {
+    const ctx = vm.createContext({ghData: state});
+    vm.runInContext(fn + '\nvar out = ghCalendar("Milo");', ctx);
+    return ctx.out;
+  };
+  const cal = {total: 1748, days: {'2026-09-16': 14}};
+  assert.equal(call({Milo: {calendar: cal, days: {'2026-09-16': 3}}}), null,
+    'public commits exist, so the calendar stays quiet');
+  assert.deepEqual(call({Milo: {calendar: cal, days: {}}}), cal,
+    'nothing public to count, so the calendar speaks');
+  assert.equal(call({Milo: {days: {}}}), null, 'no calendar, nothing to show');
+  assert.equal(call({Milo: {calendar: {total: 0, days: {}}, days: {}}}), null,
+    'an empty calendar is not a number worth printing');
+});

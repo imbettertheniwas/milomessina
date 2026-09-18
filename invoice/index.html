@@ -3351,6 +3351,19 @@ function calWeeks(){
   }
   return out;
 }
+/* A calendar count stands in only where there is no public commit to count.
+   It is the profile's own contributions figure, private work included, so it
+   answers "was this person working" where the commit scan cannot — but it
+   counts pull requests, issues and reviews too, and it misses commits made
+   outside a default branch. Where both exist the commits are the truer
+   number, so they win, and the card says which one it is showing. */
+function ghCalendar(p){
+  var got = ghData[p] || {}, cal = got.calendar;
+  if (!cal || !cal.total) return null;
+  var commits = 0, days = got.days || {};
+  for (var d in days) commits += days[d];
+  return commits ? null : cal;
+}
 function commitLabel(n, capped){
   return n + (capped ? "+" : "") + (n === 1 && !capped ? " commit" : " commits");
 }
@@ -3557,7 +3570,7 @@ function refreshGh(force){
          names for that person — otherwise it is a count of somebody else */
       if (!got || !sameLogins(ghNames(p), got.logins)) { mine.push(p); return; }
       if (got.error) { ghErrors[p] = got.error; delete ghData[p]; return; }
-      ghData[p] = {days:got.days || {}, commitsByDay:got.commitsByDay || {}, from:String(out.since||"" ).slice(0,10), through:String(out.updatedAt||"").slice(0,10), truncated:!!got.truncated, repos:got.repos || 0};
+      ghData[p] = {days:got.days || {}, commitsByDay:got.commitsByDay || {}, from:String(out.since||"" ).slice(0,10), through:String(out.updatedAt||"").slice(0,10), truncated:!!got.truncated, repos:got.repos || 0, calendar:got.calendar || null};
       delete ghErrors[p];
     });
     ghVia = !mine.length ? "the server"
@@ -3688,16 +3701,19 @@ function renderGh(){
     nm.className = "who2"; nm.textContent = p;
     var cnt = document.createElement("span");
     cnt.className = "n2";
+    var cal = ghCalendar(p);
     cnt.textContent = !logins[p] || ghErrors[p] ? "—"
+      : cal ? cal.total + (cal.total === 1 ? " contribution" : " contributions")
       : commitLabel(byPerson[p], (ghData[p] || {}).truncated);
     head.appendChild(nm); head.appendChild(cnt);
     /* the handles stay off the page — the count is the point of the card */
     card.appendChild(head);
-    card.appendChild(buildCal((ghData[p] || {}).days || {}));
+    card.appendChild(buildCal(cal ? cal.days : ((ghData[p] || {}).days || {})));
     var sub = document.createElement("div");
     sub.className = "sub2" + (ghErrors[p] ? " bad" : "");
     if (ghErrors[p]) sub.textContent = ghErrors[p];
     else if (!logins[p]) sub.textContent = "";
+    else if (cal) sub.textContent = "contributions, private work included — no public commit to read";
     else if (!byPerson[p]) sub.textContent = (ghData[p] && ghData[p].repos === 0)
       ? "no public repository pushed this quarter"
       : "nothing public in this window";

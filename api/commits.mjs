@@ -83,6 +83,58 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
     return res.json();
   }
 
+  /* The commit scan below only sees public repositories, so somebody whose
+     work is private reads as a flat zero — and on a panel people are judged
+     by, a wrong zero is worse than no number at all. GitHub serves the
+     contribution calendar its profile pages draw, private work included, to
+     anyone who asks and without a token. That is markup rather than an API,
+     so it is read defensively and dropped whole the moment it stops looking
+     like itself: a missing calendar costs a line on a card, while a
+     half-parsed one would be a wrong number nobody could spot.
+
+     These are contributions, not commits — pull requests, issues and reviews
+     are counted in there too. It is kept in a field of its own for exactly
+     that reason, so nothing that counts commits can pick it up by accident. */
+  const CAL_DAYS_MIN = 300;
+  const CAL_CELL = /data-date="(\d{4}-\d{2}-\d{2})"[^>]*id="(contribution-day-[^"]+)"/g;
+  const CAL_TIP  = /<tool-tip[^>]*for="(contribution-day-[^"]+)"[^>]*>([^<]*)<\/tool-tip>/g;
+
+  async function readCalendar(logins, fromDay, budget){
+    const days = {};
+    let answered = false;
+    for (const login of logins) {
+      if (budget.reads >= MAX_READS) break;
+      budget.reads++;
+      let html;
+      try {
+        const res = await fetchImpl('https://github.com/users/' + encodeURIComponent(login) + '/contributions',
+                                    {headers:{'User-Agent':'fomo-bootcamp-console', 'Accept':'text/html'}});
+        if (!res.ok) continue;
+        html = await res.text();
+      } catch { continue; }
+
+      const dateOf = {};
+      for (const m of html.matchAll(CAL_CELL)) dateOf[m[2]] = m[1];
+      /* a year of cells or it is not the calendar any more */
+      if (Object.keys(dateOf).length < CAL_DAYS_MIN) continue;
+
+      let read = 0;
+      for (const m of html.matchAll(CAL_TIP)) {
+        const day = dateOf[m[1]];
+        if (!day) continue;
+        const n = /^No contributions/.test(m[2]) ? 0 : parseInt(m[2], 10);
+        if (!Number.isFinite(n)) continue;
+        read++;
+        if (n && day >= fromDay) days[day] = (days[day] || 0) + n;
+      }
+      if (read >= CAL_DAYS_MIN) answered = true;
+    }
+    if (!answered) return null;
+    let total = 0;
+    for (const day in days) total += days[day];
+    return {days, total};
+  }
+
   /* One person: their owned repos pushed inside the window, then the
      commits in each authored by any of their logins. Commits to somebody
      else's repository are invisible here, exactly as they were in the
@@ -129,7 +181,10 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
     }
     /* the logins these counts were actually read from, so a browser whose
        "Manage accounts" names differ can tell and read those itself */
-    return {logins, days, commitsByDay, truncated: truncated || budget.truncated, repos: live.length};
+    /* counted separately and never merged into days: see readCalendar */
+    const calendar = await readCalendar(logins, from.slice(0, 10), budget);
+    return {logins, days, commitsByDay, truncated: truncated || budget.truncated,
+            repos: live.length, calendar};
   }
 
   async function refresh(){
