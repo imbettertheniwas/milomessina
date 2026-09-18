@@ -1,6 +1,18 @@
-/* Compact, independent overview cards; the chart never stretches to its neighbor. */
-[data-view="overview"] .grid2{align-items:start;grid-auto-rows:min-content}
+/* Compact, independent overview cards. */
+[data-view="overview"] .grid2{align-items:stretch;grid-auto-rows:min-content}
 [data-view="overview"] .panel{align-self:start;min-height:0}
+/* A pair of cards is a row, and the row is as tall as its taller card.
+   Left alone the shorter one stopped where its content did, so what sat
+   between it and the next pair was the page showing through -- a hole
+   between two cards rather than a card with room in it. The pair matches
+   instead, and a body that can use the height takes it rather than
+   leaving it dead: the day chart grows its plot area. A list or a bar
+   stack keeps its own height and the rest reads as the card's padding. */
+[data-view="overview"] .grid2>.panel{align-self:stretch;display:flex;flex-direction:column}
+[data-view="overview"] .grid2>.panel>.panel-b:has(>.mbars){flex:1;display:flex;flex-direction:column}
+[data-view="overview"] .grid2>.panel>.panel-b>.mbars{flex:1;height:auto;min-height:110px}
+/* Nothing to show is the one body worth centring in the room it got. */
+[data-view="overview"] .grid2>.panel>:is(.att,.panel-b,.feed):has(>.empty){flex:1;display:flex;flex-direction:column;justify-content:center}
 [data-view="overview"] .empty{padding:22px 16px}
 [data-view="overview"] .empty .mini{margin-top:12px}
 .overview-stat{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;padding:13px 14px;border-right:1px solid var(--line)}
