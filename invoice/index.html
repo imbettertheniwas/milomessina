@@ -727,13 +727,12 @@ td.date.run{color:var(--good)}
     <span class="mark" aria-hidden="true">
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#0B091F"></rect><path d="M36.97 24.36c7.13 0 12.82 3.59 15.97 9.24-4.19 4.44-7.29 10.16-8.48 16.4-1.19 6.24-.28 11.96 2.21 16.4-5.32 5.65-12.38 9.24-19.51 9.24-8.73 0-15.3-5.38-17.7-13.32h17.39c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H14.18c5.44-7.94 14.07-13.32 22.79-13.32Z" fill="#EAEDFF"></path><path d="M72.33 24.36c12.75 0 20.89 11.48 18.18 25.64-2.71 14.16-15.24 25.64-27.99 25.64-8.73 0-15.3-5.38-17.7-13.32h19.34c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H49.53c5.44-7.94 14.07-13.32 22.8-13.32Z" fill="#EAEDFF"></path></svg>
     </span>
-    <h2>fomo bootcamp ops</h2>
-    <p>Internal to arya's fomo bootcamp. Choose your name and enter the team passcode.</p>
+    <h2>fomo special ops</h2>
     <form id="gate-form" autocomplete="off">
-      <label for="gate-who">Who are you?</label>
-      <select id="gate-who" required><option value="">Select your name</option><option>Milo</option><option>Bijan</option><option>Jesse</option><option>Luchi</option><option value="Arya">Arya · Admin</option></select>
+      <label for="gate-who">who are you?</label>
+      <select id="gate-who" required><option value="">select your name</option><option value="Milo">milo</option><option value="Bijan">bijan</option><option value="Jesse">jesse</option><option value="Luchi">luchi</option><option value="Arya">arya · admin</option></select>
       <input id="gate-input" type="password" placeholder="passcode" aria-label="Team passcode" autocomplete="current-password">
-      <button class="btn btn-p" type="submit">Open</button>
+      <button class="btn btn-p" type="submit">open</button>
     </form>
     <div class="err" id="gate-err" role="alert"></div>
   </div>
@@ -5698,13 +5697,13 @@ async function sessionCall(body){
   if (!identityReady) {
     var probe=await fetch(ENDPOINT,{signal:AbortSignal.timeout(20000)});
     var features=await probe.json();
-    if (!features.identity || !features.moneyUndo || !features.purchaseApproval) throw new Error("Arya-only purchase approval needs to be deployed in Apps Script before signing in.");
+    if (!features.identity || !features.moneyUndo || !features.purchaseApproval) throw new Error("arya-only purchase approval needs to be deployed in apps script before signing in.");
     identityReady=true;
   }
   var res=await fetch(ENDPOINT,{method:"POST",body:JSON.stringify(Object.assign({_api:"internal"},body)),signal:AbortSignal.timeout(20000)});
   var out=await res.json();
-  if (!out.ok) throw new Error(out.error || "Sign-in failed.");
-  if (!out.who && body.action !== "logout") throw new Error("Identity access is not deployed yet. Update the shared Apps Script before signing in.");
+  if (!out.ok) throw new Error(out.error || "sign-in failed.");
+  if (!out.who && body.action !== "logout") throw new Error("identity access is not deployed yet. update the shared apps script before signing in.");
   return out;
 }
 function signedIn(out, token){
@@ -5726,11 +5725,11 @@ function signedIn(out, token){
 $("gate-form").addEventListener("submit",async function(ev){
   ev.preventDefault();
   var btn=this.querySelector('button[type="submit"]') || this.querySelector('button');
-  btn.disabled=true; $("gate-err").textContent="Signing in…";
+  btn.disabled=true; $("gate-err").textContent="signing in…";
   try {
     signedIn(await sessionCall({action:"login",who:$("gate-who").value,passcode:$("gate-input").value}));
     $("gate-input").value=""; $("gate-err").textContent="";
-  } catch(e){ $("gate-err").textContent=e.message; }
+  } catch(e){ $("gate-err").textContent=(e.message||"").toLowerCase(); }
   finally {btn.disabled=false;}
 });
 $("identity-switch").addEventListener("click",async function(){
@@ -5745,7 +5744,7 @@ $("identity-switch").addEventListener("click",async function(){
   try { saved=JSON.parse(sessionStorage.getItem("fomo.identity") || "null"); }catch(e){}
   if (saved && saved.token) {
     try { signedIn(await sessionCall({action:"session",_session:saved.token}),saved.token); return; }
-    catch(e){ $("gate-err").textContent="Sign in again to continue."; }
+    catch(e){ $("gate-err").textContent="sign in again to continue."; }
   }
   $("gate-who").focus();
 })();
