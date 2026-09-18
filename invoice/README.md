@@ -860,3 +860,27 @@ leaves their application exactly as it was.
 `PEOPLE` at the top of the page's script, and `INVOICE_PEOPLE` in the Apps
 Script, are the same four names. Change both — the endpoint refuses a name it
 doesn't recognise, on a spend and on a day alike.
+
+## Reviewing spends and undoing money changes
+
+Share approvals now open `#/charge/<id>`, showing the actual receipt, payer,
+amount, date, category, note, split, and participant confirmations. No click on
+an overview or ledger review link approves the spend. Confirmation happens on
+that page, with **Undo my approval** available afterwards. A stale review is
+rejected if the underlying charge details changed before confirmation.
+
+**Money history** and the persistent **Undo** bar reverse spend creation, edits,
+deletions, reimbursement status changes, grouped settlements, and recurring-rule
+changes. Each successful change stores its actual before/after records in
+`internal_money_history`; existing rows are not backfilled with invented history.
+Interns can undo their own actions and Arya can undo anyone's. The backend checks
+every affected record before an undo, rejecting the whole group if subsequent
+changes would be overwritten. A settlement reversal affects only that settlement,
+not previously reimbursed charges. Retracting a share confirmation affects only
+the signed-in participant's approval.
+
+Deploy the updated Apps Script on the existing URLs before using this frontend.
+The capability response now includes `moneyUndo: true`. Keep `CONFIG` and the
+separate visits script unchanged. The history tab is created on the first real
+financial change; preview and automated tests never write test records to Sheets.
+Undo changes the ledger; it cannot reverse an external transfer of money.

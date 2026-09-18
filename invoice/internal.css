@@ -130,3 +130,35 @@ button:disabled{cursor:default}
 body[data-role="intern"] #vr-save,body[data-role="intern"] #vr-hours-save{display:none}
 .overview-action{width:100%;color:inherit;text-align:left;cursor:pointer}
 .overview-action:hover{background:var(--raise)}
+
+/* Receipts and reversible money actions. */
+.charge-review{max-width:1100px;margin:0 auto;display:grid;gap:18px;align-content:start}
+.charge-review h2{font-size:24px;overflow-wrap:anywhere}
+.charge-review-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.charge-receipt,.charge-facts{padding:18px;display:grid;gap:14px;min-width:0}
+.charge-receipt iframe{width:100%;height:540px;border:0;background:var(--ink)}
+.charge-receipt img{max-width:100%;height:auto;object-fit:contain}
+.charge-receipt small,.charge-confirm small{color:var(--muted);font-size:12px;display:block}
+.charge-facts dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;margin:0}
+.charge-facts dt{color:var(--muted)}
+.charge-facts dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.charge-note{white-space:pre-wrap;overflow-wrap:anywhere}
+.charge-participants p{display:flex;justify-content:space-between;gap:12px;margin:8px 0}
+.charge-confirm{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:16px}
+#money-undo-bar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:0 4px 24px #0003;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);font-size:12px}
+#money-undo-bar[hidden]{display:none}
+#money-undo-bar .mini{min-height:36px}
+body:has(#money-undo-bar:not([hidden])) .scroller{padding-bottom:90px}
+body:has(#money-undo-bar:not([hidden])) #toast{bottom:86px}
+.money-history-head{max-width:760px;margin:0 auto 20px}
+.money-history-head p{color:var(--muted);line-height:1.6;margin-top:10px}
+.money-history-item{max-width:760px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.money-history-item div{min-width:0;overflow-wrap:anywhere}
+.money-history-item p{margin:8px 0}
+.money-history-item small{color:var(--muted)}
+.money-history-item button{min-height:40px;flex-shrink:0}
+@media(max-width:700px){.charge-review-grid{grid-template-columns:1fr}.charge-receipt iframe{height:380px}.charge-review h2{font-size:21px}#money-undo-bar{width:max-content}.charge-confirm .btn{min-height:46px}}
+.charge-confirm button{min-height:44px;padding:12px 18px;border:1px solid var(--violet);border-radius:8px;background:var(--violet);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.charge-confirm button[data-unapprove]{background:var(--surface-2);border-color:var(--line-2);color:var(--text)}
+.charge-confirm button:disabled{opacity:.6;cursor:wait}
+.charge-review>.mini{justify-self:start}

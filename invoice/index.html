@@ -985,6 +985,8 @@ td.date.run{color:var(--good)}
       </section>
 
       <!-- ────────── reimbursements ────────── -->
+      <section class="view" data-view="charge"><div class="scroller pad" id="charge-detail"></div></section>
+      <section class="view" data-view="moneyhistory"><div class="scroller pad" id="money-history"></div></section>
       <section class="view" data-view="settle">
         <div class="toolbar">
           <span class="hint">Whoever fronted the money is owed all of it — a split is a record of where it went, not a claim on anyone.</span>
@@ -1413,6 +1415,7 @@ td.date.run{color:var(--good)}
   <img id="shot-img" alt="Receipt photo">
 </div>
 <div id="tip" role="status"></div>
+<div id="money-undo-bar" hidden role="status"></div>
 <div id="toast" role="status"></div>
 
 <script>
@@ -1453,11 +1456,14 @@ var identity = null, profiles = [], profileEditing = false, profileSaving = fals
 function isAdmin(){ return !!identity && identity.who === "Arya"; }
 function own(who){ return !!identity && (isAdmin() || identity.who === who); }
 function canEdit(r){ return !!r && own(r.who) && (isAdmin() || r.status !== "reimbursed"); }
+function isParticipant(r){ return !!identity && !!r && r.who !== identity.who && sharedOf(r).indexOf(identity.who) >= 0; }
 function canApprove(r){ return !!identity && !!r && r.who !== identity.who && sharedOf(r).indexOf(identity.who) >= 0 && String(r.approvals || "").split(",").indexOf(identity.who) < 0; }
 function permission(action, p){
   p = p || {};
   if (action === "list") return "";
   if (!identity) return "Choose your name and sign in first.";
+  if (action === "moneyundo") return ""; // Stored history enforces ownership.
+  if (action === "unapprove") return isParticipant(byId(rows,p.id)) ? "" : "You can only undo your own approval.";
   if (action === "approve") return canApprove(byId(rows, p.id)) ? "" : "You can only approve your own share.";
   if (isAdmin()) return "";
   if (["profileupdate","add","subadd","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
@@ -1801,10 +1807,11 @@ function apiLocal(action, p){
         status:"pending", logged:now
       });
 
-    } else if (action === "approve") {
+    } else if (action === "approve" || action === "unapprove") {
       var approvedRow = byId(rows,p.id);
       var approved = String(approvedRow.approvals || "").split(",").filter(Boolean);
-      if (approved.indexOf(identity.who) < 0) approved.push(identity.who);
+      if (action === "unapprove") approved=approved.filter(function(name){return name!==identity.who;});
+      else if (approved.indexOf(identity.who) < 0) approved.push(identity.who);
       approvedRow.approvals = approved.join(",");
     } else if (action === "update") {
       var hit = byId(rows, p.id);
@@ -1862,7 +1869,7 @@ function apiLocal(action, p){
 }
 
 function api(action, payload){
-  return mode === "sheet" ? apiSheet(action, payload) : apiLocal(action, payload);
+  return mode === "sheet" ? apiSheet(action, payload) : localMoneyAction(action,payload,false);
 }
 
 /* ---------- the shared sheet, once the page is on it ---------- */
@@ -1930,6 +1937,7 @@ function apiSheet(action, payload){
       throw behind;
     }
     {
+      moneyHistory = out.moneyHistory || [];
       profiles = out.profiles || [];
       rows = out.rows.map(function(r){
         return {
@@ -2241,7 +2249,7 @@ document.getElementById("form").addEventListener("submit", function(ev){
     toast(money(amt) + " logged for " + picked +
       (names.length > 1 ? " — " + money(amt / names.length) + " each across " + names.length + "." : "."));
   })["catch"](function(e){ hint("That didn't save — " + fail(e) + ".", true); })
-   .then(function(){ btn.disabled = false; busy = false; btn.textContent = "Add to ledger"; });
+   .then(function(){ btn.disabled = false; busy = false; paint(); btn.textContent = "Add to ledger"; });
 });
 
 /* ---------- a spend that repeats every month ----------
@@ -2293,7 +2301,7 @@ function subStep(iso, day){
 }
 
 function subApi(action, p){
-  return subsMode() === "sheet" ? apiSheet(action, p) : subLocal(action, p);
+  return subsMode() === "sheet" ? apiSheet(action, p) : localMoneyAction(action,p,true);
 }
 
 /* Same call signature as the sheet's, so the buttons don't know which
@@ -2379,7 +2387,7 @@ function runSubs(){
     /* whatever landed before it stopped has already moved its own rule
        on, so the next load picks up where this one gave out */
     toast("A monthly line didn't go in — " + fail(e) + ".", true);
-  }).then(function(){ subsBusy = false; busy = false; renderSubs(); });
+  }).then(function(){ subsBusy = false; busy = false; renderSubs(); paint(); });
 }
 
 function renderSubs(){
@@ -2445,7 +2453,7 @@ document.getElementById("subs-body").addEventListener("click", function(ev){
          the next one */
       subApi("subdelete", {id:id}).then(function(){ toast("Subscription stopped. The lines it already added are still on the ledger."); })
         ["catch"](function(e){ toast(fail(e), true); })
-        .then(function(){ busy = false; });
+        .then(function(){ busy = false; paint(); });
     });
     return;
   }
@@ -2458,7 +2466,7 @@ document.getElementById("subs-body").addEventListener("click", function(ev){
       return act === "resume" ? runSubs() : null;
     })
     ["catch"](function(e){ toast(fail(e), true); btn.disabled = false; })
-    .then(function(){ busy = false; });
+    .then(function(){ busy = false; paint(); });
 });
 
 /* ---------- the toggle ---------- */
@@ -2511,7 +2519,7 @@ function startSub(what, amt, date){
     closeDrawer();
     toast(what + " repeats — " + money(amt) + " on the " + ord(day) + " of every month.");
   })["catch"](function(e){ hint("That didn't save — " + fail(e) + ".", true); })
-   .then(function(){ busy = false; btn.disabled = false; syncRepeat(); });
+   .then(function(){ busy = false; btn.disabled = false; syncRepeat(); paint(); });
 }
 
 /* ---------- editing a line already on the ledger ----------
@@ -2593,7 +2601,7 @@ function saveEdit(what, amt, date){
     toast("Line updated \u2014 " + money(amt) + " for " + picked + ".");
   })["catch"](function(e){ hint("That didn't save \u2014 " + fail(e) + ".", true); })
    .then(function(){
-     btn.disabled = false; busy = false;
+     btn.disabled = false; busy = false; paint();
      btn.textContent = editing ? "Save changes" : "Add to ledger";
    });
 }
@@ -2633,7 +2641,7 @@ document.addEventListener("click", function(ev){
     btn.disabled = true; busy = true;
     api("update", {id:id, status: act === "pay" ? "reimbursed" : "pending"})
       ["catch"](function(e){ toast(fail(e), true); btn.disabled = false; })
-      .then(function(){ busy = false; });
+      .then(function(){ busy = false; paint(); });
   } else if (act === "edit") {
     openEdit(id);
   } else if (act === "del") {
@@ -2641,7 +2649,7 @@ document.addEventListener("click", function(ev){
       busy = true;
       api("delete", {id:id}).then(function(){ toast("Line deleted."); })
         ["catch"](function(e){ toast(fail(e), true); })
-        .then(function(){ busy = false; });
+        .then(function(){ busy = false; paint(); });
     });
   }
 });
@@ -2657,7 +2665,7 @@ document.addEventListener("click", function(ev){
     busy = true;
     api("settle", {who:who}).then(function(){ toast(who + " is all settled up — " + money(sum) + "."); })
       ["catch"](function(e){ toast(fail(e), true); })
-      .then(function(){ busy = false; });
+      .then(function(){ busy = false; paint(); });
   });
 });
 
@@ -3175,7 +3183,7 @@ document.getElementById("clock-grid").addEventListener("click", function(ev){
   dayApi(here ? "dayclear" : "daymark", {who: who, day: day}).then(function(){
     toast(here ? who + " unmarked for today." : who + " is down for today.");
   })["catch"](function(e){ toast(fail(e), true); btn.disabled = false; })
-   .then(function(){ busy = false; });
+   .then(function(){ busy = false; paint(); });
 });
 
 /* ---------- a day somebody forgot to mark ----------
@@ -3271,7 +3279,7 @@ document.getElementById("shift-body").addEventListener("click", function(ev){
     busy = true;
     dayApi("daydelete", {id:id}).then(function(){ toast("Day removed."); })
       ["catch"](function(e){ toast(fail(e), true); })
-      .then(function(){ busy = false; });
+      .then(function(){ busy = false; paint(); });
   });
 });
 
@@ -4032,7 +4040,7 @@ function sendCarry(extraRows, extraDays, extraSubs){
     /* whatever did land is on the sheet now; offerCarry works out what is
        still missing rather than sending anything a second time */
     offerCarry(true);
-  }).then(function(){ busy = false; });
+  }).then(function(){ busy = false; paint(); });
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -4072,6 +4080,67 @@ function tint(label, v){
   return '<span class="tag tint" style="--c:var(' + v + ')">' + esc(label) + "</span>";
 }
 
+/* Money changes remain reversible after the confirmation toast disappears. */
+var MONEY_ACTION_LABELS={add:'Spend logged',edit:'Spend edited',delete:'Spend deleted',update:'Reimbursement changed',settle:'Spends settled',subadd:'Recurring spend added',subpause:'Recurring spend changed',subdelete:'Recurring spend stopped'};
+function localMoneyHistory(){ try{return JSON.parse(localStorage.getItem('fomo.money.history')||'[]');}catch(e){return [];} }
+function currentMoneyHistory(){return mode==='sheet'?moneyHistory:localMoneyHistory().filter(function(h){return identity && (isAdmin() || h.actor===identity.who);}).reverse();}
+function moneyState(){var out={};[['rows',rows],['subs',subs]].forEach(function(pair){pair[1].forEach(function(r){out[pair[0]+':'+r.id]={table:pair[0],id:r.id,value:JSON.parse(JSON.stringify(r))};});});return out;}
+function restoreLocalChange(changes, side){changes.forEach(function(c){var record=c[side], list=c.table==='rows'?rows:subs, at=list.findIndex(function(r){return r.id===c.id;});if(at>=0)list.splice(at,1);if(record)list.push(record.value);});}
+function localMoneyAction(action,p,sub){
+  p=p||{};
+  var denied=requirePermission(action,p);if(denied)return denied;
+  var before=moneyState(), history=localMoneyHistory();
+  if(action==='moneyundo'){
+    var h=history.find(function(item){return item.id===p.undoId;});
+    if(!h || (!isAdmin() && h.actor!==identity.who))return Promise.reject(new Error('You can only undo your own changes.'));
+    if(h.undone)return Promise.resolve({ok:true});
+    if(h.changes.some(function(c){return JSON.stringify(before[c.table+':'+c.id]||null)!==JSON.stringify(c.after);}))return Promise.reject(new Error('This record changed afterwards. Nothing was undone.'));
+    restoreLocalChange(h.changes,'before');h.undone=true;
+    try {localStorage.setItem('fomo.money.history',JSON.stringify(history));if(!saveAll()||!saveSubs())throw new Error('The undo could not be saved.');}
+    catch(e){restoreLocalChange(h.changes,'after');h.undone=false;try{localStorage.setItem('fomo.money.history',JSON.stringify(history));saveAll();saveSubs();}catch(ignore){}return Promise.reject(e);}
+    render();return Promise.resolve({ok:true});
+  }
+  return (sub?subLocal(action,p):apiLocal(action,p)).then(function(result){
+    if(!MONEY_ACTION_LABELS[action])return result;
+    var after=moneyState(), changes=[];
+    Object.keys(before).concat(Object.keys(after)).filter(function(k,i,a){return a.indexOf(k)===i;}).forEach(function(k){var a=before[k]||null,b=after[k]||null;if(JSON.stringify(a)!==JSON.stringify(b)){var r=b||a;changes.push({id:r.id,table:r.table,before:a,after:b});}});
+    if(changes.length){
+      var record=changes[0].after||changes[0].before;
+      history.push({id:newId(),actor:identity.who,action:action,created:new Date().toISOString(),description:record.value.what,count:changes.length,undone:false,changes:changes});
+      try{localStorage.setItem('fomo.money.history',JSON.stringify(history));}
+      catch(e){restoreLocalChange(changes,'before');saveAll();saveSubs();render();throw new Error('No room to save undo history. The change was rolled back.');}
+      render();
+    }
+    return result;
+  });
+}
+function paintMoneyUndo(){
+  var bar=$('money-undo-bar'), latest=currentMoneyHistory().find(function(h){return !h.undone;});
+  bar.hidden=!latest || !identity;
+  if(!latest)return;
+  bar.innerHTML='<span>'+esc(MONEY_ACTION_LABELS[latest.action]||'Money changed')+'</span><button class="mini" data-money-undo="'+esc(latest.id)+'" '+(busy?'disabled':'')+'>Undo</button><a href="#/moneyhistory">History</a>';
+}
+function paintMoneyHistory(){
+  var history=currentMoneyHistory();
+  $('money-history').innerHTML='<div class="money-history-head"><h2>Money history</h2><p>Undo changes recorded since this update. An undo only changes ledger records; it does not send or recover an actual payment.</p></div>'+
+    (history.length?history.map(function(h){return '<article class="money-history-item"><div><b>'+esc(MONEY_ACTION_LABELS[h.action]||h.action)+'</b><p>'+esc(h.description)+(h.count>1?' · '+h.count+' records':'')+'</p><small>'+esc(h.actor)+' · '+esc(String(h.created).replace('T',' '))+'</small></div>'+(h.undone?'<span class="pill">Undone</span>':'<button class="mini" data-money-undo="'+esc(h.id)+'" '+(busy?'disabled':'')+'>Undo</button>')+'</article>';}).join(''):'<div class="empty">No money changes recorded yet. Existing spends are still in the ledger.</div>');
+}
+function reviewedCharge(r){return JSON.stringify([r.date,r.who,r.what,r.category,Number(r.amount),r.note||'',r.receipt||'',r.shared||'']);}
+var chargePaintKey="";
+function paintCharge(){
+  var r=byId(rows,chargeOf), box=$('charge-detail');
+  var key=JSON.stringify([chargeOf,r,identity && identity.who,busy]);
+  if(key===chargePaintKey)return;
+  chargePaintKey=key;
+  if(!r){box.innerHTML='<a class="mini" href="#/ledger">← Ledger</a><div class="empty">This spend is not on the ledger. If it was deleted, check <a href="#/moneyhistory">Money history</a> to undo that change.</div>';return;}
+  var url=safeUrl(r.receipt), receipt='<div class="empty">No receipt was attached to this spend.</div>', drive=url && /^https:\/\/drive\.google\.com\/(?:file\/d\/([a-zA-Z0-9_-]+)|open\?id=([a-zA-Z0-9_-]+))/.exec(url);
+  if(drive)receipt='<iframe title="Receipt for '+esc(r.what)+'" src="https://drive.google.com/file/d/'+(drive[1]||drive[2])+'/preview" allow="fullscreen"></iframe>';
+  else if((url && /\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(url)) || /^data:image\//.test(r.receipt||''))receipt='<img src="'+esc(url||r.receipt)+'" alt="Receipt for '+esc(r.what)+'">';
+  else if(url)receipt='<p>The receipt is available at the link below.</p>';
+  var approved=String(r.approvals||'').split(','), participants=sharedOf(r), ownShare=isParticipant(r), confirmed=ownShare && approved.indexOf(identity.who)>=0;
+  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts"><dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Status</dt><dd>'+esc(r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd><dt>Split between</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd>'+(ownShare?'<dt>Your share</dt><dd>'+esc(money(eachOf(r)))+'</dd>':'')+'</dl>'+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+'<div class="charge-participants">'+participants.filter(function(name){return name!==r.who;}).map(function(name){return '<p>'+esc(name)+' <span class="pill '+(approved.indexOf(name)>=0?'good':'')+'">'+(approved.indexOf(name)>=0?'Approved':'Not approved')+'</span></p>';}).join('')+'</div>'+(ownShare?'<div class="charge-confirm"><p>'+(confirmed?'You approved your share. You can undo your approval below.':'Check the receipt and details, then confirm your '+esc(money(eachOf(r)))+' share.')+'</p><button class="btn" '+(confirmed?'data-unapprove':'data-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo my approval':'Approve my '+esc(money(eachOf(r)))+' share')+'</button><small>This confirms your share of the recorded spend. It does not move money.</small></div>':'')+(isAdmin()?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div></section></div><a href="#/moneyhistory">View money history and undo changes →</a></div>';
+}
+
 /* ---------- one row of the ledger ---------- */
 function splitCell(r){
   var names = sharedOf(r);
@@ -4084,14 +4153,14 @@ function approvalHtml(r){
   if (!participants.length) return "";
   var approved=String(r.approvals || "").split(",");
   return '<small class="charge-approvals">' + participants.map(function(p){return esc(p) + (approved.indexOf(p)>=0?' ✓':' · awaiting approval');}).join(' · ') + '</small>' +
-    (canApprove(r)?'<button class="mini approve-charge" data-approve="'+esc(r.id)+'">Approve my '+esc(money(Number(r.amount)/sharedOf(r).length))+' share</button>':'');
+    (isParticipant(r)?'<a class="mini approve-charge" href="#/charge/'+encodeURIComponent(r.id)+'">'+(canApprove(r)?'Review my '+esc(money(eachOf(r)))+' share':'View approval / undo')+'</a>':'');
 }
 function ledgerRow(r, hideWho){
   var meta = cat(r.category), url = safeUrl(r.receipt), done = r.status === "reimbursed";
   return '<tr class="ledger-line">' +
     '<td data-label="Date" class="date">' + esc(niceDate(r.date)) + "</td>" +
     (hideWho === true ? "" : '<td data-label="Paid by">' + pers(r.who) + "</td>") +
-    '<td data-label="Description"><div class="what"><b>' + esc(r.what || "—") + "</b>" +
+    '<td data-label="Description"><div class="what"><b><a href="#/charge/' + encodeURIComponent(r.id) + '">' + esc(r.what || "—") + "</a></b>" +
       (r.note ? "<small>" + esc(r.note) + "</small>" : "") +
       (r.receipt && /^data:image\//.test(r.receipt)
         ? '<small><button type="button" class="rcpt" data-shot="' + esc(r.id) + '">' +
@@ -4106,7 +4175,7 @@ function ledgerRow(r, hideWho){
     '<td data-label="Status"><span class="pill ' + (done ? "good" : "owed") + '"><i></i>' + (done ? "reimbursed" : "owed") + "</span></td>" +
     '<td data-label="Actions"><div class="acts">' +
       (done
-        ? '<button class="mini" data-act="unpay" data-id="' + esc(r.id) + '">Undo</button>'
+        ? '<button class="mini" data-act="unpay" data-id="' + esc(r.id) + '">Undo reimbursement</button>'
         : '<button class="mini" data-act="pay" data-id="' + esc(r.id) + '">Mark paid</button>') +
       '<button class="mini" data-act="edit" data-id="' + esc(r.id) + '">Edit</button>' +
       '<button class="mini danger" data-act="del" data-id="' + esc(r.id) + '">Delete</button>' +
@@ -4206,10 +4275,12 @@ var VIEWS = {
   applicants:{label:"Applicants",     sub:"everyone who has asked to run a campus"},
   campus:    {label:"Campus team",    sub:"who is on which campus, and in which state"},
   chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
+  charge:    {label:"Review spend", sub:"receipt, details, and your share"},
+  moneyhistory: {label:"Money history", sub:"review and undo recorded changes"},
   person:    {label:"",               sub:""}
 };
 
-var view = "overview", personOf = null;
+var view = "overview", personOf = null, chargeOf = null, moneyHistory = [];
 
 /* The rail is a menu, so every item sits under a heading that names the
    kind of thing it is — Overview included, which used to float above the
@@ -4227,7 +4298,7 @@ var view = "overview", personOf = null;
    the group: their pages are the ones you already know how to find. */
 var NAV = [
   {id:"start",  label:"Start",      items:[["overview","Overview",0]]},
-  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["settle","Reimbursements",1],["subs","On repeat",1],["reporting","Breakdown",0]]},
+  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["moneyhistory","Money history",0],["settle","Reimbursements",1],["subs","On repeat",1],["reporting","Breakdown",0]]},
   {id:"guests", label:"Guests",     items:[["visits","Visit requests",0]]},
   /* The chapters are the one group that is not about the four of them or
      their money — it is the campus the bootcamp is selling to, read from
@@ -4343,7 +4414,7 @@ function setView(id, who){
   if (!VIEWS[id]) id = "overview";
   if (id === "person" && !who) id = "overview";
   if (view !== id || personOf !== who) profileEditing=false;
-  view = id; personOf = id === "person" ? who : null;
+  view = id; personOf = id === "person" ? who : null; chargeOf = id === "charge" ? who : null;
   [].forEach.call(document.querySelectorAll(".view"), function(s){
     s.classList.toggle("on", s.getAttribute("data-view") === view);
   });
@@ -4357,7 +4428,7 @@ function setView(id, who){
   $("btn-new").style.display = ["visits","applicants","campus","posts"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   closeSidebar();
-  var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : view === "posts" && who ? "/" + encodeURIComponent(who) : "");
+  var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : (view === "posts" || view === "charge") && who ? "/" + encodeURIComponent(who) : "");
   if (location.hash !== hash) { try { history.replaceState(null, "", hash); } catch(e){ location.hash = hash; } }
   var sc = document.querySelector('.view[data-view="' + view + '"] .scroller');
   if (sc) sc.scrollTop = 0;
@@ -4742,7 +4813,7 @@ function paintOverview(){
      thirty that includes "all good". */
   var items = [];
   rows.filter(canApprove).forEach(function(r){
-    items.push({k:"approval",w:1000000,html:avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · your share '+esc(money(Number(r.amount)/sharedOf(r).length))+'</span></div><button class="mini" data-approve="'+esc(r.id)+'">Approve my share</button>'});
+    items.push({k:"approval",w:1000000,html:avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · your share '+esc(money(Number(r.amount)/sharedOf(r).length))+'</span></div><button class="mini" data-review="'+esc(r.id)+'">Review my share</button>'});
   });
   PAYERS.forEach(function(p){
     if (m[p].owed > 0.005) items.push({
@@ -5256,6 +5327,9 @@ function paint(){
   if (view === "reporting")  paintReporting();
   if (view === "attendance") paintAttendance();
   if (view === "person")     paintPerson();
+  if (view === "charge")     paintCharge();
+  if (view === "moneyhistory") paintMoneyHistory();
+  paintMoneyUndo();
 }
 
 /* render() is the one thing every button eventually calls, so the
@@ -5375,11 +5449,25 @@ document.addEventListener("click",function(ev){
     if(b.hasAttribute('data-ledger-query')) f.q=b.dataset.ledgerQuery.toLowerCase();
     openLedgerDetail(f);
   }
-  var approval=ev.target.closest('[data-approve]');
+  var review=ev.target.closest('[data-review]');
+  if(review) setView('charge',review.dataset.review);
+  var approval=ev.target.closest('[data-approve], [data-unapprove]');
   if(approval){
-    approval.disabled=true;
-    api('approve',{id:approval.dataset.approve}).then(function(){toast('Your share is approved.');})
-      .catch(function(e){toast(fail(e),true);approval.disabled=false;});
+    if(busy) return;
+    var reverse=approval.hasAttribute('data-unapprove');
+    var id=reverse?approval.dataset.unapprove:approval.dataset.approve;
+    approval.disabled=true; busy=true;
+    api(reverse?'unapprove':'approve',{id:id,reviewed:approval.dataset.reviewed})
+      .then(function(){toast(reverse?'Your approval was undone.':'Your share is approved. You can undo it on this page.');})
+      .catch(function(e){toast(fail(e),true);})
+      .finally(function(){busy=false;paint();});
+  }
+  var undo=ev.target.closest('[data-money-undo]');
+  if(undo && !busy){
+    busy=true;undo.disabled=true;
+    api('moneyundo',{undoId:undo.dataset.moneyUndo}).then(function(){toast('Money change undone.');})
+      .catch(function(e){toast(fail(e),true);})
+      .finally(function(){busy=false;paint();});
   }
 });
 function applyPermissionUi(){
@@ -5542,7 +5630,7 @@ async function sessionCall(body){
   if (!identityReady) {
     var probe=await fetch(ENDPOINT,{signal:AbortSignal.timeout(20000)});
     var features=await probe.json();
-    if (!features.identity) throw new Error("Identity access is not deployed yet. Update the shared Apps Script before signing in.");
+    if (!features.identity || !features.moneyUndo) throw new Error("The money review and undo update needs to be deployed in Apps Script before signing in.");
     identityReady=true;
   }
   var res=await fetch(ENDPOINT,{method:"POST",body:JSON.stringify(Object.assign({_api:"internal"},body)),signal:AbortSignal.timeout(20000)});

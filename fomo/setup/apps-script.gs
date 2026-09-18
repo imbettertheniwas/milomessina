@@ -112,6 +112,7 @@ function doGet() {
     hint: 'fomo campus form receiver is live',
     identity: true,
     approvals: true,
+    moneyUndo: true,
     ledger: typeof invoiceApi === 'function',
     visits: typeof visitsApi === 'function',
     visitHours: typeof visitAvailability === 'function',
@@ -256,12 +257,13 @@ function internalActor(body) {
 }
 function invoicePermission(action, body, actor, sh) {
   if (!actor) return 'Session expired. Enter the passcode and select your name again.';
-  if (action === 'approve') {
+  if (action === 'approve' || action === 'unapprove') {
     var charge = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
     if (!charge || charge.who === actor || String(charge.shared || '').split(',').map(function(n){return n.trim();}).indexOf(actor) < 0)
       return 'You can only approve your own share of a charge logged by someone else.';
     return null;
   }
+  if (action === 'moneyundo') return null; // The stored actor and every affected record are checked below.
   if (actor === 'Arya') return null;
   if (action === 'profileupdate' || action === 'add' || action === 'subadd' || action === 'daymark' || action === 'dayclear' || action === 'clockin' || action === 'clockout')
     return body.who === actor ? null : 'You can only change your own records.';
@@ -317,10 +319,20 @@ function invoiceApi(body) {
     var denied = invoicePermission(action, body, internalActor(body), sh);
     if (denied) return reply(false, denied);
   }
+  var trackMoney = MONEY_ACTIONS.indexOf(action) >= 0;
+  if (trackMoney) {
+    // Finish already-due recurring charges before isolating this person's change.
+    subsRoll(sh);
+    moneyHistorySheet(true);
+  }
+  var beforeMoney = trackMoney ? moneySnapshot() : null;
   var statusCol = INVOICE_COLS.indexOf('status') + 1;
   var paidCol = INVOICE_COLS.indexOf('reimbursed') + 1;
 
-  if (action === 'profileupdate') {
+  if (action === 'moneyundo') {
+    var undoError = moneyUndo(body.undoId, internalActor(body));
+    if (undoError) return reply(false, undoError);
+  } else if (action === 'profileupdate') {
     var profileError = profileUpdate(body);
     if (profileError) return reply(false, profileError);
   } else if (action === 'add') {
@@ -341,12 +353,14 @@ function invoiceApi(body) {
       return line.row[c] === undefined ? '' : line.row[c];
     }));
 
-  } else if (action === 'approve') {
+  } else if (action === 'approve' || action === 'unapprove') {
     var approvalRow = invoiceFind(sh, body.id);
     var charge = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
+    if (action === 'approve' && body.reviewed !== undefined && body.reviewed !== JSON.stringify([charge.date,charge.who,charge.what,charge.category,Number(charge.amount),charge.note||'',charge.receipt||'',charge.shared||''])) return reply(false, 'This spend changed. Review the latest details before approving.');
     var approved = String(charge.approvals || '').split(',').filter(Boolean);
     var actor = internalActor(body);
-    if (approved.indexOf(actor) < 0) approved.push(actor);
+    if (action === 'unapprove') approved = approved.filter(function(name){return name !== actor;});
+    else if (approved.indexOf(actor) < 0) approved.push(actor);
     sh.getRange(approvalRow, INVOICE_COLS.indexOf('approvals') + 1).setValue(approved.join(','));
 
   } else if (action === 'update') {
@@ -478,16 +492,116 @@ function invoiceApi(body) {
      open /invoice in the morning and one of them has to be the one that
      writes September's Cursor bill. A rule that cannot be turned into a
      line is skipped rather than allowed to take the ledger down with it. */
-  try { subsRoll(sh); } catch (rollErr) {}
+  if (action !== 'moneyundo') { try { subsRoll(sh); } catch (rollErr) {} }
+  if (trackMoney) {
+    try { moneyRemember(beforeMoney, moneySnapshot(), internalActor(body), action); }
+    catch (historyError) {
+      moneyRestore(beforeMoney);
+      return reply(false, 'The change was rolled back because its undo history could not be saved.');
+    }
+  }
 
   /* Every part comes back on every call, so the page always renders what
      the sheet actually holds rather than what it hoped it did. */
   return reply(true, null, {
+    moneyHistory: moneyHistoryPublic(internalActor(body)),
+    moneyUndo: true,
     profiles: profileRead(),
     rows: invoiceRead(sh).map(invoicePublic),
     days: dayRead(daySheet()).map(dayPublic),
     subs: subRead(subSheet()).map(subPublic)
   });
+}
+
+/* Financial changes keep their exact before/after values. No history is invented
+   for old rows. A reversal checks the entire group before touching any record. */
+var MONEY_ACTIONS = ['add','edit','delete','update','settle','subadd','subpause','subdelete'];
+var MONEY_COLS = ['id','actor','action','created','table','record','before','after','undone'];
+function moneyHistorySheet(create) {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('internal_money_history');
+  if (!sh && create) {
+    sh = ss.insertSheet('internal_money_history');
+    sh.getRange(1,1,sh.getMaxRows(),MONEY_COLS.length).setNumberFormat('@');
+    sh.getRange(1,1,1,MONEY_COLS.length).setValues([MONEY_COLS]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function moneySnapshot() {
+  var snapshot = {};
+  [[INVOICE_TAB,invoiceRead(invoiceSheet()),INVOICE_COLS], [SUB_TAB,subRead(subSheet()),SUB_COLS]].forEach(function(part){
+    part[1].forEach(function(r){
+      snapshot[part[0] + ':' + r.id] = {table:part[0], id:r.id, values:part[2].map(function(c){return r[c] == null ? '' : r[c];})};
+    });
+  });
+  return snapshot;
+}
+function moneyRestore(before) {
+  var current=moneySnapshot();
+  Object.keys(before).concat(Object.keys(current)).filter(function(k,i,all){return all.indexOf(k)===i;}).forEach(function(k){
+    var a=before[k]||null,b=current[k]||null;
+    if(JSON.stringify(a)===JSON.stringify(b))return;
+    var record=a||b,sh=record.table===INVOICE_TAB?invoiceSheet():subSheet();
+    var row=record.table===INVOICE_TAB?invoiceFind(sh,record.id):subFind(sh,record.id);
+    if(!a){if(row)sh.deleteRow(row);}
+    else if(row)sh.getRange(row,1,1,a.values.length).setValues([a.values]);
+    else sh.appendRow(a.values);
+  });
+}
+function moneyRemember(before, after, actor, action) {
+  var id = Utilities.getUuid(), stamp = invoiceStamp(), entries = [];
+  Object.keys(before).concat(Object.keys(after)).filter(function(k,i,all){return all.indexOf(k) === i;}).forEach(function(k){
+    var a = before[k] || null, b = after[k] || null;
+    if (JSON.stringify(a) === JSON.stringify(b)) return;
+    var record = b || a;
+    entries.push([id,actor,action,stamp,record.table,record.id,JSON.stringify(a),JSON.stringify(b),'']);
+  });
+  if (!entries.length) return;
+  var sh = moneyHistorySheet(true);
+  sh.getRange(sh.getLastRow()+1,1,entries.length,MONEY_COLS.length).setValues(entries);
+}
+function moneyHistoryRead() {
+  var sh = moneyHistorySheet(false);
+  if (!sh || sh.getLastRow()<2) return [];
+  return sh.getRange(2,1,sh.getLastRow()-1,MONEY_COLS.length).getValues().map(function(values,i){
+    var row = {_row:i+2}; MONEY_COLS.forEach(function(c,j){row[c]=values[j];}); return row;
+  });
+}
+function moneyHistoryPublic(actor) {
+  if (!actor) return [];
+  var groups = {}, order = [];
+  moneyHistoryRead().forEach(function(r){
+    if (actor !== 'Arya' && r.actor !== actor) return;
+    if (!groups[r.id]) {
+      groups[r.id] = {id:r.id,actor:r.actor,action:r.action,created:dayText(r.created),undone:!!r.undone,count:0,description:''}; order.push(r.id);
+    }
+    var g=groups[r.id], record=JSON.parse(r.after) || JSON.parse(r.before);
+    g.count++;
+    if (!g.description) g.description=String(record.values[record.table===INVOICE_TAB?4:3] || '');
+  });
+  return order.reverse().map(function(id){return groups[id];});
+}
+function moneyUndo(id, actor) {
+  var entries = moneyHistoryRead().filter(function(r){return String(r.id)===String(id);});
+  if (!entries.length) return 'That change is not in the money history.';
+  if (actor !== 'Arya' && entries.some(function(r){return r.actor !== actor;})) return 'You can only undo your own changes.';
+  if (entries.every(function(r){return !!r.undone;})) return null;
+  var current=moneySnapshot();
+  for (var i=0;i<entries.length;i++) {
+    var r=entries[i], expected=JSON.parse(r.after), actual=current[r.table+':'+r.record] || null;
+    if (r.undone || JSON.stringify(actual)!==JSON.stringify(expected)) return 'This record changed afterwards. Review its latest details before changing it; nothing was undone.';
+  }
+  entries.forEach(function(r){
+    var before=JSON.parse(r.before), sh=r.table===INVOICE_TAB?invoiceSheet():subSheet();
+    var row=r.table===INVOICE_TAB?invoiceFind(sh,r.record):subFind(sh,r.record);
+    if (!before) { if (row) sh.deleteRow(row); }
+    else if (row) sh.getRange(row,1,1,before.values.length).setValues([before.values]);
+    else sh.appendRow(before.values);
+  });
+  var history=moneyHistorySheet(false), stamp=invoiceStamp();
+  entries.forEach(function(r){history.getRange(r._row,MONEY_COLS.length).setValue(stamp);});
+  return null;
 }
 
 /* Team profiles use stable roster names, never display text, as ownership. */

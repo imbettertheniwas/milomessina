@@ -98,3 +98,82 @@ test('public form route cannot bypass ownership by selecting an internal tab',()
  }
  assert.deepEqual(Object.keys(h.sheets),[]);
 });
+
+test('undoing an approval preserves the other participants, amount and payment status',()=>{
+ const h=harness(),m=h.login('Milo'),b=h.login('Bijan'),j=h.login('Jesse'),l=h.login('Luchi');
+ const r=h.call(m,'add',spend()).rows[0];
+ h.call(b,'approve',{id:r.id});h.call(j,'approve',{id:r.id});
+ assert.equal(h.call(l,'unapprove',{id:r.id,who:'Bijan'}).ok,false);
+ const undone=h.call(b,'unapprove',{id:r.id,who:'Jesse'});
+ assert.equal(undone.rows[0].approvals,'Jesse');
+ assert.equal(undone.rows[0].amount,r.amount);
+ assert.equal(undone.rows[0].status,r.status);
+ assert.equal(h.call(b,'unapprove',{id:r.id}).ok,true);
+});
+
+test('a review of stale spend details cannot approve the changed charge',()=>{
+ const h=harness(),m=h.login('Milo'),b=h.login('Bijan');
+ const r=h.call(m,'add',spend()).rows[0];
+ const reviewed=JSON.stringify([r.date,r.who,r.what,r.category,r.amount,r.note||'',r.receipt||'',r.shared||'']);
+ h.call(m,'edit',{id:r.id,...spend('Milo',{amount:90})});
+ assert.equal(h.call(b,'approve',{id:r.id,reviewed}).ok,false);
+ assert.equal(h.call(b,'list').rows[0].approvals,'');
+});
+
+test('money history reverses add, edit and delete without changing unrelated records',()=>{
+ const h=harness(),m=h.login('Milo'),b=h.login('Bijan'),a=h.login('Arya');
+ const added=h.call(m,'add',spend()),id=added.rows[0].id,addUndo=added.moneyHistory[0].id;
+ assert.equal(h.call(b,'list').moneyHistory.length,0);
+ assert.equal(h.call(b,'moneyundo',{undoId:addUndo}).ok,false);
+ const edited=h.call(m,'edit',{id,...spend('Milo',{amount:55,receipt:'https://example.invalid/receipt.jpg'})});
+ const editUndo=edited.moneyHistory[0].id;
+ const unrelated=h.call(b,'add',spend('Bijan')).rows.find(r=>r.id!==id);
+ assert.equal(h.call(m,'moneyundo',{undoId:addUndo}).ok,false);
+ const restored=h.call(m,'moneyundo',{undoId:editUndo});
+ assert.equal(restored.rows.find(r=>r.id===id).amount,30);
+ assert.equal(restored.rows.find(r=>r.id===unrelated.id).amount,30);
+ const deleted=h.call(m,'delete',{id});
+ const returned=h.call(a,'moneyundo',{undoId:deleted.moneyHistory[0].id});
+ assert.equal(returned.rows.find(r=>r.id===id).id,id);
+ assert.equal(h.call(m,'moneyundo',{undoId:addUndo}).rows.some(r=>r.id===id),false);
+ assert.equal(h.call(m,'moneyundo',{undoId:addUndo}).ok,true);
+});
+
+test('settlement undo restores only the exact settled group, atomically rejects later changes',()=>{
+ const h=harness(),m=h.login('Milo'),a=h.login('Arya');
+ const first=h.call(m,'add',spend()).rows[0];
+ h.call(a,'update',{id:first.id,status:'reimbursed'});
+ const second=h.call(m,'add',spend()).rows.find(r=>r.id!==first.id);
+ const third=h.call(m,'add',spend()).rows.find(r=>r.id!==first.id&&r.id!==second.id);
+ const settled=h.call(a,'settle',{who:'Milo'}),undo=settled.moneyHistory[0].id;
+ assert.equal(h.call(m,'moneyundo',{undoId:undo}).ok,false);
+ const reversed=h.call(a,'moneyundo',{undoId:undo});
+ assert.equal(reversed.rows.find(r=>r.id===first.id).status,'reimbursed');
+ assert.equal(reversed.rows.find(r=>r.id===second.id).status,'pending');
+ assert.equal(reversed.rows.find(r=>r.id===third.id).status,'pending');
+ const next=h.call(a,'settle',{who:'Milo'}).moneyHistory[0].id;
+ h.call(a,'edit',{id:second.id,...spend('Milo',{amount:80})});
+ assert.equal(h.call(a,'moneyundo',{undoId:next}).ok,false);
+ assert.equal(h.call(a,'list').rows.find(r=>r.id===third.id).status,'reimbursed');
+});
+
+test('recurring changes can be undone without losing their existing spends',()=>{
+ const h=harness(),m=h.login('Milo');
+ const created=h.call(m,'subadd',spend('Milo',{date:'2026-10-15',day:15}));
+ const sub=created.subs[0];
+ const paused=h.call(m,'subpause',{id:sub.id,active:false});
+ assert.equal(h.call(m,'moneyundo',{undoId:paused.moneyHistory[0].id}).subs[0].active,'yes');
+ const deleted=h.call(m,'subdelete',{id:sub.id});
+ assert.equal(h.call(m,'moneyundo',{undoId:deleted.moneyHistory[0].id}).subs[0].id,sub.id);
+ assert.equal(h.call(m,'moneyundo',{undoId:created.moneyHistory[0].id}).subs.length,0);
+});
+
+test('money change is rolled back when its undo history cannot be saved',()=>{
+ const h=harness(),m=h.login('Milo');
+ const original=h.call(m,'add',spend()).rows[0];
+ const history=h.sheets.internal_money_history,range=history.getRange;
+ history.getRange=function(...args){const result=range.apply(this,args);if(args[0]>1)result.setValues=()=>{throw Error('Storage unavailable');};return result;};
+ const changed=h.call(m,'edit',{id:original.id,...spend('Milo',{amount:900})});
+ assert.equal(changed.ok,false);
+ assert.deepEqual(h.call(m,'list').rows[0],original);
+});
