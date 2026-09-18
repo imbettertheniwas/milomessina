@@ -652,14 +652,32 @@ on the device afterwards.
   holding the link. If that fails — a domain that forbids link sharing, a
   file locked down afterwards — the photo falls back to being a link, since
   the note is worth more than the picture.
+- **Tagging** — type `@` and the menu of names opens; arrow to one and
+  press enter or tab, or just keep typing the name. “Shot the reel with
+  @bijan” reads as a sentence and comes out as a link to Bijan's page.
+  Tagging is part of the writing rather than a picker of its own, for the
+  same reason links are, and the case does not matter: `@bijan` finds
+  Bijan. A name nobody on the roster answers to stays as the words it was.
+
+  The names are read back out of the note **on the sheet**, not taken from
+  the page, so the `tags` column can never say something the note does not.
+- **Fixing one** — the pencil on your own note opens it for editing where
+  it sits, with the same `@` menu. Save, or escape or Cancel to leave it
+  alone. The words, the links in them and who they tag are what changes;
+  whose note it is, the week it went into and the photos on it stay put,
+  since changing those is writing a different note rather than correcting
+  this one. An edited note says *· edited* next to its time. A note cannot
+  be edited down to nothing — delete it instead.
 - **Notes are grouped by the week they were posted into** — *This week*,
   *Last week*, then the date — newest first, so scrolling the feed is
   scrolling back through the weeks.
 - The tabs across the top filter to one person. The count in the rail is
   how many have posted *this* week, out of five — the useful question on a
   Friday.
-- Anybody in the console can delete any note, the same way anybody can
-  delete any line of the ledger. The × is on hover.
+- **Whose note it is decides who can touch it.** You can edit and delete
+  your own; Arya can edit and delete anybody's. The pencil and the × are
+  only drawn on notes you can manage, and the sheet checks the same thing
+  again on its side rather than trusting the page.
 
 The `posts` tab on the sheet:
 
@@ -672,6 +690,13 @@ The `posts` tab on the sheet:
 | `body` | the note, up to 2,000 characters |
 | `links` | the http(s) links found in the body, one per line |
 | `photos` | the Drive links, one per line |
+| `tags` | who the note tags, one per line, matched against the roster |
+| `edited` | when it was last edited, empty until it is |
+
+A `posts` tab from before tagging existed has the first seven columns and
+not the last two. It is topped up in place the next time the script reads
+it: the notes on it keep their rows and simply have nobody tagged and no
+edit stamp.
 
 > **This one needs the Apps Script redeployed.** The feed is new actions on
 > the same deployment as everything else, so until `fomo/setup/apps-script.gs`

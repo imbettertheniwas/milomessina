@@ -17,7 +17,8 @@ const toneOf = n => (bridge().tone ? bridge().tone(n) : '--s7');
 
 const MAX_BODY = 2000, MAX_PHOTOS = 4;
 
-const state = {posts: [], loaded: false, busy: false, sending: false, who: '', shots: [], at: 0};
+const state = {posts: [], loaded: false, busy: false, sending: false, who: '', shots: [], at: 0,
+  edit: {id: '', saving: false, draft: null, caret: null}};
 
 /* Apps Script answers in a second or two, every time, and the feed is the
    same notes it was a minute ago. So the last answer is kept and painted
@@ -47,6 +48,13 @@ function recall(){
 const current = () => bridge().identity ? bridge().identity() : null;
 const admin = () => bridge().admin && bridge().admin();
 const canManage = p => !!current() && (admin() || p.who === current().who);
+/* The roster as one canonical spelling per name, so "@bijan" typed in a
+   hurry still lands on Bijan's page. */
+const rosterHit = word => {
+  /* "...with @jesse." ends the sentence, not the name. */
+  const want = String(word).replace(/[-_]+$/, '').toLowerCase();
+  return PEOPLE().filter(p => p.toLowerCase() === want)[0] || '';
+};
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -93,6 +101,7 @@ async function call(action, payload){
   const cfg = bridge();
   if (!current()) throw new Error('Sign in first.');
   if (action === 'add' && !admin() && payload.who !== current().who) throw new Error('You can only post as yourself.');
+  if (action === 'edit' && !canManage(state.posts.find(p => p.id === payload.id) || {})) throw new Error('You can only edit your own posts.');
   if (action === 'delete' && !canManage(state.posts.find(p => p.id === payload.id) || {})) throw new Error('You can only delete your own posts.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const res = await fetch(cfg.endpoint, {
@@ -104,7 +113,15 @@ async function call(action, payload){
   try { out = JSON.parse(await res.text()); } catch (e) {}
   if (!out) throw new Error('the endpoint answered, but not with the feed. ' +
     'Its deployment access is probably not set to "Anyone"');
-  if (out.ok !== true) throw new Error(out.error || 'the sheet turned it away');
+  if (out.ok !== true) {
+    /* An endpoint carrying the feed but not this action is a deployment a
+       version behind, and "unknown action" on its own says nothing useful
+       to whoever is standing in front of it. */
+    if (out.error === 'unknown action') throw new Error('the Apps Script behind this endpoint ' +
+      'is an older version — it cannot ' + action + ' a note yet. Redeploy ' +
+      'fomo/setup/apps-script.gs (Deploy → Manage deployments → New version)');
+    throw new Error(out.error || 'the sheet turned it away');
+  }
   if (!out.posts) throw new Error('the Apps Script behind this endpoint is an older version — ' +
     'it does not know about the week notes yet. Redeploy fomo/setup/apps-script.gs ' +
     '(Deploy → Manage deployments → New version)');
@@ -119,6 +136,16 @@ function message(text, bad){
 }
 
 function take(out){
+  /* A read can land while somebody is halfway through fixing a note — the
+     refresh button, or the feed being re-read after a post. The sentence
+     they are in the middle of is theirs, so it is carried across the
+     repaint rather than replaced by what the sheet still holds. */
+  const open = document.querySelector('.po-edit-b');
+  if (open && state.edit.id) {
+    state.edit.draft = open.value;
+    state.edit.caret = open.selectionStart;
+  }
+
   /* Newest first, and a post with no timestamp still has to land somewhere
      rather than disappearing off the end of the sort. */
   state.posts = (out.posts || []).slice().sort((a, b) =>
@@ -177,9 +204,11 @@ function drawWrite(){
   const ready = !!state.who && (!!body.value.trim() || state.shots.length > 0);
   $('po-send').disabled = !ready || state.sending;
   $('po-send').textContent = state.sending ? 'Posting…' : 'Post';
+  const tagged = tagsIn(body.value);
   $('po-count').textContent = !state.who
     ? 'Pick your name first'
     : (state.shots.length ? state.shots.length + (state.shots.length === 1 ? ' photo · ' : ' photos · ') : '') +
+      (tagged.length ? 'tagging ' + tagged.join(', ') + (left < 200 ? ' · ' : '') : '') +
       (left < 200 ? left + ' characters left' : '');
   $('po-pick-l').classList.toggle('off', state.shots.length >= MAX_PHOTOS);
   $('po-week').textContent = 'posting into ' + weekLabel(weekOf()).toLowerCase();
@@ -211,6 +240,129 @@ function linksIn(text){
     .map(s => s.replace(/[.,;:!?]+$/, ''));
 }
 
+/* Tagging is part of the sentence rather than a field of its own, for the
+   same reason links are: somebody writing "shot the Palisades reel with
+   @bijan" has already said it, and asking them to say it again in a picker
+   is asking twice. The names in the text are matched against the roster on
+   the way to the sheet — the sheet reads them out of the note itself too,
+   so the two can never drift — and come back as links into the feed. */
+const AT = /(^|[^A-Za-z0-9@_])@([A-Za-z][A-Za-z0-9_-]*)/g;
+
+function tagsIn(text){
+  const out = [];
+  String(text).replace(AT, (m, lead, word) => {
+    const who = rosterHit(word);
+    if (who && !out.includes(who)) out.push(who);
+    return m;
+  });
+  return out;
+}
+
+/* ---------- @ someone ---------- */
+
+/* One menu at a time, wherever the caret is — the composer at the top or
+   the box inside a note being edited. It hangs off whichever textarea is
+   open, so there is nothing to keep in sync when the feed repaints. */
+const at = {box: null, from: -1, hits: [], pick: 0, q: null};
+
+function atMenu(box){
+  let el = box.parentNode.querySelector('.po-at');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'po-at';
+    el.hidden = true;
+    /* mousedown, not click: the textarea blurs first otherwise and the
+       menu is gone before the click lands. */
+    el.addEventListener('mousedown', ev => {
+      const b = ev.target.closest('button[data-at]');
+      if (!b) return;
+      ev.preventDefault();
+      atTake(b.getAttribute('data-at'));
+    });
+    box.parentNode.insertBefore(el, box.nextSibling);
+  }
+  return el;
+}
+
+function atShut(){
+  const box = at.box;
+  at.box = null; at.from = -1; at.hits = []; at.pick = 0; at.q = null;
+  if (!box || !box.parentNode) return;
+  const el = box.parentNode.querySelector('.po-at');
+  if (el) { el.hidden = true; el.innerHTML = ''; }
+}
+
+function atDraw(box){
+  const el = atMenu(box);
+  el.hidden = false;
+  el.style.top = (box.offsetTop + box.offsetHeight + 4) + 'px';
+  el.style.left = box.offsetLeft + 'px';
+  el.innerHTML = at.hits.map((p, i) =>
+    '<button type="button" class="po-at-i' + (i === at.pick ? ' on' : '') + '" data-at="' + esc(p) + '">' +
+      '<span class="av" aria-hidden="true" style="background:var(' + toneOf(p) + ')">' +
+        esc(p.charAt(0).toUpperCase()) + '</span>' + esc(p) + '</button>').join('');
+}
+
+/* Called on every keystroke in a box that can tag. It looks only at what is
+   behind the caret, so typing in the middle of a note works the same as
+   typing at the end. */
+function atSync(box){
+  const caret = box.selectionStart == null ? box.value.length : box.selectionStart;
+  const hit = box.value.slice(0, caret).match(/(^|[^A-Za-z0-9@_])@([A-Za-z0-9_-]*)$/);
+  if (!hit) { atShut(); return; }
+  const q = hit[2].toLowerCase();
+  const hits = PEOPLE().filter(p => p.toLowerCase().startsWith(q));
+  if (!hits.length) { atShut(); return; }
+  if (at.box !== box || at.q !== q) at.pick = 0;   /* a new word starts at the top */
+  at.box = box;
+  at.q = q;
+  at.from = caret - hit[2].length - 1;
+  at.hits = hits;
+  at.pick = Math.min(at.pick, hits.length - 1);
+  atDraw(box);
+}
+
+function atTake(name){
+  const box = at.box;
+  if (!box) return;
+  const caret = box.selectionStart == null ? box.value.length : box.selectionStart;
+  const before = box.value.slice(0, at.from), after = box.value.slice(caret);
+  box.value = before + '@' + name + (after.startsWith(' ') ? '' : ' ') + after;
+  const to = before.length + name.length + 2;
+  atShut();
+  box.focus();
+  box.setSelectionRange(to, to);
+  box.dispatchEvent(new Event('input'));
+}
+
+/* True when the key belonged to the menu, so the box's own keydown — the
+   one where enter posts — knows to stand down. */
+function atKey(ev){
+  if (!at.box || !at.hits.length) return false;
+  if (ev.key === 'Escape')    { atShut(); return true; }
+  if (ev.key === 'ArrowDown') { at.pick = (at.pick + 1) % at.hits.length; atDraw(at.box); ev.preventDefault(); return true; }
+  if (ev.key === 'ArrowUp')   { at.pick = (at.pick - 1 + at.hits.length) % at.hits.length; atDraw(at.box); ev.preventDefault(); return true; }
+  if (ev.key === 'Enter' || ev.key === 'Tab') {
+    if (ev.metaKey || ev.ctrlKey) return false;   /* ⌘ + enter still posts */
+    atTake(at.hits[at.pick]);
+    ev.preventDefault();
+    return true;
+  }
+  return false;
+}
+
+/* Every box that can tag somebody behaves the same way. `after` is what the
+   plain enter-less keys should do once the menu has had its say. */
+function tagBox(box, extra){
+  box.addEventListener('input', () => atSync(box));
+  box.addEventListener('click', () => atSync(box));
+  box.addEventListener('keydown', ev => {
+    if (atKey(ev)) return;
+    if (extra) extra(ev);
+  });
+  box.addEventListener('blur', () => setTimeout(() => { if (at.box === box) atShut(); }, 120));
+}
+
 async function send(){
   const body = $('po-body');
   if (state.sending || !state.who || (!body.value.trim() && !state.shots.length)) return;
@@ -223,6 +375,7 @@ async function send(){
       body: body.value,
       week: weekOf(),
       links: linksIn(body.value),
+      tags: tagsIn(body.value),
       /* The photo goes up the way a receipt does: base64 in, Drive link
          out. The sheet never holds the image itself. */
       photos: state.shots.map((src, i) => ({
@@ -242,6 +395,59 @@ async function send(){
   } finally {
     state.sending = false;
     drawWrite();
+  }
+}
+
+/* ---------- fixing one ---------- */
+
+/* The editor opens inside the note itself rather than pulling the words
+   back up into the composer at the top: the note stays where it is in the
+   week it belongs to, and there is no moment where the feed shows one
+   version and the box above shows another.
+
+   Only one is open at a time, and the feed does not repaint while it is —
+   a repaint mid-sentence would take the caret with it — so the box holds
+   the text until Save or Cancel. */
+function startEdit(id){
+  const post = state.posts.find(p => p.id === id);
+  if (!post || !canManage(post) || state.edit.saving) return;
+  state.edit = {id, saving: false, draft: null, caret: null};
+  render();
+}
+
+function stopEdit(){
+  if (state.edit.saving) return;
+  atShut();
+  state.edit = {id: '', saving: false, draft: null, caret: null};
+  render();
+}
+
+async function saveEdit(){
+  const box = document.querySelector('.po-edit-b');
+  const post = state.posts.find(p => p.id === state.edit.id);
+  if (!box || !post || state.edit.saving) return;
+
+  const text = box.value;
+  if (!text.trim() && !(post.photos || []).length && !linksIn(text).length) {
+    message('A note cannot be emptied — delete it instead.', true);
+    return;
+  }
+
+  state.edit.saving = true;
+  const save = document.querySelector('[data-edit-save]');
+  if (save) { save.disabled = true; save.textContent = 'Saving…'; }
+  message('Saving…');
+  try {
+    const out = await call('edit', {id: post.id, body: text, links: linksIn(text), tags: tagsIn(text)});
+    atShut();
+    state.edit = {id: '', saving: false, draft: null, caret: null};
+    take(out);
+    message('Saved.');
+    if (bridge().toast) bridge().toast('Note updated.');
+  } catch (err) {
+    state.edit.saving = false;
+    message(err.message, true);
+    if (save) { save.disabled = false; save.textContent = 'Save'; }
   }
 }
 
@@ -269,13 +475,23 @@ let filter = '';
    interpreted. Everything is escaped first, so the only markup that can
    reach the page is the anchor built here. */
 function bodyHtml(text){
+  /* One pass over the escaped text, links first, so an @ inside a URL stays
+     part of the URL rather than turning into somebody's name. A name the
+     roster does not know is left as the words it was. */
   return esc(text)
-    .replace(/(https?:\/\/[^\s<]+)/gi, u => {
-      const trail = (u.match(/[.,;:!?]+$/) || [''])[0];
-      const href = u.slice(0, u.length - trail.length);
-      return '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' +
-        href.replace(/^https?:\/\/(www\.)?/, '') + '</a>' + trail;
-    })
+    .replace(/(https?:\/\/[^\s<]+)|(^|[^A-Za-z0-9@_])@([A-Za-z][A-Za-z0-9_-]*)/g,
+      (whole, url, lead, word) => {
+        if (url) {
+          const trail = (url.match(/[.,;:!?]+$/) || [''])[0];
+          const href = url.slice(0, url.length - trail.length);
+          return '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' +
+            href.replace(/^https?:\/\/(www\.)?/, '') + '</a>' + trail;
+        }
+        const who = rosterHit(word);
+        if (!who) return whole;
+        return lead + '<a class="po-tag" href="#/person/' + encodeURIComponent(who) + '">@' +
+          esc(who) + '</a>';
+      })
     .replace(/\n/g, '<br>');
 }
 
@@ -301,6 +517,10 @@ function navCount(){
 }
 
 function render(){
+  /* A note somebody else deleted takes its editor with it. */
+  if (state.edit.id && !state.posts.some(p => p.id === state.edit.id))
+    state.edit = {id: '', saving: false, draft: null, caret: null};
+
   drawTabs();
   drawWho();
   drawWrite();
@@ -338,6 +558,23 @@ function render(){
       group.map(card).join('') +
     '</div>';
   }).join('');
+
+  /* The editor is written by the same innerHTML as everything else, so it is
+     a new element every repaint and is wired — and given the caret, at the
+     end of what is already there — here. */
+  const open = box.querySelector('.po-edit-b');
+  if (!open) return;
+  tagBox(open, ev => {
+    if (ev.key === 'Escape') { stopEdit(); return; }
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(); }
+  });
+  if (document.activeElement !== open) {
+    const caret = state.edit.caret == null ? open.value.length
+      : Math.min(state.edit.caret, open.value.length);
+    open.focus();
+    open.setSelectionRange(caret, caret);
+  }
+  state.edit.caret = null;
 }
 
 /* Drive hands back a viewer page — .../file/d/<id>/view — which is a web
@@ -360,17 +597,34 @@ function imageSrc(url){
 
 function card(p){
   const shots = (p.photos || []).filter(Boolean);
-  return '<article class="po-card" id="post-' + esc(p.id) + '">' +
+  const editing = state.edit.id === p.id;
+  return '<article class="po-card' + (editing ? ' po-editing' : '') + '" id="post-' + esc(p.id) + '">' +
     '<div class="po-head">' +
       '<span class="av" aria-hidden="true" style="background:var(' + toneOf(p.who) + ')">' +
         esc(String(p.who).charAt(0).toUpperCase()) + '</span>' +
       '<a class="po-author" href="#/person/' + encodeURIComponent(p.who) + '"><b>' + esc(p.who) + '</b></a><span class="po-handle">' + (p.who === 'Arya' ? 'Admin' : 'Intern') + '</span><span class="po-dot">·</span>' +
       '<span class="po-when">' + esc(ago(p.posted)) + '</span>' +
+      (p.edited ? '<span class="po-edited" title="Edited ' + esc(ago(p.edited)) + '">· edited</span>' : '') +
+      (canManage(p) ? '<button type="button" class="po-pen" data-edit="' + esc(p.id) + '" aria-label="Edit this note">' +
+        '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.6 3.7a1.7 1.7 0 0 1 2.4 2.4L7.6 14.5l-3.2.8.8-3.2z"/></svg>' +
+      '</button>' : '') +
       (canManage(p) ? '<button type="button" class="po-x" data-kill="' + esc(p.id) + '" aria-label="Delete this note">' +
         '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5.5 5.5l9 9m0-9-9 9"/></svg>' +
       '</button>' : '') +
     '</div>' +
-    (p.body ? '<div class="po-body">' + bodyHtml(p.body) + '</div>' : '') +
+    (editing
+      ? '<div class="po-edit">' +
+          '<textarea class="po-edit-b" rows="3" maxlength="' + MAX_BODY + '" ' +
+            'aria-label="Edit your note">' +
+            esc(state.edit.draft != null ? state.edit.draft : (p.body || '')) + '</textarea>' +
+          '<div class="po-edit-foot">' +
+            '<span class="hint">@ a name to tag somebody. The week and the photos stay as they are.</span>' +
+            '<span class="push"></span>' +
+            '<button type="button" class="mini ghost" data-edit-cancel>Cancel</button>' +
+            '<button type="button" class="btn btn-p" data-edit-save>Save</button>' +
+          '</div>' +
+        '</div>'
+      : p.body ? '<div class="po-body">' + bodyHtml(p.body) + '</div>' : '') +
     (shots.length
       ? '<div class="po-shots-out' + (shots.length > 1 ? ' many' : '') + '">' + shots.map((u, i) =>
           '<a class="po-photo" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" ' +
@@ -404,8 +658,9 @@ $('po-who').addEventListener('click', ev => {
 });
 
 $('po-body').addEventListener('input', drawWrite);
-/* ⌘/ctrl + enter posts, the way every other box like this one does. */
-$('po-body').addEventListener('keydown', ev => {
+/* ⌘/ctrl + enter posts, the way every other box like this one does — but
+   the @ menu, when it is open, gets enter first. */
+tagBox($('po-body'), ev => {
   if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') { ev.preventDefault(); send(); }
 });
 $('po-send').addEventListener('click', send);
@@ -425,8 +680,12 @@ $('po-shots').addEventListener('click', ev => {
 });
 
 $('po-feed').addEventListener('click', ev => {
-  const b = ev.target.closest('button[data-kill]');
-  if (b) remove(b.getAttribute('data-kill'));
+  const kill = ev.target.closest('button[data-kill]');
+  if (kill) { remove(kill.getAttribute('data-kill')); return; }
+  const pen = ev.target.closest('button[data-edit]');
+  if (pen) { startEdit(pen.getAttribute('data-edit')); return; }
+  if (ev.target.closest('[data-edit-cancel]')) { stopEdit(); return; }
+  if (ev.target.closest('[data-edit-save]')) saveEdit();
 });
 
 /* Sharing can be off — a domain that forbids link sharing, or a file

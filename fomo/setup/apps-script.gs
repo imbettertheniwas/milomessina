@@ -1678,10 +1678,11 @@ function campusHire(b) {
    is past that even shrunk. Links and photos are several per post, so each
    column holds them newline-separated rather than one column per slot. */
 var POST_TAB = 'posts';
-var POST_COLS = ['id', 'posted', 'who', 'week', 'body', 'links', 'photos'];
+var POST_COLS = ['id', 'posted', 'who', 'week', 'body', 'links', 'photos', 'tags', 'edited'];
 var POST_MAX_BODY = 2000;
 var POST_MAX_PHOTOS = 4;
 var POST_MAX_LINKS = 8;
+var POST_MAX_TAGS = 8;
 
 function postsApi(body) {
   if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
@@ -1692,13 +1693,16 @@ function postsApi(body) {
     if (!actor) return reply(false, 'Session expired. Sign in again.');
     if (actor !== 'Arya') {
       if (action === 'add' && body.who !== actor) return reply(false, 'You can only post as yourself.');
-      if (action === 'delete') {
+      if (action === 'delete' || action === 'edit') {
         var post = postRead(postSheet()).filter(function(p){return p.id === String(body.id);})[0];
-        if (!post || post.who !== actor) return reply(false, 'You can only delete your own posts.');
+        if (!post || post.who !== actor) return reply(false, action === 'edit'
+          ? 'You can only edit your own posts.'
+          : 'You can only delete your own posts.');
       }
     }
   }
   if (action === 'add')         err = postAdd(body);
+  else if (action === 'edit')   err = postEdit(body);
   else if (action === 'delete') err = postDelete(body);
   else if (action !== 'list')   return reply(false, 'unknown action');
   if (err) return reply(false, err);
@@ -1717,8 +1721,25 @@ function postSheet() {
     sh.getRange(1, 1, sh.getMaxRows(), POST_COLS.length).setNumberFormat('@');
     sh.getRange(1, 1, 1, POST_COLS.length).setValues([POST_COLS]).setFontWeight('bold');
     sh.setFrozenRows(1);
+    return sh;
+  }
+
+  /* A tab made before `tags` and `edited` existed is missing their headers,
+     and the cells under them are empty rather than wrong. So the header row
+     is topped up in place: the notes already on it keep their rows, and an
+     old post simply has nobody tagged and no edit stamp. */
+  var head = sh.getRange(1, 1, 1, POST_COLS.length).getValues()[0];
+  for (var i = 0; i < POST_COLS.length; i++) {
+    if (String(head[i]) === POST_COLS[i]) continue;
+    sh.getRange(1, 1, sh.getMaxRows(), POST_COLS.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, POST_COLS.length).setValues([POST_COLS]).setFontWeight('bold');
+    break;
   }
   return sh;
+}
+
+function postCol(name) {
+  return POST_COLS.indexOf(name) + 1;
 }
 
 /* Monday of the week a note belongs to. The page sends one, but a date
@@ -1743,6 +1764,27 @@ function postLinks(list) {
     if (out.length >= POST_MAX_LINKS) return;
     if (/^https?:\/\/[^\s]+$/i.test(s) && s.length <= 500) out.push(s);
   });
+  return out;
+}
+
+/* Who a note tags, read out of the note itself rather than taken from the
+   page. Someone types "...with @bijan" and the name is matched against the
+   roster: only somebody on it counts, so a stray e-mail address or an @ in
+   the middle of a word is left as words. The canonical spelling is stored,
+   whatever case it was typed in. */
+var POST_AT = /(^|[^A-Za-z0-9@_])@([A-Za-z][A-Za-z0-9_-]*)/g;
+
+function postTagsIn(text) {
+  var out = [], s = String(text == null ? '' : text), m;
+  POST_AT.lastIndex = 0;
+  while ((m = POST_AT.exec(s))) {
+    var typed = m[2].replace(/[-_]+$/, '').toLowerCase();
+    for (var i = 0; i < INVOICE_PAYERS.length; i++) {
+      var name = INVOICE_PAYERS[i];
+      if (name.toLowerCase() !== typed) continue;
+      if (out.indexOf(name) === -1 && out.length < POST_MAX_TAGS) out.push(name);
+    }
+  }
   return out;
 }
 
@@ -1775,9 +1817,40 @@ function postAdd(b) {
     postWeek(b.week),
     campusSafe(text),
     links.join('\n'),
-    photos.join('\n')
+    photos.join('\n'),
+    postTagsIn(text).join('\n'),
+    ''
   ]);
   return null;
+}
+
+/* A note is a few lines typed in a hurry, so it is worth being able to fix
+   one: the words, the links in them and who they tag. Whose note it is, the
+   week it went into and the photos on it stay put — changing those would be
+   writing a different note rather than correcting this one, and the delete
+   is right there for that. The edit is stamped so the feed can say so. */
+function postEdit(b) {
+  var id = String(b.id == null ? '' : b.id);
+  if (!id) return 'no post id';
+
+  var sh = postSheet(), all = postRead(sh);
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].id !== id) continue;
+
+    var text = String(b.body == null ? '' : b.body).replace(/\r\n/g, '\n').trim();
+    if (text.length > POST_MAX_BODY) text = text.slice(0, POST_MAX_BODY);
+    var links = postLinks(b.links);
+    if (!text && !links.length && !postSplit(all[i].photos).length)
+      return 'a note cannot be emptied — delete it instead';
+
+    var row = all[i]._row;
+    sh.getRange(row, postCol('body')).setValue(campusSafe(text));
+    sh.getRange(row, postCol('links')).setValue(links.join('\n'));
+    sh.getRange(row, postCol('tags')).setValue(postTagsIn(text).join('\n'));
+    sh.getRange(row, postCol('edited')).setValue(campusStamp());
+    return null;
+  }
+  return 'that post is already gone';
 }
 
 function postDelete(b) {
@@ -1813,10 +1886,20 @@ function postSplit(v) {
   }).filter(function (s) { return !!s; });
 }
 
+/* campusSafe puts a leading apostrophe on anything starting with =, + or @
+   so a cell can never be read as a formula. A note that opens by tagging
+   somebody — "@bijan and I..." — starts with an @, so that apostrophe is
+   taken back off here rather than showing up in the feed. */
+function postBody(v) {
+  var s = String(v == null ? '' : v);
+  return /^'[=+@]/.test(s) ? s.slice(1) : s;
+}
+
 function postPublic(p) {
   return {
     id: p.id, posted: p.posted, who: String(p.who), week: p.week,
-    body: String(p.body), links: postSplit(p.links), photos: postSplit(p.photos)
+    body: postBody(p.body), links: postSplit(p.links), photos: postSplit(p.photos),
+    tags: postSplit(p.tags), edited: p.edited ? campusWhen(p.edited) : ''
   };
 }
 
