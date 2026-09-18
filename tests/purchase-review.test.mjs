@@ -43,13 +43,13 @@ test('missing, failed, partial and out-of-range GitHub reads are never reported 
 test('commit API returns real details grouped by UTC author date and excludes another author or private repo',async()=>{
  const handler=createCommitHandler({now:()=>Date.parse('2026-09-17T12:00:00Z'),env:{},fetchImpl:async url=>{
    const repos=url.match(/\/users\/([^/]+)\/repos/);
-   if(repos)return {ok:true,json:async()=>repos[1]==='koolkid696969'?[
-     {full_name:'koolkid696969/public',pushed_at:'2026-09-17T00:00:00Z'},
-     {full_name:'koolkid696969/private',private:true,pushed_at:'2026-09-17T00:00:00Z'}
+   if(repos)return {ok:true,json:async()=>repos[1]==='imbettertheniwas'?[
+     {full_name:'imbettertheniwas/public',pushed_at:'2026-09-17T00:00:00Z'},
+     {full_name:'imbettertheniwas/private',private:true,pushed_at:'2026-09-17T00:00:00Z'}
    ]:[]};
    assert.ok(!url.includes('/private/'));
    return {ok:true,json:async()=>[
-     {sha:'abc123',author:{login:'koolkid696969'},commit:{author:{date:'2026-09-16T23:30:00-04:00'},message:'Real commit title\nMore text'}},
+     {sha:'abc123',author:{login:'imbettertheniwas'},commit:{author:{date:'2026-09-16T23:30:00-04:00'},message:'Real commit title\nMore text'}},
      {sha:'other',author:{login:'somebody-else'},commit:{author:{date:'2026-09-17T00:00:00Z'},message:'Not theirs'}}
    ]};
  }});
@@ -60,5 +60,5 @@ test('commit API returns real details grouped by UTC author date and excludes an
  const milo=JSON.parse(body).people.Milo;
  assert.deepEqual(milo.days,{'2026-09-17':1});
  assert.equal(milo.commitsByDay['2026-09-17'][0].message,'Real commit title');
- assert.equal(milo.commitsByDay['2026-09-17'][0].url,'https://github.com/koolkid696969/public/commit/abc123');
+ assert.equal(milo.commitsByDay['2026-09-17'][0].url,'https://github.com/imbettertheniwas/public/commit/abc123');
 });

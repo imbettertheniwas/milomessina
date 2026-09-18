@@ -34,7 +34,7 @@ const MAX_REPOS = 6, MAX_PAGES = 20, MAX_READS = 60;
    handles, but only these are cached and only these are read without one:
    an open proxy onto GitHub's API is not what this is for. */
 const ROSTER = {
-  Milo:  ['koolkid696969'],
+  Milo:  ['imbettertheniwas'],
   Bijan: ['Code-Atreides'],
   Jesse: ['jsebaiz', 'jessebaiz'],
   Luchi: ['ouchip']
