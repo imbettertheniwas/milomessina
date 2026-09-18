@@ -1455,15 +1455,15 @@ var identity = null, profiles = [], profileEditing = false, profileSaving = fals
 function isAdmin(){ return !!identity && identity.who === "Arya"; }
 function own(who){ return !!identity && (isAdmin() || identity.who === who); }
 function canEdit(r){ return !!r && own(r.who) && (isAdmin() || r.status !== "reimbursed"); }
-function isParticipant(r){ return !!identity && !!r && r.who !== identity.who && sharedOf(r).indexOf(identity.who) >= 0; }
-function canApprove(r){ return !!identity && !!r && r.who !== identity.who && sharedOf(r).indexOf(identity.who) >= 0 && String(r.approvals || "").split(",").indexOf(identity.who) < 0; }
+function purchaseApproved(r){return !!r && r.approvedBy === 'Arya';}
+function canApprove(r){return isAdmin() && !!r && !purchaseApproved(r);}
 function permission(action, p){
   p = p || {};
   if (action === "list") return "";
   if (!identity) return "Choose your name and sign in first.";
   if (action === "moneyundo") return ""; // Stored history enforces ownership.
-  if (action === "unapprove") return isParticipant(byId(rows,p.id)) ? "" : "You can only undo your own approval.";
-  if (action === "approve") return canApprove(byId(rows, p.id)) ? "" : "You can only approve your own share.";
+  if (action === "approve" || action === "unapprove") return "Share approvals have been replaced. Reload the site.";
+  if (action === "purchaseapprove" || action === "purchaseunapprove") return isAdmin() ? "" : "Only Arya can approve purchases.";
   if (isAdmin()) return "";
   if (["profileupdate","add","subadd","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
   if (action === "edit" || action === "delete") return canEdit(byId(rows,p.id)) && (action !== "edit" || own(p.who)) ? "" : "Only your own unpaid spends can be changed.";
@@ -1806,12 +1806,12 @@ function apiLocal(action, p){
         status:"pending", logged:now
       });
 
-    } else if (action === "approve" || action === "unapprove") {
-      var approvedRow = byId(rows,p.id);
-      var approved = String(approvedRow.approvals || "").split(",").filter(Boolean);
-      if (action === "unapprove") approved=approved.filter(function(name){return name!==identity.who;});
-      else if (approved.indexOf(identity.who) < 0) approved.push(identity.who);
-      approvedRow.approvals = approved.join(",");
+    } else if (action === "purchaseapprove" || action === "purchaseunapprove") {
+      var approvedRow=byId(rows,p.id);
+      if(!approvedRow)return reject(new Error('That purchase is no longer on the ledger.'));
+      if(action==='purchaseapprove' && p.reviewed!==reviewedCharge(approvedRow))return reject(new Error('This purchase changed. Review the latest details before approving.'));
+      approvedRow.approvedBy=action==='purchaseapprove'?'Arya':'';
+      approvedRow.approvedAt=action==='purchaseapprove'?(approvedRow.approvedAt||now):'';
     } else if (action === "update") {
       var hit = byId(rows, p.id);
       if (!hit) return reject(new Error("that line is no longer on the ledger"));
@@ -1824,7 +1824,7 @@ function apiLocal(action, p){
       if (!ed) return reject(new Error("that line is no longer on the ledger"));
       ed.who = p.who; ed.what = p.what; ed.category = p.category;
       ed.amount = Math.round((Number(p.amount) || 0) * 100) / 100;
-      ed.approvals = "";
+      ed.approvedBy = ""; ed.approvedAt = "";
       ed.date = p.date; ed.note = p.note || ""; ed.shared = p.shared || "";
       if (p.receiptClear) ed.receipt = "";
       else if (p.receipt) ed.receipt = p.receipt;
@@ -1943,7 +1943,7 @@ function apiSheet(action, payload){
         return {
           id: String(r.id), who: r.who, what: r.what, category: r.category,
           amount: Number(r.amount) || 0, date: r.date, note: r.note,
-          receipt: r.receipt, shared: r.shared || "", approvals:r.approvals || "",
+          receipt: r.receipt, shared: r.shared || "", approvals:r.approvals || "", approvedBy:r.approvedBy || "", approvedAt:r.approvedAt || "",
           status: r.status === "reimbursed" ? "reimbursed" : "pending",
           logged: r.logged
         };
@@ -3371,7 +3371,9 @@ function loadGh(){
   try {
     logins = JSON.parse(localStorage.getItem(GH_LOGINS) || "{}") || {};
     var c = JSON.parse(localStorage.getItem(GH_CACHE) || "null");
-    if (c && c.at) { ghData = c.data || {}; ghErrors = c.err || {}; ghAt = c.at; }
+    if (c && c.at) { ghData = c.data || {}; ghErrors = c.err || {}; ghAt = c.at;
+      if(Object.keys(ghData).some(function(p){return !ghData[p].commitsByDay;}))ghAt=0;
+    }
   } catch(e){ logins = {}; ghData = {}; ghErrors = {}; ghAt = 0; }
   applyDefaults();
 }
@@ -3422,7 +3424,7 @@ function ghJson(url){
 
 function ghFetch(names, nameSet){
   var since = calStart().toISOString();
-  var days = {}, truncated = false, seen = {}, repos = [];
+  var days = {}, commitsByDay = {}, truncated = false, seen = {}, repos = [];
 
   return names.reduce(function(chain, name){
     return chain.then(function(){
@@ -3430,7 +3432,7 @@ function ghFetch(names, nameSet){
                     "/repos?per_page=100&sort=pushed&type=owner").then(function(list){
         if (!Array.isArray(list)) throw new Error("GitHub sent something unreadable");
         list.forEach(function(r){
-          if (!r || r.fork || !r.pushed_at || r.pushed_at < since) return;
+          if (!r || r.private || r.fork || !r.pushed_at || r.pushed_at < since) return;
           if (seen[r.full_name]) return;
           seen[r.full_name] = true; repos.push(r);
         });
@@ -3440,12 +3442,12 @@ function ghFetch(names, nameSet){
     var live = repos.slice(0, GH_MAX_REPOS);
     /* more active repos than one read covers: the count is a floor, and says so */
     if (repos.length > live.length) truncated = true;
-    if (!live.length) return {days:days, truncated:false, repos:0};
+    if (!live.length) return {days:days, commitsByDay:commitsByDay, from:since.slice(0,10), through:new Date().toISOString().slice(0,10), truncated:false, repos:0};
     return live.reduce(function(chain, repo){
-      return chain.then(function(){ return ghRepoCommits(repo.full_name, nameSet, since, days); })
+      return chain.then(function(){ return ghRepoCommits(repo.full_name, nameSet, since, days, commitsByDay); })
                   .then(function(more){ if (more) truncated = true; });
     }, Promise.resolve()).then(function(){
-      return {days:days, truncated:truncated, repos:live.length};
+      return {days:days, commitsByDay:commitsByDay, from:since.slice(0,10), through:new Date().toISOString().slice(0,10), truncated:truncated, repos:live.length};
     });
   });
 }
@@ -3458,7 +3460,7 @@ function ghFetch(names, nameSet){
    repo, and GH_MAX_READS bounds a whole refresh however many repos there
    are, since none of this carries a token and the hourly allowance for an
    anonymous caller is small. Hitting either cap is what puts the + back. */
-function ghRepoCommits(fullName, nameSet, since, days){
+function ghRepoCommits(fullName, nameSet, since, days, commitsByDay){
   function page(n){
     ghReads++;
     return ghJson("https://api.github.com/repos/" + fullName + "/commits?since=" +
@@ -3474,7 +3476,10 @@ function ghRepoCommits(fullName, nameSet, since, days){
         var by = c.author && c.author.login ? c.author.login.toLowerCase() : "";
         /* somebody else's commit in a shared repo is not theirs to count */
         if (!by || !nameSet[by]) return;
-        days[dayKey(new Date(when))] = (days[dayKey(new Date(when))] || 0) + 1;
+        var key=new Date(when).toISOString().slice(0,10);
+        days[key] = (days[key] || 0) + 1;
+        var entries=commitsByDay[key] || (commitsByDay[key]=[]);
+        if(entries.length<20 && c.sha)entries.push({sha:c.sha,repo:fullName,message:String(c.commit.message||'').split('\n')[0].slice(0,240),url:'https://github.com/'+fullName+'/commit/'+encodeURIComponent(c.sha),date:when});
       });
       if (list.length < 100) return false;
       if (n >= GH_MAX_PAGES || ghReads >= GH_MAX_READS) return true;
@@ -3546,7 +3551,7 @@ function refreshGh(force){
          names for that person — otherwise it is a count of somebody else */
       if (!got || !sameLogins(ghNames(p), got.logins)) { mine.push(p); return; }
       if (got.error) { ghErrors[p] = got.error; delete ghData[p]; return; }
-      ghData[p] = {days:got.days || {}, truncated:!!got.truncated, repos:got.repos || 0};
+      ghData[p] = {days:got.days || {}, commitsByDay:got.commitsByDay || {}, from:String(out.since||"" ).slice(0,10), through:String(out.updatedAt||"").slice(0,10), truncated:!!got.truncated, repos:got.repos || 0};
       delete ghErrors[p];
     });
     ghVia = !mine.length ? "the server"
@@ -4082,7 +4087,7 @@ function tint(label, v){
 }
 
 /* Money changes remain reversible after the confirmation toast disappears. */
-var MONEY_ACTION_LABELS={add:'Spend logged',edit:'Spend edited',delete:'Spend deleted',update:'Reimbursement changed',settle:'Spends settled',subadd:'Recurring spend added',subpause:'Recurring spend changed',subdelete:'Recurring spend stopped'};
+var MONEY_ACTION_LABELS={purchaseapprove:'Purchase approved',purchaseunapprove:'Approval removed',add:'Spend logged',edit:'Spend edited',delete:'Spend deleted',update:'Reimbursement changed',settle:'Spends settled',subadd:'Recurring spend added',subpause:'Recurring spend changed',subdelete:'Recurring spend stopped'};
 function localMoneyHistory(){ try{return JSON.parse(localStorage.getItem('fomo.money.history')||'[]');}catch(e){return [];} }
 function moneyState(){var out={};[['rows',rows],['subs',subs]].forEach(function(pair){pair[1].forEach(function(r){out[pair[0]+':'+r.id]={table:pair[0],id:r.id,value:JSON.parse(JSON.stringify(r))};});});return out;}
 function restoreLocalChange(changes, side){changes.forEach(function(c){var record=c[side], list=c.table==='rows'?rows:subs, at=list.findIndex(function(r){return r.id===c.id;});if(at>=0)list.splice(at,1);if(record)list.push(record.value);});}
@@ -4119,11 +4124,6 @@ function localMoneyAction(action,p,sub){
 // resurrect old prompts or replace the action the user is about to reverse.
 function rememberMoneyUndo(action,p,knownIds,history){
   if(!identity)return;
-  if(action==='approve' || action==='unapprove'){
-    var r=byId(rows,(p||{}).id);
-    if(r)recentMoneyUndo={label:action==='approve'?'Share approved':'Approval removed',action:action==='approve'?'unapprove':'approve',payload:{id:r.id,reviewed:reviewedCharge(r)}};
-    return;
-  }
   if(!MONEY_ACTION_LABELS[action])return;
   var entry=history.find(function(h){return h.action===action && h.actor===identity.who && !h.undone && knownIds.indexOf(h.id)<0;});
   if(entry)recentMoneyUndo={label:MONEY_ACTION_LABELS[action],action:'moneyundo',payload:{undoId:entry.id}};
@@ -4136,18 +4136,45 @@ function paintMoneyUndo(){
 }
 function reviewedCharge(r){return JSON.stringify([r.date,r.who,r.what,r.category,Number(r.amount),r.note||'',r.receipt||'',r.shared||'']);}
 var chargePaintKey="";
+function purchasePeople(r){return [r.who].concat(sharedOf(r)).filter(function(name,i,all){return name && all.indexOf(name)===i;});}
+function purchaseGitHtml(r){
+  return '<div class="purchase-git-head"><h3>GitHub on '+esc(niceDate(r.date))+'</h3><p>'+esc(r.date)+' · UTC · public commits in their own repositories</p></div><div class="purchase-git-grid">'+purchasePeople(r).map(function(name){
+    var names=ghNames(name), got=ghData[name], error=ghErrors[name], summary='', details='';
+    var from=got && got.from || dayKey(calStart()), through=got && got.through || new Date(ghAt||Date.now()).toISOString().slice(0,10);
+    if(!names.length)summary='No GitHub account linked.';
+    else if(error)summary='GitHub activity unavailable: '+error;
+    else if(!got)summary=ghBusy?'Loading GitHub activity…':'GitHub activity is not available yet.';
+    else if(r.date<from || r.date>through)summary='This date is outside the loaded activity range.';
+    else {
+      var count=Number((got.days||{})[r.date])||0, commits=(got.commitsByDay||{})[r.date]||[];
+      summary=count?commitLabel(count,got.truncated):(got.truncated?'No commits returned in this partial result.':'No public commits returned for this day.');
+      if(got.truncated && count)summary+=' · partial result';
+      details=commits.map(function(c){var url=safeUrl(c.url);if(!url || !/^https:\/\/github\.com\//i.test(url))return '';return '<li><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(c.message||String(c.sha).slice(0,7))+'</a><small>'+esc(c.repo)+' · '+esc(String(c.date).slice(11,16))+' UTC</small></li>';}).join('');
+      if(details)details='<ul class="purchase-commits">'+details+'</ul>';
+      if(count>commits.length)details+='<small class="mut2">'+(commits.length?'Showing '+commits.length+' of '+count+' commits.':'Commit details were not included in this cached result.')+'</small>';
+    }
+    var links=names.map(function(login){return '<a href="https://github.com/'+encodeURIComponent(login)+'?tab=overview&amp;from='+encodeURIComponent(r.date)+'&amp;to='+encodeURIComponent(r.date)+'" target="_blank" rel="noopener noreferrer">@'+esc(login)+' ↗</a>';}).join(' · ');
+    return '<article class="purchase-git-person"><div class="purchase-git-name">'+avatar(name,'')+'<div><b>'+esc(name)+'</b><small>'+(name===r.who?'Paid for this purchase':'Included in this purchase')+'</small></div></div><p>'+esc(summary)+'</p>'+details+(links?'<div class="purchase-git-links">'+links+'</div>':'')+'</article>';
+  }).join('')+'</div><p class="purchase-git-note">Private work and commits to other people’s repositories are not included. '+(ghAt?'Last checked '+esc(new Date(ghAt).toLocaleString())+'.':'')+'</p>';
+}
+function paintChargeGit(r){var el=$('charge-git');if(el)el.innerHTML=purchaseGitHtml(r);}
 function paintCharge(){
   var r=byId(rows,chargeOf), box=$('charge-detail');
   var key=JSON.stringify([chargeOf,r,identity && identity.who,busy]);
-  if(key===chargePaintKey)return;
+  if(key===chargePaintKey){if(r)paintChargeGit(r);return;}
   chargePaintKey=key;
   if(!r){box.innerHTML='<a class="mini" href="#/ledger">← Ledger</a><div class="empty">This spend is not on the ledger. If you just deleted it, use the Undo button below.</div>';return;}
   var url=safeUrl(r.receipt), receipt='<div class="empty">No receipt was attached to this spend.</div>', drive=url && /^https:\/\/drive\.google\.com\/(?:file\/d\/([a-zA-Z0-9_-]+)|open\?id=([a-zA-Z0-9_-]+))/.exec(url);
-  if(drive)receipt='<iframe title="Receipt for '+esc(r.what)+'" src="https://drive.google.com/file/d/'+(drive[1]||drive[2])+'/preview" allow="fullscreen"></iframe>';
+  if(drive)receipt='<img class="receipt-image" src="https://drive.google.com/thumbnail?id='+(drive[1]||drive[2])+'&amp;sz=w1600" alt="Receipt for '+esc(r.what)+'"><p class="receipt-preview-error" hidden>The receipt preview is unavailable. Open the original below.</p>';
   else if((url && /\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(url)) || /^data:image\//.test(r.receipt||''))receipt='<img src="'+esc(url||r.receipt)+'" alt="Receipt for '+esc(r.what)+'">';
   else if(url)receipt='<p>The receipt is available at the link below.</p>';
-  var approved=String(r.approvals||'').split(','), participants=sharedOf(r), ownShare=isParticipant(r), confirmed=ownShare && approved.indexOf(identity.who)>=0;
-  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts"><dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Status</dt><dd>'+esc(r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd><dt>Split between</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd>'+(ownShare?'<dt>Your share</dt><dd>'+esc(money(eachOf(r)))+'</dd>':'')+'</dl>'+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+'<div class="charge-participants">'+participants.filter(function(name){return name!==r.who;}).map(function(name){return '<p>'+esc(name)+' <span class="pill '+(approved.indexOf(name)>=0?'good':'')+'">'+(approved.indexOf(name)>=0?'Approved':'Not approved')+'</span></p>';}).join('')+'</div>'+(ownShare?'<div class="charge-confirm"><p>'+(confirmed?'You approved your share. You can undo your approval below.':'Check the receipt and details, then confirm your '+esc(money(eachOf(r)))+' share.')+'</p><button class="btn" '+(confirmed?'data-unapprove':'data-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo my approval':'Approve my '+esc(money(eachOf(r)))+' share')+'</button><small>This confirms your share of the recorded spend. It does not move money.</small></div>':'')+(isAdmin()?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div></section></div></div>';
+  var confirmed=purchaseApproved(r), participants=sharedOf(r);
+  var facts='<dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Reimbursement</dt><dd>'+esc(r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd><dt>For</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd><dt>Purchase approval</dt><dd><span class="pill '+(confirmed?'good':'')+'">'+(confirmed?'Approved by Arya':'Awaiting Arya')+'</span></dd></dl>';
+  var confirm=isAdmin()?'<div class="charge-confirm"><p>'+(confirmed?'You approved this purchase. You can undo its approval.':'Review the receipt, purchase details, and GitHub activity above, then approve the full '+esc(money(r.amount))+' purchase.')+'</p><button type="button" '+(confirmed?'data-purchase-unapprove':'data-purchase-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo purchase approval':'Approve purchase · '+esc(money(r.amount)))+'</button><small>Approval records your decision. Reimbursement remains a separate action.</small></div>':'<p class="charge-approval-note">'+(confirmed?'Arya has approved this purchase.':'This purchase is waiting for Arya’s approval.')+'</p>';
+  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts">'+facts+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+(confirmed&&r.approvedAt?'<small>Approved '+esc(String(r.approvedAt).replace('T',' '))+'</small>':'')+'</div></section></div><section class="panel purchase-git" id="charge-git"></section>'+confirm+(isAdmin()?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div>';
+  var receiptImage=box.querySelector('.receipt-image');
+  if(receiptImage)receiptImage.addEventListener('error',function(){this.hidden=true;box.querySelector('.receipt-preview-error').hidden=false;});
+  paintChargeGit(r);
 }
 
 /* ---------- one row of the ledger ---------- */
@@ -4158,11 +4185,7 @@ function splitCell(r){
   return '<span class="pill blue" title="' + esc(names.join(", ")) + '">' + names.length + " ways</span>";
 }
 function approvalHtml(r){
-  var participants=sharedOf(r).filter(function(p){return p!==r.who;});
-  if (!participants.length) return "";
-  var approved=String(r.approvals || "").split(",");
-  return '<small class="charge-approvals">' + participants.map(function(p){return esc(p) + (approved.indexOf(p)>=0?' ✓':' · awaiting approval');}).join(' · ') + '</small>' +
-    (isParticipant(r)?'<a class="mini approve-charge" href="#/charge/'+encodeURIComponent(r.id)+'">'+(canApprove(r)?'Review my '+esc(money(eachOf(r)))+' share':'View approval / undo')+'</a>':'');
+  return '<small class="charge-approvals">'+(purchaseApproved(r)?'Approved by Arya':'Awaiting Arya’s approval')+'</small><a class="mini approve-charge" href="#/charge/'+encodeURIComponent(r.id)+'">'+(canApprove(r)?'Review purchase':'View purchase')+'</a>';
 }
 function ledgerRow(r, hideWho){
   var meta = cat(r.category), url = safeUrl(r.receipt), done = r.status === "reimbursed";
@@ -4284,7 +4307,7 @@ var VIEWS = {
   applicants:{label:"Applicants",     sub:"everyone who has asked to run a campus"},
   campus:    {label:"Campus team",    sub:"who is on which campus, and in which state"},
   chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
-  charge:    {label:"Review spend", sub:"receipt, details, and your share"},
+  charge:    {label:"Review spend", sub:"receipt, purchase details, and GitHub activity"},
   person:    {label:"",               sub:""}
 };
 
@@ -4822,7 +4845,7 @@ function paintOverview(){
      thirty that includes "all good". */
   var items = [];
   rows.filter(canApprove).forEach(function(r){
-    items.push({k:"approval",w:1000000,html:avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · your share '+esc(money(Number(r.amount)/sharedOf(r).length))+'</span></div><button class="mini" data-review="'+esc(r.id)+'">Review my share</button>'});
+    items.push({k:"approval",w:1000000,html:avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · awaiting your approval'+'</span></div><button class="mini" data-review="'+esc(r.id)+'">Review purchase</button>'});
   });
   PAYERS.forEach(function(p){
     if (m[p].owed > 0.005) items.push({
@@ -5353,6 +5376,7 @@ renderGh = function(){
   _renderGh.apply(null, arguments);
   paintNav();
   if (view === "person") paintPerson();
+  if (view === "charge") paintCharge();
   if (view === "overview") paintOverview();
 };
 
@@ -5459,14 +5483,14 @@ document.addEventListener("click",function(ev){
   }
   var review=ev.target.closest('[data-review]');
   if(review) setView('charge',review.dataset.review);
-  var approval=ev.target.closest('[data-approve], [data-unapprove]');
+  var approval=ev.target.closest('[data-purchase-approve], [data-purchase-unapprove]');
   if(approval){
     if(busy) return;
-    var reverse=approval.hasAttribute('data-unapprove');
-    var id=reverse?approval.dataset.unapprove:approval.dataset.approve;
+    var reverse=approval.hasAttribute('data-purchase-unapprove');
+    var id=reverse?approval.dataset.purchaseUnapprove:approval.dataset.purchaseApprove;
     approval.disabled=true; busy=true;
-    api(reverse?'unapprove':'approve',{id:id,reviewed:approval.dataset.reviewed})
-      .then(function(){toast(reverse?'Your approval was undone.':'Your share is approved. You can undo it on this page.');})
+    api(reverse?'purchaseunapprove':'purchaseapprove',{id:id,reviewed:approval.dataset.reviewed})
+      .then(function(){toast(reverse?'Purchase approval undone.':'Purchase approved.');})
       .catch(function(e){toast(fail(e),true);})
       .finally(function(){busy=false;paint();});
   }
@@ -5641,7 +5665,7 @@ async function sessionCall(body){
   if (!identityReady) {
     var probe=await fetch(ENDPOINT,{signal:AbortSignal.timeout(20000)});
     var features=await probe.json();
-    if (!features.identity || !features.moneyUndo) throw new Error("The money review and undo update needs to be deployed in Apps Script before signing in.");
+    if (!features.identity || !features.moneyUndo || !features.purchaseApproval) throw new Error("Arya-only purchase approval needs to be deployed in Apps Script before signing in.");
     identityReady=true;
   }
   var res=await fetch(ENDPOINT,{method:"POST",body:JSON.stringify(Object.assign({_api:"internal"},body)),signal:AbortSignal.timeout(20000)});

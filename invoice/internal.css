@@ -152,6 +152,19 @@ body:has(#money-undo-bar:not([hidden])) .scroller{padding-bottom:90px}
 body:has(#money-undo-bar:not([hidden])) #toast{bottom:86px}
 @media(max-width:700px){.charge-review-grid{grid-template-columns:1fr}.charge-receipt iframe{height:380px}.charge-review h2{font-size:21px}#money-undo-bar{width:max-content}.charge-confirm .btn{min-height:46px}}
 .charge-confirm button{min-height:44px;padding:12px 18px;border:1px solid var(--violet);border-radius:8px;background:var(--violet);color:#fff;font:inherit;font-weight:600;cursor:pointer}
-.charge-confirm button[data-unapprove]{background:var(--surface-2);border-color:var(--line-2);color:var(--text)}
+.charge-confirm button[data-purchase-unapprove]{background:var(--surface-2);border-color:var(--line-2);color:var(--text)}
 .charge-confirm button:disabled{opacity:.6;cursor:wait}
 .charge-review>.mini{justify-self:start}
+
+.purchase-git{padding:20px}
+.purchase-git-head p,.purchase-git-note{font-size:12px;color:var(--muted);line-height:1.6;margin:8px 0 16px}
+.purchase-git-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px}
+.purchase-git-person{border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0;overflow-wrap:anywhere}
+.purchase-git-name{display:flex;gap:10px;align-items:center}
+.purchase-git-name small,.purchase-commits small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.purchase-git-person p{margin:14px 0;font-size:13px}
+.purchase-commits{padding:0;list-style:none;max-height:340px;overflow:auto}
+.purchase-commits li{padding:10px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
+.purchase-git-links{margin-top:12px;font-size:12px}
+.charge-review>.charge-confirm{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.charge-approval-note{color:var(--muted);padding:12px 0}

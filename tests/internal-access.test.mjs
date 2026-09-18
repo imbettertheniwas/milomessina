@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {harness} from './support/internal-harness.mjs';
+const review=r=>JSON.stringify([r.date,r.who,r.what,r.category,Number(r.amount),r.note||'',r.receipt||'',r.shared||'']);
 const spend=(who='Milo',over={})=>({who,what:'Team lunch',category:'lunch',amount:30,date:'2026-09-15',shared:'Milo,Bijan,Jesse',...over});
 
 test('login validates passcode and roster, tokens expire and logout revokes',()=>{
@@ -33,17 +34,28 @@ test('intern can manage only own unpaid spends; Arya can manage all and settle',
  assert.equal(h.call(a,'delete',{id:r.id}).rows.length,0);
 });
 
-test('participant approval is idempotent, actor-bound and reset after edits',()=>{
- const h=harness(),m=h.login('Milo'),b=h.login('Bijan'),l=h.login('Luchi');
- const r=h.call(m,'add',spend()).rows[0];
- assert.equal(h.call(m,'approve',{id:r.id}).ok,false);
- assert.equal(h.call(l,'approve',{id:r.id,who:'Bijan'}).ok,false);
- assert.equal(h.call(b,'approve',{id:r.id,who:'Jesse',approvals:'Arya'}).rows[0].approvals,'Bijan');
- const again=h.call(b,'approve',{id:r.id});
- assert.equal(again.rows[0].approvals,'Bijan');
- assert.equal(again.rows[0].status,'pending');
+test('only Arya approves a whole purchase; old share endpoints and spoofed names are rejected',()=>{
+ const h=harness(),m=h.login('Milo'),b=h.login('Bijan'),a=h.login('Arya');
+ const r=h.call(m,'add',spend()).rows[0],payload={id:r.id,reviewed:review(r)};
+ for(const token of [m,b]){
+   assert.equal(h.call(token,'purchaseapprove',{...payload,who:'Arya',approvedBy:'Arya'}).ok,false);
+   assert.equal(h.call(token,'purchaseunapprove',payload).ok,false);
+ }
+ assert.equal(h.call(a,'approve',payload).ok,false);
+ assert.equal(h.call(b,'unapprove',payload).ok,false);
+ const approved=h.call(a,'purchaseapprove',payload);
+ assert.equal(approved.rows[0].approvedBy,'Arya');
+ assert.ok(approved.rows[0].approvedAt);
+ assert.equal(approved.rows[0].status,'pending');
+ const again=h.call(a,'purchaseapprove',payload);
+ assert.equal(again.rows[0].approvedAt,approved.rows[0].approvedAt);
+ assert.equal(again.moneyHistory.length,approved.moneyHistory.length);
  const edited=h.call(m,'edit',{id:r.id,...spend('Milo',{amount:60})});
- assert.equal(edited.rows[0].approvals,'');
+ assert.equal(edited.rows[0].approvedBy,'');
+ assert.equal(edited.rows[0].approvedAt,'');
+ // A purchase logged by Arya, or without a split, can also be approved.
+ const own=h.call(a,'add',spend('Arya',{shared:''})).rows.find(row=>row.who==='Arya');
+ assert.equal(h.call(a,'purchaseapprove',{id:own.id,reviewed:review(own)}).rows.find(row=>row.id===own.id).approvedBy,'Arya');
 });
 
 test('attendance and subscriptions enforce owner including imports and legacy actions',()=>{
@@ -99,25 +111,39 @@ test('public form route cannot bypass ownership by selecting an internal tab',()
  assert.deepEqual(Object.keys(h.sheets),[]);
 });
 
-test('undoing an approval preserves the other participants, amount and payment status',()=>{
- const h=harness(),m=h.login('Milo'),b=h.login('Bijan'),j=h.login('Jesse'),l=h.login('Luchi');
- const r=h.call(m,'add',spend()).rows[0];
- h.call(b,'approve',{id:r.id});h.call(j,'approve',{id:r.id});
- assert.equal(h.call(l,'unapprove',{id:r.id,who:'Bijan'}).ok,false);
- const undone=h.call(b,'unapprove',{id:r.id,who:'Jesse'});
- assert.equal(undone.rows[0].approvals,'Jesse');
+test('Arya can undo purchase approval directly or through immediate undo without changing spend data',()=>{
+ const h=harness(),m=h.login('Milo'),a=h.login('Arya');
+ const r=h.call(m,'add',spend()).rows[0],payload={id:r.id,reviewed:review(r)};
+ const approved=h.call(a,'purchaseapprove',payload),undoId=approved.moneyHistory[0].id;
+ assert.equal(h.call(m,'moneyundo',{undoId}).ok,false);
+ const undone=h.call(a,'moneyundo',{undoId});
+ assert.equal(undone.rows[0].approvedBy,'');
  assert.equal(undone.rows[0].amount,r.amount);
  assert.equal(undone.rows[0].status,r.status);
- assert.equal(h.call(b,'unapprove',{id:r.id}).ok,true);
+ h.call(a,'purchaseapprove',payload);
+ assert.equal(h.call(a,'purchaseunapprove',payload).rows[0].approvedBy,'');
 });
 
-test('a review of stale spend details cannot approve the changed charge',()=>{
- const h=harness(),m=h.login('Milo'),b=h.login('Bijan');
+test('stale or missing review details cannot approve a changed purchase',()=>{
+ const h=harness(),m=h.login('Milo'),a=h.login('Arya');
  const r=h.call(m,'add',spend()).rows[0];
- const reviewed=JSON.stringify([r.date,r.who,r.what,r.category,r.amount,r.note||'',r.receipt||'',r.shared||'']);
  h.call(m,'edit',{id:r.id,...spend('Milo',{amount:90})});
- assert.equal(h.call(b,'approve',{id:r.id,reviewed}).ok,false);
- assert.equal(h.call(b,'list').rows[0].approvals,'');
+ assert.equal(h.call(a,'purchaseapprove',{id:r.id,reviewed:review(r)}).ok,false);
+ assert.equal(h.call(a,'purchaseapprove',{id:r.id}).ok,false);
+ assert.equal(h.call(a,'list').rows[0].approvedBy,'');
+});
+
+test('legacy share approvals remain intact and do not become purchase approvals',()=>{
+ const h=harness(),m=h.login('Milo'),a=h.login('Arya');
+ const r=h.call(m,'add',spend()).rows[0];
+ const sheet=h.sheets.invoice;
+ sheet.getRange(2,h.ctx.INVOICE_COLS.indexOf('approvals')+1).setValue('Arya,Bijan');
+ const legacy=h.call(m,'list').rows[0];
+ assert.equal(legacy.approvedBy,'');
+ assert.equal(h.call(m,'edit',{id:r.id,...spend('Milo',{approvedBy:'Arya',approved_by:'Arya'})}).rows[0].approvedBy,'');
+ const approved=h.call(a,'purchaseapprove',{id:r.id,reviewed:review(r)}).rows[0];
+ assert.equal(approved.approvals,'Arya,Bijan');
+ assert.equal(approved.approvedBy,'Arya');
 });
 
 test('money history reverses add, edit and delete without changing unrelated records',()=>{

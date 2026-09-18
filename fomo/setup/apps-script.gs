@@ -113,6 +113,7 @@ function doGet() {
     identity: true,
     approvals: true,
     moneyUndo: true,
+    purchaseApproval: true,
     ledger: typeof invoiceApi === 'function',
     visits: typeof visitsApi === 'function',
     visitHours: typeof visitAvailability === 'function',
@@ -257,12 +258,8 @@ function internalActor(body) {
 }
 function invoicePermission(action, body, actor, sh) {
   if (!actor) return 'Session expired. Enter the passcode and select your name again.';
-  if (action === 'approve' || action === 'unapprove') {
-    var charge = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
-    if (!charge || charge.who === actor || String(charge.shared || '').split(',').map(function(n){return n.trim();}).indexOf(actor) < 0)
-      return 'You can only approve your own share of a charge logged by someone else.';
-    return null;
-  }
+  if (action === 'approve' || action === 'unapprove') return 'Share approvals have been replaced by Arya purchase approval. Reload the site.';
+  if (action === 'purchaseapprove' || action === 'purchaseunapprove') return actor === 'Arya' ? null : 'Only Arya can approve or undo approval of a purchase.';
   if (action === 'moneyundo') return null; // The stored actor and every affected record are checked below.
   if (actor === 'Arya') return null;
   if (action === 'profileupdate' || action === 'add' || action === 'subadd' || action === 'daymark' || action === 'dayclear' || action === 'clockin' || action === 'clockout')
@@ -293,7 +290,7 @@ var INVOICE_TAB = 'invoice';
    before it. Appending leaves old rows reading exactly as they did, with an
    empty `shared` — which the page treats as "no split recorded". */
 var INVOICE_COLS = ['id', 'logged', 'date', 'who', 'what', 'category',
-                    'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared', 'approvals'];
+                    'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared', 'approvals', 'approved_by', 'approved_at'];
 /* The interns. Only these names go on the clock or come back off it — the
    shift tab is a timesheet, and Arya does not have one. */
 var INVOICE_PEOPLE = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
@@ -353,15 +350,15 @@ function invoiceApi(body) {
       return line.row[c] === undefined ? '' : line.row[c];
     }));
 
-  } else if (action === 'approve' || action === 'unapprove') {
+  } else if (action === 'purchaseapprove' || action === 'purchaseunapprove') {
     var approvalRow = invoiceFind(sh, body.id);
+    if (!approvalRow) return reply(false, 'That purchase is no longer on the ledger.');
     var charge = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
-    if (action === 'approve' && body.reviewed !== undefined && body.reviewed !== JSON.stringify([charge.date,charge.who,charge.what,charge.category,Number(charge.amount),charge.note||'',charge.receipt||'',charge.shared||''])) return reply(false, 'This spend changed. Review the latest details before approving.');
-    var approved = String(charge.approvals || '').split(',').filter(Boolean);
-    var actor = internalActor(body);
-    if (action === 'unapprove') approved = approved.filter(function(name){return name !== actor;});
-    else if (approved.indexOf(actor) < 0) approved.push(actor);
-    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approvals') + 1).setValue(approved.join(','));
+    var reviewKey = JSON.stringify([charge.date,charge.who,charge.what,charge.category,Number(charge.amount),charge.note||'',charge.receipt||'',charge.shared||'']);
+    if (action === 'purchaseapprove' && body.reviewed !== reviewKey) return reply(false, 'This purchase changed. Review the latest receipt and details before approving.');
+    var approvePurchase = action === 'purchaseapprove';
+    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approved_by') + 1).setValue(approvePurchase ? 'Arya' : '');
+    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approved_at') + 1).setValue(approvePurchase ? (charge.approved_at || invoiceStamp()) : '');
 
   } else if (action === 'update') {
     var hit = invoiceFind(sh, body.id);
@@ -420,8 +417,9 @@ function invoiceApi(body) {
     setCol('note', next.row.note);
     setCol('shared', next.row.shared);
     setCol('receipt', keep);
-    // Changes to a charge require participants to confirm it again.
-    setCol('approvals', '');
+    // Changes to a charge require Arya to review it again. Legacy share confirmations stay archived.
+    setCol('approved_by', '');
+    setCol('approved_at', '');
 
   } else if (action === 'delete') {
     var gone = invoiceFind(sh, body.id);
@@ -506,6 +504,7 @@ function invoiceApi(body) {
   return reply(true, null, {
     moneyHistory: moneyHistoryPublic(internalActor(body)),
     moneyUndo: true,
+    purchaseApproval: true,
     profiles: profileRead(),
     rows: invoiceRead(sh).map(invoicePublic),
     days: dayRead(daySheet()).map(dayPublic),
@@ -515,7 +514,7 @@ function invoiceApi(body) {
 
 /* Financial changes keep their exact before/after values. No history is invented
    for old rows. A reversal checks the entire group before touching any record. */
-var MONEY_ACTIONS = ['add','edit','delete','update','settle','subadd','subpause','subdelete'];
+var MONEY_ACTIONS = ['purchaseapprove','purchaseunapprove','add','edit','delete','update','settle','subadd','subpause','subdelete'];
 var MONEY_COLS = ['id','actor','action','created','table','record','before','after','undone'];
 function moneyHistorySheet(create) {
   var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
@@ -745,7 +744,8 @@ function invoicePublic(r) {
     id: r.id, logged: String(r.logged), date: r.date, who: String(r.who),
     what: String(r.what), category: String(r.category), amount: r.amount,
     status: r.status, note: String(r.note), receipt: String(r.receipt),
-    shared: String(r.shared || ''), approvals: String(r.approvals || '')
+    shared: String(r.shared || ''), approvals: String(r.approvals || ''),
+    approvedBy: String(r.approved_by || ''), approvedAt: String(r.approved_at || '')
   };
 }
 

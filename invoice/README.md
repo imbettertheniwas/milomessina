@@ -167,9 +167,9 @@ Sign out revokes the session. Old remembered passcodes do not skip identity sele
 Interns can create and change their own unpaid spends, attendance, recurring
 rules, weekly posts, and profiles. They cannot change who owns an existing spend,
 settle reimbursements, manage applicants or the campus roster, or modify other
-people's records. A participant named in a split can approve **their own share**
-of another person's charge. That is separate from marking the charge reimbursed.
-Editing a charge clears its approvals. Arya can manage every person's records and
+people's records. **Only Arya approves purchases**, including purchases with no
+split and purchases he logged himself. Approval is separate from reimbursement.
+Editing a charge clears its purchase approval and requires Arya to review it again. Arya can manage every person's records and
 reimbursements. Guest requests keep their existing separate access password and
 also require an Arya internal session for changes.
 
@@ -189,15 +189,16 @@ checks prevent a signed-in intern from bypassing ownership by altering a request
    visits script. Deploy a **new version of each active deployment** that serves
    the shared sheet; an older writable deployment could bypass the new checks.
    Keep the existing `/exec` URLs. Do not create a new spreadsheet.
-2. The endpoint's GET response must include `identity: true` and `approvals: true`.
+2. The endpoint's GET response must include `identity: true`, `moneyUndo: true`, and `purchaseApproval: true`.
    The frontend checks this before attempting sign-in, and refuses an old backend.
 3. Deploy the website and visit API changes together. The visit API verifies Arya's
    session against the console's internal endpoint, separately from
    `VISITS_STORAGE_URL`. Keep `INTERNAL_SESSION_URL` in the visit handler aligned
    with `ENDPOINT` in the console if that address changes.
 
-The migration only appends an `approvals` column to `invoice` and creates an empty
-`internal_profiles` tab. Existing ledger columns, amounts, dates, receipts, attendance,
+Migrations append columns to `invoice` and create an empty `internal_profiles`
+tab as needed. Purchase approvals use `approved_by` and `approved_at`; the old
+`approvals` share-confirmation column is preserved but no longer authorizes anything. Existing ledger columns, amounts, dates, receipts, attendance,
 posts, and roster records are preserved. No demo records or sample profiles are
 seeded. Test fixtures run in memory and never connect to Google Sheets.
 
@@ -863,10 +864,10 @@ doesn't recognise, on a spend and on a day alike.
 
 ## Reviewing spends and undoing money changes
 
-Share approvals now open `#/charge/<id>`, showing the actual receipt, payer,
-amount, date, category, note, split, and participant confirmations. No click on
+Purchase reviews open `#/charge/<id>`, showing the actual receipt, payer,
+amount, date, category, note, split, and Arya’s purchase-approval status. No click on
 an overview or ledger review link approves the spend. Confirmation happens on
-that page, with **Undo my approval** available afterwards. A stale review is
+that page, with **Undo purchase approval** available afterwards. A stale review is
 rejected if the underlying charge details changed before confirmation.
 
 The immediate **Undo** prompt reverses spend creation, edits,
@@ -879,8 +880,8 @@ change still stores its actual before/after records in
 Interns can undo their own actions and Arya can undo anyone's. The backend checks
 every affected record before an undo, rejecting the whole group if subsequent
 changes would be overwritten. A settlement reversal affects only that settlement,
-not previously reimbursed charges. Retracting a share confirmation affects only
-the signed-in participant's approval.
+not previously reimbursed charges. Only Arya can approve or retract a purchase
+approval. Old share confirmations are not converted into purchase approvals.
 
 Deploy the updated Apps Script on the existing URLs before using this frontend.
 The capability response now includes `moneyUndo: true`. Keep `CONFIG` and the
@@ -890,3 +891,21 @@ Undo changes the ledger; it cannot reverse an external transfer of money.
 
 Removing the Money history page and switching to immediate Undo is a frontend-only
 change. It uses the existing undo endpoints without changing Apps Script.
+
+
+### Arya approval and GitHub review
+
+Deploy this version of Apps Script to enforce the new approval rules. Only the
+`purchaseapprove` / `purchaseunapprove` actions can change purchase approval,
+and both require an Arya session. Old share-approval actions are rejected,
+including requests from an older browser. Approval requires the exact purchase
+details Arya reviewed; stale reviews cannot approve a changed amount or receipt.
+The frontend checks `purchaseApproval: true` before signing in.
+
+The review page lists the payer and every distinct person named in the split.
+Each gets a GitHub activity card for the purchase's date, counted in UTC to match
+`/api/commits`. It uses existing linked accounts and shows the public commit count,
+up to 20 real commit details per day, and date-filtered GitHub links. Missing
+accounts, failed reads, partial results and dates outside the loaded 13-week
+window are identified rather than represented as zero activity. The count covers
+public commits in the person's own repositories; it is not a complete work log.

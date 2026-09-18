@@ -87,7 +87,7 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
      else's repository are invisible here, exactly as they were in the
      browser — this moved where the reads happen, not what they count. */
   async function readPerson(logins, from, budget){
-    const set = {}, days = {};
+    const set = {}, days = {}, commitsByDay = {};
     logins.forEach(l => { set[l.toLowerCase()] = true; });
     const repos = [], seen = {};
     for (const login of logins) {
@@ -95,7 +95,7 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
                             '/repos?per_page=100&sort=pushed&type=owner', budget);
       if (!Array.isArray(list)) continue;
       for (const r of list) {
-        if (!r || r.fork || !r.pushed_at || r.pushed_at < from) continue;
+        if (!r || r.private || r.fork || !r.pushed_at || r.pushed_at < from) continue;
         if (seen[r.full_name]) continue;
         seen[r.full_name] = true; repos.push(r);
       }
@@ -113,6 +113,13 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
           if (!when || !by || !set[by]) continue;
           const k = dayKey(new Date(when));
           days[k] = (days[k] || 0) + 1;
+          // Return the real commit details alongside the existing daily counts.
+          // Bound display payload size independently of the complete count.
+          const entries = commitsByDay[k] ??= [];
+          if (entries.length < 20 && c.sha) entries.push({
+            sha:c.sha, repo:repo.full_name, message:String(c.commit.message || '').split('\n')[0].slice(0,240),
+            url:'https://github.com/' + repo.full_name + '/commit/' + encodeURIComponent(c.sha), date:when
+          });
         }
         if (list.length < 100) break;
         if (page === MAX_PAGES || budget.reads >= MAX_READS) truncated = true;
@@ -121,7 +128,7 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
     }
     /* the logins these counts were actually read from, so a browser whose
        "Manage accounts" names differ can tell and read those itself */
-    return {logins, days, truncated: truncated || budget.truncated, repos: live.length};
+    return {logins, days, commitsByDay, truncated: truncated || budget.truncated, repos: live.length};
   }
 
   async function refresh(){
