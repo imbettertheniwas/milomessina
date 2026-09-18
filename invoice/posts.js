@@ -17,13 +17,36 @@ const toneOf = n => (bridge().tone ? bridge().tone(n) : '--s7');
 
 const MAX_BODY = 2000, MAX_PHOTOS = 4;
 
-const state = {posts: [], loaded: false, busy: false, sending: false, who: '', shots: []};
+const state = {posts: [], loaded: false, busy: false, sending: false, who: '', shots: [], at: 0};
 
-/* Who you are is remembered per device: it is a feed of four people on
-   five laptops, not an account system, so the console's one passcode is
-   the whole of the security and this is only ever a convenience. */
-try { state.who = localStorage.getItem('fomo.posts.me') || ''; } catch (e) {}
+/* Apps Script answers in a second or two, every time, and the feed is the
+   same notes it was a minute ago. So the last answer is kept and painted
+   in the frame the view opens in, and the read that replaces it happens
+   underneath — the page is never blank while the sheet is thinking.
 
+   Only the notes. The campus tables are not cached the same way and say
+   why over there. */
+const CACHE = 'fomo.posts.cache';
+
+function remember(){
+  try {
+    localStorage.setItem(CACHE, JSON.stringify({at: Date.now(), posts: state.posts}));
+  } catch (e) {}   /* a full store is not worth a broken feed */
+}
+
+function recall(){
+  try {
+    const was = JSON.parse(localStorage.getItem(CACHE) || 'null');
+    if (!was || !Array.isArray(was.posts)) return false;
+    state.posts = was.posts;
+    state.at = was.at || 0;
+    return true;
+  } catch (e) { return false; }
+}
+
+const current = () => bridge().identity ? bridge().identity() : null;
+const admin = () => bridge().admin && bridge().admin();
+const canManage = p => !!current() && (admin() || p.who === current().who);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -68,10 +91,13 @@ function ago(stamp){
 
 async function call(action, payload){
   const cfg = bridge();
+  if (!current()) throw new Error('Sign in first.');
+  if (action === 'add' && !admin() && payload.who !== current().who) throw new Error('You can only post as yourself.');
+  if (action === 'delete' && !canManage(state.posts.find(p => p.id === payload.id) || {})) throw new Error('You can only delete your own posts.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const res = await fetch(cfg.endpoint, {
     method: 'POST',
-    body: JSON.stringify(Object.assign({_api: 'posts', action, _key: cfg.key || ''}, payload || {}))
+    body: JSON.stringify(Object.assign({_api: 'posts', action, _key: cfg.key || '', _session: cfg.session ? cfg.session() : ''}, payload || {}))
   });
   if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
@@ -98,13 +124,18 @@ function take(out){
   state.posts = (out.posts || []).slice().sort((a, b) =>
     String(b.posted || '').localeCompare(String(a.posted || '')));
   state.loaded = true;
+  state.at = Date.now();
   render();
+  remember();
+  focusPost();
 }
 
 async function load(force){
-  if (state.busy || (state.loaded && !force)) return;
+  if (!current() || state.busy || (state.loaded && !force)) return;
   state.busy = true;
-  message(state.loaded ? 'Re-reading the feed…' : 'Reading the week notes…');
+  message(state.loaded ? 'Re-reading the feed…'
+        : state.posts.length ? 'Last read a moment ago — checking for newer…'
+        : 'Reading the week notes…');
   try {
     take(await call('list'));
     message(state.posts.length
@@ -122,7 +153,7 @@ async function load(force){
 function drawWho(){
   const box = $('po-who');
   if (!box) return;
-  box.innerHTML = PEOPLE().map(p =>
+  box.innerHTML = (admin() ? PEOPLE() : current() ? [current().who] : []).map(p =>
     '<button type="button" class="po-me' + (p === state.who ? ' on' : '') +
       '" data-me="' + esc(p) + '">' +
       '<span class="av" aria-hidden="true" style="background:var(' + toneOf(p) + ')">' +
@@ -145,7 +176,7 @@ function drawWrite(){
   const left = MAX_BODY - body.value.length;
   const ready = !!state.who && (!!body.value.trim() || state.shots.length > 0);
   $('po-send').disabled = !ready || state.sending;
-  $('po-send').textContent = state.sending ? 'Posting…' : 'Post the week';
+  $('po-send').textContent = state.sending ? 'Posting…' : 'Post';
   $('po-count').textContent = !state.who
     ? 'Pick your name first'
     : (state.shots.length ? state.shots.length + (state.shots.length === 1 ? ' photo · ' : ' photos · ') : '') +
@@ -216,7 +247,7 @@ async function send(){
 
 async function remove(id){
   const post = state.posts.find(p => p.id === id);
-  if (!post || state.busy) return;
+  if (!post || !canManage(post) || state.busy) return;
   if (!confirm('Delete this note? It goes off the sheet for everyone.')) return;
   state.busy = true;
   message('Deleting…');
@@ -254,7 +285,7 @@ function drawTabs(){
   const n = who => state.posts.filter(p => !who || p.who === who).length;
   box.innerHTML = ['', ...PEOPLE()].map(p =>
     '<button class="vtab' + (filter === p ? ' on' : '') + '" data-po="' + esc(p) + '">' +
-      (p ? esc(p) : 'Everyone') +
+      (p ? esc(p) : 'For the team') +
       '<span class="n">' + (n(p) || '') + '</span></button>').join('');
 }
 
@@ -329,15 +360,15 @@ function imageSrc(url){
 
 function card(p){
   const shots = (p.photos || []).filter(Boolean);
-  return '<article class="po-card">' +
+  return '<article class="po-card" id="post-' + esc(p.id) + '">' +
     '<div class="po-head">' +
       '<span class="av" aria-hidden="true" style="background:var(' + toneOf(p.who) + ')">' +
         esc(String(p.who).charAt(0).toUpperCase()) + '</span>' +
-      '<b>' + esc(p.who) + '</b>' +
+      '<a class="po-author" href="#/person/' + encodeURIComponent(p.who) + '"><b>' + esc(p.who) + '</b></a><span class="po-handle">' + (p.who === 'Arya' ? 'Admin' : 'Intern') + '</span><span class="po-dot">·</span>' +
       '<span class="po-when">' + esc(ago(p.posted)) + '</span>' +
-      '<button type="button" class="po-x" data-kill="' + esc(p.id) + '" aria-label="Delete this note">' +
+      (canManage(p) ? '<button type="button" class="po-x" data-kill="' + esc(p.id) + '" aria-label="Delete this note">' +
         '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5.5 5.5l9 9m0-9-9 9"/></svg>' +
-      '</button>' +
+      '</button>' : '') +
     '</div>' +
     (p.body ? '<div class="po-body">' + bodyHtml(p.body) + '</div>' : '') +
     (shots.length
@@ -349,6 +380,8 @@ function card(p){
           '</a>').join('') +
         '</div>'
       : '') +
+    '<div class="po-actions"><a href="#/person/' + encodeURIComponent(p.who) + '">View profile ↗</a>' +
+      '<button type="button" data-copy-post="' + esc(p.id) + '" aria-label="Copy link to this post">↗ Share update</button></div>' +
   '</article>';
 }
 
@@ -364,8 +397,8 @@ $('po-tabs').addEventListener('click', ev => {
 $('po-who').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-me]');
   if (!b) return;
+  if (!admin() && (!current() || b.getAttribute('data-me') !== current().who)) return;
   state.who = b.getAttribute('data-me');
-  try { localStorage.setItem('fomo.posts.me', state.who); } catch (e) {}
   drawWho();
   drawWrite();
 });
@@ -414,15 +447,38 @@ $('po-feed').addEventListener('error', ev => {
     esc(a.getAttribute('data-n') || '') + '</span>';
 }, true);
 
-/* Nothing is read until the view is actually opened — same as the campus
-   tables, and for the same reason. */
 function activated(){
-  if (location.hash === '#/posts') load(false);
+  if (location.hash.startsWith('#/posts')) { load(false); focusPost(); }
 }
 window.addEventListener('hashchange', activated);
 window.addEventListener('fomo:view-change', activated);
 
-/* Drawn once before anything is fetched, so the view has its empty state
-   rather than a blank page if the sheet is slow or refuses. */
+/* The read used to wait for somebody to open the view, which meant every
+   first visit paid for the whole round trip. It now starts as soon as the
+   ledger has had its turn — Apps Script serves one request at a time, so
+   going earlier than that would only put the ledger in a queue. By the
+   time anybody clicks through, this is usually already in hand. */
+window.addEventListener('fomo:ledger-ready', () => load(false));
+
+/* The last answer goes up first, so the view opens on the notes rather
+   than on a blank page waiting for the sheet. */
+recall();
 render();
 activated();
+
+function focusPost(){
+  const id=decodeURIComponent(location.hash.split('/')[2] || '');
+  const el=id && $('post-'+id);
+  if(el){ el.scrollIntoView({block:'center'}); el.classList.add('po-highlight'); }
+}
+$('po-feed').addEventListener('click', async ev => {
+  const b=ev.target.closest('[data-copy-post]'); if(!b) return;
+  const url=new URL(location.href); url.hash='/posts/'+encodeURIComponent(b.dataset.copyPost);
+  try { await navigator.clipboard.writeText(url.href); bridge().toast('Link copied.'); }
+  catch(e){ message('Copy this link: '+url.href); }
+});
+window.addEventListener('fomo:identity', () => {
+  state.who=current() ? current().who : '';
+  render(); activated();
+});
+if (current()) {state.who=current().who;render();}

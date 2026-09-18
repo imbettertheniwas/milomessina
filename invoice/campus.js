@@ -160,8 +160,10 @@ const state = {applicants:[], team:[], loaded:false, busy:false, open:null, edit
    posts with. */
 async function call(action, payload){
   const cfg = bridge();
+  if (!cfg.identity || !cfg.identity()) throw new Error('Sign in first.');
+  if (action !== 'list' && !cfg.admin()) throw new Error('Only Arya can manage applicants and the campus team.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
-  const body = Object.assign({_api:'campus', action, _key:cfg.key || ''}, payload || {});
+  const body = Object.assign({_api:'campus', action, _key:cfg.key || '', _session:cfg.session ? cfg.session() : ''}, payload || {});
   const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body)});
   if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
@@ -233,6 +235,7 @@ function publish(){
 }
 
 async function load(force){
+  if (!bridge().identity || !bridge().identity()) return;
   if (state.busy || (state.loaded && !force)) return;
   state.busy = true;
   note(state.loaded ? 'Re-reading the sheet…' : 'Reading the campus tables…');
@@ -516,6 +519,7 @@ function renderTeam(){
 
 /* ---------- adding and editing one of them ---------- */
 function openForm(row){
+  if (!bridge().admin || !bridge().admin()) { bridge().toast("Only Arya can manage the campus team."); return; }
   state.editing = row;
   const form = $('cm-form');
   form.hidden = false;
@@ -662,12 +666,28 @@ $('cm-f-state').innerHTML = '<option value="">pick a state</option>' +
    a second round trip to Apps Script. */
 function activated(){
   const hash = location.hash;
-  if (hash === '#/applicants' || hash === '#/campus') { load(false); return; }
-  /* The overview shows these numbers too, and it is the view the console
-     opens on. The read is pushed behind a beat so the ledger — which is
-     what the console is opened for — still has the network to itself. */
-  if (!hash || hash === '#/' || hash === '#/overview') setTimeout(() => load(false), 900);
+  if (hash === '#/applicants' || hash === '#/campus') load(false);
 }
 window.addEventListener('hashchange', activated);
 window.addEventListener('fomo:view-change', activated);
+
+/* These two tables used to be read only when one of their views was
+   opened, so the first visit to either paid for the whole round trip — and
+   this is the slowest of the three, a good three seconds of it. The read
+   now starts as soon as the ledger has had its turn, which is also what
+   fills the campus numbers on the overview.
+
+   Not before then, and not at the same time: doPost takes a script lock,
+   so Apps Script answers one request at a time, and a page that asked for
+   everything at once would only be putting the ledger in a queue behind
+   the rest.
+
+   What is deliberately NOT done here is keeping the answer in
+   localStorage the way the week notes do. These rows carry applicants'
+   email addresses and phone numbers, and visit requests — the other table
+   of other people's contact details — are never cached in this browser on
+   purpose. Speed is not a reason to treat them differently. */
+window.addEventListener('fomo:ledger-ready', () => load(false));
 activated();
+
+window.addEventListener("fomo:identity", activated);

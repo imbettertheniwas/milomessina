@@ -3,6 +3,8 @@ import {validateRequest,normalizeAvailability} from './validation.mjs';
 
 const SESSION_SECONDS = 4 * 60 * 60;
 const COOKIE = '__Host-fomo-visits';
+// Match the console's ENDPOINT. Guest storage can live in a separate script.
+const INTERNAL_SESSION_URL = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 const statuses = new Set(['pending','confirmed','completed','declined']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function equal(a,b) {
@@ -66,7 +68,22 @@ function cleanRecord(row) {
   const keys=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
   return Object.fromEntries(keys.map(key=>[key,row[key]]));
 }
-export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now}={}) {
+// Internal identity narrows the existing guest-access session; it never replaces it.
+export async function verifyInternalAdmin(env, token, fetchImpl=fetch) {
+  if(typeof token!=='string' || !token || token.length>100)return false;
+  // Older form receivers interpret unknown POST namespaces as submissions.
+  // Probe first, so a rollout mismatch cannot create a stray spreadsheet row.
+  const capability=await fetchImpl(INTERNAL_SESSION_URL,{signal:AbortSignal.timeout(15000)});
+  if(!capability.ok || (await capability.json()).identity!==true)return false;
+  const response=await fetchImpl(INTERNAL_SESSION_URL,{
+    method:'POST',body:JSON.stringify({_api:'internal',action:'session',_session:token}),
+    signal:AbortSignal.timeout(15000)
+  });
+  if(!response.ok)return false;
+  const identity=await response.json();
+  return identity?.ok===true && identity.who==='Arya' && identity.admin===true;
+}
+export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyAdmin=token=>verifyInternalAdmin(env,token)}={}) {
   return async function handler(req,res) {
     res.setHeader('Cache-Control','no-store');
     res.setHeader('Vercel-CDN-Cache-Control','no-store');
@@ -114,6 +131,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       }
       if(action!=='submit' && !validSession(req.headers?.cookie,env,now()))return fail(401,'Unlock visit requests to continue.');
       if(action==='session')return res.status(200).json({authenticated:true});
+      if(['update','saveAvailability'].includes(action) && !await verifyAdmin(req.headers?.['x-fomo-internal-session']))return fail(403,'Only Arya can change visit requests or opening hours.');
       if(action==='saveAvailability'){
         // Reject a malformed payload rather than normalizing it into defaults,
         // which would quietly reopen every day the team had closed.

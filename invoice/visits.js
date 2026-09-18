@@ -8,9 +8,11 @@ $('vr-open').href=publicLink;
 $('vr-link').value=publicLink;
 function message(text,error=false){$('vr-message').textContent=text;$('vr-message').classList.toggle('vr-error',error);}
 async function api(action,body) {
+  const bridge=window.FOMO_SHEET || {};
+  if(['update','saveAvailability'].includes(action) && (!bridge.admin || !bridge.admin()))throw new Error('Only Arya can change visit requests or opening hours.');
   const response=await fetch('/api/visits?action='+action,{
     method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',
-    headers:body?{'Content-Type':'application/json'}:{},
+    headers:{...(body?{'Content-Type':'application/json'}:{}),...(bridge.session && bridge.session()?{'X-Fomo-Internal-Session':bridge.session()}:{})},
     ...(body?{body:JSON.stringify(body)}:{})
   });
   const data=await response.json().catch(()=>({error:'Visit requests could not be loaded.'}));

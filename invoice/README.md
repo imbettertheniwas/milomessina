@@ -157,21 +157,49 @@ a whole person, marking a day and taking it back, and both deletes — which ask
 go, so a mis-click costs nothing. **Refresh** re-reads the store, which matters
 when the page is open in more than one tab on the same browser.
 
-## The passcode
+## Sign-in, ownership, and profiles
 
-`PASSCODE` at the top of `index.html` is `monkey`. Change it to whatever the
-four of them should type; it is remembered per browser afterwards.
+The gate requires the existing shared passcode and a dropdown selection: Milo,
+Bijan, Jesse, Luchi, or Arya. The backend issues a six-hour session bound to that
+selection; only the session token is retained in this tab's session storage.
+Sign out revokes the session. Old remembered passcodes do not skip identity selection.
 
-It travels in the page source, so it is a turnstile that keeps the ledger off
-the open web — **not** a password. Anyone who reads the source can find it. Set
-it to `''` to drop the gate entirely.
+Interns can create and change their own unpaid spends, attendance, recurring
+rules, weekly posts, and profiles. They cannot change who owns an existing spend,
+settle reimbursements, manage applicants or the campus roster, or modify other
+people's records. A participant named in a split can approve **their own share**
+of another person's charge. That is separate from marking the charge reimbursed.
+Editing a charge clears its approvals. Arya can manage every person's records and
+reimbursements. Guest requests keep their existing separate access password and
+also require an Arya internal session for changes.
 
-`INVOICE_KEY` in the Apps Script is set to the same string, so the **endpoint**
-turns away requests that don't carry it, not just the page. That matters more
-than it looks: the `/exec` URL is open to anyone who has it, and without the key
-a stranger could read the ledger and mark people in and out without ever
-loading `/invoice`. Change one and change the other, or the page locks itself
-out of its own sheet.
+The selected person's navigation item and page title say **Your page**. Profiles
+support a headline (80 characters), bio (600), and website URL (300); fields start
+empty and are saved only when someone submits them. Other teammates can read them.
+
+This intentionally remains a trusted-team identity selector: anyone knowing the
+shared passcode can select Arya. It does not independently verify who a person is.
+The shared passcode remains in the page source as before. Server-side session
+checks prevent a signed-in intern from bypassing ownership by altering a request.
+
+### Deploy this change together
+
+1. Update the existing Apps Script project's `Code.gs` from
+   `fomo/setup/apps-script.gs`, preserving its actual CONFIG values and the separate
+   visits script. Deploy a **new version of each active deployment** that serves
+   the shared sheet; an older writable deployment could bypass the new checks.
+   Keep the existing `/exec` URLs. Do not create a new spreadsheet.
+2. The endpoint's GET response must include `identity: true` and `approvals: true`.
+   The frontend checks this before attempting sign-in, and refuses an old backend.
+3. Deploy the website and visit API changes together. The visit API verifies Arya's
+   session against the console's internal endpoint, separately from
+   `VISITS_STORAGE_URL`. Keep `INTERNAL_SESSION_URL` in the visit handler aligned
+   with `ENDPOINT` in the console if that address changes.
+
+The migration only appends an `approvals` column to `invoice` and creates an empty
+`internal_profiles` tab. Existing ledger columns, amounts, dates, receipts, attendance,
+posts, and roster records are preserved. No demo records or sample profiles are
+seeded. Test fixtures run in memory and never connect to Google Sheets.
 
 ## Switching on the shared sheet
 

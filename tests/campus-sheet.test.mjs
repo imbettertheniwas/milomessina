@@ -78,11 +78,12 @@ function harness(tabs = {}) {
     ContentService:{MimeType:{JSON:'json'}, createTextOutput: body => ({setMimeType: () => JSON.parse(body)})},
     LockService:{getScriptLock: () => ({waitLock(){}, releaseLock(){}})},
     PropertiesService:{getScriptProperties: () => ({getProperty: () => null})},
+    CacheService:{getScriptCache: () => ({get: token => token === "internal:admin-test-session" ? "Arya" : null})},
     DriveApp:{}, MailApp:{}
   });
   vm.runInContext(fs.readFileSync(new URL('../fomo/setup/apps-script.gs', import.meta.url), 'utf8'), ctx);
   const call = (action, payload = {}, key = 'monkey') =>
-    ctx.campusApi(Object.assign({action, _key:key}, payload));
+    ctx.campusApi(Object.assign({action, _key:key, _session:"admin-test-session"}, payload));
   return {call, sheets, made: () => made, tab: name => sheets[name]};
 }
 

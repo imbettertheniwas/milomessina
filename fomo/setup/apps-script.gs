@@ -61,6 +61,7 @@ function doPost(e) {
        this same deployment. It answers with the whole ledger rather than a
        bare confirmation, so it takes its branch here and never touches the
        form tabs below. */
+    if (body._api === 'internal') return internalSessionApi(body);
     if (body._api === 'invoice') return invoiceApi(body);
 
     /* Visit requests from /hqvisitform go the same way, into visits.gs and its
@@ -78,6 +79,7 @@ function doPost(e) {
        the feed only grows, and the ledger is read on every page open. */
     if (body._api === 'posts') return postsApi(body);
 
+    if (body._api || ['apply','submit','report'].indexOf(tabFor(body._page)) < 0) return reply(false, 'unknown form');
     if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
 
     /* honeypot. A bot filled a field no human can see: tell it everything
@@ -108,6 +110,8 @@ function doPost(e) {
 function doGet() {
   return reply(true, null, {
     hint: 'fomo campus form receiver is live',
+    identity: true,
+    approvals: true,
     ledger: typeof invoiceApi === 'function',
     visits: typeof visitsApi === 'function',
     visitHours: typeof visitAvailability === 'function',
@@ -223,6 +227,62 @@ function notify(tabName, row) {
   });
 }
 
+/* A shared passcode and a chosen identity, as requested by the team.
+   The server stores the identity; request payloads cannot change its role.
+   This is a trusted-team selector, not verification of a person's identity. */
+function internalSessionApi(body) {
+  if (body.action === 'logout') {
+    if (body._session) CacheService.getScriptCache().remove('internal:' + body._session);
+    return reply(true);
+  }
+  if (body.action === 'session') {
+    var current = internalActor(body);
+    return current ? reply(true, null, {who:current, admin:current === 'Arya'})
+      : reply(false, 'Session expired. Enter the passcode and select your name again.');
+  }
+  if (body.action !== 'login') return reply(false, 'unknown action');
+  if (body.passcode !== CONFIG.INVOICE_KEY) return reply(false, 'That passcode does not match.');
+  var who = String(body.who || '');
+  if (INVOICE_PAYERS.indexOf(who) === -1) return reply(false, 'Select your name.');
+  var token = Utilities.getUuid() + Utilities.getUuid();
+  CacheService.getScriptCache().put('internal:' + token, who, 21600);
+  return reply(true, null, {token:token, who:who, admin:who === 'Arya'});
+}
+function internalActor(body) {
+  var token = String(body._session || '');
+  if (!token || token.length > 100) return null;
+  var who = CacheService.getScriptCache().get('internal:' + token);
+  return INVOICE_PAYERS.indexOf(who) >= 0 ? who : null;
+}
+function invoicePermission(action, body, actor, sh) {
+  if (!actor) return 'Session expired. Enter the passcode and select your name again.';
+  if (action === 'approve') {
+    var charge = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
+    if (!charge || charge.who === actor || String(charge.shared || '').split(',').map(function(n){return n.trim();}).indexOf(actor) < 0)
+      return 'You can only approve your own share of a charge logged by someone else.';
+    return null;
+  }
+  if (actor === 'Arya') return null;
+  if (action === 'profileupdate' || action === 'add' || action === 'subadd' || action === 'daymark' || action === 'dayclear' || action === 'clockin' || action === 'clockout')
+    return body.who === actor ? null : 'You can only change your own records.';
+  var record;
+  if (action === 'edit' || action === 'delete') {
+    record = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
+    if (!record || record.who !== actor || (action === 'edit' && body.who !== actor)) return 'You can only change your own spends.';
+    if (record.status === 'reimbursed') return 'Only Arya can change a reimbursed charge.';
+    return null;
+  }
+  if (action === 'daydelete') record = dayRead(daySheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
+  if (action === 'shiftdelete') record = shiftRead(shiftSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
+  if (action === 'subpause' || action === 'subdelete') record = subRead(subSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
+  if (record) return record.who === actor ? null : 'You can only change your own records.';
+  if (action === 'dayimport' || action === 'shiftimport') {
+    var list = action === 'dayimport' ? body.days : body.shifts;
+    return Array.isArray(list) && list.every(function(r){return r.who === actor;}) ? null : 'You can only import your own attendance.';
+  }
+  return 'Only Arya can do that.';
+}
+
 /* ── the stipend ledger, behind /invoice ─────────────────────── */
 
 var INVOICE_TAB = 'invoice';
@@ -231,7 +291,7 @@ var INVOICE_TAB = 'invoice';
    before it. Appending leaves old rows reading exactly as they did, with an
    empty `shared` — which the page treats as "no split recorded". */
 var INVOICE_COLS = ['id', 'logged', 'date', 'who', 'what', 'category',
-                    'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared'];
+                    'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared', 'approvals'];
 /* The interns. Only these names go on the clock or come back off it — the
    shift tab is a timesheet, and Arya does not have one. */
 var INVOICE_PEOPLE = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
@@ -253,10 +313,17 @@ function invoiceApi(body) {
 
   var sh = invoiceSheet();
   var action = String(body.action || 'list');
+  if (action !== 'list') {
+    var denied = invoicePermission(action, body, internalActor(body), sh);
+    if (denied) return reply(false, denied);
+  }
   var statusCol = INVOICE_COLS.indexOf('status') + 1;
   var paidCol = INVOICE_COLS.indexOf('reimbursed') + 1;
 
-  if (action === 'add') {
+  if (action === 'profileupdate') {
+    var profileError = profileUpdate(body);
+    if (profileError) return reply(false, profileError);
+  } else if (action === 'add') {
     /* A photo arrives as base64 and leaves as a Drive link. The sheet holds
        the link and never the image — a cell tops out at 50,000 characters
        and a receipt is comfortably past that even shrunk. */
@@ -273,6 +340,14 @@ function invoiceApi(body) {
     sh.appendRow(INVOICE_COLS.map(function (c) {
       return line.row[c] === undefined ? '' : line.row[c];
     }));
+
+  } else if (action === 'approve') {
+    var approvalRow = invoiceFind(sh, body.id);
+    var charge = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
+    var approved = String(charge.approvals || '').split(',').filter(Boolean);
+    var actor = internalActor(body);
+    if (approved.indexOf(actor) < 0) approved.push(actor);
+    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approvals') + 1).setValue(approved.join(','));
 
   } else if (action === 'update') {
     var hit = invoiceFind(sh, body.id);
@@ -331,6 +406,8 @@ function invoiceApi(body) {
     setCol('note', next.row.note);
     setCol('shared', next.row.shared);
     setCol('receipt', keep);
+    // Changes to a charge require participants to confirm it again.
+    setCol('approvals', '');
 
   } else if (action === 'delete') {
     var gone = invoiceFind(sh, body.id);
@@ -406,10 +483,43 @@ function invoiceApi(body) {
   /* Every part comes back on every call, so the page always renders what
      the sheet actually holds rather than what it hoped it did. */
   return reply(true, null, {
+    profiles: profileRead(),
     rows: invoiceRead(sh).map(invoicePublic),
     days: dayRead(daySheet()).map(dayPublic),
     subs: subRead(subSheet()).map(subPublic)
   });
+}
+
+/* Team profiles use stable roster names, never display text, as ownership. */
+var PROFILE_COLS = ['who','headline','bio','link'];
+function profileSheet(){
+  var ss=CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  var sh=ss.getSheetByName('internal_profiles');
+  if (!sh) {
+    sh=ss.insertSheet('internal_profiles');
+    sh.getRange(1,1,sh.getMaxRows(),PROFILE_COLS.length).setNumberFormat('@');
+    sh.getRange(1,1,1,PROFILE_COLS.length).setValues([PROFILE_COLS]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function profileRead(){
+  var sh=profileSheet();
+  if(sh.getLastRow()<2) return [];
+  return sh.getRange(2,1,sh.getLastRow()-1,PROFILE_COLS.length).getValues().map(function(r){
+    return {who:String(r[0]),headline:String(r[1]||''),bio:String(r[2]||''),link:String(r[3]||'')};
+  }).filter(function(p){return INVOICE_PAYERS.indexOf(p.who)>=0;});
+}
+function profileUpdate(body){
+  var who=String(body.who||''),headline=String(body.headline||'').trim(),bio=String(body.bio||'').trim(),link=String(body.link||'').trim();
+  if(INVOICE_PAYERS.indexOf(who)<0) return 'Select a person on the team.';
+  if(headline.length>80 || bio.length>600 || link.length>300) return 'Keep the headline under 80 characters and the bio under 600.';
+  if(link && !/^https?:\/\/[^\s]+$/i.test(link)) return 'Use a full website URL beginning with https:// or http://.';
+  var sh=profileSheet(),at=0;
+  if(sh.getLastRow()>1) sh.getRange(2,1,sh.getLastRow()-1,1).getValues().forEach(function(row,i){if(String(row[0])===who)at=i+2;});
+  var row=[who,campusSafe(headline),campusSafe(bio),link];
+  if(at)sh.getRange(at,1,1,PROFILE_COLS.length).setValues([row]);else sh.appendRow(row);
+  return null;
 }
 
 /* The tab builds itself on the first spend, the same way the form tabs do. */
@@ -521,7 +631,7 @@ function invoicePublic(r) {
     id: r.id, logged: String(r.logged), date: r.date, who: String(r.who),
     what: String(r.what), category: String(r.category), amount: r.amount,
     status: r.status, note: String(r.note), receipt: String(r.receipt),
-    shared: String(r.shared || '')
+    shared: String(r.shared || ''), approvals: String(r.approvals || '')
   };
 }
 
@@ -1109,6 +1219,7 @@ function campusApi(body) {
 
   var action = String(body.action || 'list'), err = null;
 
+  if (action !== 'list' && internalActor(body) !== 'Arya') return reply(false, 'Only Arya can manage the campus team and applicants.');
   if (action === 'applicant')       err = applySet(body);
   else if (action === 'hire')       err = campusHire(body);
   else if (action === 'teamadd')    err = teamAdd(body);
@@ -1462,6 +1573,17 @@ function postsApi(body) {
   if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
 
   var action = String(body.action || 'list'), err = null;
+  if (action !== 'list') {
+    var actor = internalActor(body);
+    if (!actor) return reply(false, 'Session expired. Sign in again.');
+    if (actor !== 'Arya') {
+      if (action === 'add' && body.who !== actor) return reply(false, 'You can only post as yourself.');
+      if (action === 'delete') {
+        var post = postRead(postSheet()).filter(function(p){return p.id === String(body.id);})[0];
+        if (!post || post.who !== actor) return reply(false, 'You can only delete your own posts.');
+      }
+    }
+  }
   if (action === 'add')         err = postAdd(body);
   else if (action === 'delete') err = postDelete(body);
   else if (action !== 'list')   return reply(false, 'unknown action');

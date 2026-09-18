@@ -719,6 +719,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/visits.css">
 <link rel="stylesheet" href="/invoice/campus.css">
 <link rel="stylesheet" href="/invoice/posts.css">
+<link rel="stylesheet" href="/invoice/internal.css">
 </head>
 <body>
 <div id="gate">
@@ -727,8 +728,10 @@ td.date.run{color:var(--good)}
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#0B091F"></rect><path d="M36.97 24.36c7.13 0 12.82 3.59 15.97 9.24-4.19 4.44-7.29 10.16-8.48 16.4-1.19 6.24-.28 11.96 2.21 16.4-5.32 5.65-12.38 9.24-19.51 9.24-8.73 0-15.3-5.38-17.7-13.32h17.39c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H14.18c5.44-7.94 14.07-13.32 22.79-13.32Z" fill="#EAEDFF"></path><path d="M72.33 24.36c12.75 0 20.89 11.48 18.18 25.64-2.71 14.16-15.24 25.64-27.99 25.64-8.73 0-15.3-5.38-17.7-13.32h19.34c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H49.53c5.44-7.94 14.07-13.32 22.8-13.32Z" fill="#EAEDFF"></path></svg>
     </span>
     <h2>fomo bootcamp ops</h2>
-    <p>Internal to arya's fomo bootcamp. Enter the team passcode to open the console.</p>
+    <p>Internal to arya's fomo bootcamp. Choose your name and enter the team passcode.</p>
     <form id="gate-form" autocomplete="off">
+      <label for="gate-who">Who are you?</label>
+      <select id="gate-who" required><option value="">Select your name</option><option>Milo</option><option>Bijan</option><option>Jesse</option><option>Luchi</option><option value="Arya">Arya · Admin</option></select>
       <input id="gate-input" type="password" placeholder="passcode" aria-label="Team passcode" autocomplete="current-password">
       <button class="btn btn-p" type="submit">Open</button>
     </form>
@@ -740,13 +743,16 @@ td.date.run{color:var(--good)}
 <div class="shell">
 
   <!-- ══════════ the rail ══════════ -->
+  <button type="button" id="side-backdrop" aria-label="Close navigation" hidden></button>
   <aside class="side" id="side">
     <div class="side-top">
+      <button class="icon-b side-close" id="side-close" aria-label="Close navigation">×</button>
       <span class="mark" aria-hidden="true">
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#0B091F"></rect><path d="M36.97 24.36c7.13 0 12.82 3.59 15.97 9.24-4.19 4.44-7.29 10.16-8.48 16.4-1.19 6.24-.28 11.96 2.21 16.4-5.32 5.65-12.38 9.24-19.51 9.24-8.73 0-15.3-5.38-17.7-13.32h17.39c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H14.18c5.44-7.94 14.07-13.32 22.79-13.32Z" fill="#EAEDFF"></path><path d="M72.33 24.36c12.75 0 20.89 11.48 18.18 25.64-2.71 14.16-15.24 25.64-27.99 25.64-8.73 0-15.3-5.38-17.7-13.32h19.34c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H49.53c5.44-7.94 14.07-13.32 22.8-13.32Z" fill="#EAEDFF"></path></svg>
       </span>
       <span class="nmz"><b>fomo bootcamp</b><span>arya's — internal ops</span></span>
     </div>
+    <button class="identity-switch" id="identity-switch" type="button" title="Sign out and switch person">Choose your name</button>
     <nav class="side-scroll" id="nav" aria-label="Sections"></nav>
     <div class="side-foot">
       <span class="who3"><b id="foot-count">—</b><span id="foot-where">this device</span></span>
@@ -858,10 +864,10 @@ td.date.run{color:var(--good)}
 
           <div class="ov-band"><span class="lbl">the money</span><i></i><span class="hint" id="ov-money-note"></span></div>
           <div class="rail">
-            <div><span class="lbl">total spent</span><span class="v" id="k-total">$0.00</span><span class="sub" id="k-total-sub">no spends logged yet</span></div>
-            <div><span class="lbl">still owed out</span><span class="v owed" id="k-owed">$0.00</span><span class="sub" id="k-owed-sub">nothing pending</span></div>
-            <div><span class="lbl">reimbursed</span><span class="v good" id="k-paid">$0.00</span><span class="sub" id="k-paid-sub">nothing settled yet</span></div>
-            <div><span class="lbl">every month, on repeat</span><span class="v" id="k-rep">$0.00</span><span class="sub" id="k-rep-sub">no rules set</span></div>
+            <a class="overview-stat" href="#/ledger" data-ledger-query=""><span class="lbl">total spent</span><span class="v" id="k-total">$0.00</span><span class="sub" id="k-total-sub">no spends logged yet</span></a>
+            <a class="overview-stat" href="#/settle"><span class="lbl">still owed out</span><span class="v owed" id="k-owed">$0.00</span><span class="sub" id="k-owed-sub">nothing pending</span></a>
+            <a class="overview-stat" href="#/ledger" data-ledger-status="reimbursed"><span class="lbl">reimbursed</span><span class="v good" id="k-paid">$0.00</span><span class="sub" id="k-paid-sub">nothing settled yet</span></a>
+            <a class="overview-stat" href="#/subs"><span class="lbl">every month, on repeat</span><span class="v" id="k-rep">$0.00</span><span class="sub" id="k-rep-sub">no rules set</span></a>
           </div>
 
           <div class="grid2">
@@ -888,10 +894,10 @@ td.date.run{color:var(--good)}
 
           <div class="ov-band"><span class="lbl">the four of them</span><i></i><span class="hint" id="ov-team-note"></span></div>
           <div class="rail">
-            <div><span class="lbl">in this week</span><span class="v" id="k-wk">0</span><span class="sub" id="k-wk-sub">person-days since Monday</span></div>
-            <div><span class="lbl">days marked, all time</span><span class="v" id="k-days">0</span><span class="sub" id="k-days-sub">across the four of them</span></div>
-            <div><span class="lbl">commits, 13 weeks</span><span class="v" id="k-gh">—</span><span class="sub" id="k-gh-sub">no accounts linked yet</span></div>
-            <div><span class="lbl">busiest push day</span><span class="v" id="k-ghbest">—</span><span class="sub" id="k-ghbest-sub">of the quarter</span></div>
+            <a class="overview-stat" href="#/attendance"><span class="lbl">in this week</span><span class="v" id="k-wk">0</span><span class="sub" id="k-wk-sub">person-days since Monday</span></a>
+            <a class="overview-stat" href="#/attendance"><span class="lbl">days marked, all time</span><span class="v" id="k-days">0</span><span class="sub" id="k-days-sub">across the four of them</span></a>
+            <a class="overview-stat" href="#/commits"><span class="lbl">commits, 13 weeks</span><span class="v" id="k-gh">—</span><span class="sub" id="k-gh-sub">no accounts linked yet</span></a>
+            <a class="overview-stat" href="#/commits"><span class="lbl">busiest push day</span><span class="v" id="k-ghbest">—</span><span class="sub" id="k-ghbest-sub">of the quarter</span></a>
           </div>
 
           <div class="panel">
@@ -914,10 +920,10 @@ td.date.run{color:var(--good)}
 
           <div class="ov-band"><span class="lbl">the campus, and guests</span><i></i><span class="hint" id="ov-campus-note"></span></div>
           <div class="rail">
-            <div><span class="lbl">applications in</span><span class="v" id="k-ap">—</span><span class="sub" id="k-ap-sub">from /fomo/apply</span></div>
-            <div><span class="lbl">still open</span><span class="v owed" id="k-apopen">—</span><span class="sub" id="k-apopen-sub">awaiting a decision</span></div>
-            <div><span class="lbl">on a campus</span><span class="v" id="k-cm">—</span><span class="sub" id="k-cm-sub">interns working a seat</span></div>
-            <div><span class="lbl">visit requests</span><span class="v" id="k-vr">—</span><span class="sub" id="k-vr-sub">invitations to HQ</span></div>
+            <a class="overview-stat" href="#/applicants"><span class="lbl">applications in</span><span class="v" id="k-ap">—</span><span class="sub" id="k-ap-sub">from /fomo/apply</span></a>
+            <a class="overview-stat" href="#/applicants"><span class="lbl">still open</span><span class="v owed" id="k-apopen">—</span><span class="sub" id="k-apopen-sub">awaiting a decision</span></a>
+            <a class="overview-stat" href="#/campus"><span class="lbl">on a campus</span><span class="v" id="k-cm">—</span><span class="sub" id="k-cm-sub">interns working a seat</span></a>
+            <a class="overview-stat" href="#/visits"><span class="lbl">visit requests</span><span class="v" id="k-vr">—</span><span class="sub" id="k-vr-sub">invitations to HQ</span></a>
           </div>
 
           <div class="grid2">
@@ -1069,7 +1075,7 @@ td.date.run{color:var(--good)}
             <div class="panel-b">
               <div class="po-who" id="po-who" role="group" aria-label="Who is posting"></div>
               <textarea id="po-body" rows="3" maxlength="2000"
-                placeholder="Shipped the visit form, fixed the times panel, started on the feed… Paste links straight in."></textarea>
+                placeholder="What did you ship this week?" aria-label="Your weekly update"></textarea>
               <div class="po-shots" id="po-shots" hidden></div>
               <div class="po-write-foot">
                 <label class="mini" id="po-pick-l">
@@ -1114,7 +1120,7 @@ td.date.run{color:var(--good)}
               <span class="bf-hint" id="bf-hint"></span>
             </div>
             <div class="panel">
-              <div class="panel-h"><h2>Days per week</h2><span class="note" id="at-wk-note">the last eight weeks</span></div>
+              <div class="panel-h"><h2>Who was here</h2><span class="note" id="at-wk-note"></span><div class="attendance-nav"><button class="mini" id="at-prev" aria-label="Previous week">←</button><button class="mini" id="at-today">This week</button><button class="mini" id="at-next" aria-label="Next week">→</button></div></div>
               <div class="panel-b" id="at-weeks"></div>
             </div>
           </div>
@@ -1443,6 +1449,26 @@ var PEOPLE = ["Milo","Bijan","Jesse","Luchi"];
    Kept apart from PEOPLE because Arya is not on the clock or the timesheet. */
 var PAYERS = PEOPLE.concat(["Arya"]);
 var SHARERS = PAYERS;
+var identity = null, profiles = [], profileEditing = false, profileSaving = false;
+function isAdmin(){ return !!identity && identity.who === "Arya"; }
+function own(who){ return !!identity && (isAdmin() || identity.who === who); }
+function canEdit(r){ return !!r && own(r.who) && (isAdmin() || r.status !== "reimbursed"); }
+function canApprove(r){ return !!identity && !!r && r.who !== identity.who && sharedOf(r).indexOf(identity.who) >= 0 && String(r.approvals || "").split(",").indexOf(identity.who) < 0; }
+function permission(action, p){
+  p = p || {};
+  if (action === "list") return "";
+  if (!identity) return "Choose your name and sign in first.";
+  if (action === "approve") return canApprove(byId(rows, p.id)) ? "" : "You can only approve your own share.";
+  if (isAdmin()) return "";
+  if (["profileupdate","add","subadd","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
+  if (action === "edit" || action === "delete") return canEdit(byId(rows,p.id)) && (action !== "edit" || own(p.who)) ? "" : "Only your own unpaid spends can be changed.";
+  if (action === "daydelete") return own((byId(days,p.id)||{}).who) ? "" : "You can only change your own attendance.";
+  if (action === "subpause" || action === "subdelete") return own((byId(subs,p.id)||{}).who) ? "" : "You can only change your own recurring spends.";
+  if (action === "dayimport") return Array.isArray(p.days) && p.days.every(function(d){return own(d.who);}) ? "" : "You can only import your own attendance.";
+  return "Only Arya can do that.";
+}
+function requirePermission(action,p){ var denied=permission(action,p); return denied ? Promise.reject(new Error(denied)) : null; }
+
 var CATS = [
   {id:"lunch",    label:"lunch & food",  v:"--s1"},
   {id:"coffee",   label:"coffee",        v:"--s2"},
@@ -1455,7 +1481,7 @@ var CATS = [
 var CAT = {}; CATS.forEach(function(c){ CAT[c.id] = c; });
 
 var rows = [], days = [], subs = [], armed = {}, picked = null, busy = false, poll = null, tick = null;
-var filters = {who:"", cat:"", status:"", q:""};
+var filters = {who:"", cat:"", status:"", q:"", date:""};
 
 /* ---------- helpers ---------- */
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
@@ -1524,7 +1550,9 @@ function toast(msg, bad){
    roster, the colour each of them is drawn in, and the photo shrinker go
    with them for the same reason: one copy, defined where it is used most. */
 window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast,
-  people:PAYERS, tone:tone, shrink:shrinkShot};
+  people:PAYERS, tone:tone, shrink:shrinkShot,
+  identity:function(){return identity;}, admin:isAdmin, own:own,
+  session:function(){return identity ? identity.token : "";}};
 
 /* ---------- where it saves ----------
 
@@ -1615,6 +1643,7 @@ function lsGet(k){
 }
 function saveAll(){
   try {
+    localStorage.setItem("fomo.profiles", JSON.stringify(profiles));
     localStorage.setItem(LS_ROWS, JSON.stringify(rows));
     localStorage.setItem(LS_DAYS, JSON.stringify(days));
     return true;
@@ -1657,6 +1686,7 @@ function saveSeen(){
     full: sheetDays === true,
     payers: sheetPayers,
     rows: rows,
+    profiles:profiles,
     days: sheetDays ? days : null,
     subs: sheetSubs ? subs : null
   };
@@ -1692,6 +1722,7 @@ function seenSnapshot(){
 function forgetSeen(){ try { localStorage.removeItem(LS_SEEN); } catch(e){} }
 
 function loadLocal(){
+  profiles = lsGet("fomo.profiles") || [];
   rows = lsGet(LS_ROWS) || [];
   var savedDays = lsGet(LS_DAYS);
   if (savedDays) {
@@ -1753,11 +1784,16 @@ function carriedFromShifts(){
 /* Same call signature as the sheet version, so every button above is
    unchanged whichever backend is switched on. */
 function apiLocal(action, p){
+  var denied = requirePermission(action, p); if (denied) return denied;
   p = p || {};
   return new Promise(function(resolve, reject){
     var now = new Date().toISOString();
 
-    if (action === "add") {
+    if (action === "profileupdate") {
+      var profile={who:p.who,headline:String(p.headline||"").trim(),bio:String(p.bio||"").trim(),link:safeUrl(p.link)};
+      if(profile.headline.length>80 || profile.bio.length>600 || String(p.link||"").length>300 || (p.link && !profile.link)) return reject(new Error("Check your profile fields and website URL."));
+      profiles=profiles.filter(function(v){return v.who!==p.who;}).concat([profile]);
+    } else if (action === "add") {
       rows.push({
         id:newId(), who:p.who, what:p.what, category:p.category,
         amount:Math.round((Number(p.amount)||0) * 100) / 100, date:p.date,
@@ -1765,6 +1801,11 @@ function apiLocal(action, p){
         status:"pending", logged:now
       });
 
+    } else if (action === "approve") {
+      var approvedRow = byId(rows,p.id);
+      var approved = String(approvedRow.approvals || "").split(",").filter(Boolean);
+      if (approved.indexOf(identity.who) < 0) approved.push(identity.who);
+      approvedRow.approvals = approved.join(",");
     } else if (action === "update") {
       var hit = byId(rows, p.id);
       if (!hit) return reject(new Error("that line is no longer on the ledger"));
@@ -1777,6 +1818,7 @@ function apiLocal(action, p){
       if (!ed) return reject(new Error("that line is no longer on the ledger"));
       ed.who = p.who; ed.what = p.what; ed.category = p.category;
       ed.amount = Math.round((Number(p.amount) || 0) * 100) / 100;
+      ed.approvals = "";
       ed.date = p.date; ed.note = p.note || ""; ed.shared = p.shared || "";
       if (p.receiptClear) ed.receipt = "";
       else if (p.receipt) ed.receipt = p.receipt;
@@ -1831,7 +1873,8 @@ function api(action, payload){
 var listAhead = null;
 
 function apiSheet(action, payload){
-  var body = {_api:"invoice", action:action, _key:PASSCODE};
+  var denied = requirePermission(action, payload); if (denied) return denied;
+  var body = {_api:"invoice", action:action, _key:PASSCODE, _session:identity ? identity.token : ""};
   if (payload) Object.keys(payload).forEach(function(k){ body[k] = payload[k]; });
   var sent;
   if (action === "list" && listAhead) { sent = listAhead; listAhead = null; }
@@ -1887,11 +1930,12 @@ function apiSheet(action, payload){
       throw behind;
     }
     {
+      profiles = out.profiles || [];
       rows = out.rows.map(function(r){
         return {
           id: String(r.id), who: r.who, what: r.what, category: r.category,
           amount: Number(r.amount) || 0, date: r.date, note: r.note,
-          receipt: r.receipt, shared: r.shared || "",
+          receipt: r.receipt, shared: r.shared || "", approvals:r.approvals || "",
           status: r.status === "reimbursed" ? "reimbursed" : "pending",
           logged: r.logged
         };
@@ -1975,6 +2019,7 @@ PAYERS.forEach(function(p){
   b.type = "button"; b.className = "chip"; b.textContent = p;
   b.setAttribute("aria-pressed","false");
   b.addEventListener("click", function(){
+    if (!own(p)) return;
     picked = p;
     Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed", String(c === b)); });
     try { localStorage.setItem("fomo.who", p); } catch(e){}
@@ -2060,7 +2105,7 @@ function applyRosterUi(){
   var lost = SHARERS.filter(function(n){ return !payerOk(n); });
   [whoBox, splitBox].forEach(function(box){
     Array.prototype.forEach.call(box.children, function(c){
-      var ok = payerOk(c.textContent);
+      var ok = payerOk(c.textContent) && (box !== whoBox || own(c.textContent));
       c.disabled = !ok;
       c.classList.toggle("stale", !ok);
       if (ok) c.removeAttribute("title"); else c.title = STALE_ROSTER;
@@ -2254,6 +2299,7 @@ function subApi(action, p){
 /* Same call signature as the sheet's, so the buttons don't know which
    one they are talking to. */
 function subLocal(action, p){
+  var denied = requirePermission(action, p); if (denied) return denied;
   return new Promise(function(resolve, reject){
     if (action === "subadd") {
       if (PAYERS.indexOf(p.who) === -1) return reject(new Error("that name is not on the bootcamp"));
@@ -2297,7 +2343,7 @@ function runSubs(){
 
   var now = today(), due = [], behind = 0;
   subs.forEach(function(s){
-    if (!subOn(s)) return;
+    if (!subOn(s) || !own(s.who)) return;
     var next = s.next, guard = 0;
     while (/^\d{4}-\d{2}-\d{2}$/.test(next) && next <= now) {
       /* a rule left alone for two years should not wake up and write two
@@ -2483,6 +2529,7 @@ function openEdit(id){
   var r = byId(rows, id);
   if (!r) { toast("That line is no longer on the ledger.", true); return; }
 
+  if (!canEdit(r)) { toast("Only your own unpaid spends can be changed.", true); return; }
   editing = id;
   keptShot = ""; dropShot = false;
 
@@ -2835,6 +2882,7 @@ function bindTip(el, title, lines){
 /* ---------- render ---------- */
 function visible(){
   return rows.filter(function(r){
+    if (filters.date && r.date !== filters.date) return false;
     if (filters.who && r.who !== filters.who) return false;
     if (filters.cat && r.category !== filters.cat) return false;
     if (filters.status === "pending" && r.status === "reimbursed") return false;
@@ -3080,6 +3128,7 @@ function renderClock(){
 
     var btn = document.createElement("button");
     btn.type = "button";
+    btn.disabled = !own(p);
     btn.className = "clock-btn";
     btn.setAttribute("data-clock", p);
     btn.textContent = here ? "Here today ✓" : "Mark today";
@@ -3659,6 +3708,7 @@ function buildGhLink(){
     input.title = "One username, or several separated by commas if they commit from more than one account";
     input.autocomplete = "off"; input.spellcheck = false;
     input.value = logins[p] || "";
+    input.disabled = !own(p);
     lab.appendChild(span); lab.appendChild(input);
     box.appendChild(lab);
   });
@@ -3666,6 +3716,7 @@ function buildGhLink(){
 document.getElementById("gh-save").addEventListener("click", function(){
   var changed = false;
   PEOPLE.forEach(function(p){
+    if(!own(p)) return;
     /* people paste the profile URL as often as the name; take either */
     /* a profile or repo URL pastes as readily as a name, and a person may
        have two accounts — take a comma-separated list of any of those */
@@ -3801,7 +3852,7 @@ function goSheet(seen){
      this has to get across in the meantime is which minute the board in
      front of you belongs to. */
   setLive(true, seen ? "shared · from " + seenStamp(seen.at) : "shared · syncing…");
-  api("list").then(function(){ offerCarry(false); return runSubs(); })["catch"](function(e){
+  api("list").then(function(){ ledgerReady(); offerCarry(false); return runSubs(); })["catch"](function(e){
     /* A snapshot got this page onto the sheet without asking the
        deployment first, and this is the one answer that says the snapshot
        was writing a cheque the sheet no longer honours — the script behind
@@ -3815,6 +3866,28 @@ function goSheet(seen){
     api("list")["catch"](function(){ /* the banner already says it */ });
   }, 30000);
 }
+
+/* Said once, when the ledger has actually been read.
+
+   The other tabs — the week, the campus tables — live behind their own
+   round trips to the same Apps Script, and Apps Script answers one request
+   at a time: doPost takes a script lock. So a page that fired all three at
+   once would not get them in parallel, it would get the ledger queued
+   behind the other two, and the ledger is what the console is opened for.
+
+   They warm up behind this instead. By the time anybody clicks through to
+   one it is usually already in hand, and clicking through to it before
+   then costs no more than it used to. */
+function ledgerReady(){
+  if (!identity || ledgerReady.said) return;
+  ledgerReady.said = true;
+  window.dispatchEvent(new Event("fomo:ledger-ready"));
+}
+/* On this browser's own ledger there is no round trip to queue behind, and
+   a sheet read that never comes back must not hold the other tabs cold
+   forever. Either way they get their turn. */
+setTimeout(function(){ if (mode !== "sheet") ledgerReady(); }, 400);
+setTimeout(ledgerReady, 8000);
 
 /* Back off the sheet and onto this browser's own ledger, undoing the fast
    path in full: the snapshot is wrong about the deployment, so it goes,
@@ -4006,25 +4079,32 @@ function splitCell(r){
   if (names.length === 1) return '<span class="pill">' + esc(names[0]) + "</span>";
   return '<span class="pill blue" title="' + esc(names.join(", ")) + '">' + names.length + " ways</span>";
 }
+function approvalHtml(r){
+  var participants=sharedOf(r).filter(function(p){return p!==r.who;});
+  if (!participants.length) return "";
+  var approved=String(r.approvals || "").split(",");
+  return '<small class="charge-approvals">' + participants.map(function(p){return esc(p) + (approved.indexOf(p)>=0?' ✓':' · awaiting approval');}).join(' · ') + '</small>' +
+    (canApprove(r)?'<button class="mini approve-charge" data-approve="'+esc(r.id)+'">Approve my '+esc(money(Number(r.amount)/sharedOf(r).length))+' share</button>':'');
+}
 function ledgerRow(r, hideWho){
   var meta = cat(r.category), url = safeUrl(r.receipt), done = r.status === "reimbursed";
-  return "<tr>" +
-    '<td class="date">' + esc(niceDate(r.date)) + "</td>" +
-    (hideWho === true ? "" : "<td>" + pers(r.who) + "</td>") +
-    '<td><div class="what"><b>' + esc(r.what || "—") + "</b>" +
+  return '<tr class="ledger-line">' +
+    '<td data-label="Date" class="date">' + esc(niceDate(r.date)) + "</td>" +
+    (hideWho === true ? "" : '<td data-label="Paid by">' + pers(r.who) + "</td>") +
+    '<td data-label="Description"><div class="what"><b>' + esc(r.what || "—") + "</b>" +
       (r.note ? "<small>" + esc(r.note) + "</small>" : "") +
       (r.receipt && /^data:image\//.test(r.receipt)
         ? '<small><button type="button" class="rcpt" data-shot="' + esc(r.id) + '">' +
           '<img src="' + esc(r.receipt) + '" alt="">receipt</button></small>'
         : url ? '<small><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">receipt →</a></small>' : "") +
-    "</div></td>" +
-    "<td>" + tint(meta.label, meta.v) + "</td>" +
-    "<td>" + splitCell(r) +
+    approvalHtml(r) + "</div></td>" +
+    '<td data-label="Category">' + tint(meta.label, meta.v) + "</td>" +
+    '<td data-label="Split">' + splitCell(r) +
       (headsOf(r) > 1 ? '<small class="mut2" style="display:block;font-size:10.5px">' +
         esc(money(eachOf(r))) + " each</small>" : "") + "</td>" +
-    '<td class="amt">' + esc(money(r.amount)) + "</td>" +
-    '<td><span class="pill ' + (done ? "good" : "owed") + '"><i></i>' + (done ? "reimbursed" : "owed") + "</span></td>" +
-    '<td><div class="acts">' +
+    '<td data-label="Amount" class="amt">' + esc(money(r.amount)) + "</td>" +
+    '<td data-label="Status"><span class="pill ' + (done ? "good" : "owed") + '"><i></i>' + (done ? "reimbursed" : "owed") + "</span></td>" +
+    '<td data-label="Actions"><div class="acts">' +
       (done
         ? '<button class="mini" data-act="unpay" data-id="' + esc(r.id) + '">Undo</button>'
         : '<button class="mini" data-act="pay" data-id="' + esc(r.id) + '">Mark paid</button>') +
@@ -4119,7 +4199,7 @@ var VIEWS = {
   settle:    {label:"Reimbursements", sub:"who is still owed, and settling up"},
   subs:      {label:"On repeat",      sub:"the spends that write themselves each month"},
   visits:    {label:"Visit requests", sub:"invitations to fomo HQ"},
-  posts:     {label:"The week",       sub:"what each of them has been working on, in their own words"},
+  posts:     {label:"This week",       sub:"what each of them has been working on, in their own words"},
   attendance:{label:"Attendance",     sub:"the days each of them was in"},
   commits:   {label:"Commits",        sub:"public pushes, the last 13 weeks"},
   reporting: {label:"Breakdown",      sub:"where the money went, and who it went on"},
@@ -4153,7 +4233,7 @@ var NAV = [
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
   {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
-  {id:"team",   label:"The team",   items:[["posts","The week",1],["attendance","Attendance",1],["commits","Commits",1]], roster:true}
+  {id:"team",   label:"The team",   items:[["posts","This week",1],["attendance","Attendance",1],["commits","Commits",1]], roster:true}
 ];
 
 /* Which groups are folded shut, remembered per device. Only the shut ones
@@ -4262,11 +4342,12 @@ $("ch-refresh").addEventListener("click", function(){
 function setView(id, who){
   if (!VIEWS[id]) id = "overview";
   if (id === "person" && !who) id = "overview";
+  if (view !== id || personOf !== who) profileEditing=false;
   view = id; personOf = id === "person" ? who : null;
   [].forEach.call(document.querySelectorAll(".view"), function(s){
     s.classList.toggle("on", s.getAttribute("data-view") === view);
   });
-  $("pg-title").textContent = view === "person" ? personOf : VIEWS[view].label;
+  $("pg-title").textContent = view === "person" ? (identity && personOf===identity.who ? "Your page" : personOf) : VIEWS[view].label;
   $("pg-sub").textContent = view === "person"
     ? (PEOPLE.indexOf(personOf) > -1 ? "intern · on the attendance board" : "runs the bootcamp · not on the board")
     : VIEWS[view].sub;
@@ -4275,8 +4356,8 @@ function setView(id, who){
      logs one has no business sitting over them. */
   $("btn-new").style.display = ["visits","applicants","campus","posts"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
-  $("side").classList.remove("on");
-  var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : "");
+  closeSidebar();
+  var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : view === "posts" && who ? "/" + encodeURIComponent(who) : "");
   if (location.hash !== hash) { try { history.replaceState(null, "", hash); } catch(e){ location.hash = hash; } }
   var sc = document.querySelector('.view[data-view="' + view + '"] .scroller');
   if (sc) sc.scrollTop = 0;
@@ -4297,7 +4378,23 @@ $("nav").addEventListener("click", function(ev){
   var b = ev.target.closest("button[data-go]"); if (!b) return;
   setView(b.getAttribute("data-go"), b.getAttribute("data-who"));
 });
-$("side-toggle").addEventListener("click", function(){ $("side").classList.toggle("on"); });
+function syncSidebar(){
+  var mobile=matchMedia('(max-width:860px)').matches;
+  var opened=$("side").classList.contains('on');
+  $("side").inert=mobile && !opened;
+  $("side-backdrop").hidden=!mobile || !opened;
+  $("side-toggle").setAttribute('aria-expanded',String(opened));
+}
+function closeSidebar(){ $("side").classList.remove('on');syncSidebar(); }
+$("side-toggle").addEventListener("click",function(){
+  $("side").classList.toggle('on');syncSidebar();
+  if($("side").classList.contains('on')) $("side-close").focus();
+});
+$("side-close").addEventListener("click",function(){closeSidebar();$("side-toggle").focus();});
+$("side-backdrop").addEventListener("click",function(){closeSidebar();$("side-toggle").focus();});
+window.addEventListener('resize',syncSidebar);
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape' && $("side").classList.contains('on')){closeSidebar();$("side-toggle").focus();}});
+syncSidebar();
 
 /* ══════════ the drawer ══════════ */
 function openDrawer(){
@@ -4398,6 +4495,7 @@ $("rp-tabs").addEventListener("click", function(ev){
 var PERIODS = {"30":"the last 30 days", "90":"the last 90 days", "mtd":"this month"};
 function activeFilters(){
   var f = [];
+  if (filters.date) f.push(niceDate(filters.date));
   if (filters.who) f.push(filters.who + "'s card");
   if (filters.cat) f.push(cat(filters.cat).label);
   if (filters.status) f.push(filters.status === "pending" ? "still owed" : "reimbursed");
@@ -4415,6 +4513,7 @@ function paintFilterNote(){
   $("lg-clear").hidden = !on;
 }
 function clearFilters(){
+  filters.date = "";
   ["t-who","t-cat","t-q"].forEach(function(id){ $(id).value = ""; });
   $("t-status").value = "";
   $("t-period").value = ""; period = "";
@@ -4642,10 +4741,13 @@ function paintOverview(){
      nobody marked in. A page of six real items beats a page of
      thirty that includes "all good". */
   var items = [];
+  rows.filter(canApprove).forEach(function(r){
+    items.push({k:"approval",w:1000000,html:avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · your share '+esc(money(Number(r.amount)/sharedOf(r).length))+'</span></div><button class="mini" data-approve="'+esc(r.id)+'">Approve my share</button>'});
+  });
   PAYERS.forEach(function(p){
     if (m[p].owed > 0.005) items.push({
       k:"owed", w:m[p].owed,
-      html: avatar(p, "") + '<div class="bd"><b>' + esc(p) + " is owed " + esc(money(m[p].owed)) + "</b>" +
+      html: avatar(p, "") + '<div class="bd"><b><a class="person-link" href="#/person/'+encodeURIComponent(p)+'">' + esc(p) + "</a> is owed " + esc(money(m[p].owed)) + "</b>" +
         "<span>" + m[p].lines + (m[p].lines === 1 ? " line" : " lines") + ", oldest waiting " +
         esc(agoText(daysBetween(m[p].oldest, now))) + "</span></div>" +
         '<button class="mini" data-settle="' + esc(p) + '">Settle</button>'
@@ -4658,7 +4760,7 @@ function paintOverview(){
     items.push({k:"sub", w:0,
       html: '<div class="bd"><b>' + esc(s.what || "a subscription") + " · " + esc(money(s.amount)) + "</b>" +
         "<span>due " + (d === 0 ? "today" : "in " + agoText(d)) + " on " + esc(s.who) + "'s card</span></div>" +
-        '<span class="pill purple">on repeat</span>'});
+        '<a class="pill purple" href="#/subs">on repeat →</a>'});
   });
   PEOPLE.forEach(function(p){
     var n = 0; days.forEach(function(d){ if (d.who === p && d.day >= wk) n++; });
@@ -4708,7 +4810,7 @@ function paintOverview(){
       " · peak " + shortMoney(dMax);
     $("ov-daily").innerHTML = '<div class="mbars days">' + span.map(function(x){
       var t = x.e.owed + x.e.paid, h = Math.max(4, Math.round(t / dMax * 96));
-      return '<div class="mb" title="' + esc(niceDate(x.k) + " — " +
+      return '<button type="button" class="mb" data-ledger-date="' + x.k + '" title="' + esc(niceDate(x.k) + " — " +
           (x.e.n ? money(t) + " across " + x.e.n + (x.e.n === 1 ? " line" : " lines")
                  : "nothing logged")) + '">' +
         (t > 0
@@ -4717,7 +4819,7 @@ function paintOverview(){
               (x.e.paid > 0.005 ? '<i style="background:var(--good);flex:' + x.e.paid + '"></i>' : "") +
             "</span>"
           : '<span class="zero"></span>') +
-        '<span class="mbl">' + x.d + "</span></div>";
+        '<span class="mbl">' + x.d + "</span></button>";
     }).join("") + "</div>";
   }
 
@@ -4734,10 +4836,10 @@ function paintOverview(){
       (catRank.length === 1 ? " category" : " categories") + " · of " + money(total);
     $("ov-cats").innerHTML = shown.map(function(c){
       var meta = cat(c.id), pc = total ? c.v / total * 100 : 0;
-      return '<div class="ov-cat"><span class="nm">' + tint(meta.label, meta.v) + "</span>" +
+      return '<button type="button" class="ov-cat" data-ledger-cat="' + esc(c.id) + '"><span class="nm">' + tint(meta.label, meta.v) + "</span>" +
         '<span class="bar"><i style="width:' + pc.toFixed(1) + '%;background:var(' + meta.v + ')"></i></span>' +
         '<span class="amt">' + esc(money(c.v)) + "</span>" +
-        '<span class="pc">' + Math.round(pc) + "%</span></div>";
+        '<span class="pc">' + Math.round(pc) + "%</span></button>";
     }).join("") + (restV > 0.005
       ? '<div class="ov-cat"><span class="nm mut2">everything else</span>' +
         '<span class="bar"><i style="width:' + (restV / total * 100).toFixed(1) + '%;background:var(--line-2)"></i></span>' +
@@ -4754,14 +4856,14 @@ function paintOverview(){
   $("ov-due").innerHTML = due.length
     ? due.map(function(s){
         var d = daysBetween(now, s.next || "");
-        return '<div class="att-i">' + avatar(s.who, "") +
+        return '<a class="att-i" href="#/subs">' + avatar(s.who, "") +
           '<div class="bd"><b>' + esc(s.what || "a subscription") + " · " + esc(money(s.amount)) + "</b>" +
           "<span>the " + esc(ord(s.day)) + " of the month, on " + esc(s.who) + "'s card</span></div>" +
           '<span class="pill' + (d >= 0 && d <= 7 ? " purple" : "") + '">' +
           (s.next ? (d === 0 ? "today" : d > 0 ? "in " + agoText(d) : esc(niceDate(s.next))) : "no date") +
-          "</span></div>";
+          "</span></a>";
       }).join("")
-    : '<div class="empty"><b>Nothing on repeat.</b>A rule turns one spend into the same spend every month.</div>';
+    : '<div class="empty"><b>Nothing on repeat.</b>Add a monthly expense once.<br><button class="mini" data-go2="subs">Manage recurring spend →</button></div>';
 
   /* ── the four of them ── */
   var wkDays = 0;
@@ -4797,7 +4899,7 @@ function paintOverview(){
     var c = ghCount(p);
     return '<tr data-who="' + esc(p) + '">' +
       '<td><span style="display:flex;align-items:center;gap:8px">' + avatar(p, "") +
-        "<b>" + esc(p) + "</b></span></td>" +
+        '<a class="person-link" href="#/person/' + encodeURIComponent(p) + '">' + esc(p) + " →</a></span></td>" +
       '<td class="amt">' + esc(money(e.total)) + "</td>" +
       '<td class="amt"' + (e.owed > 0.005 ? ' style="color:var(--owed)"' : "") + ">" +
         (e.owed > 0.005 ? esc(money(e.owed)) : '<span class="mut2">—</span>') + "</td>" +
@@ -4816,14 +4918,14 @@ function paintOverview(){
     : "under " + PUSH_MIN + " pushes";
   $("ov-quiet").innerHTML = (quiet.length
     ? quiet.slice(0, 8).map(function(e){
-        return '<div class="att-i">' + avatar(e.who, "") +
+        return '<button class="att-i overview-action" data-ledger-date="'+esc(e.day)+'" data-ledger-who="'+esc(e.who)+'">' + avatar(e.who, "") +
           '<div class="bd"><b>' + esc(e.who) + " spent " + esc(money(e.spend)) + " on " +
             esc(niceDate(e.day)) + "</b><span>" +
             e.lines + (e.lines === 1 ? " line" : " lines") + " that day · " +
             (e.commits ? commitLabel(e.commits, false) : "nothing pushed") +
           "</span></div>" +
           '<span class="pill' + (e.commits ? "" : " red") + '">' + e.commits +
-            (e.commits === 1 ? " push" : " pushes") + "</span></div>";
+            (e.commits === 1 ? " push" : " pushes") + "</span></button>";
       }).join("")
     : '<div class="empty"><b>Nothing to look at.</b>Every day with a spend on it had ' + PUSH_MIN +
       ' pushes or more behind it.</div>') +
@@ -4850,13 +4952,13 @@ function paintOverview(){
      timestamps, so they sort together without anything being made up. */
   var feed = [];
   rows.forEach(function(r){
-    feed.push({t:Date.parse(r.logged || r.date || "") || 0, k:"spend",
+    feed.push({t:Date.parse(r.logged || r.date || "") || 0, k:"spend", q:r.what || "",
       html:'<span class="ic">' + ico("ledger") + "</span>" +
         '<div class="bd"><b>' + esc(money(r.amount)) + " · " + esc(r.what || "a spend") + "</b>" +
         "<span>" + esc(r.who) + " · " + esc(cat(r.category).label) + "</span></div>"});
   });
   days.forEach(function(d){
-    feed.push({t:Date.parse(d.marked || "") || 0, k:"day",
+    feed.push({t:Date.parse(d.marked || "") || 0, k:"day", who:d.who,
       html:'<span class="ic">' + ico("attendance") + "</span>" +
         '<div class="bd"><b>' + esc(d.who) + " was in on " + esc(niceDate(d.day)) + "</b>" +
         "<span>attendance</span></div>"});
@@ -4870,7 +4972,7 @@ function paintOverview(){
   feed = feed.filter(function(f){ return f.t; }).sort(function(a, b){ return b.t - a.t; }).slice(0, 9);
   $("ov-feed").innerHTML = feed.length
     ? feed.map(function(f){
-        return '<div class="fi">' + f.html + '<span class="rt">' + esc(seenStamp(new Date(f.t).toISOString())) + "</span></div>";
+        return '<a class="fi" href="#/' + (f.k==='spend'?'ledger':f.k==='day'?'person/'+encodeURIComponent(f.who):'subs') + '"' + (f.k==='spend'?' data-ledger-query="'+esc(f.q)+'"':'') + '>' + f.html + '<span class="rt">' + esc(seenStamp(new Date(f.t).toISOString())) + "</span></a>";
       }).join("")
     : '<div class="empty"><b>Nothing yet.</b>Spends, days and rules all land here as they happen.</div>';
 
@@ -4960,43 +5062,37 @@ function paintReporting(){
 }
 
 /* ---------- attendance, by week ---------- */
+var attendanceOffset = 0;
 function paintAttendance(){
-  var wkStart = new Date(weekStartDay() + "T00:00:00");
-  var weeks = [];
-  for (var i = 7; i >= 0; i--) {
-    var s = new Date(wkStart); s.setDate(s.getDate() - i * 7);
-    var e = new Date(s); e.setDate(e.getDate() + 7);
-    weeks.push({from:isoOf(s), to:isoOf(e), per:{}, n:0});
+  var start = new Date(weekStartDay() + "T12:00:00");
+  start.setDate(start.getDate() + attendanceOffset * 7);
+  var cells = [], total = 0;
+  for (var i=0;i<7;i++) {
+    var d = new Date(start); d.setDate(d.getDate()+i);
+    var key=isoOf(d), future=key>today();
+    var names=PEOPLE.filter(function(p){return !!markedOn(p,key);});
+    total += names.length;
+    cells.push('<div class="attendance-day' + (key===today()?' today':'') + '"><div class="attendance-date"><b>' +
+      d.toLocaleDateString('en-US',{weekday:'short'}) + '</b><span>' + esc(niceDate(key)) +
+      (key===today()?' · today':'') + '</span></div><div class="attendance-names">' +
+      (names.length ? names.map(function(p){return '<a href="#/person/' + encodeURIComponent(p) + '">' + avatar(p,"") + esc(p) + '</a>';}).join('') :
+       '<span class="mut2">' + (future?'Upcoming':'No one marked') + '</span>') + '</div></div>');
   }
-  days.forEach(function(d){
-    for (var i = 0; i < weeks.length; i++) {
-      if (d.day >= weeks[i].from && d.day < weeks[i].to) {
-        weeks[i].per[d.who] = (weeks[i].per[d.who] || 0) + 1; weeks[i].n++; return;
-      }
-    }
-  });
-  var wMax = 1; weeks.forEach(function(w){ wMax = Math.max(wMax, w.n); });
-  $("at-weeks").innerHTML = '<div class="wkbars">' + weeks.map(function(w, i){
-    var h = w.n ? Math.max(6, Math.round(w.n / wMax * 70)) : 0;
-    return '<div class="wkb" title="' + esc("week of " + niceDate(w.from) + " — " + w.n + " person-days") + '">' +
-      (w.n
-        ? '<span class="stk" style="height:' + h + 'px">' + PEOPLE.map(function(p){
-            return w.per[p] ? '<i style="background:var(' + tone(p) + ');flex:' + w.per[p] + '"></i>' : "";
-          }).join("") + "</span>"
-        : '<span class="zero"></span>') +
-      '<span class="wkl">' + (i === weeks.length - 1 ? "this wk" : esc(niceDate(w.from))) + "</span></div>";
-  }).join("") + "</div>";
-  $("at-wk-note").innerHTML = "the last eight weeks" + PEOPLE.map(function(p){
-    return '<span style="display:inline-flex;align-items:center;gap:4px;margin-left:9px">' +
-      '<i class="sw" style="background:var(' + tone(p) + ')"></i>' + esc(p) + "</span>";
-  }).join("");
-
-  $("at-n").textContent = days.length || "";
+  $("at-weeks").innerHTML='<div class="attendance-days">'+cells.join('')+'</div>';
+  $("at-wk-note").textContent='Week of '+niceDate(isoOf(start))+' · '+total+' person-days';
+  $("at-next").disabled=attendanceOffset===0;
+  $("at-n").textContent=days.length || "";
 }
+$("at-prev").addEventListener("click",function(){attendanceOffset--;paintAttendance();});
+$("at-next").addEventListener("click",function(){attendanceOffset=Math.min(0,attendanceOffset+1);paintAttendance();});
+$("at-today").addEventListener("click",function(){attendanceOffset=0;paintAttendance();});
 
 /* ---------- one person's page ---------- */
 function paintPerson(){
-  if (!personOf) return;
+  if (!personOf || profileEditing) return;
+  var isMe=!!identity && identity.who===personOf;
+  $("pp-csv").textContent=isMe?"Export your spends":"Export their spends";
+  var profile=profiles.find(function(v){return v.who===personOf;}) || {};
   var p = personOf, m = owedBy()[p] || {owed:0, paid:0, total:0, lines:0, oldest:""};
   var mine = rows.filter(function(r){ return r.who === p; })
     .sort(function(a, b){ return a.date < b.date ? 1 : -1; });
@@ -5017,20 +5113,24 @@ function paintPerson(){
   var h = "";
   h += '<div class="phead">' + avatar(p, "xl") +
     '<div class="bd"><h2>' + esc(p) + "</h2><p>" +
-      (isIntern ? "Intern · on the attendance board and the commit map" : "Runs the bootcamp · fronts spends, not on the board") +
+      esc(profile.headline || (isIntern ? "Intern · fomo bootcamp" : "Admin · fomo bootcamp")) +
     "</p></div>" +
     '<span class="push">' +
+      (own(p) ? '<button class="mini" id="profile-edit">Edit profile</button>' : "") +
       (m.owed > 0.005 ? '<button class="mini" data-settle="' + esc(p) + '">Settle ' + esc(money(m.owed)) + "</button>" : "") +
       '<button class="mini ghost" data-go2="ledger" data-filter="' + esc(p) + '">See in the ledger</button>' +
     "</span></div>";
 
+  h += '<div class="profile-about"><p>' + (profile.bio ? esc(profile.bio).replace(/\n/g,'<br>') : isMe?'Make this page yours. Add a bio and tell the team what you’re working on.':'No bio yet.') + '</p>' +
+    (safeUrl(profile.link)?'<a href="'+esc(profile.link)+'" target="_blank" rel="noopener noreferrer">'+esc(profile.link.replace(/^https?:\/\//,''))+' ↗</a>':'')+'</div>';
+  if(own(p)) h += '<form class="profile-form panel" id="profile-form" hidden><h3>Edit '+(isMe?'your':esc(p)+"’s")+' profile</h3><label>Headline<input id="profile-headline" maxlength="80" placeholder="What are you working on?" value="'+esc(profile.headline||'')+'"></label><label>Bio<textarea id="profile-bio" maxlength="600" rows="4" placeholder="A little about you…">'+esc(profile.bio||'')+'</textarea></label><label>Website<input id="profile-link" type="url" maxlength="300" placeholder="https://" value="'+esc(profile.link||'')+'"></label><span class="hint">Visible to the bootcamp team.</span><div class="profile-form-actions"><button class="btn btn-p" type="submit">Save profile</button><button class="mini" type="button" id="profile-cancel">Cancel</button></div><p id="profile-error" role="alert"></p></form>';
   h += '<div class="ppgrid">' +
     '<div><span class="lbl">fronted</span><span class="v">' + esc(money(m.total)) + "</span>" +
       '<span class="s">' + mine.length + (mine.length === 1 ? " line" : " lines") + " logged</span></div>" +
     '<div><span class="lbl">still owed</span><span class="v' + (m.owed > 0.005 ? " owed" : " good") + '">' +
       esc(money(m.owed)) + "</span>" +
       '<span class="s">' + (m.owed > 0.005 ? m.lines + " waiting · oldest " + esc(agoText(daysBetween(m.oldest, today()))) : "all square") + "</span></div>" +
-    '<div><span class="lbl">spent on them</span><span class="v">' + esc(money(onThem)) + "</span>" +
+    '<div><span class="lbl">' + (isMe?"spent on you":"spent on them") + '</span><span class="v">' + esc(money(onThem)) + "</span>" +
       '<span class="s">' + (onLines ? "across " + onLines + (onLines === 1 ? " line" : " lines") : "no lines name them") + "</span></div>" +
     (isIntern
       ? '<div><span class="lbl">days in</span><span class="v">' + all + "</span>" +
@@ -5043,8 +5143,8 @@ function paintPerson(){
         '%</span><span class="s">of everything fronted</span></div>') +
   "</div>";
 
-  h += '<div class="panel"><div class="panel-h"><h2>Their lines</h2><span class="note">' +
-    (mine.length ? "newest first · everything on their card" : "nothing yet") + "</span></div>" +
+  h += '<div class="panel"><div class="panel-h"><h2>'+(isMe?'Your spends':'Their spends')+'</h2><span class="note">' +
+    (mine.length ? (isMe?"newest first · everything on your card":"newest first · everything on their card") : "nothing yet") + "</span></div>" +
     (mine.length
       ? '<div class="tbl-scroll"><table><thead><tr><th>Date</th><th>What</th><th>Category</th>' +
         '<th>Split</th><th class="amt">Amount</th><th>Status</th><th></th></tr></thead><tbody>' +
@@ -5073,9 +5173,25 @@ function paintPerson(){
 
   $("pp-body").innerHTML = h;
   $("pp-note").textContent = mine.length
-    ? money(m.total) + " fronted · " + money(onThem) + " spent on them"
-    : "Nothing on their card yet.";
+    ? money(m.total) + " fronted · " + money(onThem) + (isMe?" spent on you":" spent on them")
+    : (isMe?"Nothing on your card yet.":"Nothing on their card yet.");
 }
+
+$("pp-body").addEventListener("click",function(ev){
+  if(ev.target.closest('#profile-edit')){profileEditing=true;$("profile-form").hidden=false;$("profile-headline").focus();}
+  if(ev.target.closest('#profile-cancel') && !profileSaving){profileEditing=false;paintPerson();}
+});
+$("pp-body").addEventListener("submit",async function(ev){
+  if(ev.target.id!=="profile-form") return;
+  ev.preventDefault(); if(profileSaving) return;
+  var form=ev.target, button=form.querySelector('[type="submit"]');
+  profileSaving=true;button.disabled=true;
+  try {
+    await api('profileupdate',{who:personOf,headline:$("profile-headline").value,bio:$("profile-bio").value,link:$("profile-link").value});
+    profileEditing=false;paintPerson();toast('Profile saved.');
+  }catch(e){if($("profile-error"))$("profile-error").textContent=e.message;}
+  finally{profileSaving=false;button.disabled=false;}
+});
 
 /* a person's day rows live outside #shift-body, so the delete there
    needs the same handler the days page has */
@@ -5083,8 +5199,7 @@ document.addEventListener("click", function(ev){
   var b = ev.target.closest("button[data-go2]"); if (!b) return;
   var go = b.getAttribute("data-go2"), who = b.getAttribute("data-who");
   if (go === "ledger" && b.getAttribute("data-filter")) {
-    $("t-who").value = b.getAttribute("data-filter");
-    $("t-who").dispatchEvent(new Event("input", {bubbles:true}));
+    openLedgerDetail({who:b.getAttribute("data-filter")}); return;
   }
   setView(go, who);
 });
@@ -5239,6 +5354,49 @@ document.addEventListener("keydown", function(ev){
   if (ev.key === "Enter") { ev.preventDefault(); palGo(palSel); }
 });
 
+/* Overview drilldowns always clear unrelated ledger filters first. */
+function openLedgerDetail(values){
+  clearFilters();
+  Object.keys(values).forEach(function(k){filters[k]=values[k];});
+  $("t-who").value=filters.who; $("t-cat").value=filters.cat;
+  $("t-status").value=filters.status; $("t-q").value=filters.q;
+  [].forEach.call($("lg-tabs").querySelectorAll(".vtab"),function(t){t.classList.toggle("on",t.dataset.lg===filters.status);});
+  setView("ledger"); render();
+}
+document.addEventListener("click",function(ev){
+  var b=ev.target.closest('[data-ledger-date],[data-ledger-cat],[data-ledger-status],[data-ledger-query]');
+  if(b){
+    ev.preventDefault();
+    var f={};
+    if(b.hasAttribute('data-ledger-date')) f.date=b.dataset.ledgerDate;
+    if(b.hasAttribute('data-ledger-who')) f.who=b.dataset.ledgerWho;
+    if(b.hasAttribute('data-ledger-cat')) f.cat=b.dataset.ledgerCat;
+    if(b.hasAttribute('data-ledger-status')) f.status=b.dataset.ledgerStatus;
+    if(b.hasAttribute('data-ledger-query')) f.q=b.dataset.ledgerQuery.toLowerCase();
+    openLedgerDetail(f);
+  }
+  var approval=ev.target.closest('[data-approve]');
+  if(approval){
+    approval.disabled=true;
+    api('approve',{id:approval.dataset.approve}).then(function(){toast('Your share is approved.');})
+      .catch(function(e){toast(fail(e),true);approval.disabled=false;});
+  }
+});
+function applyPermissionUi(){
+  if (!identity) return;
+  document.querySelectorAll('[data-act]').forEach(function(b){
+    var action=b.dataset.act;
+    var allowed=(action==='edit'||action==='del')?canEdit(byId(rows,b.dataset.id)):isAdmin();
+    b.hidden=!allowed;
+  });
+  document.querySelectorAll('[data-settle]').forEach(function(b){b.hidden=!isAdmin();});
+  document.querySelectorAll('[data-shift]').forEach(function(b){b.hidden=!own((byId(days,b.dataset.shift)||{}).who);});
+  document.querySelectorAll('[data-sub]').forEach(function(b){b.hidden=!own((byId(subs,b.dataset.id)||{}).who);});
+  document.querySelectorAll('#who .chip').forEach(function(b){b.disabled=!own(b.textContent)||!payerOk(b.textContent);});
+  document.querySelectorAll('[data-clock]').forEach(function(b){if(!own(b.dataset.clock)) b.disabled=true;});
+}
+new MutationObserver(applyPermissionUi).observe($("app"),{childList:true,subtree:true});
+
 /* ══════════ start ══════════ */
 buildNav();
 window.addEventListener("hashchange", routeFromHash);
@@ -5249,6 +5407,7 @@ function open_(){
   document.getElementById("gate").hidden = true;
   document.getElementById("gate").style.display = "none";
   document.getElementById("app").hidden = false;
+  setTimeout(ledgerReady, 8000);
   if (BACKEND === "sheet") {
     /* the sheet may be too old to keep days, in which case these are the
        only ones there are — read them before the first paint */
@@ -5282,6 +5441,7 @@ function open_(){
       carried = {rows: rows.slice(), days: days.slice(), subs: subs.slice()};
       sheetPayers = (seen.payers && seen.payers.length) ? seen.payers.map(String) : PEOPLE.slice();
       sheetDays = true;
+      profiles = seen.profiles || [];
       rows = seen.rows || [];
       days = seen.days || [];
       /* Only ever stored on a deployment that keeps them, so its presence
@@ -5377,22 +5537,63 @@ function open_(){
     if (mode === "sheet" && !busy) api("list")["catch"](function(){ /* the banner already says it */ });
   });
 }
-document.getElementById("gate-form").addEventListener("submit", function(ev){
-  ev.preventDefault();
-  var val = document.getElementById("gate-input").value.trim();
-  if (val === PASSCODE) {
-    try { localStorage.setItem("fomo.gate", PASSCODE); } catch(e){}
-    open_();
-  } else {
-    document.getElementById("gate-err").textContent = "That passcode doesn't match. Ask Arya or Milo for it.";
-    document.getElementById("gate-input").value = "";
-    document.getElementById("gate-input").focus();
+var identityReady = false;
+async function sessionCall(body){
+  if (!identityReady) {
+    var probe=await fetch(ENDPOINT,{signal:AbortSignal.timeout(20000)});
+    var features=await probe.json();
+    if (!features.identity) throw new Error("Identity access is not deployed yet. Update the shared Apps Script before signing in.");
+    identityReady=true;
   }
+  var res=await fetch(ENDPOINT,{method:"POST",body:JSON.stringify(Object.assign({_api:"internal"},body)),signal:AbortSignal.timeout(20000)});
+  var out=await res.json();
+  if (!out.ok) throw new Error(out.error || "Sign-in failed.");
+  if (!out.who && body.action !== "logout") throw new Error("Identity access is not deployed yet. Update the shared Apps Script before signing in.");
+  return out;
+}
+function signedIn(out, token){
+  identity={who:out.who,token:out.token || token};
+  try { sessionStorage.setItem("fomo.identity",JSON.stringify(identity)); } catch(e){}
+  document.body.dataset.role=isAdmin()?"admin":"intern";
+  $("identity-switch").textContent=identity.who + (isAdmin()?" · Admin":" · Intern") + " · Sign out";
+  picked=identity.who;
+  [].forEach.call(whoBox.children,function(c){c.setAttribute("aria-pressed",String(c.textContent===picked));});
+  bfWho.value=isAdmin()?PEOPLE[0]:identity.who; bfWho.disabled=!isAdmin();
+  $("nav").querySelectorAll('[data-go="person"]').forEach(function(b){
+    if(b.dataset.who===identity.who) b.querySelector('.tx').textContent='Your page';
+  });
+  if(view==='person' && personOf===identity.who) $("pg-title").textContent='Your page';
+  resetSplit();
+  open_();
+  window.dispatchEvent(new Event("fomo:identity"));
+}
+$("gate-form").addEventListener("submit",async function(ev){
+  ev.preventDefault();
+  var btn=this.querySelector('button[type="submit"]') || this.querySelector('button');
+  btn.disabled=true; $("gate-err").textContent="Signing in…";
+  try {
+    signedIn(await sessionCall({action:"login",who:$("gate-who").value,passcode:$("gate-input").value}));
+    $("gate-input").value=""; $("gate-err").textContent="";
+  } catch(e){ $("gate-err").textContent=e.message; }
+  finally {btn.disabled=false;}
 });
-var pass = "";
-try { pass = localStorage.getItem("fomo.gate") || ""; } catch(e){}
-if (!PASSCODE || pass === PASSCODE) open_();
-else document.getElementById("gate-input").focus();
+$("identity-switch").addEventListener("click",async function(){
+  this.disabled=true;
+  try { await sessionCall({action:"logout",_session:identity.token}); }
+  catch(e){ toast("Signed out on this browser."); }
+  try {sessionStorage.removeItem("fomo.identity");localStorage.removeItem("fomo.gate");}catch(e){}
+  location.reload();
+});
+(async function(){
+  var saved;
+  try { saved=JSON.parse(sessionStorage.getItem("fomo.identity") || "null"); }catch(e){}
+  if (saved && saved.token) {
+    try { signedIn(await sessionCall({action:"session",_session:saved.token}),saved.token); return; }
+    catch(e){ $("gate-err").textContent="Sign in again to continue."; }
+  }
+  $("gate-who").focus();
+})();
+
 })();
 </script>
 <script type="module" src="/invoice/visits.js"></script>

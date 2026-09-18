@@ -121,7 +121,7 @@
 
 /* the map ---------------------------------------------------------- */
 .chapters .mapwrap{padding:10px 8px 4px;position:relative}
-.chapters svg.usmap{display:block;width:100%;height:auto;touch-action:none;cursor:grab;user-select:none}
+.chapters svg.usmap{display:block;width:100%;height:auto;touch-action:pan-y;cursor:grab;user-select:none}
 .chapters svg.usmap.drag{cursor:grabbing}
 .chapters svg.usmap .mapg{transition:transform .28s cubic-bezier(.22,.61,.36,1)}
 .chapters svg.usmap.drag .mapg{transition:none}

@@ -2,20 +2,35 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {createVisitHandler,issueSession,validSession,createSheetStore} from '../server/visits/handler.mjs';
+import {createVisitHandler,issueSession,validSession,createSheetStore,verifyInternalAdmin} from '../server/visits/handler.mjs';
 import {memoryStore} from '../server/visits-preview.mjs';
 
 const env={VISITS_PUBLIC_ORIGIN:'https://crm.example',VISITS_STORAGE_URL:'https://script.google.com/macros/s/test/exec',
   VISITS_SERVICE_SECRET:'test-service-secret-'.repeat(3),VISITS_SESSION_SECRET:'test-session-secret-'.repeat(3),
   VISITS_ADMIN_PASSWORD:'test-admin-password-for-visits'};
 const now=Date.parse('2026-09-16T20:00:00Z');
+test('internal identity checks the console deployment and never posts to a legacy receiver',async()=>{
+  const calls=[];
+  const legacy=async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({ok:true})};};
+  assert.equal(await verifyInternalAdmin(env,'',legacy),false);
+  assert.equal(calls.length,0);
+  assert.equal(await verifyInternalAdmin(env,'session-token',legacy),false);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].options.method,undefined);
+  assert.ok(readFileSync(new URL('../invoice/index.html',import.meta.url),'utf8').includes(calls[0].url));
+  assert.notEqual(calls[0].url,env.VISITS_STORAGE_URL);
+  for(const [who,admin,expected] of [['Arya',true,true],['Milo',false,false],['Arya',false,false]]) {
+    const fetchIdentity=async(url,options)=>({ok:true,json:async()=>options.method==='POST'?{ok:true,who,admin}:{identity:true}});
+    assert.equal(await verifyInternalAdmin(env,'session-token',fetchIdentity),expected);
+  }
+});
 const guest={requestId:'00000000-0000-4000-8000-000000000001',name:'Guest',email:'guest@example.invalid',social:'@guest',notes:'A collaboration',website:'',date:'2026-09-17',time:'2:15 PM'};
 function harness(overrides={}) {
   const {store,records}=memoryStore();
-  const handler=createVisitHandler({env,store,now:()=>now,...overrides});
+  const handler=createVisitHandler({env,store,now:()=>now,verifyAdmin:async token=>token==='admin-test',...overrides});
   async function call(action='submit',body=guest,{method='POST',origin=env.VISITS_PUBLIC_ORIGIN,cookie,headers={}}={}) {
     const result={status:200,headers:{}};
-    const req={url:'/api/visits?action='+action,method,body,headers:{origin,'content-type':'application/json',cookie,...headers},socket:{remoteAddress:'127.0.0.1'}};
+    const req={url:'/api/visits?action='+action,method,body,headers:{origin,'content-type':'application/json','x-fomo-internal-session':'admin-test',cookie,...headers},socket:{remoteAddress:'127.0.0.1'}};
     const res={setHeader(k,v){result.headers[k]=v;},status(code){result.status=code;return this;},json(body){result.body=body;return this;}};
     await handler(req,res);return result;
   }
@@ -104,7 +119,7 @@ test('storage credentials stay in the server request, not the public receipt',as
 test('existing console inline scripts still parse; route and iframe-free form remain present',()=>{
   const html=readFileSync(new URL('../invoice/index.html',import.meta.url),'utf8');
   for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);
-  assert.match(html,/data-view="visits"/);assert.match(html,/data-go="visits"/);
+  assert.match(html,/data-view="visits"/);assert.match(html,/href="#\/visits"/);
   const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url)));
   assert.ok(config.rewrites.some(r=>r.source==='/internal'&&r.destination==='/invoice/index.html'));
   const form=readFileSync(new URL('../hqvisitform/index.html',import.meta.url),'utf8');
@@ -157,4 +172,12 @@ test('a closed day is refused with a message naming the day, not a generic outag
   const response=await h.call();
   assert.equal(response.status,400);
   assert.match(response.body.error,/not open for visits/);
+});
+
+test('intern identity cannot update guest records even with the visit password',async()=>{
+  const h=harness();
+  const login=await h.call('login',{password:env.VISITS_ADMIN_PASSWORD});
+  const cookie=login.headers['Set-Cookie'];
+  assert.equal((await h.call('saveAvailability',{availability:defaultAvailability()},{cookie,headers:{'x-fomo-internal-session':'intern-test'}})).status,403);
+  assert.equal((await h.call('update',{},{cookie,headers:{'x-fomo-internal-session':''}})).status,403);
 });

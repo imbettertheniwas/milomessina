@@ -219,7 +219,7 @@ function markup(prefix){
         '<b id="' + id("selchip-txt") + '"></b>' +
         '<button type="button" id="' + id("selchip-x") + '" aria-label="Clear the selection">&times;</button>' +
       '</span>' +
-      '<span class="maphint">Tap a dot to filter · drag to pan · scroll to zoom</span>' +
+      '<span class="maphint">Tap a dot to filter · drag to pan · Ctrl/⌘ + scroll to zoom</span>' +
     '</div>' +
     '<div class="maplegend">' +
       '<span class="k"><i></i> onboarded, nobody joined</span>' +
@@ -707,6 +707,7 @@ function mount(opts){
     });
 
     svg.addEventListener("wheel", function(ev){
+      if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
       var pt = svgPoint(svg, ev.clientX, ev.clientY);
       zoomAt(pt[0], pt[1], ev.deltaY < 0 ? 1.18 : 1/1.18);
