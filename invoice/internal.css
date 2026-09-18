@@ -47,7 +47,15 @@ button:disabled{cursor:default}
 
 /* Keep intrinsic table and chart widths inside their own scroll containers. */
 .scroller,.scroller>* ,.panel,.panel-b,.grid2,.grid3,.rail,.ppgrid,.tbl-scroll{min-width:0}
-[data-view="overview"]>.scroller{grid-template-columns:minmax(0,1fr)}
+/* The overview scroller is a grid with a definite height, so its auto rows
+   are sized against the space it has rather than the space its content
+   needs. `min-height:0` above then lets a row that is a bare .panel --
+   "The team, line by line" and "Quiet days with a spend" are the two --
+   collapse to its own border, which drops the panel out of sight and
+   leaves it sitting on top of the band below. max-content rows size to
+   what is in them and never shrink, which is what a scrolling column of
+   panels wanted in the first place. */
+[data-view="overview"]>.scroller{grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content}
 .grid2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .rail{grid-template-columns:repeat(4,minmax(0,1fr))}
 .rail>.overview-stat{min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l)}
@@ -127,7 +135,9 @@ button:disabled{cursor:default}
  .profile-form{padding:14px}
  .profile-form-actions button{min-height:40px}
 }
-body[data-role="intern"] #vr-save,body[data-role="intern"] #vr-hours-save{display:none}
+/* The copy button rewrites the hours on screen and then tells you to press
+   Save hours, which an intern does not have. */
+body[data-role="intern"] #vr-save,body[data-role="intern"] #vr-hours-save,body[data-role="intern"] #vr-hours-copy{display:none}
 .overview-action{width:100%;color:inherit;text-align:left;cursor:pointer}
 .overview-action:hover{background:var(--raise)}
 
@@ -145,11 +155,19 @@ body[data-role="intern"] #vr-save,body[data-role="intern"] #vr-hours-save{displa
 .charge-note{white-space:pre-wrap;overflow-wrap:anywhere}
 .charge-participants p{display:flex;justify-content:space-between;gap:12px;margin:8px 0}
 .charge-confirm{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:16px}
-#money-undo-bar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:0 4px 24px #0003;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);font-size:12px}
+/* Both of these float up from the bottom of the window, and on the views
+   that carry one, the bottom of the window is the strip of totals. It is
+   37px of numbers somebody is reading, so measure from the top of it
+   rather than landing on it. The views without a strip keep the old
+   offsets, because --foot-clear is 0 there. */
+:root{--foot-clear:0px}
+body:has(.view.on .aggbar){--foot-clear:37px}
+#toast{bottom:calc(22px + var(--foot-clear))}
+#money-undo-bar{position:fixed;bottom:calc(18px + var(--foot-clear));left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:0 4px 24px #0003;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);font-size:12px}
 #money-undo-bar[hidden]{display:none}
 #money-undo-bar .mini{min-height:36px}
-body:has(#money-undo-bar:not([hidden])) .scroller{padding-bottom:90px}
-body:has(#money-undo-bar:not([hidden])) #toast{bottom:86px}
+body:has(#money-undo-bar:not([hidden])) .scroller{padding-bottom:calc(90px + var(--foot-clear))}
+body:has(#money-undo-bar:not([hidden])) #toast{bottom:calc(86px + var(--foot-clear))}
 @media(max-width:700px){.charge-review-grid{grid-template-columns:1fr}.charge-receipt iframe{height:380px}.charge-review h2{font-size:21px}#money-undo-bar{width:max-content}.charge-confirm .btn{min-height:46px}}
 .charge-confirm button{min-height:44px;padding:12px 18px;border:1px solid var(--violet);border-radius:8px;background:var(--violet);color:#fff;font:inherit;font-weight:600;cursor:pointer}
 .charge-confirm button[data-purchase-unapprove]{background:var(--surface-2);border-color:var(--line-2);color:var(--text)}

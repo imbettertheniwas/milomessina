@@ -7,9 +7,17 @@ const publicLink=new URL('/hqvisitform/',location.origin).href;
 $('vr-open').href=publicLink;
 $('vr-link').value=publicLink;
 function message(text,error=false){$('vr-message').textContent=text;$('vr-message').classList.toggle('vr-error',error);}
+/* Only Arya can move a request on or change the opening hours, and the
+   server says so on every attempt. The fields have to say it too: an
+   intern left with a live dropdown and a live notes box is being invited
+   to make changes that have nowhere to go — the Save button beside them
+   is hidden, so the edit cannot even be attempted, and typing in the
+   notes then blocks Refresh behind a prompt about discarding work that
+   was never theirs to do. */
+const mayEdit=()=>{const b=window.FOMO_SHEET||{};return !!(b.admin && b.admin());};
 async function api(action,body) {
   const bridge=window.FOMO_SHEET || {};
-  if(['update','saveAvailability'].includes(action) && (!bridge.admin || !bridge.admin()))throw new Error('Only Arya can change visit requests or opening hours.');
+  if(['update','saveAvailability'].includes(action) && !mayEdit())throw new Error('Only Arya can change visit requests or opening hours.');
   const response=await fetch('/api/visits?action='+action,{
     method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',
     headers:{...(body?{'Content-Type':'application/json'}:{}),...(bridge.session && bridge.session()?{'X-Fomo-Internal-Session':bridge.session()}:{})},
@@ -41,14 +49,16 @@ function canonicalTime(value){
 }
 function hoursRender(){
   const rows=$('vr-hours-rows');rows.replaceChildren();
+  const editable=mayEdit();
   (availability||[]).forEach((day,index)=>{
     const row=document.createElement('div');row.className='vr-day';
     const label=document.createElement('label');
     const box=document.createElement('input');box.type='checkbox';box.checked=day.open===true;
+    box.disabled=!editable;
     box.id='vr-day-'+index;box.addEventListener('change',()=>{field.disabled=!box.checked;});
     label.append(box,text('span',weekdayNames[index]));
     const field=document.createElement('input');field.type='text';field.id='vr-times-'+index;
-    field.value=(day.times||[]).join(', ');field.disabled=day.open!==true;
+    field.value=(day.times||[]).join(', ');field.disabled=day.open!==true || !editable;
     field.setAttribute('aria-label',weekdayNames[index]+' times');
     field.placeholder='No times offered';
     row.append(label,field);rows.append(row);
@@ -130,6 +140,8 @@ function select(id){
   const email=document.createElement('a');email.href='mailto:'+encodeURIComponent(record.email);email.textContent='Email guest';email.className='mini';
   body.append(email);
   $('vr-status').value=record.status;$('vr-notes').value=record.internal_notes;
+  const editable=mayEdit();
+  $('vr-status').disabled=!editable;$('vr-notes').readOnly=!editable;
   $('vr-details').hidden=false;render();$('vr-detail-name').focus();
 }
 async function refresh(){

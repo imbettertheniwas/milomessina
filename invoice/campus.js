@@ -371,6 +371,10 @@ function paintDetail(){
   if (on) add('On the campus team', 'Running ' + esc(on.campus) + ', ' + esc(on.state) +
     ' — ' + esc(labelOf(TEAM_STATES, on.status).label.toLowerCase()));
 
+  /* Only Arya can move an application on, and Save is hidden for everybody
+     else — so the two fields beside it are read-only rather than live
+     controls with nowhere to save to. */
+  const mayEdit = !!(bridge().admin && bridge().admin());
   box.innerHTML =
     '<div class="cm-detail-h"><h2>' + esc(a.name || 'no name given') +
       '<small>' + esc(seatOf(a.seat).label) + (a.school ? ' · ' + esc(a.school) : '') + '</small></h2>' +
@@ -378,11 +382,11 @@ function paintDetail(){
     '<dl>' + bits.join('') + '</dl>' +
     '<div class="cm-edit">' +
       '<label for="ap-status">Where this has got to' +
-        '<select id="ap-status">' + APPLY_STATES.map(s =>
+        '<select id="ap-status"' + (mayEdit ? '' : ' disabled') + '>' + APPLY_STATES.map(s =>
           '<option value="' + s.id + '"' + (s.id === a.status ? ' selected' : '') + '>' + esc(s.label) + '</option>').join('') +
         '</select></label>' +
       '<label for="ap-notes">What the team thinks' +
-        '<textarea id="ap-notes" maxlength="2000" placeholder="Only the team sees this.">' + esc(a.notes) + '</textarea></label>' +
+        '<textarea id="ap-notes" maxlength="2000"' + (mayEdit ? '' : ' readonly') + ' placeholder="Only the team sees this.">' + esc(a.notes) + '</textarea></label>' +
       '<div class="row"><button class="btn btn-p" id="ap-save" type="button">Save</button>' +
         (on ? '' : '<button class="mini" id="ap-hire" type="button">Put them on a campus →</button>') +
         '</div>' +
