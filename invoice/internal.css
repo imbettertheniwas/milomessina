@@ -150,13 +150,6 @@ body[data-role="intern"] #vr-save,body[data-role="intern"] #vr-hours-save{displa
 #money-undo-bar .mini{min-height:36px}
 body:has(#money-undo-bar:not([hidden])) .scroller{padding-bottom:90px}
 body:has(#money-undo-bar:not([hidden])) #toast{bottom:86px}
-.money-history-head{max-width:760px;margin:0 auto 20px}
-.money-history-head p{color:var(--muted);line-height:1.6;margin-top:10px}
-.money-history-item{max-width:760px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
-.money-history-item div{min-width:0;overflow-wrap:anywhere}
-.money-history-item p{margin:8px 0}
-.money-history-item small{color:var(--muted)}
-.money-history-item button{min-height:40px;flex-shrink:0}
 @media(max-width:700px){.charge-review-grid{grid-template-columns:1fr}.charge-receipt iframe{height:380px}.charge-review h2{font-size:21px}#money-undo-bar{width:max-content}.charge-confirm .btn{min-height:46px}}
 .charge-confirm button{min-height:44px;padding:12px 18px;border:1px solid var(--violet);border-radius:8px;background:var(--violet);color:#fff;font:inherit;font-weight:600;cursor:pointer}
 .charge-confirm button[data-unapprove]{background:var(--surface-2);border-color:var(--line-2);color:var(--text)}

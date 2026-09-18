@@ -986,7 +986,6 @@ td.date.run{color:var(--good)}
 
       <!-- ────────── reimbursements ────────── -->
       <section class="view" data-view="charge"><div class="scroller pad" id="charge-detail"></div></section>
-      <section class="view" data-view="moneyhistory"><div class="scroller pad" id="money-history"></div></section>
       <section class="view" data-view="settle">
         <div class="toolbar">
           <span class="hint">Whoever fronted the money is owed all of it — a split is a record of where it went, not a claim on anyone.</span>
@@ -1881,6 +1880,7 @@ var listAhead = null;
 
 function apiSheet(action, payload){
   var denied = requirePermission(action, payload); if (denied) return denied;
+  var knownMoneyIds = moneyHistory.map(function(h){return h.id;});
   var body = {_api:"invoice", action:action, _key:PASSCODE, _session:identity ? identity.token : ""};
   if (payload) Object.keys(payload).forEach(function(k){ body[k] = payload[k]; });
   var sent;
@@ -1973,6 +1973,7 @@ function apiSheet(action, payload){
           };
         });
       }
+      rememberMoneyUndo(action,payload,knownMoneyIds,moneyHistory);
       setLive(true, "shared · synced " + clockNow());
       hideBanner();
       render();
@@ -4083,7 +4084,6 @@ function tint(label, v){
 /* Money changes remain reversible after the confirmation toast disappears. */
 var MONEY_ACTION_LABELS={add:'Spend logged',edit:'Spend edited',delete:'Spend deleted',update:'Reimbursement changed',settle:'Spends settled',subadd:'Recurring spend added',subpause:'Recurring spend changed',subdelete:'Recurring spend stopped'};
 function localMoneyHistory(){ try{return JSON.parse(localStorage.getItem('fomo.money.history')||'[]');}catch(e){return [];} }
-function currentMoneyHistory(){return mode==='sheet'?moneyHistory:localMoneyHistory().filter(function(h){return identity && (isAdmin() || h.actor===identity.who);}).reverse();}
 function moneyState(){var out={};[['rows',rows],['subs',subs]].forEach(function(pair){pair[1].forEach(function(r){out[pair[0]+':'+r.id]={table:pair[0],id:r.id,value:JSON.parse(JSON.stringify(r))};});});return out;}
 function restoreLocalChange(changes, side){changes.forEach(function(c){var record=c[side], list=c.table==='rows'?rows:subs, at=list.findIndex(function(r){return r.id===c.id;});if(at>=0)list.splice(at,1);if(record)list.push(record.value);});}
 function localMoneyAction(action,p,sub){
@@ -4101,7 +4101,7 @@ function localMoneyAction(action,p,sub){
     render();return Promise.resolve({ok:true});
   }
   return (sub?subLocal(action,p):apiLocal(action,p)).then(function(result){
-    if(!MONEY_ACTION_LABELS[action])return result;
+    if(!MONEY_ACTION_LABELS[action]){rememberMoneyUndo(action,p,[],[]);paintMoneyUndo();return result;}
     var after=moneyState(), changes=[];
     Object.keys(before).concat(Object.keys(after)).filter(function(k,i,a){return a.indexOf(k)===i;}).forEach(function(k){var a=before[k]||null,b=after[k]||null;if(JSON.stringify(a)!==JSON.stringify(b)){var r=b||a;changes.push({id:r.id,table:r.table,before:a,after:b});}});
     if(changes.length){
@@ -4109,21 +4109,30 @@ function localMoneyAction(action,p,sub){
       history.push({id:newId(),actor:identity.who,action:action,created:new Date().toISOString(),description:record.value.what,count:changes.length,undone:false,changes:changes});
       try{localStorage.setItem('fomo.money.history',JSON.stringify(history));}
       catch(e){restoreLocalChange(changes,'before');saveAll();saveSubs();render();throw new Error('No room to save undo history. The change was rolled back.');}
+      rememberMoneyUndo(action,p,history.slice(0,-1).map(function(h){return h.id;}),history.slice().reverse());
       render();
     }
     return result;
   });
 }
-function paintMoneyUndo(){
-  var bar=$('money-undo-bar'), latest=currentMoneyHistory().find(function(h){return !h.undone;});
-  bar.hidden=!latest || !identity;
-  if(!latest)return;
-  bar.innerHTML='<span>'+esc(MONEY_ACTION_LABELS[latest.action]||'Money changed')+'</span><button class="mini" data-money-undo="'+esc(latest.id)+'" '+(busy?'disabled':'')+'>Undo</button><a href="#/moneyhistory">History</a>';
+// Only this session's just-completed action gets an Undo prompt. Reads never
+// resurrect old prompts or replace the action the user is about to reverse.
+function rememberMoneyUndo(action,p,knownIds,history){
+  if(!identity)return;
+  if(action==='approve' || action==='unapprove'){
+    var r=byId(rows,(p||{}).id);
+    if(r)recentMoneyUndo={label:action==='approve'?'Share approved':'Approval removed',action:action==='approve'?'unapprove':'approve',payload:{id:r.id,reviewed:reviewedCharge(r)}};
+    return;
+  }
+  if(!MONEY_ACTION_LABELS[action])return;
+  var entry=history.find(function(h){return h.action===action && h.actor===identity.who && !h.undone && knownIds.indexOf(h.id)<0;});
+  if(entry)recentMoneyUndo={label:MONEY_ACTION_LABELS[action],action:'moneyundo',payload:{undoId:entry.id}};
 }
-function paintMoneyHistory(){
-  var history=currentMoneyHistory();
-  $('money-history').innerHTML='<div class="money-history-head"><h2>Money history</h2><p>Undo changes recorded since this update. An undo only changes ledger records; it does not send or recover an actual payment.</p></div>'+
-    (history.length?history.map(function(h){return '<article class="money-history-item"><div><b>'+esc(MONEY_ACTION_LABELS[h.action]||h.action)+'</b><p>'+esc(h.description)+(h.count>1?' · '+h.count+' records':'')+'</p><small>'+esc(h.actor)+' · '+esc(String(h.created).replace('T',' '))+'</small></div>'+(h.undone?'<span class="pill">Undone</span>':'<button class="mini" data-money-undo="'+esc(h.id)+'" '+(busy?'disabled':'')+'>Undo</button>')+'</article>';}).join(''):'<div class="empty">No money changes recorded yet. Existing spends are still in the ledger.</div>');
+function paintMoneyUndo(){
+  var bar=$('money-undo-bar');
+  bar.hidden=!recentMoneyUndo || !identity;
+  if(bar.hidden){bar.innerHTML='';return;}
+  bar.innerHTML='<span>'+esc(recentMoneyUndo.label)+'</span><button class="mini" data-immediate-undo '+(busy?'disabled':'')+'>Undo</button><button class="mini ghost" data-dismiss-undo aria-label="Dismiss undo" '+(busy?'disabled':'')+'>×</button>';
 }
 function reviewedCharge(r){return JSON.stringify([r.date,r.who,r.what,r.category,Number(r.amount),r.note||'',r.receipt||'',r.shared||'']);}
 var chargePaintKey="";
@@ -4132,13 +4141,13 @@ function paintCharge(){
   var key=JSON.stringify([chargeOf,r,identity && identity.who,busy]);
   if(key===chargePaintKey)return;
   chargePaintKey=key;
-  if(!r){box.innerHTML='<a class="mini" href="#/ledger">← Ledger</a><div class="empty">This spend is not on the ledger. If it was deleted, check <a href="#/moneyhistory">Money history</a> to undo that change.</div>';return;}
+  if(!r){box.innerHTML='<a class="mini" href="#/ledger">← Ledger</a><div class="empty">This spend is not on the ledger. If you just deleted it, use the Undo button below.</div>';return;}
   var url=safeUrl(r.receipt), receipt='<div class="empty">No receipt was attached to this spend.</div>', drive=url && /^https:\/\/drive\.google\.com\/(?:file\/d\/([a-zA-Z0-9_-]+)|open\?id=([a-zA-Z0-9_-]+))/.exec(url);
   if(drive)receipt='<iframe title="Receipt for '+esc(r.what)+'" src="https://drive.google.com/file/d/'+(drive[1]||drive[2])+'/preview" allow="fullscreen"></iframe>';
   else if((url && /\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(url)) || /^data:image\//.test(r.receipt||''))receipt='<img src="'+esc(url||r.receipt)+'" alt="Receipt for '+esc(r.what)+'">';
   else if(url)receipt='<p>The receipt is available at the link below.</p>';
   var approved=String(r.approvals||'').split(','), participants=sharedOf(r), ownShare=isParticipant(r), confirmed=ownShare && approved.indexOf(identity.who)>=0;
-  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts"><dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Status</dt><dd>'+esc(r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd><dt>Split between</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd>'+(ownShare?'<dt>Your share</dt><dd>'+esc(money(eachOf(r)))+'</dd>':'')+'</dl>'+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+'<div class="charge-participants">'+participants.filter(function(name){return name!==r.who;}).map(function(name){return '<p>'+esc(name)+' <span class="pill '+(approved.indexOf(name)>=0?'good':'')+'">'+(approved.indexOf(name)>=0?'Approved':'Not approved')+'</span></p>';}).join('')+'</div>'+(ownShare?'<div class="charge-confirm"><p>'+(confirmed?'You approved your share. You can undo your approval below.':'Check the receipt and details, then confirm your '+esc(money(eachOf(r)))+' share.')+'</p><button class="btn" '+(confirmed?'data-unapprove':'data-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo my approval':'Approve my '+esc(money(eachOf(r)))+' share')+'</button><small>This confirms your share of the recorded spend. It does not move money.</small></div>':'')+(isAdmin()?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div></section></div><a href="#/moneyhistory">View money history and undo changes →</a></div>';
+  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts"><dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Status</dt><dd>'+esc(r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd><dt>Split between</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd>'+(ownShare?'<dt>Your share</dt><dd>'+esc(money(eachOf(r)))+'</dd>':'')+'</dl>'+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+'<div class="charge-participants">'+participants.filter(function(name){return name!==r.who;}).map(function(name){return '<p>'+esc(name)+' <span class="pill '+(approved.indexOf(name)>=0?'good':'')+'">'+(approved.indexOf(name)>=0?'Approved':'Not approved')+'</span></p>';}).join('')+'</div>'+(ownShare?'<div class="charge-confirm"><p>'+(confirmed?'You approved your share. You can undo your approval below.':'Check the receipt and details, then confirm your '+esc(money(eachOf(r)))+' share.')+'</p><button class="btn" '+(confirmed?'data-unapprove':'data-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo my approval':'Approve my '+esc(money(eachOf(r)))+' share')+'</button><small>This confirms your share of the recorded spend. It does not move money.</small></div>':'')+(isAdmin()?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div></section></div></div>';
 }
 
 /* ---------- one row of the ledger ---------- */
@@ -4276,11 +4285,10 @@ var VIEWS = {
   campus:    {label:"Campus team",    sub:"who is on which campus, and in which state"},
   chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
   charge:    {label:"Review spend", sub:"receipt, details, and your share"},
-  moneyhistory: {label:"Money history", sub:"review and undo recorded changes"},
   person:    {label:"",               sub:""}
 };
 
-var view = "overview", personOf = null, chargeOf = null, moneyHistory = [];
+var view = "overview", personOf = null, chargeOf = null, moneyHistory = [], recentMoneyUndo = null;
 
 /* The rail is a menu, so every item sits under a heading that names the
    kind of thing it is — Overview included, which used to float above the
@@ -4298,7 +4306,7 @@ var view = "overview", personOf = null, chargeOf = null, moneyHistory = [];
    the group: their pages are the ones you already know how to find. */
 var NAV = [
   {id:"start",  label:"Start",      items:[["overview","Overview",0]]},
-  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["moneyhistory","Money history",0],["settle","Reimbursements",1],["subs","On repeat",1],["reporting","Breakdown",0]]},
+  {id:"money",  label:"Money",      items:[["ledger","Ledger",1],["settle","Reimbursements",1],["subs","On repeat",1],["reporting","Breakdown",0]]},
   {id:"guests", label:"Guests",     items:[["visits","Visit requests",0]]},
   /* The chapters are the one group that is not about the four of them or
      their money — it is the campus the bootcamp is selling to, read from
@@ -4411,6 +4419,7 @@ $("ch-refresh").addEventListener("click", function(){
 });
 
 function setView(id, who){
+  if (id === "moneyhistory") id = "ledger";
   if (!VIEWS[id]) id = "overview";
   if (id === "person" && !who) id = "overview";
   if (view !== id || personOf !== who) profileEditing=false;
@@ -5328,7 +5337,6 @@ function paint(){
   if (view === "attendance") paintAttendance();
   if (view === "person")     paintPerson();
   if (view === "charge")     paintCharge();
-  if (view === "moneyhistory") paintMoneyHistory();
   paintMoneyUndo();
 }
 
@@ -5462,11 +5470,14 @@ document.addEventListener("click",function(ev){
       .catch(function(e){toast(fail(e),true);})
       .finally(function(){busy=false;paint();});
   }
-  var undo=ev.target.closest('[data-money-undo]');
-  if(undo && !busy){
+  var dismiss=ev.target.closest('[data-dismiss-undo]');
+  if(dismiss && !busy){recentMoneyUndo=null;paintMoneyUndo();}
+  var undo=ev.target.closest('[data-immediate-undo]');
+  if(undo && !busy && recentMoneyUndo){
+    var change=recentMoneyUndo;
     busy=true;undo.disabled=true;
-    api('moneyundo',{undoId:undo.dataset.moneyUndo}).then(function(){toast('Money change undone.');})
-      .catch(function(e){toast(fail(e),true);})
+    api(change.action,change.payload).then(function(){recentMoneyUndo=null;toast('Undone.');})
+      .catch(function(e){recentMoneyUndo=change;toast(fail(e),true);})
       .finally(function(){busy=false;paint();});
   }
 });
