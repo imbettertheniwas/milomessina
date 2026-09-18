@@ -2,35 +2,34 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {createVisitHandler,issueSession,validSession,createSheetStore,verifyInternalAdmin} from '../server/visits/handler.mjs';
+import {createVisitHandler,createSheetStore,verifyInternalIdentity} from '../server/visits/handler.mjs';
 import {memoryStore} from '../server/visits-preview.mjs';
 
 const env={VISITS_PUBLIC_ORIGIN:'https://crm.example',VISITS_STORAGE_URL:'https://script.google.com/macros/s/test/exec',
-  VISITS_SERVICE_SECRET:'test-service-secret-'.repeat(3),VISITS_SESSION_SECRET:'test-session-secret-'.repeat(3),
-  VISITS_ADMIN_PASSWORD:'test-admin-password-for-visits'};
+  VISITS_SERVICE_SECRET:'test-service-secret-'.repeat(3)};
 const now=Date.parse('2026-09-16T20:00:00Z');
 test('internal identity checks the console deployment and never posts to a legacy receiver',async()=>{
   const calls=[];
   const legacy=async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({ok:true})};};
-  assert.equal(await verifyInternalAdmin(env,'',legacy),false);
+  assert.equal(await verifyInternalIdentity(env,'',legacy),false);
   assert.equal(calls.length,0);
-  assert.equal(await verifyInternalAdmin(env,'session-token',legacy),false);
+  assert.equal(await verifyInternalIdentity(env,'session-token',legacy),false);
   assert.equal(calls.length,1);
   assert.equal(calls[0].options.method,undefined);
   assert.ok(readFileSync(new URL('../invoice/index.html',import.meta.url),'utf8').includes(calls[0].url));
   assert.notEqual(calls[0].url,env.VISITS_STORAGE_URL);
-  for(const [who,admin,expected] of [['Arya',true,true],['Milo',false,false],['Arya',false,false]]) {
+  for(const [who,admin,expected] of [['Arya',true,{who:'Arya',admin:true}],['Milo',false,{who:'Milo',admin:false}],['Arya',false,{who:'Arya',admin:false}],['Milo',true,{who:'Milo',admin:false}],['Unknown',true,false]]) {
     const fetchIdentity=async(url,options)=>({ok:true,json:async()=>options.method==='POST'?{ok:true,who,admin}:{identity:true}});
-    assert.equal(await verifyInternalAdmin(env,'session-token',fetchIdentity),expected);
+    assert.deepEqual(await verifyInternalIdentity(env,'session-token',fetchIdentity),expected);
   }
 });
 const guest={requestId:'00000000-0000-4000-8000-000000000001',name:'Guest',email:'guest@example.invalid',social:'@guest',notes:'A collaboration',website:'',date:'2026-09-17',time:'2:15 PM'};
 function harness(overrides={}) {
   const {store,records}=memoryStore();
-  const handler=createVisitHandler({env,store,now:()=>now,verifyAdmin:async token=>token==='admin-test',...overrides});
+  const handler=createVisitHandler({env,store,now:()=>now,verifyIdentity:async token=>token==='admin-test'?{who:'Arya',admin:true}:token==='intern-test'?{who:'Milo',admin:false}:false,...overrides});
   async function call(action='submit',body=guest,{method='POST',origin=env.VISITS_PUBLIC_ORIGIN,cookie,headers={}}={}) {
     const result={status:200,headers:{}};
-    const req={url:'/api/visits?action='+action,method,body,headers:{origin,'content-type':'application/json','x-fomo-internal-session':'admin-test',cookie,...headers},socket:{remoteAddress:'127.0.0.1'}};
+    const req={url:'/api/visits?action='+action,method,body,headers:{origin,'content-type':'application/json',cookie,...headers},socket:{remoteAddress:'127.0.0.1'}};
     const res={setHeader(k,v){result.headers[k]=v;},status(code){result.status=code;return this;},json(body){result.body=body;return this;}};
     await handler(req,res);return result;
   }
@@ -59,47 +58,42 @@ test('reject invalid times, past dates, honeypots, malformed JSON, cross-origin 
   assert.equal((await h.call('submit',guest,{headers:{'content-length':'12001'}})).status,413);
   assert.equal(h.records.size,0);
 });
-test('private list and updates require a valid signed session',async()=>{
+test('internal login replaces the extra password and expired sessions cannot read guests',async()=>{
   const h=harness();
+  const admin={headers:{'x-fomo-internal-session':'admin-test'}};
+  const intern={headers:{'x-fomo-internal-session':'intern-test'}};
   assert.equal((await h.call('list',null,{method:'GET'})).status,401);
   assert.equal((await h.call('update',{})).status,401);
-  assert.equal((await h.call('login',{password:'wrong'})).status,401);
-  const login=await h.call('login',{password:env.VISITS_ADMIN_PASSWORD});
-  assert.equal(login.status,200);
-  const cookie=login.headers['Set-Cookie'];
-  assert.match(cookie,/HttpOnly; Secure; SameSite=Strict/);
-  assert.equal(validSession(cookie,env,now),true);
-  assert.equal(validSession(cookie,env,now+4*3600000),false);
-  assert.equal(validSession(cookie,{...env,VISITS_ADMIN_PASSWORD:'rotated'},now),false);
-  assert.equal(validSession(cookie.replace(/.$/,'x'),env,now),true); // Attribute changes do not change the signed token.
-  assert.equal(validSession(cookie.replace('__Host-fomo-visits=','__Host-fomo-visits=forged'),env,now),false);
+  assert.equal((await h.call('login',{password:'obsolete-password'})).status,404);
+  assert.equal((await h.call('list',null,{method:'GET',cookie:'__Host-fomo-visits=old-cookie'})).status,401);
+  assert.equal((await h.call('list',null,{method:'GET',headers:{'x-fomo-internal-session':'expired'}})).status,401);
   await h.call();
-  const list=await h.call('list',null,{method:'GET',cookie});
+  const list=await h.call('list',null,{method:'GET',...intern});
   assert.equal(list.status,200);assert.equal(list.body.requests.length,1);
+  assert.equal(list.headers['Cache-Control'],'no-store');
+  assert.equal((await h.call('session',null,{method:'GET',...intern})).status,200);
   const edit={id:guest.requestId,status:'confirmed',internalNotes:'Team note',version:1};
-  assert.equal((await h.call('update',edit,{cookie})).body.request.version,2);
-  assert.equal((await h.call('update',edit,{cookie})).status,409);
-  assert.equal((await h.call('update',{...edit,version:2,status:'deleted'},{cookie})).status,400);
-  const logout=await h.call('logout',{}, {cookie});assert.match(logout.headers['Set-Cookie'],/Max-Age=0/);
+  assert.equal((await h.call('update',edit,intern)).status,403);
+  assert.equal(h.records.get(guest.requestId).version,1);
+  assert.equal((await h.call('update',edit,admin)).body.request.version,2);
+  assert.equal((await h.call('update',edit,admin)).status,409);
+  assert.equal((await h.call('update',{...edit,version:2,status:'deleted'},admin)).status,400);
 });
-test('shared login limiter is consulted before checking passwords',async()=>{
-  const h=harness();
-  for(let i=0;i<10;i++)assert.equal((await h.call('login',{password:'incorrect'})).status,401);
-  assert.equal((await h.call('login',{password:env.VISITS_ADMIN_PASSWORD})).status,429);
+test('unauthenticated reads and writes never reach guest storage',async()=>{
+  let touched=false;
+  const h=harness({store:async()=>{touched=true;}});
+  for(const [action,method] of [['list','GET'],['session','GET'],['update','POST'],['saveAvailability','POST']])
+    assert.equal((await h.call(action,{}, {method})).status,401);
+  assert.equal(touched,false);
 });
-test('public submissions carry an address key, scoped apart from login',async()=>{
+test('public submissions keep their address rate limit',async()=>{
   const calls=[];
   const h=harness({store:async(action,payload)=>{
     calls.push({action,payload});
-    return action==='submit'?{reference:guest.requestId,status:'pending'}:{allowed:true};
+    return {reference:guest.requestId,status:'pending'};
   }});
   assert.equal((await h.call()).status,201);
-  const submit=calls.find(c=>c.action==='submit');
-  assert.match(submit.payload.addressKey,/^[a-f0-9]{64}$/);
-  await h.call('login',{password:'wrong'});
-  const throttle=calls.find(c=>c.action==='throttle');
-  // Same caller, different scope, so the two limiters cannot exhaust each other.
-  assert.notEqual(submit.payload.addressKey,throttle.payload.key);
+  assert.match(calls[0].payload.addressKey,/^[a-f0-9]{64}$/);
 });
 test('storage errors or malformed receipts never report success',async()=>{
   const h=harness({store:async()=>{throw new Error('secret provider detail');}});
@@ -157,12 +151,11 @@ test('opening hours are public, but only a session may change them',async()=>{
   assert.equal(open.body.availability[3].open,true);
   assert.equal(open.body.availability[0].open,false);
   assert.equal((await h.call('saveAvailability',{availability:stored})).status,401);
-  const login=await h.call('login',{password:env.VISITS_ADMIN_PASSWORD});
-  const cookie=login.headers['Set-Cookie'];
-  assert.equal((await h.call('saveAvailability',{availability:stored},{cookie})).status,200);
+  const headers={'x-fomo-internal-session':'admin-test'};
+  assert.equal((await h.call('saveAvailability',{availability:stored},{headers})).status,200);
   // A malformed payload must not normalize into "every day open".
-  assert.equal((await h.call('saveAvailability',{availability:'x'},{cookie})).status,400);
-  assert.equal((await h.call('saveAvailability',{availability:[]},{cookie})).status,400);
+  assert.equal((await h.call('saveAvailability',{availability:'x'},{headers})).status,400);
+  assert.equal((await h.call('saveAvailability',{availability:[]},{headers})).status,400);
 });
 test('a closed day is refused with a message naming the day, not a generic outage',async()=>{
   const h=harness({store:async action=>{
@@ -174,10 +167,37 @@ test('a closed day is refused with a message naming the day, not a generic outag
   assert.match(response.body.error,/not open for visits/);
 });
 
-test('intern identity cannot update guest records even with the visit password',async()=>{
+test('only Arya can change visiting hours with the existing internal session',async()=>{
   const h=harness();
-  const login=await h.call('login',{password:env.VISITS_ADMIN_PASSWORD});
-  const cookie=login.headers['Set-Cookie'];
-  assert.equal((await h.call('saveAvailability',{availability:defaultAvailability()},{cookie,headers:{'x-fomo-internal-session':'intern-test'}})).status,403);
-  assert.equal((await h.call('update',{},{cookie,headers:{'x-fomo-internal-session':''}})).status,403);
+  assert.equal((await h.call('saveAvailability',{availability:defaultAvailability()},{headers:{'x-fomo-internal-session':'intern-test'}})).status,403);
+  assert.equal((await h.call('update',{}, {headers:{'x-fomo-internal-session':''}})).status,401);
+});
+
+test('visit view waits for Internal login, loads automatically, and clears data on expiry',async()=>{
+  const nodes=new Map(),events=new Map(),calls=[];let token='',expired=false;
+  const element=()=>({value:'',hidden:true,textContent:'',classList:{toggle(){}},
+    addEventListener(){},replaceChildren(){},append(){},setAttribute(){}});
+  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,element());return nodes.get(id);},createElement:element};
+  const window={FOMO_SHEET:{session:()=>token,admin:()=>false},
+    addEventListener(name,fn){events.set(name,fn);},dispatchEvent(){}};
+  const context=vm.createContext({document,window,URL,location:{origin:'https://crm.example',hash:'#/visits'},
+    CustomEvent:class{constructor(type){this.type=type;}},fetch:async(url,options)=>{
+      calls.push({url,options});
+      return {ok:!expired,status:expired?401:200,json:async()=>expired?{error:'Sign in to Internal to view visit requests.'}:url.includes('availability')?{availability:[]}:{requests:[]}};
+    }});
+  vm.runInContext(readFileSync(new URL('../invoice/visits.js',import.meta.url),'utf8'),context);
+  assert.equal(calls.length,0);
+  token='intern-test';events.get('fomo:identity')();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls[0].url,'/api/visits?action=list');
+  assert.equal(calls[0].options.headers['X-Fomo-Internal-Session'],token);
+  assert.equal(nodes.get('vr-workspace').hidden,false);
+  assert.equal(window.FOMO_VISIT_STATS.total,0);
+  expired=true;
+  await vm.runInContext('refresh()',context);
+  assert.equal(nodes.get('vr-workspace').hidden,true);
+  assert.equal(window.FOMO_VISIT_STATS,null);
+  assert.equal(calls.some(call=>call.url.includes('login')),false);
+  const html=readFileSync(new URL('../invoice/index.html',import.meta.url),'utf8');
+  assert.doesNotMatch(html,/id="vr-(?:password|login|lock)"/);
 });

@@ -36,9 +36,8 @@ export function createVisitPreview({port=4187}={}) {
   const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
   const origin='http://localhost:'+port;
   const env={NODE_ENV:'development',VISITS_PUBLIC_ORIGIN:origin,VISITS_STORAGE_URL:'https://script.google.com/macros/s/preview_only/exec',
-    VISITS_SERVICE_SECRET:randomBytes(32).toString('hex'),VISITS_SESSION_SECRET:randomBytes(32).toString('hex'),
-    VISITS_ADMIN_PASSWORD:'local-preview-only-visit-pass'};
-  const {store}=memoryStore(),api=createVisitHandler({env,store});
+    VISITS_SERVICE_SECRET:randomBytes(32).toString('hex')};
+  const {store}=memoryStore(),api=createVisitHandler({env,store,verifyIdentity:async()=>false});
   const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2'};
   return createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');
@@ -75,7 +74,7 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   createVisitPreview({port}).listen(port,'127.0.0.1',()=>{
     console.log('LOCAL TEST ONLY: http://localhost:'+port+'/internal#/visits');
     console.log('Form: http://localhost:'+port+'/hqvisitform/');
-    console.log('Test password: local-preview-only-visit-pass');
+    console.log('Internal visit access is disabled in this standalone public-form preview.');
     console.log('In-memory test data only; restarting clears it. No production endpoints are called.');
   });
 }

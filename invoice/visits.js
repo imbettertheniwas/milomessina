@@ -72,12 +72,13 @@ function hoursCollect(){
 function lock(){
   requestEpoch++;
   state.authenticated=false;state.requests=[];state.selected=null;state.loaded=false;
-  $('vr-login').hidden=false;$('vr-workspace').hidden=true;$('vr-lock').hidden=true;
+  $('vr-workspace').hidden=true;
+  window.FOMO_VISIT_STATS=null;window.dispatchEvent(new CustomEvent('fomo:visit-stats'));
   $('vr-details').hidden=true;$('vr-list').replaceChildren();$('vr-count').textContent='';
   $('vr-notes').value='';$('vr-detail-body').replaceChildren();
   availability=null;$('vr-hours-rows').replaceChildren();$('vr-hours-status').textContent='';$('vr-hours').open=false;
 }
-function unlock(){state.authenticated=true;$('vr-login').hidden=true;$('vr-workspace').hidden=false;$('vr-lock').hidden=false;}
+function unlock(){state.authenticated=true;$('vr-workspace').hidden=false;}
 function text(tag,value,className){
   const element=document.createElement(tag);element.textContent=value;
   if(className)element.className=className;return element;
@@ -85,10 +86,7 @@ function text(tag,value,className){
 function dateLabel(date){
   return new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric'});
 }
-/* The overview counts visit requests too. These are behind their own
-   password, so nothing is published until somebody has actually signed in
-   here — the overview says as much until then. The counts are off the
-   whole list, never off the filter the page happens to be showing. */
+/* Publish counts only after the internal session has loaded the real list. */
 function publish(){
   const all=state.requests||[];
   const n=id=>all.filter(r=>r.status===id).length;
@@ -136,6 +134,7 @@ function select(id){
 }
 async function refresh(){
   if(state.busy || state.saving)return;
+  if(!window.FOMO_SHEET?.session?.()){lock();message('Sign in to Internal to view visit requests.');return;}
   const editing=state.requests.find(r=>r.id===state.selected);
   if(editing && ($('vr-notes').value!==editing.internal_notes || $('vr-status').value!==editing.status) &&
     !confirm('Refresh and discard the unsaved changes to this request?'))return;
@@ -164,17 +163,6 @@ $('vr-copy').addEventListener('click',async()=>{
   catch{$('vr-link-wrap').hidden=false;$('vr-link').focus();$('vr-link').select();message('Copy the selected link.');}
 });
 $('vr-refresh').addEventListener('click',refresh);
-$('vr-login').addEventListener('submit',async event=>{
-  event.preventDefault();const button=$('vr-unlock');button.disabled=true;
-  try{await api('login',{password:$('vr-password').value});$('vr-password').value='';await refresh();}
-  catch(error){message(error.message,true);}
-  finally{button.disabled=false;}
-});
-$('vr-lock').addEventListener('click',async()=>{
-  lock();
-  try{await api('logout',{});message('Visit requests locked.');}
-  catch(error){message(error.message,true);}
-});
 $('vr-close').addEventListener('click',()=>{
   if(state.saving)return;
   const current=state.requests.find(r=>r.id===state.selected);
@@ -197,8 +185,9 @@ $('vr-edit').addEventListener('submit',async event=>{
   finally{button.disabled=false;state.saving=false;$('vr-status').disabled=false;$('vr-notes').disabled=false;}
 });
 function activated(){
-  if(location.hash==='#/visits' && !state.loaded && !state.busy)refresh();
+  if(location.hash==='#/visits' && window.FOMO_SHEET?.session?.() && !state.loaded && !state.busy)refresh();
 }
+window.addEventListener('fomo:identity',()=>{lock();activated();});
 window.addEventListener('hashchange',activated);
 window.addEventListener('fomo:view-change',activated);
 activated();

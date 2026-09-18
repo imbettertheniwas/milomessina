@@ -89,7 +89,7 @@ everywhere: nothing is lost and nothing is silently accepted.
 ### What sharing the spreadsheet means
 
 - Everyone who can open the spreadsheet can read guest names, emails, social
-  links and notes directly, without the visit-access password. That password
+  links and notes directly, without signing in to Internal. The internal login
   gates the console, not the sheet. Keep spreadsheet sharing to the people who
   should see guest details.
 - The form receiver writes a row, and will add a column, to whatever tab name a
@@ -111,22 +111,19 @@ Set the following server environment variables for the intended deployment:
 | VISITS_PUBLIC_ORIGIN | Exact form and console origin, e.g. https://milomessina.com |
 | VISITS_STORAGE_URL | The /exec URL of the deployment that reports "visits": true |
 | VISITS_SERVICE_SECRET | Same random secret as the VISITS_SERVICE_SECRET script property |
-| VISITS_SESSION_SECRET | A DIFFERENT random secret, at least 32 characters |
-| VISITS_ADMIN_PASSWORD | A separate strong team visit-access password, at least 16 characters |
 
 For Preview, point VISITS_SHEET_ID at a scratch copy of the spreadsheet and use
-different secrets and password, so preview traffic never writes real rows. Set
+a different service secret, so preview traffic never writes real rows. Set
 VISITS_PUBLIC_ORIGIN to that preview deployment's exact origin. Production
 credentials should not be attached to unreviewed preview branches. Until these
 are set, the view and public form display the disconnected error.
 
-Share the visit-access password with approved teammates using the team's normal
-private channel. It is NOT the existing page-source passcode. It grants access
-only to visit requests; it does not replace or change the existing console gate.
-Sessions last four hours. Rotating either the password or session secret
-invalidates prior sessions. The standalone script applies a shared, short-lived
-10-attempt/15-minute login limit; Apps Script cache availability is best-effort.
-A shared password provides team access, not per-person identity or an audit trail.
+Visit requests use the existing Internal login. The server validates the internal
+session before reading guest details, and only Arya can change requests or hours.
+There is no separate visit password or cookie. `VISITS_SESSION_SECRET` and
+`VISITS_ADMIN_PASSWORD` are no longer used; existing values can remain in Vercel.
+This change needs a website deploy only, with the existing identity-enabled Apps
+Script deployment. Guest storage and existing rows are unchanged.
 
 After setting environment variables, redeploy the feature preview and test it.
 An owner can merge and deploy production after review. Do not share the new
@@ -139,7 +136,7 @@ public link until a real end-to-end check succeeds.
   UUID as the receipt only after storage accepts it.
 - Repeated IDs do not create duplicates. A different email on the same ID fails.
 - Five new requests per normalized email per rolling 24 hours.
-- Authenticated team list and update actions use the signed server session.
+- Team reads require a valid Internal session; updates require Arya’s session.
 - Concurrent status/note edits return a conflict instead of overwriting another
   person's changes. Refresh and reopen the request to get the new version.
 - Guest details stay out of localStorage and public API reads.

@@ -170,8 +170,8 @@ settle reimbursements, manage applicants or the campus roster, or modify other
 people's records. **Only Arya approves purchases**, including purchases with no
 split and purchases he logged himself. Approval is separate from reimbursement.
 Editing a charge clears its purchase approval and requires Arya to review it again. Arya can manage every person's records and
-reimbursements. Guest requests keep their existing separate access password and
-also require an Arya internal session for changes.
+reimbursements. Guest requests use the existing Internal session with no second password.
+All signed-in teammates can read them; only Arya can change requests or hours.
 
 The selected person's navigation item and page title say **Your page**. Profiles
 support a headline (80 characters), bio (600), and website URL (300); fields start

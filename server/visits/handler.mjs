@@ -1,15 +1,10 @@
-import {createHash, createHmac, randomBytes, timingSafeEqual} from 'node:crypto';
+import {createHmac} from 'node:crypto';
 import {validateRequest,normalizeAvailability} from './validation.mjs';
 
-const SESSION_SECONDS = 4 * 60 * 60;
-const COOKIE = '__Host-fomo-visits';
 // Match the console's ENDPOINT. Guest storage can live in a separate script.
 const INTERNAL_SESSION_URL = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 const statuses = new Set(['pending','confirmed','completed','declined']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-function equal(a,b) {
-  return timingSafeEqual(createHash('sha256').update(String(a)).digest(),createHash('sha256').update(String(b)).digest());
-}
 function configured(env) {
   try {
     const storage = new URL(env.VISITS_STORAGE_URL);
@@ -19,33 +14,12 @@ function configured(env) {
       !storage.search && !storage.username &&
       origin.origin===env.VISITS_PUBLIC_ORIGIN &&
       (origin.protocol==='https:' || (env.NODE_ENV!=='production' && ['localhost','127.0.0.1'].includes(origin.hostname))) &&
-      env.VISITS_SERVICE_SECRET?.length>=32 && env.VISITS_SESSION_SECRET?.length>=32 &&
-      env.VISITS_ADMIN_PASSWORD?.length>=16;
+      env.VISITS_SERVICE_SECRET?.length>=32;
   } catch { return false; }
-}
-function sign(value,env) {
-  return createHmac('sha256',env.VISITS_SESSION_SECRET).update(env.VISITS_ADMIN_PASSWORD+'\n'+value).digest('base64url');
-}
-export function issueSession(env, now=Date.now()) {
-  const value=String(Math.floor(now/1000)+SESSION_SECONDS)+'.'+randomBytes(24).toString('base64url');
-  return value+'.'+sign(value,env);
-}
-export function validSession(cookie,env,now=Date.now()) {
-  if(typeof cookie!=='string' || cookie.length>1000)return false;
-  const token=cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);
-  if(!token)return false;
-  const parts=token.split('.');
-  if(parts.length!==3 || !/^\d+$/.test(parts[0]) || !/^[A-Za-z0-9_-]{32}$/.test(parts[1]))return false;
-  const expires=Number(parts[0]);
-  if(expires<=Math.floor(now/1000) || expires>Math.floor(now/1000)+SESSION_SECONDS)return false;
-  return equal(sign(parts[0]+'.'+parts[1],env),parts[2]);
 }
 function addressKey(req,env,scope) {
   const address=String(req.headers?.['x-vercel-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
   return createHmac('sha256',env.VISITS_SERVICE_SECRET).update(scope+':'+address).digest('hex');
-}
-function sessionCookie(token,seconds=SESSION_SECONDS) {
-  return COOKIE+'='+token+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age='+seconds;
 }
 export function createSheetStore(env,fetchImpl=fetch) {
   return async (action,payload={})=>{
@@ -68,8 +42,8 @@ function cleanRecord(row) {
   const keys=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
   return Object.fromEntries(keys.map(key=>[key,row[key]]));
 }
-// Internal identity narrows the existing guest-access session; it never replaces it.
-export async function verifyInternalAdmin(env, token, fetchImpl=fetch) {
+// Reuse the console session; no separate visit password or browser cookie.
+export async function verifyInternalIdentity(env, token, fetchImpl=fetch) {
   if(typeof token!=='string' || !token || token.length>100)return false;
   // Older form receivers interpret unknown POST namespaces as submissions.
   // Probe first, so a rollout mismatch cannot create a stray spreadsheet row.
@@ -81,9 +55,10 @@ export async function verifyInternalAdmin(env, token, fetchImpl=fetch) {
   });
   if(!response.ok)return false;
   const identity=await response.json();
-  return identity?.ok===true && identity.who==='Arya' && identity.admin===true;
+  if(identity?.ok!==true || !['Milo','Bijan','Jesse','Luchi','Arya'].includes(identity.who))return false;
+  return {who:identity.who,admin:identity.who==='Arya' && identity.admin===true};
 }
-export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyAdmin=token=>verifyInternalAdmin(env,token)}={}) {
+export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyIdentity=token=>verifyInternalIdentity(env,token)}={}) {
   return async function handler(req,res) {
     res.setHeader('Cache-Control','no-store');
     res.setHeader('Vercel-CDN-Cache-Control','no-store');
@@ -94,7 +69,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
     // The form and console are same-origin. Cross-origin requests are never enabled.
     if(origin && origin!==env.VISITS_PUBLIC_ORIGIN)return fail(403,'Please use the visit portal.');
     const action=new URL(req.url,'https://local.invalid').searchParams.get('action')||'submit';
-    const allowed={submit:'POST',login:'POST',logout:'POST',list:'GET',update:'POST',session:'GET',availability:'GET',saveAvailability:'POST'};
+    const allowed={submit:'POST',list:'GET',update:'POST',session:'GET',availability:'GET',saveAvailability:'POST'};
     if(!Object.hasOwn(allowed,action))return fail(404,'Unknown action.');
     if(req.method!==allowed[action]){res.setHeader('Allow',allowed[action]);return fail(405,'Method not allowed.');}
     if(req.method==='POST' && origin!==env.VISITS_PUBLIC_ORIGIN)return fail(403,'Please use the visit portal.');
@@ -110,17 +85,6 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       } catch {return fail(400,'Invalid request.');}
     }
     try {
-      if(action==='login'){
-        if(typeof body.password!=='string' || body.password.length>512)return fail(400,'Enter the visit-access password.');
-        await store('throttle',{key:addressKey(req,env,'login')});
-        if(!equal(body.password,env.VISITS_ADMIN_PASSWORD))return fail(401,'That password did not match.');
-        res.setHeader('Set-Cookie',sessionCookie(issueSession(env,now())));
-        return res.status(200).json({authenticated:true});
-      }
-      if(action==='logout'){
-        res.setHeader('Set-Cookie',sessionCookie('',0));
-        return res.status(200).json({authenticated:false});
-      }
       if(action==='availability'){
         const data=await store('settings');
         // Opening hours are public and change rarely, so let the CDN absorb the
@@ -129,9 +93,13 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         res.setHeader('Vercel-CDN-Cache-Control','max-age=60');
         return res.status(200).json({availability:normalizeAvailability(data?.availability)});
       }
-      if(action!=='submit' && !validSession(req.headers?.cookie,env,now()))return fail(401,'Unlock visit requests to continue.');
+      if(action!=='submit'){
+        const identity=await verifyIdentity(req.headers?.['x-fomo-internal-session']);
+        if(!identity)return fail(401,'Sign in to Internal to view visit requests.');
+        if(['update','saveAvailability'].includes(action) && !(identity.who==='Arya' && identity.admin===true))
+          return fail(403,'Only Arya can change visit requests or opening hours.');
+      }
       if(action==='session')return res.status(200).json({authenticated:true});
-      if(['update','saveAvailability'].includes(action) && !await verifyAdmin(req.headers?.['x-fomo-internal-session']))return fail(403,'Only Arya can change visit requests or opening hours.');
       if(action==='saveAvailability'){
         // Reject a malformed payload rather than normalizing it into defaults,
         // which would quietly reopen every day the team had closed.
