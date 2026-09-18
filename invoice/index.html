@@ -3381,12 +3381,23 @@ function ghNameSet(p){
   return set;
 }
 
+/* A cache written by an older build is missing whatever that build had not
+   thought of yet, and an absent field reads as a person having nothing
+   rather than as a question nobody asked. Waiting out the freshness window
+   would draw that zero for fifteen minutes; refetching costs one request.
+   A field added to a person belongs in this list on the way past. */
+var GH_FIELDS = ["commitsByDay", "calendar"];
+function ghStale(data){
+  return Object.keys(data).some(function(p){
+    return GH_FIELDS.some(function(f){ return !(f in (data[p] || {})); });
+  });
+}
 function loadGh(){
   try {
     logins = JSON.parse(localStorage.getItem(GH_LOGINS) || "{}") || {};
     var c = JSON.parse(localStorage.getItem(GH_CACHE) || "null");
     if (c && c.at) { ghData = c.data || {}; ghErrors = c.err || {}; ghAt = c.at;
-      if(Object.keys(ghData).some(function(p){return !ghData[p].commitsByDay;}))ghAt=0;
+      if(ghStale(ghData))ghAt=0;
     }
   } catch(e){ logins = {}; ghData = {}; ghErrors = {}; ghAt = 0; }
   applyDefaults();

@@ -163,3 +163,39 @@ test('a commit count always beats a contribution count', () => {
   assert.equal(call({Milo: {calendar: {total: 0, days: {}}, days: {}}}), null,
     'an empty calendar is not a number worth printing');
 });
+
+/* The bug this catches, exactly as it happened: Arya was seeded by one
+   deploy and the contribution calendar arrived in the next. The second
+   deploy had nothing left to seed, so the cache was never dropped, and a
+   browser drew Arya's private work as a zero until the freshness window
+   ran out. A cache is only as good as the fields the build that wrote it
+   knew about. */
+test('a cache written before a field existed is refetched, not drawn', () => {
+  const fn = lift(/function ghStale\(data\)\{[\s\S]*?\n\}/, 'ghStale');
+  const fields = lift(/var GH_FIELDS = \[[^\]]*\];/, 'GH_FIELDS');
+  const stale = data => {
+    const ctx = vm.createContext({});
+    vm.runInContext(fields + '\n' + fn + '\nvar out = ghStale(' + JSON.stringify(data) + ');', ctx);
+    return ctx.out;
+  };
+  const current = {days: {}, commitsByDay: {}, calendar: null};
+  assert.equal(stale({Arya: current}), false, 'a cache from this build is kept');
+  assert.equal(stale({Arya: {days: {}, commitsByDay: {}}}), true,
+    'no calendar key at all means the build that wrote it had none');
+  assert.equal(stale({Arya: {days: {}, calendar: null}}), true,
+    'the older commitsByDay guard still holds');
+  assert.equal(stale({Milo: current, Arya: {days: {}, commitsByDay: {}}}), true,
+    'one stale person spoils the cache, because they share a fetch');
+  assert.equal(stale({}), false, 'an empty cache is not stale, just empty');
+});
+
+test('every field the merge path stores is one the cache guard checks', () => {
+  const merge = SRC.match(/ghData\[p\] = \{days:got\.days[^;]*;/)[0];
+  const fields = lift(/var GH_FIELDS = \[[^\]]*\];/, 'GH_FIELDS');
+  /* a field that can arrive from a later deploy has to be able to
+     invalidate a cache that predates it */
+  for (const f of ['commitsByDay', 'calendar']) {
+    assert.ok(merge.includes(f + ':'), 'the merge path stores ' + f);
+    assert.ok(fields.includes('"' + f + '"'), 'and the guard watches ' + f);
+  }
+});
