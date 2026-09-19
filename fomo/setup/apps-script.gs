@@ -129,7 +129,12 @@ function doGet() {
        the script behind the URL is current — so it is named here rather
        than assumed. A page talking to an older deployment can then grey a
        name out instead of taking the line and losing it to a refusal. */
-    payers: INVOICE_PAYERS
+    payers: INVOICE_PAYERS,
+    /* Whether this deployment will take Arya's name on somebody else's
+       line. Named rather than assumed for the same reason `payers` is:
+       a page ahead of the script behind it can grey the chip out instead
+       of taking the line and losing it to a refusal. */
+    cardSpends: typeof invoiceSettled === 'function'
   });
 }
 
@@ -262,19 +267,26 @@ function invoicePermission(action, body, actor, sh) {
   if (action === 'purchaseapprove' || action === 'purchaseunapprove') return actor === 'Arya' ? null : 'Only Arya can approve or undo approval of a purchase.';
   if (action === 'moneyundo') return null; // The stored actor and every affected record are checked below.
   if (actor === 'Arya') return null;
-  if (action === 'profileupdate' || action === 'add' || action === 'subadd' || action === 'daymark' || action === 'dayclear' || action === 'clockin' || action === 'clockout')
+  /* Arya's card goes round the room, so his name is the one everybody may
+     put on a line. Nothing else about it is theirs to hand out. */
+  if (action === 'add' || action === 'subadd')
+    return (body.who === actor || body.who === CARD_PAYER) ? null : 'You can only log a spend on your own card or on Arya’s.';
+  if (action === 'profileupdate' || action === 'daymark' || action === 'dayclear' || action === 'clockin' || action === 'clockout')
     return body.who === actor ? null : 'You can only change your own records.';
   var record;
   if (action === 'edit' || action === 'delete') {
     record = invoiceRead(sh).filter(function(r){return String(r.id) === String(body.id);})[0];
-    if (!record || record.who !== actor || (action === 'edit' && body.who !== actor)) return 'You can only change your own spends.';
-    if (record.status === 'reimbursed') return 'Only Arya can change a reimbursed charge.';
+    if (!record || invoiceLogger(record) !== actor || (action === 'edit' && body.who !== actor && body.who !== CARD_PAYER)) return 'You can only change your own spends.';
+    /* The lock is there so a line cannot be rewritten after somebody was
+       paid for it. A card line settles without anybody being paid, so it
+       stays open to the person who logged it. */
+    if (record.status === 'reimbursed' && String(record.who) !== CARD_PAYER) return 'Only Arya can change a reimbursed charge.';
     return null;
   }
   if (action === 'daydelete') record = dayRead(daySheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
   if (action === 'shiftdelete') record = shiftRead(shiftSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
   if (action === 'subpause' || action === 'subdelete') record = subRead(subSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
-  if (record) return record.who === actor ? null : 'You can only change your own records.';
+  if (record) return invoiceLogger(record) === actor ? null : 'You can only change your own records.';
   if (action === 'dayimport' || action === 'shiftimport') {
     var list = action === 'dayimport' ? body.days : body.shifts;
     return Array.isArray(list) && list.every(function(r){return r.who === actor;}) ? null : 'You can only import your own attendance.';
@@ -290,7 +302,22 @@ var INVOICE_TAB = 'invoice';
    before it. Appending leaves old rows reading exactly as they did, with an
    empty `shared` — which the page treats as "no split recorded". */
 var INVOICE_COLS = ['id', 'logged', 'date', 'who', 'what', 'category',
-                    'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared', 'approvals', 'approved_by', 'approved_at'];
+                    'amount', 'status', 'note', 'receipt', 'reimbursed', 'shared', 'approvals', 'approved_by', 'approved_at',
+                    'logged_by'];
+
+/* Arya hands his card over for a lunch run, so a line can name him as the
+   payer whoever typed it. Two things follow. Nothing is owed on it — it is
+   his money going out, and it lands settled rather than waiting to be paid
+   back to somebody who never paid. And `who` is no longer the person who
+   can change it, so `logged_by` carries that: empty on every line written
+   before this existed, where the payer is also the one who logged it.
+
+   Mirrors CARD in invoice/index.html — change both together. */
+var CARD_PAYER = 'Arya';
+function invoiceSettled(who, status) {
+  return (String(who) === CARD_PAYER || String(status) === 'reimbursed') ? 'reimbursed' : 'pending';
+}
+function invoiceLogger(r) { return String((r && (r.logged_by || r.who)) || ''); }
 /* The interns. Only these names go on the clock or come back off it — the
    shift tab is a timesheet, and Arya does not have one. */
 var INVOICE_PEOPLE = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
@@ -312,8 +339,11 @@ function invoiceApi(body) {
 
   var sh = invoiceSheet();
   var action = String(body.action || 'list');
+  /* Who is asking, taken from the session rather than the payload: the
+     page says whose card a line went on, never whose hands typed it. */
+  var actor = internalActor(body);
   if (action !== 'list') {
-    var denied = invoicePermission(action, body, internalActor(body), sh);
+    var denied = invoicePermission(action, body, actor, sh);
     if (denied) return reply(false, denied);
   }
   var trackMoney = MONEY_ACTIONS.indexOf(action) >= 0;
@@ -344,7 +374,7 @@ function invoiceApi(body) {
           (err && err.message ? err.message : String(err)));
       }
     }
-    var line = invoiceClean(body);
+    var line = invoiceClean(body, actor);
     if (line.error) return reply(false, line.error);
     sh.appendRow(INVOICE_COLS.map(function (c) {
       return line.row[c] === undefined ? '' : line.row[c];
@@ -403,7 +433,7 @@ function invoiceApi(body) {
       keep = String(body.receipt).slice(0, 500);
     }
 
-    var next = invoiceClean(body);
+    var next = invoiceClean(body, was ? invoiceLogger(was) : actor);
     if (next.error) return reply(false, next.error);
 
     var setCol = function (name, value) {
@@ -420,6 +450,17 @@ function invoiceApi(body) {
     // Changes to a charge require Arya to review it again. Legacy share confirmations stay archived.
     setCol('approved_by', '');
     setCol('approved_at', '');
+    /* Whether a line has been paid back is not edited here — but which
+       card it went on decides whether anything is owed at all, and that
+       is edited here. Moved onto Arya's card the line is settled by the
+       move; moved back off it, it is owed again. */
+    if (next.row.who === CARD_PAYER) {
+      setCol('status', 'reimbursed');
+      setCol('reimbursed', (was && was.reimbursed) ? was.reimbursed : invoiceStamp());
+    } else if (was && String(was.who) === CARD_PAYER) {
+      setCol('status', 'pending');
+      setCol('reimbursed', '');
+    }
 
   } else if (action === 'delete') {
     var gone = invoiceFind(sh, body.id);
@@ -463,7 +504,7 @@ function invoiceApi(body) {
     if (ddrow) ddsh.deleteRow(ddrow);
 
   } else if (action === 'subadd') {
-    var rule = subClean(body);
+    var rule = subClean(body, actor);
     if (rule.error) return reply(false, rule.error);
     subSheet().appendRow(SUB_COLS.map(function (c) {
       return rule.row[c] === undefined ? '' : rule.row[c];
@@ -666,8 +707,11 @@ function invoiceSheet() {
   return sh;
 }
 
-/* Nothing reaches the sheet unchecked — the endpoint is open to the web. */
-function invoiceClean(b) {
+/* Nothing reaches the sheet unchecked — the endpoint is open to the web.
+   `actor` is the signed-in name, kept apart from `who`: one is whose card
+   it was, the other is whose hands typed it, and on Arya's card they are
+   two different people. */
+function invoiceClean(b, actor) {
   var who = String(b.who || '').trim();
   var what = String(b.what || '').trim().slice(0, 90);
   var category = String(b.category || 'other').trim();
@@ -697,11 +741,13 @@ function invoiceClean(b) {
     what: what,
     category: category,
     amount: amount,
-    status: 'pending',
+    status: invoiceSettled(who, 'pending'),
     note: String(b.note || '').slice(0, 120),
     receipt: /^https?:\/\//i.test(receipt) ? receipt.slice(0, 500) : '',
-    reimbursed: '',
-    shared: shared.join(', ')
+    /* a card line is settled on arrival, and the stamp says when */
+    reimbursed: who === CARD_PAYER ? invoiceStamp() : '',
+    shared: shared.join(', '),
+    logged_by: String(actor || b.logged_by || who)
   }};
 }
 
@@ -717,7 +763,10 @@ function invoiceRead(sh) {
     for (var j = 0; j < INVOICE_COLS.length; j++) o[INVOICE_COLS[j]] = raw[j];
     o.id = String(o.id);
     o.amount = Number(o.amount) || 0;
-    o.status = String(o.status) === 'reimbursed' ? 'reimbursed' : 'pending';
+    /* Lines Arya logged for himself were written before his card counted
+       as settled. The rule is applied on the way out rather than by
+       rewriting rows that are otherwise perfectly good. */
+    o.status = invoiceSettled(o.who, o.status);
     o.date = invoiceDate(o.date);
     out.push(o);
   }
@@ -745,7 +794,8 @@ function invoicePublic(r) {
     what: String(r.what), category: String(r.category), amount: r.amount,
     status: r.status, note: String(r.note), receipt: String(r.receipt),
     shared: String(r.shared || ''), approvals: String(r.approvals || ''),
-    approvedBy: String(r.approved_by || ''), approvedAt: String(r.approved_at || '')
+    approvedBy: String(r.approved_by || ''), approvedAt: String(r.approved_at || ''),
+    loggedBy: invoiceLogger(r)
   };
 }
 
@@ -771,7 +821,7 @@ function invoiceStamp() {
    device storage has no sheet to do it for them. */
 var SUB_TAB = 'subs';
 var SUB_COLS = ['id', 'created', 'who', 'what', 'category', 'amount',
-                'day', 'next', 'active', 'note', 'shared', 'last'];
+                'day', 'next', 'active', 'note', 'shared', 'last', 'logged_by'];
 
 /* A rule left alone for two years should not wake up and write two years
    of lines. It catches up a year at a time and the page says so. */
@@ -783,6 +833,15 @@ function subSheet() {
   if (!ss) throw new Error('no spreadsheet — set SHEET_ID, or run this script from inside the sheet');
 
   var sh = ss.getSheetByName(SUB_TAB);
+
+  /* Same as the ledger's: columns are only ever appended, so widening the
+     header row brings a tab built before one existed up to date. */
+  if (sh && sh.getLastColumn() < SUB_COLS.length) {
+    var had = sh.getLastColumn();
+    sh.getRange(1, had + 1, sh.getMaxRows(), SUB_COLS.length - had).setNumberFormat('@');
+    sh.getRange(1, 1, 1, SUB_COLS.length).setValues([SUB_COLS]).setFontWeight('bold');
+  }
+
   if (!sh) {
     sh = ss.insertSheet(SUB_TAB);
     sh.getRange(1, 1, sh.getMaxRows(), SUB_COLS.length).setNumberFormat('@');
@@ -795,8 +854,8 @@ function subSheet() {
 
 /* Nothing reaches the sheet unchecked — a rule writes a line a month for
    as long as it exists, so it is checked exactly as hard as a spend. */
-function subClean(b) {
-  var line = invoiceClean(b);
+function subClean(b, actor) {
+  var line = invoiceClean(b, actor);
   if (line.error) return line;
 
   var start = line.row.date;
@@ -814,7 +873,8 @@ function subClean(b) {
     active: 'yes',
     note: line.row.note,
     shared: line.row.shared,
-    last: ''
+    last: '',
+    logged_by: line.row.logged_by
   }};
 }
 
@@ -853,7 +913,8 @@ function subPublic(s) {
   return {
     id: s.id, who: String(s.who), what: String(s.what), category: String(s.category),
     amount: s.amount, day: s.day, next: s.next, active: s.active,
-    note: String(s.note || ''), shared: String(s.shared || ''), last: s.last || ''
+    note: String(s.note || ''), shared: String(s.shared || ''), last: s.last || '',
+    loggedBy: invoiceLogger(s)
   };
 }
 
@@ -890,7 +951,7 @@ function subsRoll(insh) {
       var line = invoiceClean({
         who: s.who, what: s.what, category: s.category, amount: s.amount,
         date: next, note: s.note, shared: s.shared
-      });
+      }, invoiceLogger(s));
       /* a rule whose name or amount was edited into something the ledger
          will not take stops writing rather than throwing — it stays on the
          subs tab, with its `next` where it was, saying which day it stuck on */

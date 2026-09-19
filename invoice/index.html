@@ -1348,6 +1348,7 @@ td.date.run{color:var(--good)}
       <div class="field">
         <span class="lbl">who paid</span>
         <div class="who" id="who" role="group" aria-label="Who paid"></div>
+        <span class="split-hint">Pick <b>Arya</b> when it went on his card — the line lands settled, with nothing owed back.</span>
         <span class="split-hint stale-note" id="who-stale" hidden></span>
       </div>
       <div class="field">
@@ -1450,10 +1451,39 @@ var PAYERS = PEOPLE.concat(["Arya"]);
    asking. */
 var GH_PEOPLE = PEOPLE.concat(["Arya"]);
 var SHARERS = PAYERS;
+
+/* ---------- the card that isn't yours ----------
+
+   Arya hands his card over for a lunch run often enough that treating
+   every line as fronted by whoever typed it would leave interns owed
+   money nobody owes them. So his name is pickable in the "who paid" row
+   by anyone: a line carrying it means his card, not theirs. Nothing is
+   owed on such a line and it lands settled — `settledStatus` is what
+   says so, applied on the way in rather than by rewriting old rows.
+
+   Who actually typed it is kept separately in `loggedBy`, because that
+   is the person who has to be able to fix a typo in it afterwards. The
+   money questions stay keyed on `who`; only the permission ones move. */
+var CARD = "Arya";
+function onCard(r){ return !!r && r.who === CARD; }
+function settledStatus(who, status){ return (who === CARD || status === "reimbursed") ? "reimbursed" : "pending"; }
+function loggerOf(r){ return (r && (r.loggedBy || r.who)) || ""; }
+
 var identity = null, profiles = [], profileEditing = false, profileSaving = false;
 function isAdmin(){ return !!identity && identity.who === "Arya"; }
 function own(who){ return !!identity && (isAdmin() || identity.who === who); }
-function canEdit(r){ return !!r && own(r.who) && (isAdmin() || r.status !== "reimbursed"); }
+/* Arya's own name is the one anybody may put on a line. */
+function canPay(who){ return own(who) || (who === CARD && cardLendable()); }
+/* Lending the card is the deployment's decision as much as this page's: a
+   script older than the change still refuses a line with somebody else's
+   name on it, and a chip greyed out beats typing lost to a refusal. */
+function cardLendable(){ return mode !== "sheet" || sheetCard; }
+/* Whose line it is to change: the person who logged it, which is the
+   payer on every line but a card one. */
+function ownRow(r){ return !!r && (isAdmin() || (!!identity && identity.who === loggerOf(r))); }
+/* The reimbursed lock stops a line being rewritten after somebody was
+   paid for it. Nobody is ever paid for a card line, so it doesn't apply. */
+function canEdit(r){ return !!r && ownRow(r) && (isAdmin() || onCard(r) || r.status !== "reimbursed"); }
 function purchaseApproved(r){return !!r && r.approvedBy === 'Arya';}
 function canApprove(r){return isAdmin() && !!r && !purchaseApproved(r);}
 function permission(action, p){
@@ -1464,10 +1494,11 @@ function permission(action, p){
   if (action === "approve" || action === "unapprove") return "Share approvals have been replaced. Reload the site.";
   if (action === "purchaseapprove" || action === "purchaseunapprove") return isAdmin() ? "" : "Only Arya can approve purchases.";
   if (isAdmin()) return "";
-  if (["profileupdate","add","subadd","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
-  if (action === "edit" || action === "delete") return canEdit(byId(rows,p.id)) && (action !== "edit" || own(p.who)) ? "" : "Only your own unpaid spends can be changed.";
+  if (action === "add" || action === "subadd") return canPay(p.who) ? "" : "You can only log a spend on your own card or on Arya’s.";
+  if (["profileupdate","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
+  if (action === "edit" || action === "delete") return canEdit(byId(rows,p.id)) && (action !== "edit" || canPay(p.who)) ? "" : "Only your own unpaid spends can be changed.";
   if (action === "daydelete") return own((byId(days,p.id)||{}).who) ? "" : "You can only change your own attendance.";
-  if (action === "subpause" || action === "subdelete") return own((byId(subs,p.id)||{}).who) ? "" : "You can only change your own recurring spends.";
+  if (action === "subpause" || action === "subdelete") return ownRow(byId(subs,p.id)) ? "" : "You can only change your own recurring spends.";
   if (action === "dayimport") return Array.isArray(p.days) && p.days.every(function(d){return own(d.who);}) ? "" : "You can only import your own attendance.";
   return "Only Arya can do that.";
 }
@@ -1587,6 +1618,7 @@ var BACKEND = 'auto';
    device and is raised to sheet only once the endpoint has proved it can
    serve the ledger, so everything below asks `mode`, never BACKEND. */
 var mode = BACKEND === 'sheet' ? 'sheet' : 'device';
+var sheetCard = false;
 
 /* Whether the deployment behind ENDPOINT keeps the monthly rules too.
    Same shape of question as `mode`, and asked the same way: the endpoint
@@ -1689,6 +1721,7 @@ function saveSeen(){
     url: ENDPOINT,
     full: sheetDays === true,
     payers: sheetPayers,
+    card: sheetCard,
     rows: rows,
     profiles:profiles,
     days: sheetDays ? days : null,
@@ -1728,6 +1761,10 @@ function forgetSeen(){ try { localStorage.removeItem(LS_SEEN); } catch(e){} }
 function loadLocal(){
   profiles = lsGet("fomo.profiles") || [];
   rows = lsGet(LS_ROWS) || [];
+  /* Lines Arya logged for himself were written before his card counted
+     as settled. The rule is applied on the way in, so an old store and
+     a new one read the same without either being rewritten. */
+  rows.forEach(function(r){ r.status = settledStatus(r.who, r.status); });
   var savedDays = lsGet(LS_DAYS);
   if (savedDays) {
     days = savedDays;
@@ -1802,7 +1839,9 @@ function apiLocal(action, p){
         id:newId(), who:p.who, what:p.what, category:p.category,
         amount:Math.round((Number(p.amount)||0) * 100) / 100, date:p.date,
         note:p.note || "", receipt:p.receipt || "", shared:p.shared || "",
-        status:"pending", logged:now
+        /* a card line is settled the moment it is logged */
+        status:settledStatus(p.who, "pending"),
+        loggedBy:(identity && identity.who) || p.who, logged:now
       });
 
     } else if (action === "purchaseapprove" || action === "purchaseunapprove") {
@@ -1821,6 +1860,11 @@ function apiLocal(action, p){
          line may not change: id, logged, status and reimbursed stay put. */
       var ed = byId(rows, p.id);
       if (!ed) return reject(new Error("that line is no longer on the ledger"));
+      /* Whether a line has been paid back is not edited here — but which
+         card it went on decides whether anything is owed at all, and that
+         is. The sheet keeps the same rule. */
+      if (p.who === CARD) ed.status = "reimbursed";
+      else if (ed.who === CARD) ed.status = "pending";
       ed.who = p.who; ed.what = p.what; ed.category = p.category;
       ed.amount = Math.round((Number(p.amount) || 0) * 100) / 100;
       ed.approvedBy = ""; ed.approvedAt = "";
@@ -1943,7 +1987,7 @@ function apiSheet(action, payload){
           id: String(r.id), who: r.who, what: r.what, category: r.category,
           amount: Number(r.amount) || 0, date: r.date, note: r.note,
           receipt: r.receipt, shared: r.shared || "", approvals:r.approvals || "", approvedBy:r.approvedBy || "", approvedAt:r.approvedAt || "",
-          status: r.status === "reimbursed" ? "reimbursed" : "pending",
+          status: settledStatus(r.who, r.status), loggedBy: r.loggedBy || "",
           logged: r.logged
         };
       });
@@ -1965,7 +2009,8 @@ function apiSheet(action, payload){
         sheetSubs = true;
         subs = out.subs.map(function(b){
           return {
-            id:String(b.id), who:String(b.who), what:String(b.what), category:String(b.category),
+            id:String(b.id), who:String(b.who), loggedBy:String(b.loggedBy||""),
+            what:String(b.what), category:String(b.category),
             amount:Number(b.amount)||0, day:Number(b.day)||1, next:String(b.next||""),
             active: String(b.active) === "no" ? "no" : "yes",
             note:String(b.note||""), shared:String(b.shared||""), last:String(b.last||"")
@@ -2027,7 +2072,7 @@ PAYERS.forEach(function(p){
   b.type = "button"; b.className = "chip"; b.textContent = p;
   b.setAttribute("aria-pressed","false");
   b.addEventListener("click", function(){
-    if (!own(p)) return;
+    if (!canPay(p)) return;
     picked = p;
     Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed", String(c === b)); });
     try { localStorage.setItem("fomo.who", p); } catch(e){}
@@ -2088,7 +2133,10 @@ SHARERS.forEach(function(n){
    person's name ticked on somebody else's line */
 function resetSplit(){
   sharedWith = {};
-  if (picked) sharedWith[picked] = true;
+  /* Whose card it was does not answer whose coffee it was: on Arya's
+     card the likelier default is the person standing at the till. */
+  var first = (picked === CARD && identity && identity.who !== CARD) ? identity.who : picked;
+  if (first) sharedWith[first] = true;
   renderSplit();
 }
 document.getElementById("f-amt").addEventListener("input", renderSplit);
@@ -2113,7 +2161,7 @@ function applyRosterUi(){
   var lost = SHARERS.filter(function(n){ return !payerOk(n); });
   [whoBox, splitBox].forEach(function(box){
     Array.prototype.forEach.call(box.children, function(c){
-      var ok = payerOk(c.textContent) && (box !== whoBox || own(c.textContent));
+      var ok = payerOk(c.textContent) && (box !== whoBox || canPay(c.textContent));
       c.disabled = !ok;
       c.classList.toggle("stale", !ok);
       if (ok) c.removeAttribute("title"); else c.title = STALE_ROSTER;
@@ -2122,7 +2170,7 @@ function applyRosterUi(){
   /* whoever was picked before the verdict came in cannot stay picked — the
      name is remembered across visits, so this is the ordinary case for
      anybody who last logged a line while the sheet was still current */
-  if (picked && !payerOk(picked)) {
+  if (picked && (!payerOk(picked) || (identity && !canPay(picked)))) {
     picked = null;
     Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed","false"); });
     resetSplit();
@@ -2137,15 +2185,24 @@ function applyRosterUi(){
      is a standing condition rather than news about one request. It lives
      under the chips it is about, where it is also readable on a phone,
      which a hover title is not. */
-  var note = document.getElementById("who-stale");
-  note.hidden = !lost.length;
+  var note = document.getElementById("who-stale"), said = [];
   if (lost.length) {
     var who = lost.slice(0, 2).join(" and "), many = lost.length > 1;
-    note.innerHTML = "<b>" + esc(who) + "</b> can't go on a line yet — the shared sheet is running an " +
+    said.push("<b>" + esc(who) + "</b> can't go on a line yet — the shared sheet is running an " +
       "older copy of the script, which doesn't carry " + (many ? "those names" : "that name") + ". " +
       "Everything else works as normal. Redeploy <b>fomo/setup/apps-script.gs</b> " +
-      "(Deploy \u2192 Manage deployments \u2192 New version).";
+      "(Deploy \u2192 Manage deployments \u2192 New version).");
   }
+  /* The card is the same kind of disagreement, one deployment later: the
+     name is on the roster, but lending it to somebody else's line is not
+     something the script behind this URL knows how to allow yet. */
+  if (!cardLendable() && !isAdmin()) {
+    said.push("<b>Arya</b>'s card can't go on somebody else's line yet — same reason, same fix: " +
+      "redeploy <b>fomo/setup/apps-script.gs</b> (Deploy \u2192 Manage deployments \u2192 New version). " +
+      "Your own lines are unaffected.");
+  }
+  note.hidden = !said.length;
+  if (said.length) note.innerHTML = said.join(" ");
 }
 
 var fCat = document.getElementById("f-cat"), tCat = document.getElementById("t-cat"), tWho = document.getElementById("t-who");
@@ -2189,7 +2246,8 @@ function hint(msg, bad){
 }
 function defaultHint(){
   if (editing) return "Editing a line already on the ledger. Whether it has been paid back is not changed here.";
-  if (!repeat) return picked ? "Logging as " + picked + "." : "Pick who paid, then add the line.";
+  if (!repeat) return picked === CARD ? "On Arya’s card — nothing to pay back."
+    : picked ? "Logging as " + picked + "." : "Pick who paid, then add the line.";
   if (!picked) return "Pick who paid, then set the subscription up.";
   var d = document.getElementById("f-date").value || today();
   return "Adds itself on the " + ord(subDay(d)) + " of every month, starting " + niceDate(d) + ".";
@@ -2246,7 +2304,7 @@ document.getElementById("form").addEventListener("submit", function(ev){
     refreshDate();
     hint("");
     closeDrawer();
-    toast(money(amt) + " logged for " + picked +
+    toast(money(amt) + (picked === CARD ? " logged on Arya’s card" : " logged for " + picked) +
       (names.length > 1 ? " — " + money(amt / names.length) + " each across " + names.length + "." : "."));
   })["catch"](function(e){ hint("That didn't save — " + fail(e) + ".", true); })
    .then(function(){ btn.disabled = false; busy = false; paint(); btn.textContent = "Add to ledger"; });
@@ -2312,7 +2370,8 @@ function subLocal(action, p){
     if (action === "subadd") {
       if (PAYERS.indexOf(p.who) === -1) return reject(new Error("that name is not on the bootcamp"));
       subs.push({
-        id:newId(), who:p.who, what:p.what, category:p.category,
+        id:newId(), who:p.who, loggedBy:(identity && identity.who) || p.who,
+        what:p.what, category:p.category,
         amount:Math.round((Number(p.amount)||0) * 100) / 100,
         day:Math.min(31, Math.max(1, Number(p.day) || subDay(p.date))),
         next:p.date, active:"yes", note:p.note || "", shared:p.shared || "", last:""
@@ -2351,7 +2410,7 @@ function runSubs(){
 
   var now = today(), due = [], behind = 0;
   subs.forEach(function(s){
-    if (!subOn(s) || !own(s.who)) return;
+    if (!subOn(s) || !(own(s.who) || s.who === CARD)) return;
     var next = s.next, guard = 0;
     while (/^\d{4}-\d{2}-\d{2}$/.test(next) && next <= now) {
       /* a rule left alone for two years should not wake up and write two
@@ -2685,12 +2744,12 @@ document.getElementById("t-refresh").addEventListener("click", function(){
 document.getElementById("t-csv").addEventListener("click", function(){
   var list = visible();
   if (!list.length) { toast("Nothing to export with these filters.", true); return; }
-  var head = ["date","who","what","category","amount_usd","status","note","receipt","for","split_ways","each_usd"];
+  var head = ["date","who","logged_by","what","category","amount_usd","status","note","receipt","for","split_ways","each_usd"];
   var q = function(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; };
   var csv = head.join(",") + "\r\n" + list.map(function(r){
     var names = sharedOf(r);
-    return [r.date, r.who, r.what, cat(r.category).label, (Number(r.amount)||0).toFixed(2),
-      r.status === "reimbursed" ? "reimbursed" : "owed", r.note || "",
+    return [r.date, r.who, loggerOf(r), r.what, cat(r.category).label, (Number(r.amount)||0).toFixed(2),
+      onCard(r) ? "arya's card" : r.status === "reimbursed" ? "reimbursed" : "owed", r.note || "",
       !r.receipt ? "" : (/^data:/.test(r.receipt) ? "photo attached" : r.receipt),
       names.join(" + "), names.length || "",
       names.length ? ((Number(r.amount)||0) / names.length).toFixed(2) : ""].map(q).join(",");
@@ -2949,7 +3008,9 @@ function render(){
       seg.style.background = s[2];
       track.appendChild(seg);
     });
-    bindTip(track, p, [money(d.total) + " fronted", money(d.owed) + " still owed", money(d.paid) + " reimbursed"]);
+    bindTip(track, p, p === CARD
+      ? [money(d.total) + " on his own card", "his money going out — nothing owed back"]
+      : [money(d.total) + " fronted", money(d.owed) + " still owed", money(d.paid) + " reimbursed"]);
     var amt = document.createElement("div"); amt.className = "amt";
     amt.textContent = money(d.total);
     if (d.owed > 0.005) {
@@ -3891,6 +3952,7 @@ function probeSheet(){
          everybody's days or only this browser's, rather than saying one
          and then the other a second later. */
       sheetDays = out.days === true;
+      sheetCard = out.cardSpends === true;
       return "shared";
     }
     return "old";
@@ -4216,9 +4278,9 @@ function paintCharge(){
   else if((url && /\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(url)) || /^data:image\//.test(r.receipt||''))receipt='<img src="'+esc(url||r.receipt)+'" alt="Receipt for '+esc(r.what)+'">';
   else if(url)receipt='<p>The receipt is available at the link below.</p>';
   var confirmed=purchaseApproved(r), participants=sharedOf(r);
-  var facts='<dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Reimbursement</dt><dd>'+esc(r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd><dt>For</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd><dt>Purchase approval</dt><dd><span class="pill '+(confirmed?'good':'')+'">'+(confirmed?'Approved by Arya':'Awaiting Arya')+'</span></dd></dl>';
+  var facts='<dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Reimbursement</dt><dd>'+esc(onCard(r)?'Not needed — Arya’s card':r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd>'+(loggerOf(r)!==r.who?'<dt>Logged by</dt><dd>'+esc(loggerOf(r))+'</dd>':'')+'<dt>For</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd><dt>Purchase approval</dt><dd><span class="pill '+(confirmed?'good':'')+'">'+(confirmed?'Approved by Arya':'Awaiting Arya')+'</span></dd></dl>';
   var confirm=isAdmin()?'<div class="charge-confirm"><p>'+(confirmed?'You approved this purchase. You can undo its approval.':'Review the receipt, purchase details, and GitHub activity above, then approve the full '+esc(money(r.amount))+' purchase.')+'</p><button type="button" '+(confirmed?'data-purchase-unapprove':'data-purchase-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo purchase approval':'Approve purchase · '+esc(money(r.amount)))+'</button><small>Approval records your decision. Reimbursement remains a separate action.</small></div>':'<p class="charge-approval-note">'+(confirmed?'Arya has approved this purchase.':'This purchase is waiting for Arya’s approval.')+'</p>';
-  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts">'+facts+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+(confirmed&&r.approvedAt?'<small>Approved '+esc(String(r.approvedAt).replace('T',' '))+'</small>':'')+'</div></section></div><section class="panel purchase-git" id="charge-git"></section>'+confirm+(isAdmin()?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div>';
+  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts">'+facts+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+(confirmed&&r.approvedAt?'<small>Approved '+esc(String(r.approvedAt).replace('T',' '))+'</small>':'')+'</div></section></div><section class="panel purchase-git" id="charge-git"></section>'+confirm+(isAdmin()&&!onCard(r)?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div>';
   var receiptImage=box.querySelector('.receipt-image');
   if(receiptImage)receiptImage.addEventListener('error',function(){this.hidden=true;box.querySelector('.receipt-preview-error').hidden=false;});
   paintChargeGit(r);
@@ -4235,7 +4297,7 @@ function approvalHtml(r){
   return '<small class="charge-approvals">'+(purchaseApproved(r)?'Approved by Arya':'Awaiting Arya’s approval')+'</small><a class="mini approve-charge" href="#/charge/'+encodeURIComponent(r.id)+'">'+(canApprove(r)?'Review purchase':'View purchase')+'</a>';
 }
 function ledgerRow(r, hideWho){
-  var meta = cat(r.category), url = safeUrl(r.receipt), done = r.status === "reimbursed";
+  var meta = cat(r.category), url = safeUrl(r.receipt), card = onCard(r), done = r.status === "reimbursed";
   return '<tr class="ledger-line">' +
     '<td data-label="Date" class="date">' + esc(niceDate(r.date)) + "</td>" +
     (hideWho === true ? "" : '<td data-label="Paid by">' + pers(r.who) + "</td>") +
@@ -4251,9 +4313,14 @@ function ledgerRow(r, hideWho){
       (headsOf(r) > 1 ? '<small class="mut2" style="display:block;font-size:10.5px">' +
         esc(money(eachOf(r))) + " each</small>" : "") + "</td>" +
     '<td data-label="Amount" class="amt">' + esc(money(r.amount)) + "</td>" +
-    '<td data-label="Status"><span class="pill ' + (done ? "good" : "owed") + '"><i></i>' + (done ? "reimbursed" : "owed") + "</span></td>" +
+    '<td data-label="Status"><span class="pill ' + (done ? "good" : "owed") + '"><i></i>' +
+      (card ? "arya’s card" : done ? "reimbursed" : "owed") + "</span></td>" +
     '<td data-label="Actions"><div class="acts">' +
-      (done
+      /* there is nothing to pay back on the card, so no button to say it
+         was paid back — and none to un-say it and leave Arya owed money
+         by himself */
+      (card ? ""
+        : done
         ? '<button class="mini" data-act="unpay" data-id="' + esc(r.id) + '">Undo reimbursement</button>'
         : '<button class="mini" data-act="pay" data-id="' + esc(r.id) + '">Mark paid</button>') +
       '<button class="mini" data-act="edit" data-id="' + esc(r.id) + '">Edit</button>' +
@@ -5561,8 +5628,10 @@ function applyPermissionUi(){
   });
   document.querySelectorAll('[data-settle]').forEach(function(b){b.hidden=!isAdmin();});
   document.querySelectorAll('[data-shift]').forEach(function(b){b.hidden=!own((byId(days,b.dataset.shift)||{}).who);});
-  document.querySelectorAll('[data-sub]').forEach(function(b){b.hidden=!own((byId(subs,b.dataset.id)||{}).who);});
-  document.querySelectorAll('#who .chip').forEach(function(b){b.disabled=!own(b.textContent)||!payerOk(b.textContent);});
+  document.querySelectorAll('[data-sub]').forEach(function(b){b.hidden=!ownRow(byId(subs,b.dataset.id));});
+  /* Arya's chip stays live for everybody: his card is the one anybody may
+     put on a line. The rest of this row is still your own name only. */
+  document.querySelectorAll('#who .chip').forEach(function(b){b.disabled=!canPay(b.textContent)||!payerOk(b.textContent);});
   document.querySelectorAll('[data-clock]').forEach(function(b){if(!own(b.dataset.clock)) b.disabled=true;});
 }
 new MutationObserver(applyPermissionUi).observe($("app"),{childList:true,subtree:true});
@@ -5610,6 +5679,7 @@ function open_(){
          off the sheet and says the same thing. */
       carried = {rows: rows.slice(), days: days.slice(), subs: subs.slice()};
       sheetPayers = (seen.payers && seen.payers.length) ? seen.payers.map(String) : PEOPLE.slice();
+      sheetCard = seen.card === true;
       sheetDays = true;
       profiles = seen.profiles || [];
       rows = seen.rows || [];

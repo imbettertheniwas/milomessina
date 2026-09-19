@@ -165,9 +165,10 @@ selection; only the session token is retained in this tab's session storage.
 Sign out revokes the session. Old remembered passcodes do not skip identity selection.
 
 Interns can create and change their own unpaid spends, attendance, recurring
-rules, weekly posts, and profiles. They cannot change who owns an existing spend,
-settle reimbursements, manage applicants or the campus roster, or modify other
-people's records. **Only Arya approves purchases**, including purchases with no
+rules, weekly posts, and profiles, plus any spend they logged on Arya's card.
+They cannot put anybody else's name on a line — Arya's is the one card that is
+lent out — settle reimbursements, manage applicants or the campus roster, or
+modify other people's records. **Only Arya approves purchases**, including purchases with no
 split and purchases he logged himself. Approval is separate from reimbursement.
 Editing a charge clears its purchase approval and requires Arya to review it again. Arya can manage every person's records and
 reimbursements. Guest requests use the existing Internal session with no second password.
@@ -291,15 +292,16 @@ The `invoice` tab:
 | `id` | 8 characters, generated server-side; how a row is found again |
 | `logged` | when it was added |
 | `date` | the day of the spend, `YYYY-MM-DD` |
-| `who` | Milo, Bijan, Jesse or Luchi — anything else is refused |
+| `who` | whose card it was: Milo, Bijan, Jesse, Luchi or Arya — anything else is refused |
 | `what` | the description |
 | `category` | lunch, coffee, ai, software, travel, supplies, other |
 | `amount` | USD |
-| `status` | `pending` or `reimbursed` |
+| `status` | `pending` or `reimbursed`. Always `reimbursed` on Arya's card — see below |
 | `note` | optional |
 | `receipt` | a link, if one was pasted in — see below |
 | `reimbursed` | when it was marked paid |
 | `shared` | who the line was *for* — see below. Blank on anything logged before this column existed |
+| `logged_by` | who typed it, which is only ever different from `who` on Arya's card. Blank on anything logged before this column existed, where the payer is also the one who logged it |
 
 The `subs` tab — one row per monthly subscription, and none of them a spend:
 
@@ -312,6 +314,7 @@ The `subs` tab — one row per monthly subscription, and none of them a spend:
 | `next` | the day the next line is due — the one field the whole thing turns on |
 | `active` | `yes`, or `no` while it is paused |
 | `last` | the day of the last line it wrote |
+| `logged_by` | who set the rule up — the person who can pause or stop it |
 
 The `days` tab — one row per person per day they were here:
 
@@ -373,7 +376,12 @@ receipt and the logged-at stamp along with the mistake.
 What editing deliberately **cannot** change is whether the line has been
 paid back. That is a fact about the money rather than a detail of the
 description, and it has its own button two columns to the left. `id`,
-`logged` and `reimbursed` are left alone too.
+`logged`, `logged_by` and `reimbursed` are left alone too.
+
+The one thing that does move the money is **which card** the line went on:
+moved onto Arya's it is settled by the edit, moved back off it, it is owed
+again. That is not the pay-back button being edited round the back — it is
+the question of whether anything was ever owed.
 
 The receipt has three states in the drawer:
 
@@ -438,21 +446,50 @@ open the picker for an input it is not rendering, so it is moved off-screen
 instead — a hidden-attribute file input is the classic reason "add a photo"
 does nothing on an iPhone.
 
+## Arya's card
+
+Arya hands his card over for a lunch run, so **anybody can pick Arya in the
+"who paid" row** — it is the one name in that row that is not your own. The
+rest of the row is still yourself only.
+
+What follows from it is the whole feature. A line on his card is his money
+going out, so **nothing is owed on it**: it lands settled the moment it is
+logged, reads **arya's card** in the ledger's status column instead of
+*reimbursed* or *owed*, and carries no *Mark paid* button, because there is
+nothing to pay back and no sense in a button that would leave Arya owed money
+by himself. He never appears in **still owed out**, and the settle button
+never appears against his name.
+
+Because the line no longer names the person who typed it, `logged_by` does.
+That is who can still fix a typo in it — the settled-line lock exists to stop
+a line being rewritten after somebody was paid for it, and on a card line
+nobody was. Everyone else sees the row without **Edit** or **Delete**, exactly
+as they would on any line that is not theirs.
+
+Changing the payer on an existing line moves the money with it: onto the card
+it is settled by the edit, back off it, it is owed again. A monthly rule can
+sit on the card too, and every line it writes comes out settled.
+
+Lines Arya logged for himself before any of this read as settled now as well —
+the rule is applied on the way out of the sheet rather than by rewriting rows
+that were otherwise fine.
+
 ## Who a spend was for
 
 Who paid and who a spend was *for* are two different questions, and the form
 asks them separately. Both rows list the same five names — the four interns
 and **Arya**. Most lines are an intern's card, and those are the ones owed
-money back, but Arya fronts spends too and they belong on the ledger the same
-way. **who it was for** is a row of toggles underneath, because a good deal
-of what gets bought is bought for Arya.
+money back; the rest are Arya's, and those are already square. **who it was
+for** is a row of toggles underneath, because a good deal of what gets bought
+is bought for Arya.
 
 The board is the one place the roster is shorter: **Attendance** and
 **Commits** are the four interns only. Arya is not on either, and their page
 says so in place of the two figures that would be blank.
 
 Whoever is paying starts ticked, since the usual case is buying your own along
-with everyone else's. Untick yourself and the line reads as bought purely for
+with everyone else's — except on Arya's card, where the person at the till is
+the one ticked instead. Untick yourself and the line reads as bought purely for
 someone else — that is how "I got Arya a coffee and nothing for me" is
 recorded rather than fudged into the note.
 
