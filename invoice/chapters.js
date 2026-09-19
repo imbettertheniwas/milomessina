@@ -48,9 +48,11 @@ var SCHOOLS = {
   "Clemson University":                  [34.6834,  -82.8374, "SC"],
   "Coastal Carolina University":         [33.7930,  -79.0117, "SC"],
   "Cornell University":                  [42.4534,  -76.4735, "NY"],
+  "Elon University":                     [36.1032,  -79.5064, "NC"],
   "Emory University":                    [33.7925,  -84.3240, "GA"],
   "Florida International University":    [25.7574,  -80.3736, "FL"],
   "Indiana University - Bloomington":    [39.1682,  -86.5230, "IN"],
+  "New York University":                 [40.7295,  -73.9965, "NY"],
   "Ohio State University - Columbus":    [40.0067,  -83.0305, "OH"],
   "Ohio University":                     [39.3242,  -82.1013, "OH"],
   "Pennsylvania State University":       [40.7982,  -77.8599, "PA"],
@@ -59,6 +61,7 @@ var SCHOOLS = {
   "San Diego State University":          [32.7757, -117.0719, "CA"],
   "Texas Christian University":          [32.7092,  -97.3628, "TX"],
   "University of California, Irvine":    [33.6405, -117.8443, "CA"],
+  "University of Colorado at Boulder":   [40.0076, -105.2659, "CO"],
   "University of Michigan - Ann Arbor":  [42.2780,  -83.7382, "MI"],
   "University of South Carolina":        [33.9937,  -81.0300, "SC"],
   "University of Southern California":   [34.0224, -118.2851, "CA"],
@@ -85,9 +88,9 @@ function regionOf(st){
   for (var r in REGION) if (REGION[r].indexOf(st) > -1) return r;
   return "elsewhere";
 }
-var STATE_NAME = {AZ:"Arizona",CA:"California",FL:"Florida",GA:"Georgia",IN:"Indiana",MD:"Maryland",
-  MI:"Michigan",NJ:"New Jersey",NY:"New York",OH:"Ohio",PA:"Pennsylvania",SC:"South Carolina",
-  TX:"Texas",VA:"Virginia"};
+var STATE_NAME = {AZ:"Arizona",CA:"California",CO:"Colorado",FL:"Florida",GA:"Georgia",IN:"Indiana",
+  MD:"Maryland",MI:"Michigan",NC:"North Carolina",NJ:"New Jersey",NY:"New York",OH:"Ohio",
+  PA:"Pennsylvania",SC:"South Carolina",TX:"Texas",VA:"Virginia"};
 
 /* ---------- helpers ---------- */
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
