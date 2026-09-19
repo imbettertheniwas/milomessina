@@ -719,6 +719,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/visits.css">
 <link rel="stylesheet" href="/invoice/campus.css">
 <link rel="stylesheet" href="/invoice/posts.css">
+<link rel="stylesheet" href="/invoice/schedules.css">
 <link rel="stylesheet" href="/invoice/internal.css">
 </head>
 <body>
@@ -1128,6 +1129,150 @@ td.date.run{color:var(--good)}
           <div class="empty" id="shift-empty" hidden>No days marked yet. Press a name on the board.</div>
         </div>
         <div class="aggbar" id="at-agg"><span class="agg" id="hours-week"></span><span class="agg" id="hours-note"></span></div>
+      </section>
+
+
+      <!-- ────────── schedules ──────────
+
+           Everything in here is drawn by schedules.js, ids and all; this is
+           the shape it fills. The board comes first because it is the
+           question the tab exists to answer — when could we all be in — and
+           the week you fill in for yourself is the thing you do once a
+           term to make that answer true. -->
+      <section class="view" data-view="schedules">
+        <div class="vtabs" id="sc-tabs">
+          <button class="vtab on" data-sc="board">When we could be in</button>
+          <button class="vtab" data-sc="mine">My week<span class="n" id="sc-n"></span></button>
+          <button class="vtab" data-sc="all">Everyone</button>
+        </div>
+        <div class="toolbar">
+          <span class="hint" id="sc-msg">Reading the schedules…</span>
+          <span class="push">
+            <button class="mini ghost" id="sc-refresh">Refresh</button>
+          </span>
+        </div>
+
+        <!-- the board -->
+        <div class="scroller pad" id="sc-board" style="display:grid;gap:12px;align-content:start">
+          <p class="sc-rule" id="sc-guess-note">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7.2"/><path d="M10 5.8V10l2.8 1.7"/></svg>
+            <span id="sc-guess-say">A guess, not a calendar — it only knows the weeks people have filled in.</span>
+          </p>
+
+          <p class="sc-rule sc-away" id="sc-away" hidden></p>
+
+          <div class="panel">
+            <div class="panel-h">
+              <h2>The best windows</h2>
+              <span class="note" id="sc-best-note"></span>
+            </div>
+            <div class="panel-b" id="sc-best"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h">
+              <h2>Everybody's week, over each other</h2>
+              <span class="note" id="sc-free-note"></span>
+              <div class="sc-ctl">
+                <label class="sc-need" for="sc-need">At least
+                  <select id="sc-need" aria-label="How many people a window needs"></select>
+                </label>
+                <button class="mini ghost" id="sc-hours">Show the whole day</button>
+              </div>
+            </div>
+            <div class="panel-b sc-gridwrap"><div class="sc-grid" id="sc-heat"></div></div>
+          </div>
+        </div>
+
+        <!-- my week -->
+        <div class="scroller pad" id="sc-mine" hidden style="display:grid;gap:12px;align-content:start">
+          <div class="sc-whobar" id="sc-whobar" role="group" aria-label="Whose week"></div>
+
+          <div class="panel">
+            <div class="panel-h">
+              <h2>Add a block</h2>
+              <span class="note">a class, a shift, anything you cannot move</span>
+            </div>
+            <div class="panel-b sc-form">
+              <label class="sc-f-label" for="sc-label">What is it
+                <input id="sc-label" maxlength="80" placeholder="e.g. CS 106 lecture">
+              </label>
+              <label for="sc-kind">Kind
+                <select id="sc-kind">
+                  <option value="class">Class</option>
+                  <option value="work">Work</option>
+                  <option value="busy">Something else</option>
+                </select>
+              </label>
+              <div class="sc-days" id="sc-days" role="group" aria-label="Which days"></div>
+              <label for="sc-start">From<input id="sc-start" type="time" step="300" value="09:00"></label>
+              <label for="sc-end">To<input id="sc-end" type="time" step="300" value="10:15"></label>
+              <div class="sc-form-foot">
+                <span class="hint" id="sc-form-hint"></span>
+                <span class="push"></span>
+                <button class="btn btn-p" id="sc-add" type="button">Add it</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h">
+              <h2>Bring a whole term in at once</h2>
+              <span class="note">nothing is uploaded — the file is read here</span>
+            </div>
+            <div class="panel-b sc-import">
+              <label class="mini" id="sc-pick-l">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13.4V4.2m0 0L6.8 7.4M10 4.2l3.2 3.2M4 13.6v2a1.3 1.3 0 0 0 1.3 1.3h9.4a1.3 1.3 0 0 0 1.3-1.3v-2"/></svg>
+                Upload a calendar (.ics)
+                <input type="file" id="sc-pick" accept=".ics,text/calendar" hidden>
+              </label>
+              <p class="hint sc-import-say">Export your timetable from your school's portal, Google Calendar or Apple Calendar and drop the .ics here. The weekly things in it become blocks below; a second upload replaces the first rather than stacking on it.</p>
+              <details class="sc-paste">
+                <summary>Or paste it as text</summary>
+                <textarea id="sc-paste" rows="4" placeholder="CS 106 MWF 9:00-10:15&#10;Shift at the library Tue Thu 2pm-6pm"></textarea>
+                <div class="sc-paste-foot">
+                  <span class="hint" id="sc-paste-hint">One commitment a line: the days, the hours, and what it is.</span>
+                  <span class="push"></span>
+                  <button class="mini" id="sc-paste-go" type="button">Read it</button>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <!-- the week as it actually looks, once there is one -->
+          <div class="panel" id="sc-week-panel" hidden>
+            <div class="panel-h">
+              <h2>Your week, laid out</h2>
+              <span class="note" id="sc-week-note"></span>
+            </div>
+            <div class="panel-b sc-weekwrap"><div class="sc-week" id="sc-week"></div></div>
+          </div>
+
+          <!-- what the school calendar knows that a week cannot hold -->
+          <div class="panel" id="sc-breaks-panel" hidden>
+            <div class="panel-h">
+              <h2>Breaks and days off</h2>
+              <span class="note" id="sc-breaks-note"></span>
+            </div>
+            <div class="panel-b" id="sc-breaks"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h">
+              <h2>On record</h2>
+              <span class="note" id="sc-mine-note"></span>
+              <button class="mini danger" id="sc-clear" hidden>Clear the week</button>
+            </div>
+            <div class="panel-b" id="sc-list"></div>
+          </div>
+        </div>
+
+        <!-- everyone -->
+        <div class="scroller pad" id="sc-all" hidden style="display:grid;gap:12px;align-content:start">
+          <div id="sc-people"></div>
+        </div>
+
+        <div class="aggbar" id="sc-agg"></div>
       </section>
 
       <!-- ────────── commits ────────── -->
@@ -4401,7 +4546,8 @@ var ICO = {
   applicants:'<rect x="4.6" y="2.8" width="10.8" height="14.4" rx="2.2"/><path d="M7.4 7h5.2M7.4 10h5.2M7.4 13h3"/>',
   campus:    '<circle cx="7.2" cy="7.4" r="2.4"/><path d="M2.9 15.6a4.4 4.4 0 0 1 8.6 0"/><circle cx="14" cy="8.6" r="1.9"/><path d="M12.6 12.6a3.5 3.5 0 0 1 4.5 3"/>',
   person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>',
-  posts:     '<path d="M16.6 12.4a2 2 0 0 1-2 2H7.3L3.4 17.2V5.6a2 2 0 0 1 2-2h9.2a2 2 0 0 1 2 2v6.8Z"/><path d="M6.8 7.6h6.4M6.8 10.6h4"/>'
+  posts:     '<path d="M16.6 12.4a2 2 0 0 1-2 2H7.3L3.4 17.2V5.6a2 2 0 0 1 2-2h9.2a2 2 0 0 1 2 2v6.8Z"/><path d="M6.8 7.6h6.4M6.8 10.6h4"/>',
+  schedules: '<rect x="2.8" y="4.6" width="14.4" height="12" rx="2.2"/><path d="M2.8 8.4h14.4M6.6 3.2v2.8M13.4 3.2v2.8"/><path d="M6.4 11.4h2.2v2.2H6.4zM11.4 11.4h2.2v2.2h-2.2z"/>'
 };
 function ico(k){
   return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" ' +
@@ -4417,6 +4563,7 @@ var VIEWS = {
   posts:     {label:"This week",       sub:"what each of them has been working on, in their own words"},
   attendance:{label:"Attendance",     sub:"the days each of them was in"},
   commits:   {label:"Commits",        sub:"public pushes, the last 13 weeks"},
+  schedules: {label:"Schedules",      sub:"the hours they are spoken for, and when the office could be full"},
   reporting: {label:"Breakdown",      sub:"where the money went, and who it went on"},
   applicants:{label:"Applicants",     sub:"everyone who has asked to run a campus"},
   campus:    {label:"Campus team",    sub:"who is on which campus, and in which state"},
@@ -4449,7 +4596,7 @@ var NAV = [
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
   {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
-  {id:"team",   label:"The team",   items:[["posts","This week",1],["attendance","Attendance",1],["commits","Commits",1]], roster:true}
+  {id:"team",   label:"The team",   items:[["posts","This week",1],["attendance","Attendance",1],["schedules","Schedules",1],["commits","Commits",1]], roster:true}
 ];
 
 /* Which groups are folded shut, remembered per device. Only the shut ones
@@ -4571,7 +4718,7 @@ function setView(id, who){
   markNav();
   /* Nothing on these three is a spend, so the one button that only ever
      logs one has no business sitting over them. */
-  $("btn-new").style.display = ["visits","applicants","campus","posts"].indexOf(view) > -1 ? "none" : "";
+  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   closeSidebar();
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : (view === "posts" || view === "charge") && who ? "/" + encodeURIComponent(who) : "");
@@ -5839,5 +5986,6 @@ $("identity-switch").addEventListener("click",async function(){
 <script type="module" src="/invoice/visits.js"></script>
 <script type="module" src="/invoice/campus.js"></script>
 <script type="module" src="/invoice/posts.js"></script>
+<script type="module" src="/invoice/schedules.js"></script>
 </body>
 </html>

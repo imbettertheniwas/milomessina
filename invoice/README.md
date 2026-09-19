@@ -28,6 +28,7 @@ anything.
 | **On repeat** | The monthly rules, what they cost a month and a year, and when the next one lands |
 | **The week** | The feed each of them posts their week into — a few lines on what they worked on, with the links and screenshots, newest week first |
 | **Attendance** | The board you press your name on, the backfill, days per week, and the full record |
+| **Schedules** | The hours each of them is already spoken for in a normal week, the windows when enough of them are free to be in the office at once, and the breaks their school calendars are on |
 | **Commits** | The contribution map, together and one each |
 | **Breakdown** | Where the money went by category, and who it was spent on |
 | **Chapters** | Every house that has onboarded: the map, the funnel, who and where they are, and the full table — read from the campus admin, not the sheet |
@@ -337,6 +338,26 @@ any more. The first time the script is asked for a `days` tab that does not
 exist yet, it creates one and carries every distinct person-and-day in `hours`
 across, so the history survives the change. That runs once, on the tab's
 creation, and cannot double up.
+
+The `schedules` tab — one row per recurring commitment, plus one per break:
+
+| Column | Holds |
+| --- | --- |
+| `id` | 8 characters, generated server-side |
+| `updated` | when the row was last written |
+| `who` | whose week it is |
+| `label` | what it is — "CS 106A Lecture", "Library shift", "Spring Break" |
+| `kind` | `class`, `work` or `busy` for an hour in the week; `break` for a dated one; `none` for "nothing fixed this week" |
+| `days` | the weekdays it repeats on, `1`–`7` with Monday as 1, comma separated. Blank on a break |
+| `start`, `end` | `HH:MM`, 24-hour, wall-clock with no timezone on it. Blank on a break |
+| `source` | `typed`, `ics` or `pasted` — which is how a re-upload knows what it is replacing |
+| `from`, `to` | the first and last day of a break, `YYYY-MM-DD`, both inclusive. Blank on everything else |
+
+A row with `kind` of `none` is the answer "nothing fixed this week", which a
+list of busy hours cannot give on its own — without it, somebody with no
+classes looks exactly like somebody who never filled the tab in, and the
+board waits on them forever. It and a real block cannot both be true: adding
+one takes the other away.
 
 The `apply` tab is the form's, not the console's: `/fomo/apply` writes a
 column per question it asks and adds one whenever it gains a question. The
@@ -740,6 +761,123 @@ edit stamp.
 > is pasted in again and deployed as a **new version**, the view says so in
 > as many words rather than failing quietly. Deploy → Manage deployments →
 > the pencil → New version. `doGet` reports `posts: true` once it has taken.
+
+## Schedules
+
+**Schedules** in the rail, under *The team*. Four interns on four campuses
+with four timetables nobody else has seen, and one question that comes up
+every week: when could we all actually be in the office at the same time.
+Asking on a group chat gets three answers and a week of drift. This is the
+answer worked out from the hours each of them is already spoken for.
+
+What it stores is **a normal week, not a calendar**. A row is "Mon, Wed, Fri
+9:00–10:15, CS 106" — one thing, repeating — because that is the shape the
+question gets asked in and the shape that stays true for a whole term
+instead of needing a sync. Times are wall-clock and carry no timezone: a
+class at nine is at nine to the person sitting in it.
+
+There are three sub-tabs.
+
+### When we could be in
+
+**The best windows** is the answer: up to six stretches of an hour or more
+where enough of them are free, each one naming who is in it and who is not.
+**At least** sets the bar, and it starts at *everybody in* — the question
+the tab gets opened for. If no hour exists that everybody can make, the bar
+comes down a person at a time and the panel says it did rather than showing
+nothing.
+
+They are not ranked longest-first. Past about four hours a window has
+stopped getting more useful — everybody is coming in for an afternoon, not
+for thirteen hours — so length is scored with a ceiling on it, and weekdays
+come before weekends. Without that, "free all Saturday" wins every time it
+is true, which it usually is, and the Tuesday afternoon that is the actual
+answer ends up fifth.
+
+**Everybody's week, over each other** is the same thing as a grid, half an
+hour at a time: solid where enough of them are free, faint where fewer are.
+Hovering a cell names who is free in it. **Show the whole day** widens it
+from 8am–9pm to 6am–midnight.
+
+Two things it deliberately does not do:
+
+- **Somebody who has said nothing is left out, not counted free.** The
+  banner at the top says how many weeks it is actually reading. Silence and
+  an empty week are different answers and the board would be a lie if it
+  read them the same way.
+- **It is a guess and says so.** It knows the classes people typed in. It
+  does not know about the dentist, the drive, or the week somebody goes
+  home. It narrows *when is everyone free* from a blank page down to two or
+  three windows worth putting to the group, which is all it is for.
+
+A block that runs to 10:15 is read as busy through the whole 10:00 half
+hour. The fifteen minutes it spills over are not a window anybody can use,
+and rounding the other way would put somebody in a room they are still in a
+lecture hall for.
+
+### My week
+
+Three ways in, and they can be mixed:
+
+- **Add a block** — what it is, what kind, which days, from and to. The
+  **Weekdays** button fills Monday to Friday in one press.
+- **Upload a calendar (.ics)** — export from your school's portal, Google
+  Calendar or Apple Calendar and either pick the file or drag it onto the
+  page. **Nothing is uploaded anywhere**: the file is read in the browser
+  and only the weekly blocks it works out are sent on.
+- **Paste it as text** — one commitment a line. `CS 106 MWF 9:00-10:15` and
+  `Shift at the library Tue Thu 2pm-6pm` both read. A line it cannot make
+  sense of is handed back with the reason rather than dropped in silence.
+
+Once there is a week on record it is drawn as **Your week, laid out** —
+every class where it actually falls, and the gaps between them labelled,
+because a two-hour hole on Wednesday is the most useful thing on the page
+and nothing else says so.
+
+**A second upload replaces the first** rather than stacking on it — a term
+exported twice is one term — but only the blocks that came from a calendar.
+Anything typed by hand survives it, because those are the ones the calendar
+does not know about.
+
+If somebody genuinely has nothing fixed, **say there is nothing fixed**.
+That is a real answer and it puts them on the board as free, which an empty
+week cannot do on its own.
+
+### Breaks and days off
+
+An academic calendar's other half is all-day: spring break, reading week,
+the Monday after Thanksgiving. Those are not hours in a week and never go on
+the grid — marking a whole day busy from one would be wrong in the direction
+that costs a window — so they come in as **dated breaks** and are listed on
+their own, soonest first, with the number of days each one runs. Breaks that
+have already finished are not shown; last spring's break is not news.
+
+When somebody's break is happening now, the board says so above the windows:
+the classes on the grid are term-time, so during a break there is more room
+than the grid shows.
+
+### Who can change what
+
+The same rule as the week notes: **you own your own week and nobody else's**,
+and Arya owns all of them — the picker at the top of *My week* only appears
+for Arya. It is enforced on the sheet as well as in the page, so a request
+that goes around the page still cannot move somebody else's classes.
+
+### Everyone
+
+A week each, at a glance: one strip per person, in their own colour, with
+the hours down the side. It is how you see who has filled theirs in, when
+they last touched it, and whose Friday is the one blocking every window.
+
+### Before the sheet is redeployed
+
+This tab is newer than the deployment most consoles are pointing at, so on a
+sheet that has never heard of it the page **falls back to this browser's own
+storage** and says so in the toolbar. Everything works — adding, uploading,
+the board — but what you are looking at is what this browser knows, which is
+nobody else's week. Redeploy `fomo/setup/apps-script.gs` (Deploy → Manage
+deployments → New version) and it moves itself over to the shared sheet next
+time it loads. Only then is the board answering for the whole team.
 
 ## What everyone's pushing
 

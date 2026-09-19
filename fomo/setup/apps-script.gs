@@ -79,6 +79,12 @@ function doPost(e) {
        the feed only grows, and the ledger is read on every page open. */
     if (body._api === 'posts') return postsApi(body);
 
+    /* The hours each of them is already spoken for in a normal week,
+       so /internal can work out when they could all be in the office at
+       once. Recurring blocks, not dated events — the tab is small and
+       changes a few times a term. */
+    if (body._api === 'schedules') return schedulesApi(body);
+
     if (body._api || ['apply','submit','report'].indexOf(tabFor(body._page)) < 0) return reply(false, 'unknown form');
     if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
 
@@ -119,6 +125,7 @@ function doGet() {
     visitHours: typeof visitAvailability === 'function',
     campus: typeof campusApi === 'function',
     posts: typeof postsApi === 'function',
+    schedules: typeof schedulesApi === 'function',
     editline: /'edit'/.test(String(invoiceApi)),
     clock: typeof shiftIn === 'function',
     shiftimport: typeof shiftImport === 'function',
@@ -1961,6 +1968,357 @@ function postPublic(p) {
     id: p.id, posted: p.posted, who: String(p.who), week: p.week,
     body: postBody(p.body), links: postSplit(p.links), photos: postSplit(p.photos),
     tags: postSplit(p.tags), edited: p.edited ? campusWhen(p.edited) : ''
+  };
+}
+
+/* ══════════ the schedules ══════════
+
+   One more tab of the same sheet, behind the same deployment: the hours
+   each of them is already spoken for in a normal week — classes, a shift,
+   practice — so the console can work out the other thing nobody can answer
+   from four separate calendars, which is when everybody could actually be
+   at the office at the same time.
+
+   A row is one recurring block, not one event on one date: "Mon, Wed, Fri
+   9:00–10:15, CS 106". `days` holds the weekdays it repeats on, 1 for
+   Monday through 7 for Sunday, because a class on three days is one thing
+   somebody typed once and three rows of it would be three things to fix
+   when it moves.
+
+   The times are wall-clock and carry no zone. That is not an oversight:
+   a class at nine is at nine to the person sitting in it, whichever zone
+   the script happens to be set to, and the office they are deciding to
+   come into is the one they are near. */
+var SCHED_TAB = 'schedules';
+var SCHED_COLS = ['id', 'updated', 'who', 'label', 'kind', 'days', 'start', 'end', 'source', 'from', 'to'];
+/* 'none' is not a block, it is the answer "nothing fixed this week" — the
+   one thing a list of busy hours cannot say for itself. Without it somebody
+   with no classes at all is indistinguishable from somebody who never
+   filled the tab in, and the board would wait on them forever. It is stored
+   as a row with no days and no hours, and the two cannot coexist with real
+   blocks: adding one takes the other away, on the way in, below. */
+var SCHED_KINDS = ['class', 'work', 'busy', 'none', 'break'];
+var SCHED_SOURCES = ['typed', 'ics', 'pasted'];
+/* A week of classes is a couple of dozen rows; a school calendar's terms,
+   holidays and reading weeks are a couple of dozen more on top. The cap is
+   there to stop a runaway import, not to ration a normal year. */
+var SCHED_MAX_PER_PERSON = 140;
+var SCHED_MAX_LABEL = 80;
+
+function schedulesApi(body) {
+  if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+
+  var action = String(body.action || 'list'), err = null;
+  if (action !== 'list') {
+    var actor = internalActor(body);
+    if (!actor) return reply(false, 'Session expired. Sign in again.');
+    /* Arya reads and writes anybody's week; everybody else owns their own
+       and nothing else. A block names its person, so the check is the same
+       question in two shapes: the name on the way in, and the name already
+       on the row being changed. */
+    if (actor !== 'Arya') {
+      if (action === 'add' || action === 'import' || action === 'clear') {
+        if (String(body.who || '') !== actor) return reply(false, 'You can only change your own week.');
+      }
+      if (action === 'edit' || action === 'delete') {
+        var block = schedRead(schedSheet()).filter(function (s) { return s.id === String(body.id); })[0];
+        if (!block || String(block.who) !== actor) return reply(false, 'You can only change your own week.');
+      }
+    }
+  }
+  if (action === 'add')         err = schedAdd(body);
+  else if (action === 'edit')   err = schedEdit(body);
+  else if (action === 'delete') err = schedDelete(body);
+  else if (action === 'import') err = schedImport(body);
+  else if (action === 'clear')  err = schedClear(body);
+  else if (action !== 'list')   return reply(false, 'unknown action');
+  if (err) return reply(false, err);
+
+  return reply(true, null, { schedules: schedRead(schedSheet()).map(schedPublic) });
+}
+
+function schedSheet() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID)
+                           : SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('no spreadsheet — set SHEET_ID, or run this script from inside the sheet');
+
+  var sh = ss.getSheetByName(SCHED_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(SCHED_TAB);
+    sh.getRange(1, 1, sh.getMaxRows(), SCHED_COLS.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, SCHED_COLS.length).setValues([SCHED_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  /* Everything on this tab is text, times included: '9:00' left to the
+     sheet's own guess comes back as a Date in 1899, and the header is
+     topped up in place the way the notes tab's is. */
+  var head = sh.getRange(1, 1, 1, SCHED_COLS.length).getValues()[0];
+  for (var i = 0; i < SCHED_COLS.length; i++) {
+    if (String(head[i]) === SCHED_COLS[i]) continue;
+    sh.getRange(1, 1, sh.getMaxRows(), SCHED_COLS.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, SCHED_COLS.length).setValues([SCHED_COLS]).setFontWeight('bold');
+    break;
+  }
+  return sh;
+}
+
+function schedCol(name) {
+  return SCHED_COLS.indexOf(name) + 1;
+}
+
+/* "1,3,5" out of whatever the page sent — a list, a string, numbers or the
+   names of the days. Sorted, deduplicated, and Monday first, so two ways of
+   saying the same week read as the same week. */
+function schedDays(v) {
+  var raw = (v && v.length !== undefined && typeof v !== 'string') ? v : String(v == null ? '' : v).split(',');
+  var out = [];
+  for (var i = 0; i < raw.length; i++) {
+    var n = parseInt(String(raw[i]).trim(), 10);
+    if (!(n >= 1 && n <= 7)) continue;
+    if (out.indexOf(n) === -1) out.push(n);
+  }
+  out.sort(function (a, b) { return a - b; });
+  return out;
+}
+
+/* 'HH:MM', or '' for anything that is not a time of day. Minutes are kept
+   as they are typed rather than rounded: a class that ends at 10:15 ends
+   at 10:15, and the board can round when it draws. */
+function schedTime(v) {
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(v == null ? '' : v).trim());
+  if (!m) return '';
+  var h = parseInt(m[1], 10), min = parseInt(m[2], 10);
+  if (!(h >= 0 && h <= 23) || !(min >= 0 && min <= 59)) return '';
+  return (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min;
+}
+
+/* 'YYYY-MM-DD', or '' for anything that is not a day. A cell somebody has
+   typed a date into comes back as a Date and is read the same way. */
+function schedDate(v) {
+  if (v && typeof v.getFullYear === 'function') {
+    return v.getFullYear() + '-' + (v.getMonth() < 9 ? '0' : '') + (v.getMonth() + 1) +
+      '-' + (v.getDate() < 10 ? '0' : '') + v.getDate();
+  }
+  var s = String(v == null ? '' : v).trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+}
+
+function schedMins(hhmm) {
+  var m = /^(\d{2}):(\d{2})$/.exec(String(hhmm || ''));
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : -1;
+}
+
+function schedKind(v) {
+  var s = String(v == null ? '' : v).trim().toLowerCase();
+  return SCHED_KINDS.indexOf(s) >= 0 ? s : 'busy';
+}
+
+function schedSource(v) {
+  var s = String(v == null ? '' : v).trim().toLowerCase();
+  return SCHED_SOURCES.indexOf(s) >= 0 ? s : 'typed';
+}
+
+/* One block, cleaned, or a sentence saying what is wrong with it. The
+   sentence is what gets shown, so it says what to do rather than which
+   field failed. */
+function schedClean(b) {
+  var who = String(b.who == null ? '' : b.who).trim();
+  if (INVOICE_PAYERS.indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
+
+  var kind = schedKind(b.kind);
+  if (kind === 'none') {
+    return { who: who, label: '', kind: 'none', days: '', start: '', end: '',
+             source: schedSource(b.source), from: '', to: '' };
+  }
+
+  /* A break is the other thing a school calendar knows and a weekly grid
+     cannot hold: spring break, reading week, the Monday nobody has class.
+     It is dated rather than repeating, so it carries two days instead of a
+     list of weekdays and no hours at all. */
+  if (kind === 'break') {
+    var from = schedDate(b.from), to = schedDate(b.to) || from;
+    if (!from) return { error: 'a break needs the day it starts' };
+    if (to < from) to = from;
+    var name = String(b.label == null ? '' : b.label).replace(/\s+/g, ' ').trim().slice(0, SCHED_MAX_LABEL);
+    if (!name) return { error: 'a break needs a name' };
+    return { who: who, label: campusSafe(name), kind: 'break', days: '', start: '', end: '',
+             source: schedSource(b.source), from: from, to: to };
+  }
+
+  var days = schedDays(b.days);
+  if (!days.length) return { error: 'pick at least one day' };
+
+  var start = schedTime(b.start), end = schedTime(b.end);
+  if (!start || !end) return { error: 'give a start and an end, like 09:00 and 10:15' };
+  if (schedMins(end) <= schedMins(start)) return { error: 'that block ends before it starts' };
+
+  var label = String(b.label == null ? '' : b.label).replace(/\s+/g, ' ').trim().slice(0, SCHED_MAX_LABEL);
+
+  return {
+    who: who, label: campusSafe(label), kind: kind,
+    days: days.join(','), start: start, end: end, source: schedSource(b.source),
+    from: '', to: ''
+  };
+}
+
+function schedAdd(b) {
+  var clean = schedClean(b);
+  if (clean.error) return clean.error;
+
+  var sh = schedSheet(), mine = schedRead(sh).filter(function (s) { return String(s.who) === clean.who; });
+  if (clean.kind !== 'none' && mine.length >= SCHED_MAX_PER_PERSON)
+    return 'that is already a full week — delete something first';
+
+  /* "Nothing fixed" and an actual block are answers to the same question,
+     so the newer one replaces the older rather than sitting beside it:
+     declaring an empty week clears what was on it, and putting anything
+     back on takes the declaration away. */
+  var drop = mine.filter(function (s) {
+    return clean.kind === 'none' ? true : schedKind(s.kind) === 'none';
+  });
+  for (var i = drop.length - 1; i >= 0; i--) sh.deleteRow(drop[i]._row);
+
+  sh.appendRow([
+    Utilities.getUuid().slice(0, 8), campusStamp(), clean.who, clean.label,
+    clean.kind, clean.days, clean.start, clean.end, clean.source, clean.from, clean.to
+  ]);
+  return null;
+}
+
+/* Everything about a block can be corrected except whose it is: moving one
+   onto somebody else is two people's weeks being changed by one edit, and
+   the person it would land on never asked. */
+function schedEdit(b) {
+  var id = String(b.id == null ? '' : b.id);
+  if (!id) return 'no block id';
+
+  var sh = schedSheet(), all = schedRead(sh);
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].id !== id) continue;
+    if (schedKind(all[i].kind) === 'none') return 'there is nothing on that line to edit';
+    var was = schedKind(all[i].kind);
+    var clean = schedClean({
+      who: all[i].who, label: b.label, kind: was === 'break' ? 'break' : (b.kind === 'none' ? 'busy' : b.kind),
+      days: b.days, start: b.start, end: b.end, source: all[i].source,
+      from: b.from, to: b.to
+    });
+    if (clean.error) return clean.error;
+    var row = all[i]._row;
+    sh.getRange(row, schedCol('from')).setValue(clean.from);
+    sh.getRange(row, schedCol('to')).setValue(clean.to);
+    sh.getRange(row, schedCol('label')).setValue(clean.label);
+    sh.getRange(row, schedCol('kind')).setValue(clean.kind);
+    sh.getRange(row, schedCol('days')).setValue(clean.days);
+    sh.getRange(row, schedCol('start')).setValue(clean.start);
+    sh.getRange(row, schedCol('end')).setValue(clean.end);
+    sh.getRange(row, schedCol('updated')).setValue(campusStamp());
+    return null;
+  }
+  return 'that block is already gone';
+}
+
+function schedDelete(b) {
+  var id = String(b.id == null ? '' : b.id);
+  if (!id) return 'no block id';
+  var sh = schedSheet(), all = schedRead(sh);
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].id === id) { sh.deleteRow(all[i]._row); return null; }
+  }
+  return 'that block is already gone';
+}
+
+/* A calendar file is dropped on the page, read there, and arrives here as
+   the blocks it worked out. It replaces what the last drop of the same
+   kind left behind rather than adding to it — a term's timetable exported
+   twice is one timetable, and an import that piled up would have somebody
+   busy at every hour by the third try. Blocks typed by hand are left
+   alone: they are the ones the calendar does not know about. */
+function schedImport(b) {
+  var who = String(b.who == null ? '' : b.who).trim();
+  if (INVOICE_PAYERS.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  var source = schedSource(b.source);
+  if (source === 'typed') return 'an import has to say where it came from';
+
+  var list = (b.blocks && b.blocks.length) ? b.blocks : [];
+  if (list.length > SCHED_MAX_PER_PERSON) return 'that calendar has more in it than a week can hold';
+
+  var clean = [];
+  for (var i = 0; i < list.length; i++) {
+    var one = schedClean({
+      who: who, label: list[i].label, kind: list[i].kind,
+      days: list[i].days, start: list[i].start, end: list[i].end, source: source,
+      from: list[i].from, to: list[i].to
+    });
+    /* A single unreadable line in a calendar of forty is not a reason to
+       refuse the other thirty-nine. */
+    if (!one.error) clean.push(one);
+  }
+  if (!clean.length) return 'nothing in that file looked like a weekly commitment';
+
+  var sh = schedSheet(), all = schedRead(sh);
+  for (var j = all.length - 1; j >= 0; j--) {
+    if (String(all[j].who) !== who) continue;
+    /* the last import of this kind, and any standing "nothing fixed" — a
+       calendar with hours in it has answered that question now */
+    if (String(all[j].source) === source || schedKind(all[j].kind) === 'none') sh.deleteRow(all[j]._row);
+  }
+  var stamp = campusStamp();
+  for (var k = 0; k < clean.length; k++) {
+    sh.appendRow([
+      Utilities.getUuid().slice(0, 8), stamp, clean[k].who, clean[k].label,
+      clean[k].kind, clean[k].days, clean[k].start, clean[k].end, clean[k].source,
+      clean[k].from, clean[k].to
+    ]);
+  }
+  return null;
+}
+
+function schedClear(b) {
+  var who = String(b.who == null ? '' : b.who).trim();
+  if (INVOICE_PAYERS.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  var sh = schedSheet(), all = schedRead(sh);
+  for (var i = all.length - 1; i >= 0; i--) {
+    if (String(all[i].who) === who) sh.deleteRow(all[i]._row);
+  }
+  return null;
+}
+
+function schedRead(sh) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, SCHED_COLS.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    if (!String(vals[i][0])) continue;
+    var o = { _row: i + 2 };
+    for (var j = 0; j < SCHED_COLS.length; j++) o[SCHED_COLS[j]] = vals[i][j];
+    o.id = String(o.id);
+    o.updated = campusWhen(o.updated);
+    out.push(o);
+  }
+  return out;
+}
+
+/* A time typed into the cell by hand comes back as a Date, the way a date
+   does — read both as the 'HH:MM' the board is drawn from. It is asked
+   whether it can tell the time rather than whether it is a Date: the same
+   object crossing into this script from anywhere else is still a Date, and
+   an instanceof would say no and quietly blank the cell. */
+function schedCell(v) {
+  if (v && typeof v.getHours === 'function') {
+    var h = v.getHours(), m = v.getMinutes();
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  return schedTime(v);
+}
+
+function schedPublic(s) {
+  return {
+    id: s.id, updated: s.updated, who: String(s.who),
+    label: postBody(s.label), kind: schedKind(s.kind),
+    days: schedDays(s.days), start: schedCell(s.start), end: schedCell(s.end),
+    source: schedSource(s.source), from: schedDate(s.from), to: schedDate(s.to)
   };
 }
 

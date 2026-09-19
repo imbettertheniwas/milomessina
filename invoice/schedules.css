@@ -1,0 +1,186 @@
+/* ══════════ the schedules ══════════
+   The tab at /internal#/schedules. Everything here is drawn by
+   schedules.js and themed off the console's own tokens, so it follows
+   light, dark and fomo without knowing which one is on. */
+
+/* ---------- what the board is, said once ---------- */
+.sc-rule{display:flex;align-items:flex-start;gap:9px;margin:0;padding:10px 13px;
+  border-radius:var(--r-m);border:1px solid var(--violet-soft);
+  background:var(--violet-soft);color:var(--text);font-size:12.5px;line-height:1.45}
+.sc-rule svg{width:15px;height:15px;flex:none;color:var(--violet-hi);margin-top:1px}
+.sc-rule b{font-weight:600}
+
+.sc-ctl{display:flex;align-items:center;gap:8px;margin-left:auto}
+.sc-need{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted-2)}
+.sc-need select{height:24px;border-radius:6px;border:1px solid var(--line-2);
+  background:var(--surface);color:var(--text);font:inherit;font-size:11.5px;padding:0 4px}
+.sc-need select:disabled{opacity:.5}
+
+.sc-none{padding:12px 2px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.sc-none b{color:var(--text);font-weight:600}
+.linkish{color:var(--violet-hi);text-decoration:underline;font:inherit}
+
+/* ---------- the windows worth putting to the group ---------- */
+#sc-best{display:grid;gap:8px}
+.sc-win{display:grid;gap:7px;padding:10px 12px;border-radius:var(--r-m);
+  border:1px solid var(--line);background:var(--surface)}
+.sc-win.all{border-color:var(--violet);background:var(--violet-soft)}
+.sc-win-when{display:flex;align-items:baseline;gap:9px}
+.sc-win-when b{font-size:13.5px;font-weight:600}
+.sc-win-when span{font-family:var(--mono);font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.sc-win-who{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px}
+.sc-win-who .av{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+  font-size:9.5px;font-weight:600;color:#0C0C0E;flex:none;margin-right:-6px}
+.sc-win-who i{font-style:normal;font-size:12px;color:var(--muted)}
+.sc-win-tail{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px}
+.sc-win-len{font-family:var(--mono);color:var(--muted-2)}
+.sc-win-out{color:var(--muted-2)}
+.sc-win-ok{color:var(--good)}
+
+/* ---------- everybody's week, over each other ---------- */
+.sc-gridwrap{overflow-x:auto}
+.sc-grid{display:flex;gap:3px;min-width:340px;align-items:flex-start}
+.sc-hcol{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.sc-htimes{flex:none;width:52px}
+.sc-hhead{height:18px;display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:600;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em}
+.sc-htime{height:13px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;
+  font-family:var(--mono);font-size:9.5px;color:var(--muted-2);white-space:nowrap}
+
+/* The cell is the count, read as weight rather than as a number: --fill is
+   the share of the people on record who are free in that half hour.
+
+   The weight is squared rather than straight. Four people is five possible
+   values, and spread evenly across them the hour three of them can make
+   looks very nearly like the hour all four can — which is the one
+   difference on this grid anybody is actually looking for. Squaring holds
+   the darkest end back for the hours that are genuinely clear.
+
+   And an hour short of what the box above asks for is dimmed further still,
+   so "where can I get four of them" is answered by the shape of the grid
+   rather than by counting cells. */
+.sc-cell{height:13px;border-radius:2px;background:var(--violet);
+  opacity:calc(.05 + (var(--fill) * var(--fill) * .95));transition:opacity .1s}
+.sc-cell:not(.on){opacity:calc(.04 + (var(--fill) * .22))}
+.sc-cell.all{border-radius:3px}
+
+/* ---------- my week ---------- */
+.sc-whobar{display:flex;flex-wrap:wrap;gap:6px}
+.sc-me{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 5px;
+  border-radius:99px;border:1px solid var(--line-2);color:var(--muted);font-size:12.5px;
+  transition:background .12s,color .12s,border-color .12s}
+.sc-me .av{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;
+  font-size:9.5px;font-weight:600;color:#0C0C0E;flex:none}
+.sc-me:hover{color:var(--text);background:var(--raise)}
+.sc-me.on{color:var(--text);border-color:var(--violet);background:var(--violet-soft);font-weight:500}
+.sc-dot{width:5px;height:5px;border-radius:50%;background:var(--warn);flex:none}
+
+.sc-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+.sc-form label{display:grid;gap:4px;font-size:11.5px;color:var(--muted-2)}
+/* what it is and what kind sit on one line; the days get their own */
+.sc-f-label{min-width:0}
+.sc-form input,.sc-form select{height:30px;padding:0 9px;border-radius:var(--r-m);
+  border:1px solid var(--line-2);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px}
+.sc-form input:focus,.sc-form select:focus{outline:none;border-color:var(--violet);
+  box-shadow:0 0 0 3px var(--violet-soft)}
+.sc-days{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.sc-day{height:28px;min-width:42px;padding:0 9px;border-radius:7px;border:1px solid var(--line-2);
+  color:var(--muted);font-size:12px;transition:background .12s,color .12s,border-color .12s}
+.sc-day:hover{color:var(--text);background:var(--raise)}
+.sc-day.on{color:var(--text);border-color:var(--violet);background:var(--violet-soft);font-weight:500}
+.sc-day-set{margin-left:4px;color:var(--muted-2);border-style:dashed}
+.sc-form-foot{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sc-form-foot .push{flex:1}
+#sc-form-hint{color:var(--bad)}
+
+/* ---------- a term, brought in at once ---------- */
+.sc-import{display:grid;gap:9px;justify-items:start}
+.sc-import-say{margin:0;line-height:1.5}
+#sc-pick-l{cursor:pointer}
+.sc-paste{width:100%;font-size:12.5px}
+.sc-paste summary{cursor:pointer;color:var(--muted);padding:4px 0}
+.sc-paste summary:hover{color:var(--text)}
+.sc-paste textarea{width:100%;margin-top:7px;resize:vertical;min-height:62px;padding:9px 11px;
+  border-radius:var(--r-m);border:1px solid var(--line-2);background:var(--surface);
+  color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.6}
+.sc-paste textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}
+.sc-paste-foot{display:flex;align-items:center;gap:10px;margin-top:7px;flex-wrap:wrap}
+.sc-paste-foot .push{flex:1}
+#sc-paste-hint{line-height:1.45}
+
+/* A file being dragged over the panel says so, or nobody lets go of it. */
+#sc-mine.sc-dragging{outline:2px dashed var(--violet);outline-offset:-8px;border-radius:var(--r-l)}
+
+/* ---------- the week, laid out ----------
+   Each day is a column and each block is drawn where it falls in it, so a
+   Tuesday of three classes back to back looks like one. The gaps between
+   them are drawn too, faintly, because a two-hour hole on Wednesday is the
+   most useful thing on the page and nothing else on it says so. */
+.sc-weekwrap{overflow-x:auto}
+.sc-week{display:flex;gap:4px;min-width:420px;align-items:stretch}
+.sc-wcol{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.sc-wtimes{flex:none;width:44px}
+.sc-whead{height:18px;display:flex;align-items:center;justify-content:center;font-size:10.5px;
+  font-weight:600;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em}
+.sc-whead.off{opacity:.45}
+.sc-wbody{position:relative;height:300px;border-radius:var(--r-m);background:var(--surface)}
+.sc-wtimes .sc-wbody{background:none}
+.sc-wtime{position:absolute;right:6px;transform:translateY(-50%);font-family:var(--mono);
+  font-size:9.5px;color:var(--muted-2);white-space:nowrap}
+.sc-wline{position:absolute;left:0;right:0;height:1px;background:var(--line);opacity:.65}
+
+.sc-wblock{position:absolute;left:2px;right:2px;border-radius:5px;padding:3px 5px;overflow:hidden;
+  display:flex;flex-direction:column;gap:1px;color:#0C0C0E;min-height:13px}
+.sc-wblock b{font-size:10px;font-weight:600;line-height:1.15;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.sc-wblock i{font-style:normal;font-size:9px;opacity:.72;font-family:var(--mono)}
+.sc-wblock.tight{padding:1px 5px}
+.sc-wblock.tight i{display:none}
+
+.sc-wgap{position:absolute;left:2px;right:2px;border-radius:5px;
+  border:1px dashed var(--line-2);display:grid;place-items:center;overflow:hidden}
+.sc-wgap i{font-style:normal;font-size:9px;color:var(--muted-2);font-family:var(--mono);
+  white-space:nowrap}
+
+/* ---------- breaks ---------- */
+.sc-away{border-color:var(--t-amber-bd);background:var(--t-amber-bg);color:var(--text);display:block}
+.sc-away b{font-weight:600}
+.sc-row.now .sc-row-what b::after{content:'';display:inline-block;width:5px;height:5px;
+  border-radius:50%;background:var(--good);margin-left:6px;vertical-align:middle}
+
+/* ---------- what is on record ---------- */
+.sc-rows{display:grid;gap:1px}
+.sc-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
+.sc-row:last-child{border-bottom:0}
+.sc-swatch{width:3px;height:26px;border-radius:99px;flex:none}
+.sc-row-what{display:grid;gap:2px;min-width:0;flex:1}
+.sc-row-what b{font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-row-sub{font-size:11px;color:var(--muted-2)}
+.sc-row-when{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.sc-x{width:22px;height:22px;flex:none;border-radius:6px;display:grid;place-items:center;
+  color:var(--muted-2);opacity:0;transition:opacity .12s,background .12s,color .12s}
+.sc-x svg{width:13px;height:13px}
+.sc-row:hover .sc-x,.sc-x:focus-visible{opacity:1}
+.sc-x:hover{background:var(--t-red-bg);color:var(--bad)}
+
+/* ---------- everyone, a week each ---------- */
+#sc-people{display:grid;gap:12px}
+.sc-person .panel-h .av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  font-size:10px;font-weight:600;color:#0C0C0E;flex:none}
+.sc-pstrip{display:flex;gap:3px;overflow-x:auto}
+.sc-pcol{display:flex;flex-direction:column;gap:2px;flex:1;min-width:24px}
+.sc-phead{height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;
+  color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em}
+.sc-pcell{height:7px;border-radius:2px;background:var(--raise)}
+.sc-pcell.busy{opacity:.85}
+.sc-ptimes{flex:none;width:42px}
+.sc-ptime{height:7px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;
+  font-family:var(--mono);font-size:8.5px;color:var(--muted-2);white-space:nowrap;line-height:1}
+
+@media (max-width:640px){
+  .sc-form{grid-template-columns:1fr}
+  .sc-htimes{width:44px}
+}
