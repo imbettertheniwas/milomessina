@@ -219,6 +219,49 @@ test('a tab written before breaks existed gains the columns and keeps its rows',
   assert.equal(h.call(m, 'add', {who:'Milo', kind:'break', label:'Spring Break',
     from:'2099-03-16', to:'2099-03-20'}, 'schedules').ok, true);
   assert.deepEqual(sh.rows[0],
-    ['id','updated','who','label','kind','days','start','end','source','from','to']);
+    ['id','updated','who','label','kind','days','start','end','source','from','to','week']);
   assert.equal(mine(h, 'Milo').length, 2);
+});
+
+test('a block can run every other week, and says which of the two it is', () => {
+  const h = harness(), m = h.login('Milo');
+  assert.equal(add(h, m, {label:'CHEM Lab', days:[2], start:'14:00', end:'17:00',
+    week:'2/2'}).ok, true);
+  const [s] = mine(h, 'Milo');
+  assert.equal(s.week, '2/2');
+  assert.deepEqual(s.days, [2]);
+});
+
+test('a rotation nobody could keep is read as every week rather than refused', () => {
+  const h = harness(), m = h.login('Milo');
+  [['0/2'], ['3/2'], ['1/9'], ['every other'], ['']].forEach(([week]) => {
+    h.call(m, 'clear', {who:'Milo'}, 'schedules');
+    add(h, m, {week});
+    assert.equal(mine(h, 'Milo')[0].week, 'every', JSON.stringify(week) + ' is not a rotation');
+  });
+});
+
+test('an edit can put a block on a rotation and take it off again', () => {
+  const h = harness(), m = h.login('Milo');
+  add(h, m);
+  const [was] = mine(h, 'Milo');
+  h.call(m, 'edit', {id:was.id, label:'CS 106', kind:'class', days:[1,3,5],
+    start:'09:00', end:'10:15', week:'1/2'}, 'schedules');
+  assert.equal(mine(h, 'Milo')[0].week, '1/2');
+  h.call(m, 'edit', {id:was.id, label:'CS 106', kind:'class', days:[1,3,5],
+    start:'09:00', end:'10:15', week:'every'}, 'schedules');
+  assert.equal(mine(h, 'Milo')[0].week, 'every');
+});
+
+test('a tab written before rotations existed reads every row as every week', () => {
+  const h = harness(), m = h.login('Milo');
+  add(h, m);
+  const sh = h.sheets.schedules;
+  sh.rows[0] = ['id','updated','who','label','kind','days','start','end','source','from','to'];
+  sh.rows[1] = sh.rows[1].slice(0, 11);
+  assert.equal(mine(h, 'Milo')[0].week, 'every');
+  assert.equal(add(h, m, {label:'Lab', days:[2], start:'14:00', end:'17:00', week:'1/2'}).ok, true);
+  assert.deepEqual(sh.rows[0],
+    ['id','updated','who','label','kind','days','start','end','source','from','to','week']);
+  assert.equal(mine(h, 'Milo').filter(s => s.label === 'Lab')[0].week, '1/2');
 });

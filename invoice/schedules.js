@@ -74,8 +74,18 @@ const MAX_BLOCKS = 80, MAX_LABEL = 80;
 const state = {
   blocks: [], loaded: false, busy: false, saving: false,
   tab: 'board', who: '', need: 0, needSet: false, wide: false,
-  days: [], local: false, at: 0
+  days: [], local: false, at: 0,
+  /* The Monday of the week every grid on the tab is drawn for. It only
+     ever moves off this one if somebody has a block that does not run
+     every week — with nothing rotating, one week is every week and a
+     picker would be a control that changes nothing. */
+  week: '', every: 2
 };
+
+/* The week everything is drawn for. state.week is filled in at the bottom,
+   once the date helpers above it exist, so this answers with the current
+   week rather than throwing for anything that runs in between. */
+const weekShown = () => state.week || mondayOf(new Date());
 
 /* ---------- where it saves ----------
 
@@ -148,6 +158,58 @@ function day10(v){
 
 const today10 = () => day10(new Date());
 
+/* ---------- which weeks a block runs in ----------
+
+   Most blocks run every week and this is all dead weight to them. The ones
+   that do not are the reason the tab needed a second week at all: a lab
+   every other Tuesday, an A/B timetable, a shift on a three-week rota. A
+   block carries 'every', or 'i/n' — week i of an n-week cycle.
+
+   Which real week is week 1 is not stored. It is counted off a fixed
+   Monday — 5 January 1970, which was one — so two people's pages and the
+   sheet all agree about next Tuesday without an anchor row anybody could
+   get wrong. */
+const WEEK_ONE = Date.UTC(1970, 0, 5);
+
+/* The Monday of the week a date falls in, as 'YYYY-MM-DD'. */
+function mondayOf(date){
+  const d = date instanceof Date ? new Date(date.getTime()) : new Date(String(date) + 'T12:00:00');
+  if (isNaN(d.getTime())) return today10();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return day10(d);
+}
+
+function weekIndex(mondayIso){
+  const d = new Date(String(mondayIso) + 'T12:00:00');
+  if (isNaN(d.getTime())) return 0;
+  return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - WEEK_ONE) / 6048e5);
+}
+
+const cycleOf = week => {
+  const m = /^(\d)\/(\d)$/.exec(String(week || ''));
+  return m ? {i:+m[1], n:+m[2]} : null;
+};
+
+/* Does this block happen in the week beginning on that Monday? */
+function runsOn(block, mondayIso){
+  const cycle = cycleOf(block && block.week);
+  if (!cycle) return true;
+  return ((weekIndex(mondayIso) % cycle.n) + cycle.n) % cycle.n === cycle.i - 1;
+}
+
+/* "every other week", "1 of 3" — how a rotation is said out loud. */
+function weekSay(week){
+  const cycle = cycleOf(week);
+  if (!cycle) return '';
+  if (cycle.n === 2) return 'every other week';
+  return 'week ' + cycle.i + ' of ' + cycle.n;
+}
+
+/* The rotation a block would need to fall in this particular week — what
+   the form fills in when somebody says "every other week, starting the one
+   I am looking at". */
+const cycleFor = (mondayIso, n) => (((weekIndex(mondayIso) % n) + n) % n + 1) + '/' + n;
+
 /* "Mar 16" and "Mar 16 – Mar 20", read off the two dates. */
 function breakSay(b){
   const one = iso => {
@@ -196,7 +258,7 @@ function clean(b){
   const who = String(b.who || '').trim();
   if (PEOPLE().indexOf(who) < 0) return {error:'that name is not on the bootcamp'};
   if (b.kind === 'none') return {who, label:'', kind:'none', days:[], start:'', end:'', source:'typed',
-    from:'', to:''};
+    from:'', to:'', week:'every'};
   if (b.kind === 'break') {
     const from = day10(b.from), to = day10(b.to) || from;
     if (!from) return {error:'a break needs the day it starts'};
@@ -204,7 +266,7 @@ function clean(b){
     if (!name) return {error:'a break needs a name'};
     return {who, label:name, kind:'break', days:[], start:'', end:'',
       source:['typed','ics','pasted'].indexOf(b.source) >= 0 ? b.source : 'typed',
-      from, to: to < from ? from : to};
+      from, to: to < from ? from : to, week:'every'};
   }
   const days = (b.days || []).map(Number).filter(n => n >= 1 && n <= 7)
     .filter((n, i, all) => all.indexOf(n) === i).sort((a, b2) => a - b2);
@@ -217,7 +279,7 @@ function clean(b){
     label: String(b.label || '').replace(/\s+/g, ' ').trim().slice(0, MAX_LABEL),
     kind: KINDS[b.kind] ? b.kind : 'busy',
     source: ['typed','ics','pasted'].indexOf(b.source) >= 0 ? b.source : 'typed',
-    from:'', to:''
+    from:'', to:'', week: cycleOf(b.week) ? b.week : 'every'
   };
 }
 
@@ -418,6 +480,7 @@ function icsBlocks(text){
     const endAt = Math.min(24 * 60, e.start.at + long);
 
     const rule = {};
+    let cycle = 'every';
     String(e.rrule || '').split(';').forEach(part => {
       const bits = part.split('=');
       if (bits.length === 2) rule[bits[0].toUpperCase()] = bits[1];
@@ -432,13 +495,26 @@ function icsBlocks(text){
       const by = String(rule.BYDAY || '').split(',')
         .map(t => ICS_DAY[t.replace(/^[-+]?\d+/, '').toUpperCase()]).filter(Boolean);
       days = by.length ? by : (freq === 'DAILY' ? [1, 2, 3, 4, 5, 6, 7] : [e.start.day]);
+
+      /* INTERVAL=2 is a lab every other Tuesday, and reading it as every
+         Tuesday would book out half the Tuesdays in the term that are
+         actually free. Which half it is comes from the week the rule
+         starts in. Anything on a longer cycle than four weeks is left off
+         rather than guessed at — it is rare, and a wrong guess is a block
+         that is wrong three weeks in four. */
+      const every = parseInt(rule.INTERVAL || '1', 10) || 1;
+      if (freq === 'WEEKLY' && every > 1) {
+        if (every > 4) return;
+        cycle = cycleFor(mondayOf(e.start.date), every);
+      }
     } else {
       if (e.start.date < new Date(now.getTime() - 864e5) || e.start.date > horizon) return;
       days = [e.start.day];
     }
 
     const label = (e.summary || e.where || 'Busy').slice(0, MAX_LABEL);
-    days.forEach(d => out.push({day:d, start:e.start.at, end:endAt, label, kind:guessKind(label)}));
+    days.forEach(d => out.push({day:d, start:e.start.at, end:endAt, label,
+      kind:guessKind(label), week:cycle}));
   }
 
   return {blocks:fold(out),
@@ -468,13 +544,16 @@ function guessKind(label){
 function fold(list){
   const byKey = {};
   list.forEach(b => {
-    const key = b.start + '|' + b.end + '|' + b.label.toLowerCase();
-    if (!byKey[key]) byKey[key] = {days:[], start:b.start, end:b.end, label:b.label, kind:b.kind};
+    /* the rotation is part of the key: a fortnightly lab and a weekly
+       lecture at the same hour are two different commitments */
+    const key = b.start + '|' + b.end + '|' + (b.week || 'every') + '|' + b.label.toLowerCase();
+    if (!byKey[key]) byKey[key] = {days:[], start:b.start, end:b.end, label:b.label,
+      kind:b.kind, week:b.week || 'every'};
     if (byKey[key].days.indexOf(b.day) < 0) byKey[key].days.push(b.day);
   });
   return Object.keys(byKey).map(k => byKey[k])
     .map(b => ({days:b.days.sort((x, y) => x - y), start:hhmm(b.start), end:hhmm(b.end),
-                label:b.label, kind:b.kind}))
+                label:b.label, kind:b.kind, week:b.week}))
     .sort((a, b) => (a.days[0] - b.days[0]) || (mins(a.start) - mins(b.start)))
     .slice(0, MAX_BLOCKS);
 }
@@ -611,11 +690,17 @@ function knownPeople(){
   return PEOPLE().filter(filledIn);
 }
 
+/* Whether anybody's week rotates. Nothing on this tab changes shape until
+   one does. */
+const anyRotating = () => state.blocks.some(b => !!cycleOf(b.week));
+
 /* A busy map per person: 7 days of half-hour slots, true where a block
-   covers any part of the slot. */
-function busyOf(who){
+   covers any part of the slot. Blocks that do not run in the week being
+   looked at are simply not in it. */
+function busyOf(who, monday){
+  const when = monday || weekShown();
   const grid = DAYS.map(() => new Array(SLOTS).fill(false));
-  blocksOf(who).forEach(b => {
+  blocksOf(who).filter(b => runsOn(b, when)).forEach(b => {
     const from = mins(b.start), to = mins(b.end);
     if (from < 0 || to <= from) return;
     (b.days || []).forEach(d => {
@@ -629,8 +714,9 @@ function busyOf(who){
 
 /* For every slot of the week: who, of the people who have filled theirs
    in, has nothing on. */
-function freeGrid(){
-  const who = knownPeople(), maps = who.map(busyOf);
+function freeGrid(monday){
+  const when = monday || weekShown();
+  const who = knownPeople(), maps = who.map(p => busyOf(p, when));
   return DAYS.map((d, di) => {
     const row = [];
     for (let s = 0; s < SLOTS; s++) row.push(who.filter((p, i) => !maps[i][di][s]));
@@ -729,7 +815,41 @@ function drawTabs(){
   });
 }
 
+/* The weeks you can ask about: this one and the next few real ones, named
+   by their dates rather than as "week A", which is only a name if you
+   already know which one you are in. It is hidden outright while nobody's
+   week rotates, because then every week is the same week. */
+function drawWeeks(){
+  const box = $('sc-weeks');
+  if (!box) return;
+  const rotating = anyRotating();
+  box.hidden = !rotating;
+  if (!rotating) { state.week = mondayOf(new Date()); box.innerHTML = ''; return; }
+
+  const here = mondayOf(new Date());
+  /* How far ahead is worth offering: one full turn of the longest rotation
+     anybody has, so every distinct week is reachable and no more. */
+  const longest = state.blocks.reduce((n, b) => {
+    const c = cycleOf(b.week);
+    return c && c.n > n ? c.n : n;
+  }, 2);
+  let html = '';
+  for (let i = 0; i < longest; i++) {
+    const d = new Date(here + 'T12:00:00');
+    d.setDate(d.getDate() + i * 7);
+    const iso = day10(d);
+    const label = i === 0 ? 'This week' : i === 1 ? 'Next week'
+      : 'Week of ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    html += '<button type="button" class="sc-wk' + (iso === weekShown() ? ' on' : '') +
+      '" data-week="' + iso + '"><b>' + label + '</b><i>' +
+      (i === 0 || i === 1 ? d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') +
+      '</i></button>';
+  }
+  box.innerHTML = html;
+}
+
 function drawBoard(){
+  drawWeeks();
   const known = knownPeople(), all = PEOPLE(), missing = all.filter(p => !filledIn(p));
   const grid = freeGrid(), [from, to] = hoursNow();
 
@@ -773,6 +893,20 @@ function drawBoard(){
       esc(onBreak(p)[0].label.toLowerCase()) + ' until ' +
       esc(breakSay({from:onBreak(p)[0].to || onBreak(p)[0].from}))).join(', and ') +
       (away.length ? ' — the classes below are term-time, so there is more room than the grid shows.' : '');
+  }
+
+  /* With rotations in play the answer is about one week rather than about
+     weeks in general, and a board that did not say which would be quietly
+     wrong every other Tuesday. */
+  const rotate = $('sc-week-say');
+  if (rotate) {
+    const on = anyRotating() && weekShown() !== mondayOf(new Date());
+    rotate.hidden = !anyRotating();
+    rotate.textContent = anyRotating()
+      ? 'for the week of ' + new Date(weekShown() + 'T12:00:00')
+          .toLocaleDateString('en-US', {month:'short', day:'numeric'}) +
+        (on ? '' : ' — this week')
+      : '';
   }
 
   drawBest(grid, known, from, to);
@@ -864,6 +998,7 @@ function drawHeat(grid, known, from, to){
 function drawMine(){
   drawWhobar();
   drawDayPicker();
+  drawEvery();
   drawWeek();
   drawBreaks();
   drawList();
@@ -904,6 +1039,9 @@ function drawWeek(){
   DAYS.forEach(day => {
     const onDay = mine.filter(b => (b.days || []).indexOf(day.n) >= 0)
       .sort((a, b) => mins(a.start) - mins(b.start));
+    /* the gaps are between the things actually on this week, so a block
+       that is skipped this week does not close a hole that is open */
+    const running = onDay.filter(b => runsOn(b, weekShown()));
     h += '<div class="sc-wcol"><span class="sc-whead' + (onDay.length ? '' : ' off') + '">' +
       day.short + '</span><div class="sc-wbody">';
     for (let m = Math.ceil(from / 60) * 60; m < to; m += 60) {
@@ -912,8 +1050,8 @@ function drawWeek(){
 
     /* the gaps between one thing and the next, which is what a break in a
        school day actually is */
-    onDay.forEach((b, i) => {
-      const next = onDay[i + 1];
+    running.forEach((b, i) => {
+      const next = running[i + 1];
       if (!next) return;
       const open = mins(next.start) - mins(b.end);
       if (open < 45) return;
@@ -925,21 +1063,31 @@ function drawWeek(){
 
     onDay.forEach(b => {
       const k = kindOf(b.kind), long = mins(b.end) - mins(b.start);
-      h += '<span class="sc-wblock' + (long <= 60 ? ' tight' : '') +
+      const off = !runsOn(b, weekShown());
+      h += '<span class="sc-wblock' + (long <= 60 ? ' tight' : '') + (off ? ' off' : '') +
         '" style="top:' + at(mins(b.start)) + ';height:' + (long / tall * 100).toFixed(3) +
         '%;background:var(' + k.v + ')" title="' +
-        esc((b.label || k.label) + ' · ' + span(mins(b.start), mins(b.end))) + '">' +
-        '<b>' + esc(b.label || k.label) + '</b><i>' + esc(clock(mins(b.start))) + '</i></span>';
+        esc((b.label || k.label) + ' · ' + span(mins(b.start), mins(b.end)) +
+          (weekSay(b.week) ? ' · ' + weekSay(b.week) + (off ? ', not this one' : '') : '')) + '">' +
+        '<b>' + esc(b.label || k.label) + '</b><i>' + esc(clock(mins(b.start))) +
+        (weekSay(b.week) ? ' · alt' : '') + '</i></span>';
     });
     h += '</div></div>';
   });
   box.innerHTML = h;
 
+  const rotating = mine.filter(b => cycleOf(b.week)).length;
   const days = DAYS.filter(d => mine.some(b => (b.days || []).indexOf(d.n) >= 0)).length;
   const free = DAYS.length - days;
   $('sc-week-note').textContent = days + (days === 1 ? ' day with something on it' : ' days with something on it') +
     (free ? ' · ' + free + ' clear' : '') +
-    (gaps.length ? ' · ' + gaps.length + (gaps.length === 1 ? ' gap' : ' gaps') + ' between classes' : '');
+    (gaps.length ? ' · ' + gaps.length + (gaps.length === 1 ? ' gap' : ' gaps') + ' between classes' : '') +
+    /* Which week this is only needs saying once somebody has a block that
+       does not run in all of them — and then it needs saying by name,
+       because "this week" is exactly the thing in question. */
+    (rotating ? ' · week of ' + new Date(weekShown() + 'T12:00:00')
+        .toLocaleDateString('en-US', {month:'short', day:'numeric'}) +
+      ', faded blocks are off it' : '');
 }
 
 /* ---------- the breaks ---------- */
@@ -981,6 +1129,27 @@ function drawWhobar(){
   box.innerHTML = can.map(p => '<button type="button" class="sc-me' + (p === state.who ? ' on' : '') +
     '" data-me="' + esc(p) + '">' + av(p) + esc(p) +
     (filledIn(p) ? '' : '<i class="sc-dot" aria-hidden="true"></i>') + '</button>').join('');
+}
+
+/* "Every other week" is only half an answer — the other half is which of
+   the two, and the only way to ask that without a lecture about cycles is
+   to name real weeks and let somebody point at one. */
+function drawEvery(){
+  const every = $('sc-every'), wrap = $('sc-cycle-l'), pick = $('sc-cycle');
+  if (!every || !pick) return;
+  const n = +every.value || 1;
+  wrap.hidden = n < 2;
+  if (n < 2) { pick.innerHTML = ''; return; }
+  const here = mondayOf(new Date());
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const d = new Date(here + 'T12:00:00');
+    d.setDate(d.getDate() + i * 7);
+    html += '<option value="' + day10(d) + '"' + (i === 0 ? ' selected' : '') + '>' +
+      (i === 0 ? 'this week' : i === 1 ? 'next week'
+        : 'week of ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric'})) + '</option>';
+  }
+  pick.innerHTML = html;
 }
 
 function drawDayPicker(){
@@ -1035,6 +1204,7 @@ function drawList(){
       '<i class="sc-swatch" style="background:var(' + k.v + ')" aria-hidden="true"></i>' +
       '<span class="sc-row-what"><b>' + esc(b.label || k.label) + '</b>' +
         '<span class="sc-row-sub">' + esc(daysSay(b.days)) + ' · ' + esc(k.label.toLowerCase()) +
+        (weekSay(b.week) ? ' · ' + esc(weekSay(b.week)) : '') +
         (b.source && b.source !== 'typed' ? ' · from ' + (b.source === 'ics' ? 'a calendar' : 'a paste') : '') +
         '</span></span>' +
       '<span class="sc-row-when">' + esc(span(mins(b.start), mins(b.end))) + '</span>' +
@@ -1055,7 +1225,7 @@ function drawAll(){
 
   box.innerHTML = PEOPLE().map(p => {
     const mine = blocksOf(p), has = filledIn(p);
-    const map = busyOf(p);
+    const map = busyOf(p, weekShown());
     const hours = mine.reduce((sum, b) =>
       sum + (mins(b.end) - mins(b.start)) * (b.days || []).length, 0) / 60;
     const last2 = state.blocks.filter(b => b.who === p)
@@ -1193,6 +1363,15 @@ $('sc-need').addEventListener('change', ev => {
   drawBoard();
 });
 
+$('sc-weeks').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-week]');
+  if (!b) return;
+  state.week = b.getAttribute('data-week');
+  render();
+});
+
+$('sc-every').addEventListener('change', () => { drawEvery(); });
+
 $('sc-hours').addEventListener('click', () => {
   state.wide = !state.wide;
   drawBoard();
@@ -1226,9 +1405,11 @@ $('sc-days').addEventListener('click', ev => {
 });
 
 $('sc-add').addEventListener('click', async () => {
+  const n = +$('sc-every').value || 1;
   const block = {
     who: state.who, label: $('sc-label').value, kind: $('sc-kind').value,
-    days: state.days.slice(), start: $('sc-start').value, end: $('sc-end').value, source: 'typed'
+    days: state.days.slice(), start: $('sc-start').value, end: $('sc-end').value, source: 'typed',
+    week: n < 2 ? 'every' : cycleFor($('sc-cycle').value || mondayOf(new Date()), n)
   };
   const c = clean(block);
   if (c.error) { $('sc-form-hint').textContent = c.error; return; }
@@ -1236,7 +1417,9 @@ $('sc-add').addEventListener('click', async () => {
   if (await act('add', block, 'Adding it…')) {
     $('sc-label').value = '';
     state.days = [];
+    $('sc-every').value = '1';
     drawDayPicker();
+    drawEvery();
   }
 });
 
@@ -1350,6 +1533,7 @@ window.addEventListener('fomo:identity', () => {
 });
 
 if (current()) state.who = current().who;
+state.week = mondayOf(new Date());
 recall();
 render();
 activated();

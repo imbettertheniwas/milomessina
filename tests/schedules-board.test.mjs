@@ -52,6 +52,15 @@ function board(){
       run('state.blocks = ' + JSON.stringify(blocks) + ';');
       return out('windows(freeGrid(), ' + need + ', ' + from + ', ' + to + ')');
     },
+    /* the board asked about one particular week */
+    freeIn(blocks, monday, {need = 2, from = 8, to = 21} = {}){
+      run('state.blocks = ' + JSON.stringify(blocks) + '; state.week = ' + JSON.stringify(monday) + ';');
+      return out('windows(freeGrid(' + JSON.stringify(monday) + '), ' + need + ', ' + from + ', ' + to + ')');
+    },
+    runsOn(block, monday){
+      return run('runsOn(' + JSON.stringify(block) + ', ' + JSON.stringify(monday) + ')');
+    },
+    cycleFor(monday, n){ return run('cycleFor(' + JSON.stringify(monday) + ', ' + n + ')'); },
     known(blocks){
       run('state.blocks = ' + JSON.stringify(blocks) + ';');
       return out('knownPeople()');
@@ -326,4 +335,90 @@ test('the window only covers the hours the board is showing', () => {
     assert.ok(w.start >= 8 * 60, 'no window starts before the board does');
     assert.ok(w.end <= 21 * 60, 'no window runs past the end of the board');
   });
+});
+
+/* ---------- weeks that are not every week ----------
+
+   A lab every other Tuesday is the one thing a single repeating week
+   cannot say. Read as weekly it books out every Tuesday in the term, half
+   of which are free — which is the expensive direction to be wrong in,
+   because the windows it hides are the ones people would have used. */
+
+test('a fortnightly block runs on alternate weeks and nothing else', () => {
+  const b = board();
+  /* two consecutive Mondays; a 1-of-2 block falls on exactly one of them */
+  const first = '2026-09-21', second = '2026-09-28', third = '2026-10-05';
+  const cycle = b.cycleFor(first, 2);
+  const block = {who:'Milo', days:[2], start:'14:00', end:'17:00', label:'Lab',
+    kind:'class', week:cycle};
+  assert.equal(b.runsOn(block, first), true);
+  assert.equal(b.runsOn(block, second), false);
+  assert.equal(b.runsOn(block, third), true, 'and it comes back round');
+});
+
+test('a block with no rotation on it runs every week, including one saved before rotations existed', () => {
+  const b = board();
+  const weekly = {who:'Milo', days:[2], start:'14:00', end:'17:00', label:'Lecture', week:'every'};
+  const old = {who:'Milo', days:[2], start:'14:00', end:'17:00', label:'Lecture'};
+  ['2026-09-21', '2026-09-28', '2026-10-05'].forEach(monday => {
+    assert.equal(b.runsOn(weekly, monday), true);
+    assert.equal(b.runsOn(old, monday), true, 'silence means every week');
+  });
+});
+
+test('the week you are looking at is the week the board answers for', () => {
+  const b = board();
+  const first = '2026-09-21', second = '2026-09-28';
+  const onFirst = b.cycleFor(first, 2);
+  const blocks = [
+    {id:'1', who:'Milo', days:[2], start:'09:00', end:'12:00', label:'Lab', kind:'class',
+      week:onFirst, source:'typed'},
+    {id:'2', who:'Bijan', days:[2], start:'13:00', end:'14:00', label:'Seminar', kind:'class',
+      week:'every', source:'typed'}
+  ];
+  /* On the lab week nothing can be booked across 9–12; on the other week
+     the same hours are the two of them free. */
+  const covers = list => list.some(w => w.day === 2 && w.start < 12 * 60 && w.end > 9 * 60 &&
+    w.who.length === 2);
+  assert.equal(covers(b.freeIn(blocks, first, {need:2})), false,
+    'nobody is offered the hours the lab is running in');
+  assert.equal(covers(b.freeIn(blocks, second, {need:2})), true,
+    'and on the week with no lab, those same hours are a window');
+});
+
+test('every-other-week in a calendar is read as every other week, not every week', () => {
+  const b = board();
+  const out = b.ics(CAL([EVENT([
+    'SUMMARY:CHEM 31A Lab',
+    'DTSTART:20260915T140000',
+    'DTEND:20260915T170000',
+    'RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=TU'
+  ])]));
+  assert.equal(out.length, 1);
+  assert.deepEqual(out[0].days, [2]);
+  assert.match(out[0].week, /^[12]\/2$/);
+  /* and it lands on the week the rule actually starts in */
+  assert.equal(b.runsOn(out[0], '2026-09-14'), true);
+  assert.equal(b.runsOn(out[0], '2026-09-21'), false);
+});
+
+test('a weekly lecture and a fortnightly lab at the same hour stay two things', () => {
+  const b = board();
+  const out = b.ics(CAL([
+    EVENT(['SUMMARY:CHEM 31A', 'DTSTART:20260915T140000', 'DTEND:20260915T170000',
+      'RRULE:FREQ=WEEKLY;BYDAY=TU']),
+    EVENT(['SUMMARY:CHEM 31A', 'DTSTART:20260917T140000', 'DTEND:20260917T170000',
+      'RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=TH'])
+  ]));
+  assert.equal(out.length, 2, 'the fold must not swallow one into the other');
+  assert.equal(out.filter(x => x.week === 'every').length, 1);
+  assert.equal(out.filter(x => /\/2$/.test(x.week)).length, 1);
+});
+
+test('a rotation longer than a month is left off rather than guessed at', () => {
+  const b = board();
+  assert.deepEqual(b.ics(CAL([EVENT([
+    'SUMMARY:Rare thing', 'DTSTART:20260915T140000', 'DTEND:20260915T150000',
+    'RRULE:FREQ=WEEKLY;INTERVAL=6;BYDAY=TU'
+  ])])), []);
 });

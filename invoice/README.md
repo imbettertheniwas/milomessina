@@ -351,7 +351,13 @@ The `schedules` tab — one row per recurring commitment, plus one per break:
 | `days` | the weekdays it repeats on, `1`–`7` with Monday as 1, comma separated. Blank on a break |
 | `start`, `end` | `HH:MM`, 24-hour, wall-clock with no timezone on it. Blank on a break |
 | `source` | `typed`, `ics` or `pasted` — which is how a re-upload knows what it is replacing |
+| `week` | `every`, or `i/n` — week *i* of an *n*-week rotation, `n` up to 4. Blank reads as `every` |
 | `from`, `to` | the first and last day of a break, `YYYY-MM-DD`, both inclusive. Blank on everything else |
+
+Which real week is week 1 of a rotation is **not stored anywhere**. It is
+counted off a fixed Monday — 5 January 1970, which was one — so every page,
+every person and the script all land on the same answer for the same week
+without an anchor row that could drift.
 
 A row with `kind` of `none` is the answer "nothing fixed this week", which a
 list of busy hours cannot give on its own — without it, somebody with no
@@ -780,6 +786,12 @@ There are three sub-tabs.
 
 ### When we could be in
 
+**Which week.** As soon as anybody has a block that does not run every
+week, a strip of real weeks appears above the windows — *This week*, *Next
+week* — and everything below it is worked out for the one you pick. It is
+hidden entirely while nothing rotates, because then every week is the same
+week and it would be a control that changes nothing.
+
 **The best windows** is the answer: up to six stretches of an hour or more
 where enough of them are free, each one naming who is in it and who is not.
 **At least** sets the bar, and it starts at *everybody in* — the question
@@ -829,10 +841,24 @@ Three ways in, and they can be mixed:
   `Shift at the library Tue Thu 2pm-6pm` both read. A line it cannot make
   sense of is handed back with the reason rather than dropped in silence.
 
+**Every week, or not.** A lab every other Tuesday is the one thing a single
+repeating week cannot say, so a block can carry a rotation: *how often* on
+the form, and then *starting* which real week, because "every other week" is
+only half an answer and the other half is which of the two. `.ics` files say
+this themselves with `RRULE;INTERVAL=2` and it is read straight off —
+before this, a fortnightly lab was imported as a weekly one, which booked
+out every Tuesday in the term when half of them were free. That is the
+expensive direction to be wrong in: the windows it hid were the ones people
+would have used. A rotation longer than four weeks is left out rather than
+guessed at.
+
 Once there is a week on record it is drawn as **Your week, laid out** —
 every class where it actually falls, and the gaps between them labelled,
 because a two-hour hole on Wednesday is the most useful thing on the page
 and nothing else says so.
+
+Blocks that do not run in the week on screen are drawn faded rather than
+hidden, so the week still reads as the same week.
 
 **A second upload replaces the first** rather than stacking on it — a term
 exported twice is one term — but only the blocks that came from a calendar.

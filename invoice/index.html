@@ -1159,11 +1159,14 @@ td.date.run{color:var(--good)}
             <span id="sc-guess-say">A guess, not a calendar — it only knows the weeks people have filled in.</span>
           </p>
 
+          <div class="sc-weeks" id="sc-weeks" hidden role="group" aria-label="Which week to work out"></div>
+
           <p class="sc-rule sc-away" id="sc-away" hidden></p>
 
           <div class="panel">
             <div class="panel-h">
               <h2>The best windows</h2>
+              <span class="note" id="sc-week-say" hidden></span>
               <span class="note" id="sc-best-note"></span>
             </div>
             <div class="panel-b" id="sc-best"></div>
@@ -1205,6 +1208,16 @@ td.date.run{color:var(--good)}
                 </select>
               </label>
               <div class="sc-days" id="sc-days" role="group" aria-label="Which days"></div>
+              <label for="sc-every">How often
+                <select id="sc-every">
+                  <option value="1">Every week</option>
+                  <option value="2">Every other week</option>
+                  <option value="3">Every third week</option>
+                </select>
+              </label>
+              <label for="sc-cycle" id="sc-cycle-l" hidden>Starting
+                <select id="sc-cycle"></select>
+              </label>
               <label for="sc-start">From<input id="sc-start" type="time" step="300" value="09:00"></label>
               <label for="sc-end">To<input id="sc-end" type="time" step="300" value="10:15"></label>
               <div class="sc-form-foot">

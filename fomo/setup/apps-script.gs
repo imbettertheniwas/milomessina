@@ -1990,7 +1990,7 @@ function postPublic(p) {
    the script happens to be set to, and the office they are deciding to
    come into is the one they are near. */
 var SCHED_TAB = 'schedules';
-var SCHED_COLS = ['id', 'updated', 'who', 'label', 'kind', 'days', 'start', 'end', 'source', 'from', 'to'];
+var SCHED_COLS = ['id', 'updated', 'who', 'label', 'kind', 'days', 'start', 'end', 'source', 'from', 'to', 'week'];
 /* 'none' is not a block, it is the answer "nothing fixed this week" — the
    one thing a list of busy hours cannot say for itself. Without it somebody
    with no classes at all is indistinguishable from somebody who never
@@ -2104,6 +2104,28 @@ function schedDate(v) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
 
+/* Which weeks a block actually runs in.
+
+   'every' is the ordinary answer and what everything written before this
+   column existed reads as. The other answer is a rotation: '1/2' is the
+   first week of an alternating pair, '2/3' the middle week of a three-week
+   cycle. A lab every other Tuesday is one block with a rotation on it, not
+   a block that lies about half the Tuesdays in the term.
+
+   Which real week is which is not stored anywhere. It is counted off a
+   fixed Monday — 5 January 1970, which was one — so every page, every
+   person and this script all land on the same answer for the same week
+   without a shared anchor row to keep in step. */
+function schedWeek(v) {
+  var s = String(v == null ? '' : v).trim().toLowerCase();
+  if (!s || s === 'every') return 'every';
+  var m = /^(\d)\/(\d)$/.exec(s);
+  if (!m) return 'every';
+  var i = parseInt(m[1], 10), n = parseInt(m[2], 10);
+  if (!(n >= 2 && n <= 4) || !(i >= 1 && i <= n)) return 'every';
+  return i + '/' + n;
+}
+
 function schedMins(hhmm) {
   var m = /^(\d{2}):(\d{2})$/.exec(String(hhmm || ''));
   return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : -1;
@@ -2129,7 +2151,7 @@ function schedClean(b) {
   var kind = schedKind(b.kind);
   if (kind === 'none') {
     return { who: who, label: '', kind: 'none', days: '', start: '', end: '',
-             source: schedSource(b.source), from: '', to: '' };
+             source: schedSource(b.source), from: '', to: '', week: 'every' };
   }
 
   /* A break is the other thing a school calendar knows and a weekly grid
@@ -2143,7 +2165,7 @@ function schedClean(b) {
     var name = String(b.label == null ? '' : b.label).replace(/\s+/g, ' ').trim().slice(0, SCHED_MAX_LABEL);
     if (!name) return { error: 'a break needs a name' };
     return { who: who, label: campusSafe(name), kind: 'break', days: '', start: '', end: '',
-             source: schedSource(b.source), from: from, to: to };
+             source: schedSource(b.source), from: from, to: to, week: 'every' };
   }
 
   var days = schedDays(b.days);
@@ -2158,7 +2180,7 @@ function schedClean(b) {
   return {
     who: who, label: campusSafe(label), kind: kind,
     days: days.join(','), start: start, end: end, source: schedSource(b.source),
-    from: '', to: ''
+    from: '', to: '', week: schedWeek(b.week)
   };
 }
 
@@ -2181,7 +2203,8 @@ function schedAdd(b) {
 
   sh.appendRow([
     Utilities.getUuid().slice(0, 8), campusStamp(), clean.who, clean.label,
-    clean.kind, clean.days, clean.start, clean.end, clean.source, clean.from, clean.to
+    clean.kind, clean.days, clean.start, clean.end, clean.source, clean.from, clean.to,
+    clean.week
   ]);
   return null;
 }
@@ -2201,12 +2224,13 @@ function schedEdit(b) {
     var clean = schedClean({
       who: all[i].who, label: b.label, kind: was === 'break' ? 'break' : (b.kind === 'none' ? 'busy' : b.kind),
       days: b.days, start: b.start, end: b.end, source: all[i].source,
-      from: b.from, to: b.to
+      from: b.from, to: b.to, week: b.week
     });
     if (clean.error) return clean.error;
     var row = all[i]._row;
     sh.getRange(row, schedCol('from')).setValue(clean.from);
     sh.getRange(row, schedCol('to')).setValue(clean.to);
+    sh.getRange(row, schedCol('week')).setValue(clean.week);
     sh.getRange(row, schedCol('label')).setValue(clean.label);
     sh.getRange(row, schedCol('kind')).setValue(clean.kind);
     sh.getRange(row, schedCol('days')).setValue(clean.days);
@@ -2248,7 +2272,7 @@ function schedImport(b) {
     var one = schedClean({
       who: who, label: list[i].label, kind: list[i].kind,
       days: list[i].days, start: list[i].start, end: list[i].end, source: source,
-      from: list[i].from, to: list[i].to
+      from: list[i].from, to: list[i].to, week: list[i].week
     });
     /* A single unreadable line in a calendar of forty is not a reason to
        refuse the other thirty-nine. */
@@ -2268,7 +2292,7 @@ function schedImport(b) {
     sh.appendRow([
       Utilities.getUuid().slice(0, 8), stamp, clean[k].who, clean[k].label,
       clean[k].kind, clean[k].days, clean[k].start, clean[k].end, clean[k].source,
-      clean[k].from, clean[k].to
+      clean[k].from, clean[k].to, clean[k].week
     ]);
   }
   return null;
@@ -2318,7 +2342,8 @@ function schedPublic(s) {
     id: s.id, updated: s.updated, who: String(s.who),
     label: postBody(s.label), kind: schedKind(s.kind),
     days: schedDays(s.days), start: schedCell(s.start), end: schedCell(s.end),
-    source: schedSource(s.source), from: schedDate(s.from), to: schedDate(s.to)
+    source: schedSource(s.source), from: schedDate(s.from), to: schedDate(s.to),
+    week: schedWeek(s.week)
   };
 }
 
