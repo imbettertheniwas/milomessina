@@ -160,10 +160,18 @@ when the page is open in more than one tab on the same browser.
 
 ## Sign-in, ownership, and profiles
 
-The gate requires the existing shared passcode and a dropdown selection: Milo,
-Bijan, Jesse, Luchi, or Arya. The backend issues a six-hour session bound to that
-selection; only the session token is retained in this tab's session storage.
-Sign out revokes the session. Old remembered passcodes do not skip identity selection.
+The gate requires the existing shared passcode and a dropdown selection. The
+names on it are the roster the endpoint will actually accept, fetched on load,
+rather than a list written into the page — see **Changing the team**. The backend
+issues a six-hour session bound to that selection; only the session token is
+retained in this tab's session storage. Sign out revokes the session. Old
+remembered passcodes do not skip identity selection.
+
+The session reply carries two separate flags. `admin` is Arya, and is about
+money. `operator` is Arya or Milo, and is about the maintenance console at
+`#/admin` — a different question, deliberately answered separately, so that
+giving somebody the tools to unstick the sheet does not hand them the interns'
+reimbursements. See **The console**.
 
 Interns can create and change their own unpaid spends, attendance, recurring
 rules, weekly posts, and profiles, plus any spend they logged on Arya's card.
@@ -193,13 +201,18 @@ checks prevent a signed-in intern from bypassing ownership by altering a request
    Keep the existing `/exec` URLs. Do not create a new spreadsheet.
 2. The endpoint's GET response must include `identity: true`, `moneyUndo: true`, and `purchaseApproval: true`.
    The frontend checks this before attempting sign-in, and refuses an old backend.
+   It also reports `admin: true` and `team` once the console is deployed; a page
+   that does not see those leaves the console off the rail rather than failing
+   at a button.
 3. Deploy the website and visit API changes together. The visit API verifies Arya's
    session against the console's internal endpoint, separately from
    `VISITS_STORAGE_URL`. Keep `INTERNAL_SESSION_URL` in the visit handler aligned
    with `ENDPOINT` in the console if that address changes.
 
 Migrations append columns to `invoice` and create an empty `internal_profiles`
-tab as needed. Purchase approvals use `approved_by` and `approved_at`; the old
+tab as needed. An `internal_roster` tab is created on first read and seeded with
+the five names that were previously constants; `internal_admin_log` is created
+on the console's first write. Purchase approvals use `approved_by` and `approved_at`; the old
 `approvals` share-confirmation column is preserved but no longer authorizes anything. Existing ledger columns, amounts, dates, receipts, attendance,
 posts, and roster records are preserved. No demo records or sample profiles are
 seeded. Test fixtures run in memory and never connect to Google Sheets.
@@ -1084,9 +1097,82 @@ leaves their application exactly as it was.
 
 ## Changing the team
 
-`PEOPLE` at the top of the page's script, and `INVOICE_PEOPLE` in the Apps
-Script, are the same four names. Change both — the endpoint refuses a name it
-doesn't recognise, on a spend and on a day alike.
+The roster lives in the sheet, on an `internal_roster` tab, and is changed from
+the console at `#/admin`. It used to be two constants — `PEOPLE` in the page and
+`INVOICE_PEOPLE` in the Apps Script — which had to be edited, redeployed and
+shipped in step, with a window in between where the page offered a name the
+sheet had never heard of. Both constants are still there under the names
+`PEOPLE`/`LEADS` and `INVOICE_PEOPLE_SEED`/`INVOICE_LEADS_SEED`, but they are
+now only the seed: the first time anything reads the roster, an absent tab is
+created holding exactly those names, and from then on the tab is the answer.
+A deployment nobody opens the console on behaves exactly as it did before.
+
+Every sign-in comes back carrying the roster, so a person added in the console
+is pickable in the spend form, the split, the rail and the sign-in menu without
+anybody shipping a new page.
+
+## The console
+
+`#/admin`, in the rail under **Maintenance**, for the two names in `OPERATORS`
+(page) and `INTERNAL_ADMINS` (Apps Script): **Arya and Milo**. Change both
+together. Everything it does is something the rest of the tool is right to
+refuse — that is what it is for.
+
+This is not the same permission as `admin`. `admin` is still Arya alone and is
+still about money: approving a purchase, settling somebody up, changing a line
+after it has been paid. Milo holding the console does not widen any of that, and
+the tests assert as much. The console is about the sheet underneath, not the
+ledger on top of it.
+
+The rail hiding the door, and the hash bouncing to Overview, are conveniences.
+The lock is the endpoint: every `_api: "admin"` call checks the session's name
+against `INTERNAL_ADMINS` and refuses anybody else, whatever the payload claims
+about who is asking.
+
+What it does:
+
+- **Add somebody**, as an intern (on the clock and the attendance board) or a
+  lead (on the ledger only, like Arya). A name is an identifier before it is a
+  label — it is written into the `who` column of six tabs and read back out of a
+  comma-joined `shared` list — so it is letters, spaces, dots, hyphens and
+  apostrophes, and never a comma.
+- **Take somebody off.** This is not a delete. Their name comes out of every
+  picker and they can no longer sign in; every spend they logged, day they were
+  in and note they wrote stays exactly where it is and keeps rendering, because
+  that is what the ledger did and wiping it would also change what everyone else
+  is owed. Somebody still owed money needs a second confirmation. Somebody who
+  comes back keeps the row they already had rather than getting a second one.
+- **Move somebody between intern and lead.** Days already on the board stay
+  there; a lead simply stops being marked in on new ones.
+- **Rename somebody**, through every tab keyed on the old string — `who`,
+  `logged_by`, `shared`, `approvals`, `tags` and the profile row. Each list
+  column keeps the separator it has always used. This is the one thing in here
+  with no undo behind it, so it asks for the new name twice.
+- **Delete a row its owner cannot** — a spend locked by reimbursement, a day on
+  somebody who has left. The deletion quotes the whole row back at the sheet, so
+  a screen that has gone stale refuses rather than deleting the wrong thing. A
+  spend or a monthly rule goes through the ledger's own money history and can be
+  put back; a day, note or schedule block cannot.
+- **Say what looks wrong.** Read-only: rows belonging to a name the roster has
+  never carried, lines that read settled without being written down as settled,
+  spends with no amount. Nothing is fixed automatically — a script quietly
+  rewriting the ledger is what this console exists to avoid.
+
+Every write lands in an `internal_admin_log` tab first, under the name that made
+it, and nothing removes a line from it.
+
+The endpoint's GET response gains `admin: true` when the console is deployed,
+and `team` — the roster with its roles. A page talking to an older deployment
+leaves the door off the rail rather than opening onto a screen whose every
+button answers `unknown form`.
+
+### What this is not
+
+The gate is a shared passcode and a name picked off a menu. So the console
+belongs to whoever holds the passcode and picks Arya or Milo. It keeps sharp
+tools out of everyone else's way and writes down who used them; it is not, and
+is not sold as, a check on who somebody is — the same caveat the sign-in section
+above makes about identity generally.
 
 ## Reviewing spends and undoing money changes
 

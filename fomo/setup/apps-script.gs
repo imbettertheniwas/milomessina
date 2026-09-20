@@ -64,6 +64,12 @@ function doPost(e) {
     if (body._api === 'internal') return internalSessionApi(body);
     if (body._api === 'invoice') return invoiceApi(body);
 
+    /* The console that fixes the rest of it when it has gone wrong. Its own
+       namespace because everything in it is something every other namespace
+       is right to refuse, and because a reader of this line should be able
+       to find all of it in one place. */
+    if (body._api === 'admin') return internalAdminApi(body);
+
     /* Visit requests from /hqvisitform go the same way, into the bundled visits code and its
        own visit_requests tab. They carry their own 32-character service secret
        instead of SHARED_SECRET, because the rows hold guest contact details. */
@@ -114,6 +120,7 @@ function doPost(e) {
    Script serves the last deployed version, not the last saved one, so a
    paste without a redeploy leaves this false. */
 function doGet() {
+  var seen = rosterProbe();
   return reply(true, null, {
     hint: 'fomo campus form receiver is live',
     identity: true,
@@ -136,7 +143,17 @@ function doGet() {
        the script behind the URL is current — so it is named here rather
        than assumed. A page talking to an older deployment can then grey a
        name out instead of taking the line and losing it to a refusal. */
-    payers: INVOICE_PAYERS,
+    payers: seen.payers,
+    /* The same roster with its roles on it, which `payers` flattens away.
+       The sign-in menu is drawn off the first; who is on the clock and who
+       is only on the ledger comes off this. */
+    team: seen.team,
+    /* Whether the roster behind this URL is the sheet's rather than this
+       file's constant, and whether the console is deployed at all. A page
+       that offers Arya and Milo a console the script has never heard of
+       sends them to a button that answers 'unknown form'. */
+    roster: typeof rosterRead === 'function',
+    admin: typeof internalAdminApi === 'function',
     /* Whether this deployment will take Arya's name on somebody else's
        line. Named rather than assumed for the same reason `payers` is:
        a page ahead of the script behind it can grey the chip out instead
@@ -251,22 +268,27 @@ function internalSessionApi(body) {
   }
   if (body.action === 'session') {
     var current = internalActor(body);
-    return current ? reply(true, null, {who:current, admin:current === 'Arya'})
+    return current ? reply(true, null, {who:current, admin:current === 'Arya', operator:internalIsAdmin(current), roster:rosterRead().map(rosterPublic)})
       : reply(false, 'Session expired. Enter the passcode and select your name again.');
   }
   if (body.action !== 'login') return reply(false, 'unknown action');
   if (body.passcode !== CONFIG.INVOICE_KEY) return reply(false, 'That passcode does not match.');
   var who = String(body.who || '');
-  if (INVOICE_PAYERS.indexOf(who) === -1) return reply(false, 'Select your name.');
+  if (rosterPayers().indexOf(who) === -1) return reply(false, 'Select your name.');
   var token = Utilities.getUuid() + Utilities.getUuid();
   CacheService.getScriptCache().put('internal:' + token, who, 21600);
-  return reply(true, null, {token:token, who:who, admin:who === 'Arya'});
+  /* Two different questions, deliberately answered separately. `admin` is
+     whose money it is, and it is Arya's alone: approving a purchase, settling
+     a person up. `operator` is who may open the console that fixes the sheet
+     when it has gone wrong. Widening the first to get the second would have
+     put the interns' reimbursements in more hands than agreed to it. */
+  return reply(true, null, {token:token, who:who, admin:who === 'Arya', operator:internalIsAdmin(who), roster:rosterRead().map(rosterPublic)});
 }
 function internalActor(body) {
   var token = String(body._session || '');
   if (!token || token.length > 100) return null;
   var who = CacheService.getScriptCache().get('internal:' + token);
-  return INVOICE_PAYERS.indexOf(who) >= 0 ? who : null;
+  return rosterPayers().indexOf(who) >= 0 ? who : null;
 }
 function invoicePermission(action, body, actor, sh) {
   if (!actor) return 'Session expired. Enter the passcode and select your name again.';
@@ -325,18 +347,170 @@ function invoiceSettled(who, status) {
   return (String(who) === CARD_PAYER || String(status) === 'reimbursed') ? 'reimbursed' : 'pending';
 }
 function invoiceLogger(r) { return String((r && (r.logged_by || r.who)) || ''); }
+/* ---------- the roster, and who is allowed to change it ----------
+
+   These five names were a constant for as long as the five of them were
+   the whole bootcamp. Somebody arriving or leaving then meant editing this
+   file, redeploying it, editing invoice/index.html and shipping that too —
+   four steps, in order, with a window in between where the page offers a
+   name the sheet has never heard of. That is the shape of a job nobody
+   does, so the ledger carries a person who left for months.
+
+   So the list moved into the sheet, where everything else the console is
+   about already lives. What is left here is the seed: the first time
+   anything asks, the roster tab is written out as exactly these names, and
+   from then on the tab is the answer. A deployment nobody has opened the
+   console on behaves precisely as it did before.
+
+   Mirrors PEOPLE/LEADS in invoice/index.html. That copy is what the page
+   believes before the sheet has answered; `payers` in doGet and `roster` on
+   every ledger reply are what keep the two honest. */
+
 /* The interns. Only these names go on the clock or come back off it — the
    shift tab is a timesheet, and Arya does not have one. */
-var INVOICE_PEOPLE = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
+var INVOICE_PEOPLE_SEED = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
 
-/* Everyone a line can name — as the person who fronted it, or as somebody it
-   was bought for. Arya reimburses the ledger rather than being paid out of it,
-   so most lines are an intern's card; but Arya fronts spends too, and plenty
-   of what the interns buy is bought for Arya, so `shared` has to be able to
-   say so. Kept apart from INVOICE_PEOPLE, which is the timesheet roster.
-   Mirrors PAYERS/SHARERS in invoice/index.html — change both together. */
-var INVOICE_PAYERS = INVOICE_PEOPLE.concat(['Arya']);
-var INVOICE_SHARERS = INVOICE_PAYERS;
+/* Not on the clock, but on the ledger. Arya reimburses it rather than being
+   paid out of it; plenty of what the interns buy is bought for him, so a
+   line has to be able to name him. Kept apart from the interns, which is
+   the timesheet roster. */
+var INVOICE_LEADS_SEED = ['Arya'];
+
+/* The two who can open the console. Not the same question as who approves a
+   purchase — that is Arya's money and stays his alone — and not the same as
+   who is on the roster either, which is why it is its own list and why the
+   roster refuses to remove anybody on it. Arya runs the bootcamp; Milo
+   maintains this console, and needed to be able to fix it without going
+   through Arya for every stuck row.
+
+   Worth being plain about what this is: the gate is the shared passcode and
+   a name picked off a menu, so this grants the console to whoever holds the
+   passcode and picks one of these two names. It is a set of tools kept out
+   of everyone else's way, not an identity check.
+
+   Mirrors OPERATORS in invoice/index.html — change both together. */
+var INTERNAL_ADMINS = ['Arya', 'Milo'];
+function internalIsAdmin(who) { return INTERNAL_ADMINS.indexOf(String(who || '')) > -1; }
+
+var ROSTER_TAB = 'internal_roster';
+var ROSTER_COLS = ['name', 'role', 'added', 'added_by', 'removed', 'removed_by'];
+var ROSTER_ROLES = ['intern', 'lead'];
+
+/* One read per request, not one per name checked. dayImport asks about the
+   roster once for every row in the file it was handed, and a spreadsheet
+   read inside that loop is the difference between an import and a timeout.
+   Every write below clears it, so nothing is ever answered from a copy the
+   same request has already replaced. */
+var rosterMemo = null;
+function rosterForget() { rosterMemo = null; }
+
+function rosterSheet() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(ROSTER_TAB);
+  if (sh) return sh;
+  sh = ss.insertSheet(ROSTER_TAB);
+  sh.getRange(1, 1, 1, ROSTER_COLS.length).setValues([ROSTER_COLS]).setFontWeight('bold');
+  sh.setFrozenRows(1);
+  var stamp = invoiceStamp();
+  INVOICE_PEOPLE_SEED.forEach(function (n) { sh.appendRow([n, 'intern', stamp, 'seed', '', '']); });
+  INVOICE_LEADS_SEED.forEach(function (n) { sh.appendRow([n, 'lead', stamp, 'seed', '', '']); });
+  rosterForget();
+  return sh;
+}
+
+function rosterRead() {
+  if (rosterMemo) return rosterMemo;
+  var sh = rosterSheet(), last = sh.getLastRow(), out = [];
+  if (last > 1) {
+    var vals = sh.getRange(2, 1, last - 1, ROSTER_COLS.length).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      var name = String(vals[i][0] || '').trim();
+      if (!name) continue;
+      var role = String(vals[i][1] || 'intern');
+      out.push({
+        _row: i + 2,
+        name: name,
+        role: ROSTER_ROLES.indexOf(role) > -1 ? role : 'intern',
+        added: String(vals[i][2] || ''),
+        added_by: String(vals[i][3] || ''),
+        removed: String(vals[i][4] || ''),
+        removed_by: String(vals[i][5] || '')
+      });
+    }
+  }
+  rosterMemo = out;
+  return out;
+}
+
+function rosterFind(name) {
+  var all = rosterRead(), want = String(name || '').trim();
+  for (var i = 0; i < all.length; i++) if (all[i].name === want) return all[i];
+  return null;
+}
+
+/* Everybody currently on the roster, in the role asked for. An empty answer
+   is never returned: a tab that exists but has been emptied by hand would
+   otherwise lock all five of them out of their own ledger, which is a worse
+   outcome than ignoring it and carrying on with the seed. */
+function rosterActive(role) {
+  var out = rosterRead().filter(function (r) { return !r.removed && (!role || r.role === role); })
+    .map(function (r) { return r.name; });
+  if (out.length) return out;
+  return role === 'lead' ? INVOICE_LEADS_SEED.slice()
+    : role === 'intern' ? INVOICE_PEOPLE_SEED.slice()
+    : INVOICE_PEOPLE_SEED.concat(INVOICE_LEADS_SEED);
+}
+
+/* The timesheet roster: who can be marked in, clocked on, or counted as a
+   day in the office. */
+function rosterPeople() { return rosterActive('intern'); }
+
+/* Everyone a line, a schedule or a post can name. */
+function rosterPayers() { return rosterActive('intern').concat(rosterActive('lead')); }
+
+/* Everyone the sheet has ever carried, whether they are still here or not.
+   This is the list the READ paths use. Somebody leaving must not take four
+   months of spends, days and posts off the board with them — their rows are
+   still what the ledger did, and a name that has fallen out of `payers`
+   would otherwise be filtered straight out of every answer. */
+function rosterKnown() {
+  var out = rosterRead().map(function (r) { return r.name; });
+  INVOICE_PEOPLE_SEED.concat(INVOICE_LEADS_SEED).forEach(function (n) {
+    if (out.indexOf(n) === -1) out.push(n);
+  });
+  return out;
+}
+
+/* The roster as the probe may ask for it, and the probe only. Opening the
+   /exec URL in a browser is the cheap health check — it is hit on every page
+   load and is the one call that has never needed the spreadsheet — so it
+   must not start failing because the book is unreachable, or because this
+   script is running somewhere there is no book at all. A page told the seed
+   names by a deployment whose sheet is down is in exactly the position it
+   was in before the roster moved, which is a working one.
+
+   Nothing that decides whether a request is allowed uses this. Those paths
+   call rosterPayers() and are meant to fail loudly, because answering a
+   permission question out of a fallback list is how somebody taken off the
+   roster gets back in. */
+function rosterProbe() {
+  try { return { payers: rosterPayers(), team: rosterRead().map(rosterPublic) }; }
+  catch (e) {
+    return {
+      payers: INVOICE_PEOPLE_SEED.concat(INVOICE_LEADS_SEED),
+      team: INVOICE_PEOPLE_SEED.map(function (n) { return { name: n, role: 'intern', removed: '' }; })
+        .concat(INVOICE_LEADS_SEED.map(function (n) { return { name: n, role: 'lead', removed: '' }; }))
+    };
+  }
+}
+
+function rosterPublic(r) {
+  return {
+    name: r.name, role: r.role, added: r.added, addedBy: r.added_by,
+    removed: r.removed, removedBy: r.removed_by,
+    admin: internalIsAdmin(r.name), card: r.name === CARD_PAYER
+  };
+}
 var INVOICE_CATS = ['lunch', 'coffee', 'ai', 'software', 'travel', 'supplies', 'other'];
 
 /* Every action answers with the whole ledger, so the page never has to
@@ -669,11 +843,11 @@ function profileRead(){
   if(sh.getLastRow()<2) return [];
   return sh.getRange(2,1,sh.getLastRow()-1,PROFILE_COLS.length).getValues().map(function(r){
     return {who:String(r[0]),headline:String(r[1]||''),bio:String(r[2]||''),link:String(r[3]||'')};
-  }).filter(function(p){return INVOICE_PAYERS.indexOf(p.who)>=0;});
+  }).filter(function(p){return rosterKnown().indexOf(p.who)>=0;});
 }
 function profileUpdate(body){
   var who=String(body.who||''),headline=String(body.headline||'').trim(),bio=String(body.bio||'').trim(),link=String(body.link||'').trim();
-  if(INVOICE_PAYERS.indexOf(who)<0) return 'Select a person on the team.';
+  if(rosterPayers().indexOf(who)<0) return 'Select a person on the team.';
   if(headline.length>80 || bio.length>600 || link.length>300) return 'Keep the headline under 80 characters and the bio under 600.';
   if(link && !/^https?:\/\/[^\s]+$/i.test(link)) return 'Use a full website URL beginning with https:// or http://.';
   var sh=profileSheet(),at=0;
@@ -731,10 +905,10 @@ function invoiceClean(b, actor) {
      on screen as a missing name where a refusal shows up as lost typing. */
   var shared = String(b.shared || '').split(',').map(function (n) { return n.trim(); })
     .filter(function (n, i, all) {
-      return INVOICE_SHARERS.indexOf(n) > -1 && all.indexOf(n) === i;
+      return rosterPayers().indexOf(n) > -1 && all.indexOf(n) === i;
     });
 
-  if (INVOICE_PAYERS.indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
+  if (rosterPayers().indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
   if (!what) return { error: 'that line needs a description' };
   if (!(amount > 0) || amount > 100000) return { error: 'that amount does not look right' };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'that date does not look right' };
@@ -1029,7 +1203,7 @@ function dayMigrate(ss, sh) {
   var all = shiftRead(hrs), seen = {}, add = [];
   for (var i = 0; i < all.length; i++) {
     var who = String(all[i].who || '');
-    if (INVOICE_PEOPLE.indexOf(who) === -1) continue;
+    if (rosterKnown().indexOf(who) === -1) continue;
 
     var day = dayText(all[i].day);
     if (!isDayString(day)) day = dayFromStamp(all[i].start);
@@ -1086,7 +1260,7 @@ function dayMark(who, day) {
   who = String(who || '');
   day = dayText(day);
 
-  if (INVOICE_PEOPLE.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  if (rosterPeople().indexOf(who) === -1) return 'that name is not on the bootcamp';
   if (!isDayString(day)) return 'that day does not look right';
   /* Tomorrow, not today, because the person pressing the button may be
      hours ahead of whatever timezone this script thinks in — but a week
@@ -1127,7 +1301,7 @@ function dayImport(list) {
   for (var j = 0; j < list.length; j++) {
     var v = list[j] || {};
     var who = String(v.who || '');
-    if (INVOICE_PEOPLE.indexOf(who) === -1) continue;
+    if (rosterPeople().indexOf(who) === -1) continue;
 
     var day = dayText(v.day);
     if (!isDayString(day) || day > dayShift(1)) continue;
@@ -1213,7 +1387,7 @@ function shiftSheet() {
    `day` is the local date alongside them, purely so the tab reads well. */
 function shiftIn(who) {
   who = String(who || '');
-  if (INVOICE_PEOPLE.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  if (rosterPeople().indexOf(who) === -1) return 'that name is not on the bootcamp';
 
   var sh = shiftSheet();
   if (shiftOpenFor(sh, who)) return who + ' is already on the clock';
@@ -1270,7 +1444,7 @@ function shiftImport(list) {
   for (var j = 0; j < list.length; j++) {
     var v = list[j] || {};
     var who = String(v.who || '');
-    if (INVOICE_PEOPLE.indexOf(who) === -1) continue;
+    if (rosterPeople().indexOf(who) === -1) continue;
 
     var start = new Date(v.start);
     if (isNaN(start.getTime())) continue;
@@ -1844,11 +2018,15 @@ var POST_AT = /(^|[^A-Za-z0-9@_])@([A-Za-z][A-Za-z0-9_-]*)/g;
 
 function postTagsIn(text) {
   var out = [], s = String(text == null ? '' : text), m;
+  /* Everyone the sheet has heard of, not only everyone still here: an @ at
+     somebody who has since left is still a mention of that person, and read
+     once here rather than once per @ in the post. */
+  var known = rosterKnown();
   POST_AT.lastIndex = 0;
   while ((m = POST_AT.exec(s))) {
     var typed = m[2].replace(/[-_]+$/, '').toLowerCase();
-    for (var i = 0; i < INVOICE_PAYERS.length; i++) {
-      var name = INVOICE_PAYERS[i];
+    for (var i = 0; i < known.length; i++) {
+      var name = known[i];
       if (name.toLowerCase() !== typed) continue;
       if (out.indexOf(name) === -1 && out.length < POST_MAX_TAGS) out.push(name);
     }
@@ -2146,7 +2324,7 @@ function schedSource(v) {
    field failed. */
 function schedClean(b) {
   var who = String(b.who == null ? '' : b.who).trim();
-  if (INVOICE_PAYERS.indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
+  if (rosterPayers().indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
 
   var kind = schedKind(b.kind);
   if (kind === 'none') {
@@ -2260,7 +2438,7 @@ function schedDelete(b) {
    alone: they are the ones the calendar does not know about. */
 function schedImport(b) {
   var who = String(b.who == null ? '' : b.who).trim();
-  if (INVOICE_PAYERS.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  if (rosterPayers().indexOf(who) === -1) return 'that name is not on the bootcamp';
   var source = schedSource(b.source);
   if (source === 'typed') return 'an import has to say where it came from';
 
@@ -2300,7 +2478,7 @@ function schedImport(b) {
 
 function schedClear(b) {
   var who = String(b.who == null ? '' : b.who).trim();
-  if (INVOICE_PAYERS.indexOf(who) === -1) return 'that name is not on the bootcamp';
+  if (rosterPayers().indexOf(who) === -1) return 'that name is not on the bootcamp';
   var sh = schedSheet(), all = schedRead(sh);
   for (var i = all.length - 1; i >= 0; i--) {
     if (String(all[i].who) === who) sh.deleteRow(all[i]._row);
@@ -2353,6 +2531,400 @@ function reply(ok, error, extra) {
   if (extra) Object.keys(extra).forEach(function (k) { out[k] = extra[k]; });
   return ContentService.createTextOutput(JSON.stringify(out))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ── the console behind /internal, for the two who maintain it ──
+
+   Everything here is something the ledger deliberately refuses to do. A
+   spend belongs to whoever logged it, a post to whoever wrote it, a day to
+   whoever was in — and those rules are the point of the place, so nothing
+   below weakens them. What they do not cover is the sheet going wrong: a
+   row whose owner has left and cannot delete it, a name typed into the
+   roster with a letter missing, a day marked on the wrong person by an
+   import. Before this, fixing any of it meant opening the spreadsheet by
+   hand, which is how a ledger four people trust stops being one.
+
+   So the powers live here instead, behind their own namespace, named out
+   loud, and every one of them writes down who used it. Two rules hold the
+   whole thing up:
+
+     · this is the only door — no check anywhere else was loosened to make
+       room for it, so a bug in this file cannot quietly hand an intern
+       somebody else's ledger;
+     · destructive work is confirmed against what the caller was looking
+       at, the same way approving a purchase is, so a row cannot be deleted
+       on the strength of a screen that is ten minutes stale. */
+
+var ADMIN_TABLES = ['invoice', 'days', 'hours', 'subs', 'posts', 'schedules'];
+
+function internalAdminApi(body) {
+  if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+
+  var actor = internalActor(body);
+  if (!actor) return reply(false, 'Session expired. Enter the passcode and select your name again.');
+  if (!internalIsAdmin(actor)) return reply(false, 'The console is Arya and Milo only.');
+
+  var action = String(body.action || 'list'), err = null;
+  if (action === 'list')              err = null;
+  else if (action === 'rows')         err = null;
+  else if (action === 'rosteradd')    err = rosterAdd(body, actor);
+  else if (action === 'rosterremove') err = rosterRemove(body, actor);
+  else if (action === 'rosterrestore')err = rosterRestore(body, actor);
+  else if (action === 'rosterrole')   err = rosterRole(body, actor);
+  else if (action === 'rosterrename') err = rosterRename(body, actor);
+  else if (action === 'forcedelete')  err = adminForceDelete(body, actor);
+  else return reply(false, 'unknown action');
+  if (err) return reply(false, err);
+
+  /* Like the ledger, the console answers with everything rather than a
+     confirmation: the screen it is drawn on is the one thing that must not
+     be allowed to disagree with the sheet. */
+  var out = {
+    roster: rosterRead().map(rosterPublic),
+    counts: adminCounts(),
+    audit: adminAudit(),
+    log: adminLogRead()
+  };
+  /* One person's rows in one table, asked for on the way to deleting one of
+     them. Not sent with every answer: the key that a delete has to echo back
+     is the whole row, and six tables of those on every roster change would
+     be most of the payload for the sake of a button nobody pressed. */
+  if (action === 'rows') {
+    out.table = String(body.table || '');
+    out.who = String(body.who || '');
+    out.rows = adminRows(out.table, out.who);
+  }
+  return reply(true, null, out);
+}
+
+/* ---------- the roster ---------- */
+
+function rosterName(v) {
+  var name = String(v == null ? '' : v).trim().replace(/\s+/g, ' ').slice(0, 40);
+  /* The name is an identifier before it is a label: it is written into the
+     `who` column of six tabs and read back out of a comma-joined `shared`
+     list, so a comma in it would split one person into two. */
+  if (!name) return { error: 'that person needs a name' };
+  if (!/^[A-Za-z][A-Za-z .'-]*$/.test(name)) return { error: 'a roster name is letters, and may hold a space, a dot, a hyphen or an apostrophe' };
+  return { name: name };
+}
+
+function rosterAdd(b, actor) {
+  var clean = rosterName(b.name);
+  if (clean.error) return clean.error;
+  var role = String(b.role || 'intern');
+  if (ROSTER_ROLES.indexOf(role) === -1) return 'a new person is either an intern or a lead';
+
+  var had = rosterFind(clean.name);
+  /* Somebody who left and is coming back is the row that is already there,
+     not a second one: their spends, days and posts are all keyed on this
+     name and would otherwise end up split between two people with it. */
+  if (had && !had.removed) return clean.name + ' is already on the roster';
+  if (had) return rosterRestore({ name: clean.name, role: role }, actor);
+
+  var sh = rosterSheet();
+  sh.appendRow([clean.name, role, invoiceStamp(), actor, '', '']);
+  rosterForget();
+  adminLog(actor, 'rosteradd', clean.name, role);
+  return null;
+}
+
+/* Taking somebody off the roster is not deleting them. Their name comes out
+   of every picker and they can no longer sign in; every line they logged,
+   day they were in and post they wrote stays exactly where it is and keeps
+   rendering, because that is what the ledger did and the ledger is a record.
+   Wiping it would also quietly change what everyone else is owed. */
+function rosterRemove(b, actor) {
+  var row = rosterFind(String(b.name || '').trim());
+  if (!row) return 'that person is not on the roster';
+  if (row.removed) return row.name + ' is already off the roster';
+  if (internalIsAdmin(row.name)) return 'the console is ' + INTERNAL_ADMINS.join(' and ') + ' — neither of them can be taken off the roster from inside it';
+  if (row.name === CARD_PAYER) return CARD_PAYER + '’s card is what half the ledger is logged against. Move the card before moving him.';
+  var owed = adminOwed(row.name);
+  if (owed > 0 && !b.evenThoughOwed) return row.name + ' is still owed ' + adminMoney(owed) + '. Settle up first, or tick the box to take them off anyway.';
+
+  var sh = rosterSheet();
+  sh.getRange(row._row, ROSTER_COLS.indexOf('removed') + 1, 1, 2).setValues([[invoiceStamp(), actor]]);
+  rosterForget();
+  adminLog(actor, 'rosterremove', row.name, owed > 0 ? 'still owed ' + adminMoney(owed) : '');
+  return null;
+}
+
+function rosterRestore(b, actor) {
+  var row = rosterFind(String(b.name || '').trim());
+  if (!row) return 'that person is not on the roster';
+  var sh = rosterSheet();
+  sh.getRange(row._row, ROSTER_COLS.indexOf('removed') + 1, 1, 2).setValues([['', '']]);
+  if (b.role && ROSTER_ROLES.indexOf(String(b.role)) > -1) {
+    sh.getRange(row._row, ROSTER_COLS.indexOf('role') + 1).setValue(String(b.role));
+  }
+  rosterForget();
+  adminLog(actor, 'rosterrestore', row.name, '');
+  return null;
+}
+
+function rosterRole(b, actor) {
+  var row = rosterFind(String(b.name || '').trim());
+  if (!row) return 'that person is not on the roster';
+  var role = String(b.role || '');
+  if (ROSTER_ROLES.indexOf(role) === -1) return 'somebody is either an intern or a lead';
+  if (role === row.role) return null;
+  /* An intern has a timesheet and a lead does not, so this is not only a
+     label: moving somebody to lead takes their name off the attendance
+     board while leaving the days they were in on the sheet. */
+  rosterSheet().getRange(row._row, ROSTER_COLS.indexOf('role') + 1).setValue(role);
+  rosterForget();
+  adminLog(actor, 'rosterrole', row.name, row.role + ' → ' + role);
+  return null;
+}
+
+/* A name typed wrong is the one roster mistake that cannot be fixed by
+   removing and re-adding: six tabs are keyed on the string. So it is done
+   here, in one pass over every column that holds a person's name, and it is
+   the one thing in the console with no undo behind it — which is why it
+   asks for the new name twice on the way in and says so on screen. */
+/* Each list column says how it is joined, because they do not agree and a
+   rename must not quietly restyle a column on its way past. A split share
+   is written 'Jesse, Milo', the archived approvals are bare commas, and a
+   post's tags are one per line. Reading is forgiving — a comma or a newline
+   ends a name either way — and writing puts back exactly what that column
+   has always used. */
+var ADMIN_NAME_COLS = [
+  { tab: function () { return invoiceSheet(); },   cols: INVOICE_COLS,  who: ['who', 'logged_by'], list: [['shared', ', '], ['approvals', ',']] },
+  { tab: function () { return daySheet(); },       cols: DAY_COLS,      who: ['who'],              list: [] },
+  { tab: function () { return shiftSheet(); },     cols: SHIFT_COLS,    who: ['who'],              list: [] },
+  { tab: function () { return subSheet(); },       cols: SUB_COLS,      who: ['who'],              list: [['shared', ', ']] },
+  { tab: function () { return postSheet(); },      cols: POST_COLS,     who: ['who'],              list: [['tags', '\n']] },
+  { tab: function () { return schedSheet(); },     cols: SCHED_COLS,    who: ['who'],              list: [] },
+  { tab: function () { return profileSheet(); },   cols: PROFILE_COLS,  who: ['who'],              list: [] }
+];
+
+function rosterRename(b, actor) {
+  var row = rosterFind(String(b.name || '').trim());
+  if (!row) return 'that person is not on the roster';
+  var clean = rosterName(b.to);
+  if (clean.error) return clean.error;
+  if (clean.name === row.name) return null;
+  if (rosterFind(clean.name)) return clean.name + ' is already a name on the roster';
+  if (String(b.confirm || '') !== clean.name) return 'type the new name again to confirm the rename';
+
+  var moved = 0;
+  ADMIN_NAME_COLS.forEach(function (t) {
+    var sh = t.tab(), last = sh.getLastRow();
+    if (last < 2) return;
+    var width = t.cols.length;
+    var vals = sh.getRange(2, 1, last - 1, width).getValues(), touched = false;
+    for (var i = 0; i < vals.length; i++) {
+      t.who.forEach(function (c) {
+        var at = t.cols.indexOf(c);
+        if (at > -1 && String(vals[i][at]) === row.name) { vals[i][at] = clean.name; touched = true; moved++; }
+      });
+      t.list.forEach(function (c) {
+        var at = t.cols.indexOf(c[0]);
+        if (at === -1) return;
+        var parts = String(vals[i][at] || '').split(/[,\n]/).map(function (n) { return n.trim(); })
+          .filter(function (n) { return n; });
+        if (parts.indexOf(row.name) === -1) return;
+        vals[i][at] = parts.map(function (n) { return n === row.name ? clean.name : n; }).join(c[1]);
+        touched = true; moved++;
+      });
+    }
+    if (touched) sh.getRange(2, 1, last - 1, width).setValues(vals);
+  });
+
+  rosterSheet().getRange(row._row, 1).setValue(clean.name);
+  rosterForget();
+  adminLog(actor, 'rosterrename', row.name + ' → ' + clean.name, moved + ' cells');
+  return null;
+}
+
+/* ---------- a row nobody else can reach ---------- */
+
+function adminTable(name) {
+  if (name === 'invoice')   return { sh: invoiceSheet(),  cols: INVOICE_COLS, read: function (sh) { return invoiceRead(sh); } };
+  if (name === 'days')      return { sh: daySheet(),      cols: DAY_COLS,     read: function (sh) { return dayRead(sh); } };
+  if (name === 'hours')     return { sh: shiftSheet(),    cols: SHIFT_COLS,   read: function (sh) { return shiftRead(sh); } };
+  if (name === 'subs')      return { sh: subSheet(),      cols: SUB_COLS,     read: function (sh) { return subRead(sh); } };
+  if (name === 'posts')     return { sh: postSheet(),     cols: POST_COLS,    read: function (sh) { return postRead(sh); } };
+  if (name === 'schedules') return { sh: schedSheet(),    cols: SCHED_COLS,   read: function (sh) { return schedRead(sh); } };
+  return null;
+}
+
+/* What the caller was looking at when they pressed delete, joined the same
+   way a purchase approval names what it approved. A row that has changed
+   since the screen was drawn refuses rather than going, because the whole
+   reason this exists is rows nobody is watching. */
+function adminRowKey(cols, r) {
+  return cols.map(function (c) { return String(r[c] == null ? '' : r[c]); }).join('␟');
+}
+
+/* Everything one person is holding in one table, each row carrying the key
+   its own deletion will have to quote back and a line of plain English
+   saying what it is. The line matters: a console that offers to delete
+   `a3f19c2b` is a console nobody should press a button on. */
+function adminRows(name, who) {
+  var t = adminTable(name);
+  if (!t) return [];
+  who = String(who || '');
+  return t.read(t.sh).filter(function (r) {
+    return !who || String(r.who) === who || (name === 'invoice' && invoiceLogger(r) === who);
+  }).map(function (r) {
+    return { id: String(r.id), who: String(r.who || ''), key: adminRowKey(t.cols, r), line: adminLine(name, r) };
+  });
+}
+
+function adminLine(name, r) {
+  if (name === 'invoice') return String(r.date || '').slice(0, 10) + ' \u00b7 ' + adminMoney(r.amount) + ' \u00b7 ' + String(r.what || '') +
+    ' \u00b7 ' + String(r.status || '') + (invoiceLogger(r) !== String(r.who) ? ' \u00b7 logged by ' + invoiceLogger(r) : '');
+  if (name === 'days')  return String(r.day || '');
+  if (name === 'hours') return String(r.day || '') + ' \u00b7 ' + (Math.round((Number(r.minutes) || 0) / 6) / 10) + 'h';
+  if (name === 'subs')  return adminMoney(r.amount) + ' \u00b7 ' + String(r.what || '') + ' \u00b7 the ' + r.day + 'th' +
+    (String(r.active) === 'no' ? ' \u00b7 paused' : '');
+  if (name === 'posts') return String(r.week || '') + ' \u00b7 ' + String(r.body || '').replace(/\s+/g, ' ').slice(0, 90);
+  if (name === 'schedules') return String(r.label || '') + ' \u00b7 ' + String(r.days || '') + ' ' + String(r.start || '') + '\u2013' + String(r.end || '');
+  return String(r.id || '');
+}
+
+function adminForceDelete(b, actor) {
+  var name = String(b.table || '');
+  if (ADMIN_TABLES.indexOf(name) === -1) return 'that is not a table the console deletes from';
+  var t = adminTable(name);
+  if (!t) return 'that is not a table the console deletes from';
+
+  var all = t.read(t.sh), hit = null;
+  for (var i = 0; i < all.length; i++) if (String(all[i].id) === String(b.id)) hit = all[i];
+  if (!hit) return 'that row is not on the sheet any more';
+  if (adminRowKey(t.cols, hit) !== String(b.reviewed || '')) return 'That row changed since you looked at it. Reload and check it again before deleting it.';
+
+  /* A ledger or subscription line is money, so it goes through the same
+     history every other money change does and can be put back. The rest is
+     attendance and writing: gone is gone, and the log says who did it. */
+  if (name === 'invoice' || name === 'subs') {
+    var before = moneySnapshot();
+    t.sh.deleteRow(hit._row);
+    try { moneyRemember(before, moneySnapshot(), actor, 'delete'); }
+    catch (historyError) {
+      moneyRestore(before);
+      return 'The row was put back because its undo history could not be saved.';
+    }
+  } else {
+    t.sh.deleteRow(hit._row);
+  }
+  adminLog(actor, 'forcedelete', name + ' ' + hit.id, String(hit.who || ''));
+  return null;
+}
+
+/* ---------- what the sheet looks like from up here ---------- */
+
+function adminMoney(n) { return '$' + (Math.round(Number(n) * 100) / 100).toFixed(2); }
+
+function adminOwed(who) {
+  var out = 0;
+  invoiceRead(invoiceSheet()).forEach(function (r) {
+    if (String(r.who) !== String(who)) return;
+    if (invoiceSettled(r.who, r.status) === 'reimbursed') return;
+    out += Number(r.amount) || 0;
+  });
+  return Math.round(out * 100) / 100;
+}
+
+/* How much of the sheet each name is actually holding, so "remove Jesse"
+   is a decision made in front of the four hundred rows it touches rather
+   than blind. */
+function adminCounts() {
+  var out = {};
+  function bump(who, key) {
+    var name = String(who || '');
+    if (!name) return;
+    if (!out[name]) out[name] = { rows: 0, days: 0, hours: 0, subs: 0, posts: 0, schedules: 0, owed: 0 };
+    out[name][key]++;
+  }
+  invoiceRead(invoiceSheet()).forEach(function (r) {
+    bump(r.who, 'rows');
+    var name = String(r.who || '');
+    if (name && out[name] && invoiceSettled(r.who, r.status) !== 'reimbursed') {
+      out[name].owed = Math.round((out[name].owed + (Number(r.amount) || 0)) * 100) / 100;
+    }
+  });
+  dayRead(daySheet()).forEach(function (r) { bump(r.who, 'days'); });
+  shiftRead(shiftSheet()).forEach(function (r) { bump(r.who, 'hours'); });
+  subRead(subSheet()).forEach(function (r) { bump(r.who, 'subs'); });
+  postRead(postSheet()).forEach(function (r) { bump(r.who, 'posts'); });
+  schedRead(schedSheet()).forEach(function (r) { bump(r.who, 'schedules'); });
+  return out;
+}
+
+/* The things that are wrong rather than merely unfinished. Read-only on
+   purpose: an audit that fixed what it found would be a script rewriting
+   the ledger on its own, and the point of the console is that a person
+   decided. Each finding names the row so it can be gone to. */
+function adminAudit() {
+  var known = rosterKnown(), out = [];
+  function flag(kind, what, row, table) {
+    if (out.length >= 200) return;
+    var cols = table === 'invoice' ? INVOICE_COLS : table === 'days' ? DAY_COLS : table === 'posts' ? POST_COLS
+      : table === 'schedules' ? SCHED_COLS : table === 'subs' ? SUB_COLS : SHIFT_COLS;
+    out.push({ kind: kind, what: what, id: String(row.id || ''), table: table || '', key: adminRowKey(cols, row) });
+  }
+
+  invoiceRead(invoiceSheet()).forEach(function (r) {
+    var who = String(r.who || '');
+    if (who && known.indexOf(who) === -1) flag('stranger', 'a spend logged against ' + who + ', who is not on the roster', r, 'invoice');
+    if (invoiceSettled(r.who, r.status) === 'reimbursed' && String(r.status) !== 'reimbursed' && who !== CARD_PAYER) {
+      flag('settled', 'a line that reads settled but is not marked so', r, 'invoice');
+    }
+    if (!(Number(r.amount) > 0)) flag('amount', 'a spend with no amount on it', r, 'invoice');
+    String(r.shared || '').split(',').map(function (n) { return n.trim(); }).filter(String).forEach(function (n) {
+      if (n && known.indexOf(n) === -1) flag('stranger', 'a spend split with ' + n + ', who is not on the roster', r, 'invoice');
+    });
+  });
+  dayRead(daySheet()).forEach(function (r) {
+    if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a day marked for ' + r.who + ', who is not on the roster', r, 'days');
+  });
+  postRead(postSheet()).forEach(function (r) {
+    if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a post by ' + r.who + ', who is not on the roster', r, 'posts');
+  });
+  schedRead(schedSheet()).forEach(function (r) {
+    if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a schedule for ' + r.who + ', who is not on the roster', r, 'schedules');
+  });
+  subRead(subSheet()).forEach(function (r) {
+    if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a monthly rule for ' + r.who + ', who is not on the roster', r, 'subs');
+  });
+  return out;
+}
+
+/* ---------- the log ----------
+
+   A power used without a record of who used it is the thing everybody was
+   right to be nervous about. Every write above lands here first, before the
+   console will show anybody a fresh screen, and nothing deletes from it. */
+var ADMIN_LOG_TAB = 'internal_admin_log';
+var ADMIN_LOG_COLS = ['at', 'who', 'action', 'subject', 'detail'];
+var ADMIN_LOG_KEEP = 200;
+
+function adminLogSheet() {
+  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(ADMIN_LOG_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(ADMIN_LOG_TAB);
+    sh.getRange(1, 1, 1, ADMIN_LOG_COLS.length).setValues([ADMIN_LOG_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function adminLog(actor, action, subject, detail) {
+  adminLogSheet().appendRow([invoiceStamp(), String(actor || ''), String(action || ''),
+    campusSafe(String(subject || '')), campusSafe(String(detail || ''))]);
+}
+
+function adminLogRead() {
+  var sh = adminLogSheet(), last = sh.getLastRow();
+  if (last < 2) return [];
+  var from = Math.max(2, last - ADMIN_LOG_KEEP + 1);
+  return sh.getRange(from, 1, last - from + 1, ADMIN_LOG_COLS.length).getValues().map(function (r) {
+    return { at: String(r[0]), who: String(r[1]), action: String(r[2]), subject: String(r[3]), detail: String(r[4]) };
+  }).reverse();
 }
 
 /* ── Visit requests and visiting hours ──────────────────────────

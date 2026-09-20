@@ -1477,6 +1477,88 @@ td.date.run{color:var(--good)}
         </div>
       </section>
 
+      <!-- ────────── the console ──────────
+
+           Everything in here is something the rest of the page is right to
+           refuse. It is drawn only for the two names in OPERATORS, and the
+           script behind the endpoint refuses every one of these calls from
+           anybody else regardless of what this markup says — the rail
+           hiding the door is a convenience, not the lock. -->
+      <section class="view" data-view="admin">
+        <div class="toolbar">
+          <span class="hint" id="ad-note">The roster, and the rows nobody else can reach.</span>
+          <span class="push"><button class="mini ghost" id="ad-refresh">Refresh</button></span>
+        </div>
+        <div class="scroller pad" id="ad-body">
+          <div class="ad-warn" id="ad-warn" role="note">
+            <b>This page writes straight to the sheet.</b>
+            Nothing here asks the owner of a row for permission — that is what it is for. Every
+            change is written down under your name in <code>internal_admin_log</code>, and a
+            deleted spend can be put back from the ledger&rsquo;s own undo. A deleted day, note or
+            schedule cannot.
+          </div>
+
+          <!-- the roster -->
+          <div class="ad-card">
+            <div class="ad-h"><h3>The roster</h3><span class="ad-sub" id="ad-roster-sub"></span></div>
+            <!-- No .tbl-scroll around this one, unlike every other table on
+                 the page. A row here opens a panel underneath it, and inside a
+                 horizontal scroller that panel is as wide as the table rather
+                 than as wide as the card — which on a phone put the second
+                 half of the rename field off the edge. The columns wrap
+                 instead, and the one that can't usefully wrap is dropped at
+                 phone width. -->
+            <table class="ad-tbl">
+              <thead><tr><th>Name</th><th>On the</th><th>Holding</th><th>Owed</th><th></th></tr></thead>
+              <tbody id="ad-roster"></tbody>
+            </table>
+            <form class="ad-add" id="ad-add-form" autocomplete="off">
+              <input id="ad-add-name" placeholder="Their name, as it goes on the ledger" aria-label="New person's name" maxlength="40">
+              <select id="ad-add-role" aria-label="Intern or lead">
+                <option value="intern">intern · on the clock and the board</option>
+                <option value="lead">lead · on the ledger only</option>
+              </select>
+              <button class="btn btn-p" type="submit">Add them</button>
+            </form>
+            <p class="ad-foot" id="ad-add-hint">A name is how six tabs find somebody&rsquo;s rows, so it
+              is letters, spaces, dots, hyphens and apostrophes — no commas. Somebody who left and
+              is coming back keeps the row they already had, and everything on it.</p>
+          </div>
+
+          <!-- what the sheet has got wrong -->
+          <div class="ad-card">
+            <div class="ad-h"><h3>What looks wrong</h3><span class="ad-sub" id="ad-audit-sub"></span></div>
+            <div id="ad-audit"></div>
+            <p class="ad-foot">Read only. Nothing here is fixed automatically — a script quietly
+              rewriting the ledger is the thing this console exists to avoid.</p>
+          </div>
+
+          <!-- one person's rows -->
+          <div class="ad-card">
+            <div class="ad-h"><h3>Reach a row</h3><span class="ad-sub">Everything one name is holding, including the rows its owner can no longer delete.</span></div>
+            <div class="ad-pick">
+              <select id="ad-rows-who" aria-label="Whose rows"></select>
+              <select id="ad-rows-table" aria-label="Which table">
+                <option value="invoice">spends</option>
+                <option value="days">days in</option>
+                <option value="posts">notes</option>
+                <option value="schedules">schedule blocks</option>
+                <option value="subs">monthly rules</option>
+                <option value="hours">old clocked hours</option>
+              </select>
+              <button class="btn btn-g" id="ad-rows-go" type="button">Show them</button>
+            </div>
+            <div id="ad-rows"></div>
+          </div>
+
+          <!-- who did what in here -->
+          <div class="ad-card">
+            <div class="ad-h"><h3>What has been done in here</h3><span class="ad-sub">Newest first. Nothing removes a line from this.</span></div>
+            <div id="ad-log"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- ────────── one person ────────── -->
       <section class="view" data-view="person">
         <div class="toolbar">
@@ -1590,25 +1672,106 @@ td.date.run{color:var(--good)}
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 var PASSCODE = 'monkey';
 
+/* ---------- the roster ----------
+
+   These five names used to be the literal answer. They are now the opening
+   bid: the sheet keeps the roster, the console at /internal#/admin is where
+   it is changed, and every sign-in comes back carrying it. What is written
+   here is what this page believes in the seconds before it has been told —
+   the same five the script seeds itself with — so a page that cannot reach
+   the endpoint behaves exactly as it did before any of this.
+
+   Every one of these is filled in place, never reassigned, because most of
+   the page reads them inside a function that runs long after this line. The
+   handful of places that read them once, at parse time, to build a row of
+   chips or a menu are named builders below and are re-run together by
+   applyRoster when the sheet says the roster has moved.
+
+   Mirrors INVOICE_PEOPLE_SEED/INVOICE_LEADS_SEED in fomo/setup/apps-script.gs. */
+
 /* The interns. This is the roster for the things that are only ever theirs:
    days on the board, the days table, commits counted on GitHub. */
 var PEOPLE = ["Milo","Bijan","Jesse","Luchi"];
 
+/* On the ledger but not on the clock. Arya runs the bootcamp and reimburses
+   it, so most lines are somebody else's card; but he does front spends too,
+   and plenty of what gets bought is bought for him, so a coffee run that
+   covered him should say so rather than reading as one intern drinking two
+   coffees. Kept apart from PEOPLE because he is not on the timesheet. */
+var LEADS = ["Arya"];
+
 /* Everyone a line can be attached to — as the person who fronted it, or as
-   somebody it was bought for. Arya runs the bootcamp and reimburses it, so
-   most lines are somebody else's card; but Arya does front spends too, and
-   plenty of what gets bought is bought for Arya, so a coffee run that covered
-   them should say so rather than reading as one intern drinking two coffees.
-   Kept apart from PEOPLE because Arya is not on the clock or the timesheet. */
-var PAYERS = PEOPLE.concat(["Arya"]);
+   somebody it was bought for. */
+var PAYERS = PEOPLE.concat(LEADS);
 
 /* The GitHub panel is not the timesheet. It reports what was pushed, and
    Arya pushes too, so the commit cards read from this list. The quiet
    spend check stays on PEOPLE: flagging the person who reimburses the
    card for a slow commit day would be noise, not a question worth
    asking. */
-var GH_PEOPLE = PEOPLE.concat(["Arya"]);
-var SHARERS = PAYERS;
+var GH_PEOPLE = PAYERS.slice();
+var SHARERS = PAYERS.slice();
+
+/* Everyone the sheet has ever carried, whether they are still here or not.
+   Somebody leaving takes their name out of every picker; it must not take
+   four months of their spends off the board with it, so anything that is
+   rendering history asks this rather than PAYERS. */
+var KNOWN = PAYERS.slice();
+
+/* The roster exactly as the sheet holds it — roles, leaving dates and all.
+   Only the console reads this; everything else wants one of the lists
+   above. null until a sign-in has come back. */
+var roster = null;
+
+function rosterFill(arr, next){ arr.length = 0; next.forEach(function(v){ if (arr.indexOf(v) === -1) arr.push(v); }); }
+
+/* What a sign-in, a session check, or a change made in the console all end
+   at. Returns whether anything actually moved, because rebuilding a row of
+   chips somebody is halfway through clicking is not free. */
+function applyRoster(list){
+  if (!list || !list.length) return false;
+  roster = list.slice();
+  var people = [], leads = [], known = [];
+  roster.forEach(function(p){
+    var name = String(p && p.name || "");
+    if (!name) return;
+    known.push(name);
+    if (p.removed) return;
+    (p.role === "lead" ? leads : people).push(name);
+  });
+  /* An answer with nobody on it is not an empty bootcamp, it is a bad
+     answer, and acting on it would empty every picker on the page. */
+  if (!people.length && !leads.length) return false;
+  var before = PAYERS.join("\u241f");
+  rosterFill(PEOPLE, people);
+  rosterFill(LEADS, leads);
+  rosterFill(PAYERS, people.concat(leads));
+  rosterFill(SHARERS, PAYERS.slice());
+  rosterFill(GH_PEOPLE, PAYERS.slice());
+  rosterFill(KNOWN, known.concat(PAYERS));
+  if (PAYERS.join("\u241f") === before) return false;
+  rebuildRosterUi();
+  return true;
+}
+
+/* The four places that read the roster once and turned it into markup. Held
+   together here so that adding a fifth is a change in one place, and so that
+   the order — chips before the split that resets against them — is written
+   down rather than remembered. */
+function rebuildRosterUi(){
+  buildWhoChips();
+  buildSplitChips();
+  buildWhoFilter();
+  buildBackfillNames();
+  buildNav();
+  markNav();
+  /* Somebody halfway through a spend on a name that has just gone: the
+     line is still theirs to log, so the form keeps it rather than clearing
+     out from under them, but nothing may stay ticked that the sheet will
+     refuse. */
+  if (picked && PAYERS.indexOf(picked) === -1) picked = identity ? identity.who : (PAYERS[0] || "");
+  resetSplit();
+}
 
 /* ---------- the card that isn't yours ----------
 
@@ -1629,6 +1792,38 @@ function loggerOf(r){ return (r && (r.loggedBy || r.who)) || ""; }
 
 var identity = null, profiles = [], profileEditing = false, profileSaving = false;
 function isAdmin(){ return !!identity && identity.who === "Arya"; }
+
+/* ---------- the console, and why it is not `admin` ----------
+
+   Two different questions, and the page kept getting into trouble by
+   treating them as one. `isAdmin` is whose money it is: approving a
+   purchase, settling somebody up, changing a line after it has been paid.
+   That is Arya's, and widening it to get anything else would put the
+   interns' reimbursements in more hands than agreed to it.
+
+   `isOperator` is who may open the console — the page that fixes the sheet
+   when it has gone wrong. Adding an intern, taking one off, deleting the
+   row whose owner left before they could. Arya runs the bootcamp; Milo
+   maintains this page, and needed to be able to unstick it without going
+   through Arya for every stuck row.
+
+   Worth being plain about what this is. The gate is a shared passcode and a
+   name picked off a menu, so this hands the console to whoever holds the
+   passcode and picks one of these two names. It keeps a set of sharp tools
+   out of everyone else's way and writes down who used them; it is not, and
+   was never sold as, a check on who somebody is.
+
+   Mirrors INTERNAL_ADMINS in fomo/setup/apps-script.gs — change both
+   together. The server keeps its own copy and enforces it there; this one
+   only decides whether the rail shows the door. */
+var OPERATORS = ["Arya", "Milo"];
+function isOperator(){ return !!identity && OPERATORS.indexOf(identity.who) > -1 && sheetAdmin !== false; }
+
+/* Whether the deployment behind ENDPOINT carries the console at all. Asked
+   the same way sheetDays and sheetCard are, and for the same reason: a rail
+   offering Arya and Milo a page the script has never heard of sends them to
+   a button that answers "unknown form". null until the endpoint has said. */
+var sheetAdmin = null;
 function own(who){ return !!identity && (isAdmin() || identity.who === who); }
 /* Arya's own name is the one anybody may put on a line. */
 function canPay(who){ return own(who) || (who === CARD && cardLendable()); }
@@ -2225,20 +2420,24 @@ function resync(){
 
 /* ---------- build the controls ---------- */
 var whoBox = document.getElementById("who");
-PAYERS.forEach(function(p){
-  var b = document.createElement("button");
-  b.type = "button"; b.className = "chip"; b.textContent = p;
-  b.setAttribute("aria-pressed","false");
-  b.addEventListener("click", function(){
-    if (!canPay(p)) return;
-    picked = p;
-    Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed", String(c === b)); });
-    try { localStorage.setItem("fomo.who", p); } catch(e){}
-    resetSplit();
-    hint("");
+function buildWhoChips(){
+  whoBox.innerHTML = "";
+  PAYERS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = p;
+    b.setAttribute("aria-pressed", String(p === picked));
+    b.addEventListener("click", function(){
+      if (!canPay(p)) return;
+      picked = p;
+      Array.prototype.forEach.call(whoBox.children, function(c){ c.setAttribute("aria-pressed", String(c === b)); });
+      try { localStorage.setItem("fomo.who", p); } catch(e){}
+      resetSplit();
+      hint("");
+    });
+    whoBox.appendChild(b);
   });
-  whoBox.appendChild(b);
-});
+}
+buildWhoChips();
 try {
   var saved = localStorage.getItem("fomo.who");
   if (saved && PAYERS.indexOf(saved) > -1) {
@@ -2277,16 +2476,20 @@ function renderSplit(){
       " · " + esc(names.join(", "));
   }
 }
-SHARERS.forEach(function(n){
-  var b = document.createElement("button");
-  b.type = "button"; b.className = "chip sm"; b.textContent = n;
-  b.setAttribute("aria-pressed","false");
-  b.addEventListener("click", function(){
-    if (sharedWith[n]) delete sharedWith[n]; else sharedWith[n] = true;
-    renderSplit();
+function buildSplitChips(){
+  splitBox.innerHTML = "";
+  SHARERS.forEach(function(n){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip sm"; b.textContent = n;
+    b.setAttribute("aria-pressed", String(!!sharedWith[n]));
+    b.addEventListener("click", function(){
+      if (sharedWith[n]) delete sharedWith[n]; else sharedWith[n] = true;
+      renderSplit();
+    });
+    splitBox.appendChild(b);
   });
-  splitBox.appendChild(b);
-});
+}
+buildSplitChips();
 /* changing who paid starts the split over rather than leaving the last
    person's name ticked on somebody else's line */
 function resetSplit(){
@@ -2365,7 +2568,16 @@ function applyRosterUi(){
 
 var fCat = document.getElementById("f-cat"), tCat = document.getElementById("t-cat"), tWho = document.getElementById("t-who");
 CATS.forEach(function(c){ fCat.appendChild(new Option(c.label, c.id)); tCat.appendChild(new Option(c.label, c.id)); });
-PAYERS.forEach(function(p){ tWho.appendChild(new Option(p, p)); });
+/* The filter names everyone the sheet has ever carried, not only everyone
+   still here: it is read over the whole ledger, and a leaver's lines are
+   exactly what somebody filtering by name is usually looking for. */
+function buildWhoFilter(){
+  var was = tWho.value;
+  while (tWho.options.length > 1) tWho.remove(1);
+  KNOWN.forEach(function(p){ tWho.appendChild(new Option(p, p)); });
+  tWho.value = KNOWN.indexOf(was) > -1 ? was : "";
+}
+buildWhoFilter();
 /* `max` is today's date, which stops a spend being logged into next week —
    but it was worked out once, when the page loaded. A phone does not
    reload a tab for days, so by the morning the ceiling was yesterday and
@@ -3413,11 +3625,18 @@ document.getElementById("clock-grid").addEventListener("click", function(ev){
    in dispute. Without this the only fix is hand-editing the sheet, which
    is how attendance stops being trustworthy. */
 var bfWho = document.getElementById("bf-who");
-PEOPLE.forEach(function(p){
-  var o = document.createElement("option");
-  o.value = p; o.textContent = p;
-  bfWho.appendChild(o);
-});
+function buildBackfillNames(){
+  var was = bfWho.value;
+  bfWho.innerHTML = "";
+  PEOPLE.forEach(function(p){
+    var o = document.createElement("option");
+    o.value = p; o.textContent = p;
+    bfWho.appendChild(o);
+  });
+  bfWho.value = PEOPLE.indexOf(was) > -1 ? was
+    : (identity && PEOPLE.indexOf(identity.who) > -1 && !isAdmin()) ? identity.who : (PEOPLE[0] || "");
+}
+buildBackfillNames();
 function bfHint(msg, bad){
   var el = document.getElementById("bf-hint");
   el.textContent = msg || "";
@@ -4111,6 +4330,15 @@ function probeSheet(){
          and then the other a second later. */
       sheetDays = out.days === true;
       sheetCard = out.cardSpends === true;
+      /* Whether the console is deployed at all. Said here rather than
+         discovered by pressing one of its buttons, so the rail can leave
+         the door off instead of opening onto a page whose every control
+         answers "unknown form". */
+      sheetAdmin = out.admin === true;
+      /* Either way round: the door goes on the rail if it is there, and
+         comes back off it if the deployment behind the URL has gone back
+         to a version without it. */
+      buildNav(); markNav();
       return "shared";
     }
     return "old";
@@ -4334,12 +4562,63 @@ function $(id){ return document.getElementById(id); }
 
 /* ---------- a person, drawn the same way everywhere ----------
 
-   One colour per name, fixed in a table rather than hashed, so the
-   monogram beside a spend is the same monogram on the attendance
-   board and in the rail. A name that isn't on the list gets the
-   grey rather than a colour somebody else already answers to. */
+   One colour per name, so the monogram beside a spend is the same monogram
+   on the attendance board and in the rail.
+
+   These five are written down rather than worked out, and stay written down
+   even though the roster no longer is: they have been these colours on every
+   board anybody has looked at, and a name's colour changing underneath
+   somebody is exactly the thing this table exists to prevent.
+
+   Everybody else is dealt one. That used to be the grey — fine when the
+   roster was these five and nobody else could exist, and wrong the moment
+   the console could add somebody, because then every new person was the same
+   colour as every other new person. So a name not in the table is hashed to
+   a fixed place in the ring below: still one colour per name, still the same
+   one on every board and after every reload, just worked out rather than
+   written down. */
 var TONE = {Milo:"--s1", Bijan:"--s6", Jesse:"--s3", Luchi:"--s4", Arya:"--s5"};
-function tone(n){ return TONE[n] || "--s7"; }
+
+/* --s2 leads because it is the one colour the five above do not use, so the
+   next person onto the roster gets one nobody already answers to. --s7 is
+   deliberately absent: the grey stays what it has always been, which is the
+   colour of no name at all rather than of somebody in particular. */
+var TONE_RING = ["--s2", "--s1", "--s3", "--s4", "--s5", "--s6"];
+function tone(n){
+  var name = String(n == null ? "" : n).trim(), i;
+  if (!name) return "--s7";
+  if (TONE[name]) return TONE[name];
+  /* Dealt by where somebody comes on the roster rather than by hashing the
+     name, so the ring is worked through in order. Hashing looked simpler and
+     was worse at the one job this has: on a handful of short names it put
+     three of them on --s1 and left --s2 — the only unused colour there is —
+     unused.
+
+     Be clear about the arithmetic, because it runs out fast. The ring is six
+     colours, the grey is not one of them, and five are already written down
+     above, so exactly one person can be added before somebody has to share
+     with one of the original five. That is the palette, not this function;
+     the honest choice is to spend the free colour first and then repeat in a
+     fixed order, rather than to invent colours for a palette somebody tuned
+     across three themes.
+
+     The seat counts only the names not already in the table above, so the
+     five who are written down do not eat places in the ring. Roster rows are
+     appended and a leaver's row stays, so a seat, once dealt, is somebody's
+     for good. */
+  var at = KNOWN.indexOf(name);
+  if (at > -1) {
+    var seat = 0;
+    for (i = 0; i < at; i++) if (!TONE[KNOWN[i]]) seat++;
+    return TONE_RING[seat % TONE_RING.length];
+  }
+  /* Not on the roster at all: a row left by somebody the sheet no longer
+     lists, or a name posts.js met in the seconds before the roster came
+     back. Hashed, which is at least stable and never the unknown grey. */
+  var h = 0;
+  for (i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return TONE_RING[h % TONE_RING.length];
+}
 function mono(n){ return String(n || "?").trim().charAt(0).toUpperCase(); }
 function avatar(n, cls){
   return '<span class="av' + (cls ? " " + cls : "") + '" aria-hidden="true" style="background:var(' +
@@ -4557,6 +4836,7 @@ var ICO = {
   reporting: '<path d="M4.2 16.4V9.2M8.8 16.4V4.6M13.4 16.4v-4.8"/><path d="M2.8 16.4h14.4"/>',
   chapters:  '<path d="M1.8 4.1 5.9 2.4v9.5L1.8 13.6V4.1Z"/><path d="M5.9 2.4 10.1 4.1v9.5L5.9 11.9V2.4Z"/><path d="M10.1 4.1 14.2 2.4v9.5l-4.1 1.7V4.1Z"/>',
   applicants:'<rect x="4.6" y="2.8" width="10.8" height="14.4" rx="2.2"/><path d="M7.4 7h5.2M7.4 10h5.2M7.4 13h3"/>',
+  admin:     '<path d="M10 2.6 3.6 5.2v4.5c0 3.7 2.6 6.9 6.4 7.7 3.8-.8 6.4-4 6.4-7.7V5.2L10 2.6Z"/><path d="M7.8 9.9 9.4 11.5l3-3.4"/>',
   campus:    '<circle cx="7.2" cy="7.4" r="2.4"/><path d="M2.9 15.6a4.4 4.4 0 0 1 8.6 0"/><circle cx="14" cy="8.6" r="1.9"/><path d="M12.6 12.6a3.5 3.5 0 0 1 4.5 3"/>',
   person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>',
   posts:     '<path d="M16.6 12.4a2 2 0 0 1-2 2H7.3L3.4 17.2V5.6a2 2 0 0 1 2-2h9.2a2 2 0 0 1 2 2v6.8Z"/><path d="M6.8 7.6h6.4M6.8 10.6h4"/>',
@@ -4582,6 +4862,7 @@ var VIEWS = {
   campus:    {label:"Campus team",    sub:"who is on which campus, and in which state"},
   chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
   charge:    {label:"Review spend", sub:"receipt, purchase details, and GitHub activity"},
+  admin:     {label:"Console",        sub:"the roster, and the rows nobody else can reach"},
   person:    {label:"",               sub:""}
 };
 
@@ -4609,7 +4890,12 @@ var NAV = [
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
   {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
-  {id:"team",   label:"The team",   items:[["posts","This week",1],["attendance","Attendance",1],["schedules","Schedules",1],["commits","Commits",1]], roster:true}
+  {id:"team",   label:"The team",   items:[["posts","This week",1],["attendance","Attendance",1],["schedules","Schedules",1],["commits","Commits",1]], roster:true},
+  /* Last, and only for the two who hold it. A group rather than an item on
+     an existing one because it does not belong under any of them: nothing
+     in it is about the money, the guests, the campus or the four of them —
+     it is about the sheet underneath all four. */
+  {id:"admin",  label:"Maintenance", items:[["admin","Console",0]], operator:true}
 ];
 
 /* Which groups are folded shut, remembered per device. Only the shut ones
@@ -4623,6 +4909,7 @@ var CHEV = '<svg class="cv" viewBox="0 0 12 12" fill="none" stroke="currentColor
 function buildNav(){
   var nav = $("nav"), h = "";
   NAV.forEach(function(g){
+    if (g.operator && !isOperator()) return;
     var shut = !!navShut[g.id], gid = "nav-g-" + g.id;
     h += '<div class="nav-grp" data-grp="' + g.id + '">';
     h += '<button class="nav-sec" type="button" aria-expanded="' + (shut ? "false" : "true") +
@@ -4718,6 +5005,11 @@ $("ch-refresh").addEventListener("click", function(){
 function setView(id, who){
   if (id === "moneyhistory") id = "ledger";
   if (!VIEWS[id]) id = "overview";
+  /* A hash anybody can type, so it is turned away here too rather than
+     only being left off the rail. The endpoint refuses the calls anyway;
+     this is so the page does not offer a screenful of buttons that will
+     all come back as no. */
+  if (id === "admin" && !isOperator()) id = "overview";
   if (id === "person" && !who) id = "overview";
   if (view !== id || personOf !== who) profileEditing=false;
   view = id; personOf = id === "person" ? who : null; chargeOf = id === "charge" ? who : null;
@@ -4731,7 +5023,7 @@ function setView(id, who){
   markNav();
   /* Nothing on these three is a spend, so the one button that only ever
      logs one has no business sitting over them. */
-  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules"].indexOf(view) > -1 ? "none" : "";
+  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   closeSidebar();
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : (view === "posts" || view === "charge") && who ? "/" + encodeURIComponent(who) : "");
@@ -4739,6 +5031,7 @@ function setView(id, who){
   var sc = document.querySelector('.view[data-view="' + view + '"] .scroller');
   if (sc) sc.scrollTop = 0;
   if (view === "chapters") mountChapters();
+  if (view === "admin") adminLoad();
   paint();
   window.dispatchEvent(new Event("fomo:view-change"));
 }
@@ -5661,6 +5954,7 @@ function palBuild(q){
   var out = [];
   Object.keys(VIEWS).forEach(function(k){
     if (k === "person") return;
+    if (k === "admin" && !isOperator()) return;
     out.push({t:VIEWS[k].label, s:VIEWS[k].sub, ic:ico(k), go:k});
   });
   PAYERS.forEach(function(p){
@@ -5938,11 +6232,337 @@ function open_(){
   });
 }
 var identityReady = false;
+/* ══════════ the console ══════════
+
+   Drawn for the two names in OPERATORS and nobody else, and every call it
+   makes is refused by the script behind the endpoint unless the session
+   behind it is one of them. That refusal is the actual lock; this file only
+   decides what is worth putting on screen.
+
+   Everything here is deliberately slow to press. A roster change says what
+   it is about to touch before it touches it, a deletion quotes the row back
+   at the sheet so a stale screen cannot delete the wrong thing, and a
+   rename asks for the new name twice. None of that is ceremony — these are
+   the buttons that reach past the rules every other page keeps. */
+
+var adminState = {roster:[], counts:{}, audit:[], log:[], rows:null, table:"", who:""};
+var adminBusy = false, adminOpen = "", adminConfirm = "";
+
+function adminCall(action, payload){
+  var body = {_api:"admin", action:action, _key:PASSCODE, _session:identity ? identity.token : ""};
+  if (payload) Object.keys(payload).forEach(function(k){ body[k] = payload[k]; });
+  return fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body)}).then(function(res){
+    if (!res.ok) throw new Error("the sheet answered HTTP " + res.status);
+    return res.text();
+  }).then(function(txt){
+    var out = null;
+    try { out = JSON.parse(txt); } catch(e){}
+    if (!out) throw new Error('the endpoint answered, but not with the console');
+    if (out.ok !== true) {
+      var why = out.error || "the sheet turned it away";
+      /* The one refusal that is never about the request. The page only ever
+         sends actions it knows the name of, so this can only mean the
+         script behind the URL is older than the page asking — and left in
+         the sheet's words, the one person who can fix it reads it as their
+         own mistake. */
+      if (/unknown (action|form)/i.test(why)) {
+        why = "the shared sheet is running an older copy of the script, which has no console in it yet" +
+              " — redeploy fomo/setup/apps-script.gs (Deploy → Manage deployments → New version)";
+      }
+      throw new Error(why);
+    }
+    adminState.roster = out.roster || [];
+    adminState.counts = out.counts || {};
+    adminState.audit  = out.audit  || [];
+    adminState.log    = out.log    || [];
+    if (out.rows) { adminState.rows = out.rows; adminState.table = out.table; adminState.who = out.who; }
+    /* The roster the console just changed is the roster the rest of the
+       page is drawing from, so it moves here rather than on the next
+       reload — an intern added in one tab is pickable in the form behind
+       it before anybody has to be told to refresh. */
+    applyRoster(adminState.roster);
+    return out;
+  });
+}
+
+function adminLoad(){
+  if (!isOperator()) return;
+  $("ad-note").textContent = "Reading the sheet…";
+  adminCall("list").then(function(){
+    $("ad-note").textContent = "The roster, and the rows nobody else can reach.";
+    renderAdmin();
+  })["catch"](function(e){
+    $("ad-note").textContent = e.message || "the console could not be read";
+    $("ad-roster").innerHTML = '<tr><td colspan="5" class="ad-none">' + esc(e.message || "") + "</td></tr>";
+  });
+}
+
+/* Every write goes through here so that exactly one thing is true of all of
+   them: the screen is redrawn from what the sheet said afterwards, never
+   from what the page hoped would happen. */
+function adminDo(action, payload, said){
+  if (adminBusy) return;
+  adminBusy = true; renderAdmin();
+  adminCall(action, payload).then(function(){
+    adminBusy = false; adminOpen = ""; adminConfirm = "";
+    /* A row that has just gone takes the list it was in with it, rather
+       than leaving a line that deletes something else when pressed. */
+    if (action === "forcedelete") adminState.rows = null;
+    renderAdmin();
+    if (said) toast(said);
+  })["catch"](function(e){
+    adminBusy = false;
+    renderAdmin();
+    toast(e.message || "the sheet turned that down", true);
+  });
+}
+
+function adminHeld(name){
+  var c = adminState.counts[name];
+  if (!c) return "nothing yet";
+  var bits = [];
+  if (c.rows) bits.push(c.rows + (c.rows === 1 ? " spend" : " spends"));
+  if (c.days) bits.push(c.days + (c.days === 1 ? " day" : " days"));
+  if (c.posts) bits.push(c.posts + (c.posts === 1 ? " note" : " notes"));
+  if (c.schedules) bits.push(c.schedules + " blocks");
+  if (c.subs) bits.push(c.subs + " monthly");
+  if (c.hours) bits.push(c.hours + "h logged");
+  return bits.length ? bits.join(" · ") : "nothing yet";
+}
+
+function renderAdmin(){
+  if (!isOperator()) return;
+  renderAdminRoster();
+  renderAdminAudit();
+  renderAdminRows();
+  renderAdminLog();
+}
+
+function renderAdminRoster(){
+  var here = adminState.roster.filter(function(p){ return !p.removed; });
+  var gone = adminState.roster.filter(function(p){ return p.removed; });
+  $("ad-roster-sub").textContent = here.length + " here" + (gone.length ? " · " + gone.length + " no longer" : "");
+
+  var h = "";
+  adminState.roster.forEach(function(p){
+    var counts = adminState.counts[p.name] || {}, owed = Number(counts.owed) || 0;
+    var locked = p.admin || p.card;
+    h += '<tr class="' + (p.removed ? "ad-gone" : "") + '">';
+    h += "<td>" + avatar(p.name, "sm") + " <b>" + esc(p.name) + "</b>" +
+      (p.admin ? '<span class="ad-tag">console</span>' : "") +
+      (p.card ? '<span class="ad-tag">the card</span>' : "") + "</td>";
+    h += "<td>" + (p.removed ? "off the roster since " + esc(String(p.removed).slice(0, 10))
+      : p.role === "lead" ? "ledger only" : "clock and board") + "</td>";
+    h += '<td class="ad-held">' + esc(adminHeld(p.name)) + "</td>";
+    h += '<td class="amt">' + (owed > 0 ? money(owed) : "—") + "</td>";
+    h += '<td class="ad-act">';
+    if (p.removed) {
+      h += '<button class="mini ghost" data-ad="restore" data-name="' + esc(p.name) + '">Bring back</button>';
+    } else {
+      h += '<button class="mini ghost" data-ad="open" data-name="' + esc(p.name) + '">' +
+        (adminOpen === p.name ? "Close" : "Change…") + "</button>";
+    }
+    h += "</td></tr>";
+
+    if (adminOpen === p.name && !p.removed) {
+      h += '<tr class="ad-open"><td colspan="5"><div class="ad-panel">';
+
+      h += '<div class="ad-row"><span class="ad-lbl">On the</span>';
+      h += '<button class="mini' + (p.role === "intern" ? " on" : " ghost") + '" data-ad="role" data-name="' +
+        esc(p.name) + '" data-role="intern">clock and board</button>';
+      h += '<button class="mini' + (p.role === "lead" ? " on" : " ghost") + '" data-ad="role" data-name="' +
+        esc(p.name) + '" data-role="lead">ledger only</button>';
+      h += '<span class="ad-say">A lead keeps every day already on the board and stops being marked in on new ones.</span></div>';
+
+      h += '<div class="ad-row"><span class="ad-lbl">Name</span>' +
+        '<input class="ad-in" id="ad-ren-to" placeholder="' + esc(p.name) + '" maxlength="40" aria-label="New name">' +
+        '<input class="ad-in" id="ad-ren-confirm" placeholder="and again" maxlength="40" aria-label="Confirm the new name">' +
+        '<button class="mini ghost" data-ad="rename" data-name="' + esc(p.name) + '">Rename</button>' +
+        '<span class="ad-say">Rewrites the name through every tab keyed on it. This one has no undo behind it.</span></div>';
+
+      if (p.admin) {
+        h += '<div class="ad-row ad-no"><span class="ad-lbl">Remove</span>' +
+          '<span class="ad-say">' + esc(p.name) + ' holds the console. Taking them off it from inside it is the one thing this page will not do.</span></div>';
+      } else if (p.card) {
+        h += '<div class="ad-row ad-no"><span class="ad-lbl">Remove</span>' +
+          '<span class="ad-say">Half the ledger is logged against ' + esc(p.name) + '’s card. Move the card first.</span></div>';
+      } else {
+        var owedNow = Number((adminState.counts[p.name] || {}).owed) || 0;
+        h += '<div class="ad-row"><span class="ad-lbl">Remove</span>';
+        if (adminConfirm === "remove:" + p.name) {
+          h += '<button class="mini bad" data-ad="remove!" data-name="' + esc(p.name) + '">' +
+            "Yes — take " + esc(p.name) + " off</button>" +
+            '<button class="mini ghost" data-ad="cancel">Keep them</button>' +
+            '<span class="ad-say">They keep ' + esc(adminHeld(p.name)) +
+            ' on the sheet and everything stays on the board. They stop being able to sign in.' +
+            (owedNow > 0 ? " <b>They are still owed " + esc(money(owedNow)) + ".</b>" : "") + "</span>";
+        } else {
+          h += '<button class="mini ghost" data-ad="remove" data-name="' + esc(p.name) + '">Take them off…</button>' +
+            '<span class="ad-say">Their rows stay exactly where they are. Only signing in stops.</span>';
+        }
+        h += "</div>";
+      }
+      h += "</div></td></tr>";
+    }
+  });
+  $("ad-roster").innerHTML = h || '<tr><td colspan="5" class="ad-none">Nobody on the roster.</td></tr>';
+  $("ad-add-form").querySelector("button").disabled = adminBusy;
+
+  var pick = $("ad-rows-who"), was = pick.value;
+  pick.innerHTML = "";
+  KNOWN.forEach(function(n){ pick.appendChild(new Option(n, n)); });
+  pick.value = KNOWN.indexOf(was) > -1 ? was : (identity ? identity.who : KNOWN[0] || "");
+}
+
+var AUDIT_SAYS = {
+  stranger: "a name the roster has never carried",
+  settled:  "settled, but not written down as settled",
+  amount:   "no amount on it"
+};
+
+function renderAdminAudit(){
+  var found = adminState.audit;
+  $("ad-audit-sub").textContent = found.length
+    ? found.length + (found.length === 1 ? " thing" : " things") + " worth a look"
+    : "nothing out of place";
+  if (!found.length) {
+    $("ad-audit").innerHTML = '<div class="ad-none">Every row on every tab belongs to somebody the roster knows about.</div>';
+    return;
+  }
+  var h = "";
+  found.forEach(function(f, i){
+    var key = "audit:" + i;
+    h += '<div class="ad-find"><div><b>' + esc(f.what) + "</b>" +
+      '<span class="ad-say">' + esc(f.table) + " · " + esc(f.id) + " · " +
+      esc(AUDIT_SAYS[f.kind] || f.kind) + "</span></div>";
+    if (adminConfirm === key) {
+      h += '<span class="ad-act"><button class="mini bad" data-ad="kill!" data-table="' + esc(f.table) +
+        '" data-id="' + esc(f.id) + '" data-key="' + esc(f.key) + '">Yes — delete it</button>' +
+        '<button class="mini ghost" data-ad="cancel">Leave it</button></span>';
+    } else {
+      h += '<span class="ad-act"><button class="mini ghost" data-ad="kill" data-confirm="' + key + '">Delete it…</button></span>';
+    }
+    h += "</div>";
+  });
+  $("ad-audit").innerHTML = h;
+}
+
+function renderAdminRows(){
+  var box = $("ad-rows");
+  if (!adminState.rows) {
+    box.innerHTML = '<div class="ad-none">Pick a name and a table.</div>';
+    return;
+  }
+  if (!adminState.rows.length) {
+    box.innerHTML = '<div class="ad-none">' + esc(adminState.who) + " has nothing on that tab.</div>";
+    return;
+  }
+  var h = "";
+  adminState.rows.forEach(function(r){
+    var key = "row:" + adminState.table + ":" + r.id;
+    h += '<div class="ad-find"><div><b>' + esc(r.line || r.id) + "</b>" +
+      '<span class="ad-say">' + esc(adminState.table) + " · " + esc(r.id) + "</span></div>";
+    if (adminConfirm === key) {
+      h += '<span class="ad-act"><button class="mini bad" data-ad="kill!" data-table="' + esc(adminState.table) +
+        '" data-id="' + esc(r.id) + '" data-key="' + esc(r.key) + '">Yes — delete it</button>' +
+        '<button class="mini ghost" data-ad="cancel">Leave it</button></span>';
+    } else {
+      h += '<span class="ad-act"><button class="mini ghost" data-ad="kill" data-confirm="' + key + '">Delete it…</button></span>';
+    }
+    h += "</div>";
+  });
+  box.innerHTML = h;
+}
+
+function renderAdminLog(){
+  var log = adminState.log;
+  if (!log.length) { $("ad-log").innerHTML = '<div class="ad-none">Nothing has been done in here yet.</div>'; return; }
+  var h = "";
+  log.slice(0, 40).forEach(function(e){
+    h += '<div class="ad-log"><span class="ad-when">' + esc(String(e.at).replace("T", " ").slice(0, 16)) + "</span>" +
+      "<b>" + esc(e.who) + "</b> <span>" + esc(e.action) + "</span> " +
+      '<span class="ad-say">' + esc(e.subject) + (e.detail ? " · " + esc(e.detail) : "") + "</span></div>";
+  });
+  $("ad-log").innerHTML = h;
+}
+
+$("ad-body").addEventListener("click", function(ev){
+  var b = ev.target.closest("button[data-ad]"); if (!b) return;
+  var what = b.getAttribute("data-ad"), name = b.getAttribute("data-name") || "";
+  if (what === "cancel")  { adminConfirm = ""; renderAdmin(); return; }
+  if (what === "open")    { adminOpen = adminOpen === name ? "" : name; adminConfirm = ""; renderAdmin(); return; }
+  if (what === "remove")  { adminConfirm = "remove:" + name; renderAdmin(); return; }
+  if (what === "kill")    { adminConfirm = b.getAttribute("data-confirm"); renderAdmin(); return; }
+  if (what === "restore") { adminDo("rosteradd", {name:name}, name + " is back on the roster."); return; }
+  if (what === "role")    { adminDo("rosterrole", {name:name, role:b.getAttribute("data-role")}); return; }
+  if (what === "remove!") { adminDo("rosterremove", {name:name, evenThoughOwed:true}, name + " is off the roster. Their rows are all still there."); return; }
+  if (what === "kill!")   {
+    adminDo("forcedelete", {table:b.getAttribute("data-table"), id:b.getAttribute("data-id"), reviewed:b.getAttribute("data-key")},
+      "Deleted. A spend can be put back from the ledger's undo; the rest cannot.");
+    return;
+  }
+  if (what === "rename") {
+    var to = ($("ad-ren-to").value || "").trim(), again = ($("ad-ren-confirm").value || "").trim();
+    if (!to) { toast("Type the new name first.", true); return; }
+    if (to !== again) { toast("The two names do not match.", true); return; }
+    adminDo("rosterrename", {name:name, to:to, confirm:again}, name + " is " + to + " everywhere now.");
+  }
+});
+
+$("ad-add-form").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  var name = ($("ad-add-name").value || "").trim();
+  if (!name) { toast("They need a name.", true); return; }
+  adminDo("rosteradd", {name:name, role:$("ad-add-role").value}, name + " is on the roster.");
+  $("ad-add-name").value = "";
+});
+
+$("ad-rows-go").addEventListener("click", function(){
+  adminConfirm = "";
+  adminDo("rows", {table:$("ad-rows-table").value, who:$("ad-rows-who").value});
+});
+
+$("ad-refresh").addEventListener("click", adminLoad);
+
+/* The names on the sign-in menu are the names the sheet will accept, which
+   since the roster moved into the sheet is not something this file knows.
+   So the gate asks the endpoint once, on load, and fills itself in from the
+   answer — an intern added in the console this morning can sign in this
+   afternoon without anybody shipping a new page.
+
+   The same answer is what sessionCall checks the deployment against, so it
+   is remembered here rather than fetched twice; and if it never arrives the
+   menu keeps the five names already in the markup, which is what it had
+   before and is still right on every deployment nobody has touched. */
+var gateFeatures = null;
+function gateProbe(){
+  if (gateFeatures) return Promise.resolve(gateFeatures);
+  return fetch(ENDPOINT, {signal:AbortSignal.timeout(20000)}).then(function(res){ return res.json(); })
+    .then(function(out){ gateFeatures = out; return out; });
+}
+function fillGate(out){
+  var list = (out && out.payers && out.payers.length) ? out.payers.map(String) : null;
+  if (!list) return;
+  /* `team` is the same roster with its roles kept. A deployment too old to
+     send it still sends `payers`, and the roles are then guessed from what
+     this file already believes — wrong only about somebody made a lead
+     since, and corrected the moment they sign in. */
+  applyRoster((out.team && out.team.length) ? out.team
+    : list.map(function(n){ return {name:n, role:LEADS.indexOf(n) > -1 ? "lead" : "intern", removed:""}; }));
+  var sel = $("gate-who"), was = sel.value;
+  sel.innerHTML = '<option value="">select your name</option>';
+  list.forEach(function(n){
+    sel.appendChild(new Option(n.toLowerCase() + (OPERATORS.indexOf(n) > -1 ? " · admin" : ""), n));
+  });
+  if (list.indexOf(was) > -1) sel.value = was;
+}
+gateProbe().then(fillGate)["catch"](function(){});
+
 async function sessionCall(body){
   if (!identityReady) {
-    var probe=await fetch(ENDPOINT,{signal:AbortSignal.timeout(20000)});
-    var features=await probe.json();
+    var features=await gateProbe();
     if (!features.identity || !features.moneyUndo || !features.purchaseApproval) throw new Error("arya-only purchase approval needs to be deployed in apps script before signing in.");
+    if (features.admin === true) sheetAdmin=true;
     identityReady=true;
   }
   var res=await fetch(ENDPOINT,{method:"POST",body:JSON.stringify(Object.assign({_api:"internal"},body)),signal:AbortSignal.timeout(20000)});
@@ -5954,9 +6574,32 @@ async function sessionCall(body){
 function signedIn(out, token){
   identity={who:out.who,token:out.token || token};
   try { sessionStorage.setItem("fomo.identity",JSON.stringify(identity)); } catch(e){}
+  /* The roster comes back with the sign-in rather than being asked for
+     separately, so the form, the rail and the split are drawn from the
+     sheet's list the first time they are drawn and never from this file's
+     copy of it. An answer that does not carry one is a deployment older
+     than the roster — the seed names stand, which is what it was doing
+     before any of this. */
+  if (out.roster) applyRoster(out.roster);
+  /* A sign-in that comes back saying `operator` at all is a deployment with
+     the console in it — only the deployment that has it sends the field. A
+     false is no evidence either way, because it is also what a deployment
+     sends about an intern, and the name check above has already settled
+     that case. So only a true is read. */
+  if (out.operator === true) sheetAdmin = true;
   document.body.dataset.role=isAdmin()?"admin":"intern";
-  $("identity-switch").textContent=identity.who + (isAdmin()?" · Admin":" · Intern") + " · Sign out";
+  document.body.dataset.operator=isOperator()?"yes":"no";
+  /* Three words, because there are three positions. Arya is Admin — the
+     money is his. An intern holding the console is an intern with a console,
+     not an admin, and saying "Intern" of somebody looking at a page full of
+     roster controls reads as the page having got it wrong. */
+  $("identity-switch").textContent=identity.who +
+    (isAdmin()?" · Admin":isOperator()?" · Console":" · Intern") + " · Sign out";
   picked=identity.who;
+  /* The rail is rebuilt here rather than at parse time: whether it carries
+     a Maintenance group is a question about who just signed in, and there
+     was nobody to ask until now. */
+  buildNav();
   [].forEach.call(whoBox.children,function(c){c.setAttribute("aria-pressed",String(c.textContent===picked));});
   bfWho.value=isAdmin()?PEOPLE[0]:identity.who; bfWho.disabled=!isAdmin();
   $("nav").querySelectorAll('[data-go="person"]').forEach(function(b){

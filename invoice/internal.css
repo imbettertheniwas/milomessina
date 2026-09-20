@@ -198,3 +198,86 @@ body:has(#money-undo-bar:not([hidden])) #toast{bottom:calc(86px + var(--foot-cle
 .purchase-git-links{margin-top:12px;font-size:12px}
 .charge-review>.charge-confirm{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
 .charge-approval-note{color:var(--muted);padding:12px 0}
+
+/* ══════════ the console ══════════
+
+   Deliberately plainer than the rest of the page. Nothing in here is a
+   dashboard and none of it wants to be glanced at: every control is one
+   that reaches past a rule the ledger keeps, so the styling is there to
+   slow a hand down, not to make a row inviting to press. The one colour
+   used is --bad, and only on the button that has already been confirmed
+   once. */
+.ad-warn{border:1px solid var(--line-2);border-left:3px solid var(--warn);border-radius:10px;
+  background:var(--surface);padding:14px 16px;font-size:13px;line-height:1.6;color:var(--muted);margin-bottom:16px}
+.ad-warn b{color:var(--text);display:block;margin-bottom:4px}
+.ad-warn code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--text)}
+
+.ad-card{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px;overflow:hidden}
+.ad-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:16px 18px 12px}
+.ad-h h3{margin:0;font-size:15px}
+.ad-sub{color:var(--muted);font-size:12px;line-height:1.5}
+.ad-foot{margin:0;padding:12px 18px 16px;color:var(--muted-2);font-size:12px;line-height:1.6;border-top:1px solid var(--line)}
+.ad-none{padding:18px;color:var(--muted);font-size:13px}
+
+.ad-tbl{width:100%}
+.ad-tbl td,.ad-tbl th{vertical-align:middle}
+.ad-tbl .ad-held{color:var(--muted);font-size:12px}
+.ad-tbl tr.ad-gone td{opacity:.55}
+.ad-tag{display:inline-block;margin-left:7px;padding:1px 7px;border:1px solid var(--line-2);border-radius:20px;
+  font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ad-act{text-align:right;white-space:nowrap}
+.ad-act .mini+.mini{margin-left:6px}
+
+/* A row's own panel, opened under it rather than in a dialog: what these
+   buttons are about to do is mostly a fact about the row above them, and a
+   modal would put that fact behind itself. */
+.ad-open>td{background:var(--surface-2);padding:0!important}
+.ad-panel{display:grid;gap:14px;padding:16px 18px;border-top:1px solid var(--line)}
+.ad-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ad-lbl{min-width:64px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.ad-say{flex:1 1 260px;color:var(--muted);font-size:12px;line-height:1.55;min-width:0}
+.ad-say b{color:var(--text)}
+.ad-row.ad-no .ad-say{color:var(--muted-2)}
+.ad-in{height:30px;padding:0 9px;border:1px solid var(--line-2);border-radius:6px;
+  background:var(--ink);color:var(--text);font:inherit;font-size:13px;min-width:0;width:150px}
+.mini.on{border-color:var(--violet);color:var(--text);background:var(--raise)}
+.mini.bad{border-color:var(--bad);color:var(--bad)}
+.mini.bad:hover{background:var(--bad);color:#fff}
+
+.ad-add{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);align-items:center}
+.ad-add input{flex:1 1 220px;height:34px;padding:0 11px;border:1px solid var(--line-2);border-radius:7px;
+  background:var(--ink);color:var(--text);font:inherit;font-size:13px;min-width:0}
+.ad-add select{height:34px;padding:0 9px;border:1px solid var(--line-2);border-radius:7px;
+  background:var(--ink);color:var(--text);font:inherit;font-size:13px}
+.ad-pick{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px 14px;align-items:center}
+.ad-pick select{height:32px;padding:0 9px;border:1px solid var(--line-2);border-radius:7px;
+  background:var(--ink);color:var(--text);font:inherit;font-size:13px;min-width:0}
+
+/* One finding, one row. The description carries the weight and the button
+   sits at the end of it, so nothing is ever deleted without the sentence
+   saying what it is being read first. */
+.ad-find{display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid var(--line);font-size:13px}
+.ad-find>div{min-width:0;flex:1}
+.ad-find b{display:block;overflow-wrap:anywhere}
+.ad-find .ad-say{display:block;margin-top:3px;font-size:11px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+.ad-log{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;padding:9px 18px;
+  border-top:1px solid var(--line);font-size:12px}
+.ad-log .ad-when{color:var(--muted-2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+.ad-log .ad-say{flex:1 1 200px;font-size:12px}
+
+@media(max-width:700px){
+  .ad-find{flex-direction:column;align-items:stretch}
+  .ad-find .ad-act{text-align:left}
+  .ad-lbl{min-width:0;flex-basis:100%}
+  .ad-in{width:auto;flex:1 1 120px}
+  /* The column that has nowhere to go on a phone. What somebody is holding
+     is the reason to think twice before removing them, so it is not lost —
+     it is said again, in words, in the panel that does the removing. */
+  .ad-tbl .ad-held,.ad-tbl th:nth-child(3){display:none}
+  /* These two hold their own width on every other table on the page, which
+     is right where a table may scroll. This one may not, so they wrap. */
+  .ad-tbl td.amt,.ad-tbl th.amt,.ad-tbl .ad-act{white-space:normal}
+  .ad-tbl td,.ad-tbl th{padding-left:9px;padding-right:9px}
+}

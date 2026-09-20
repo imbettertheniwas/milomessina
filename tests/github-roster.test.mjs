@@ -18,8 +18,14 @@ function lift(re, what){
 }
 
 /* the roster, the storage keys and the function under test, as shipped */
+/* The roster is filled from the sheet now, so these four lines are the seed
+   the page opens with rather than the whole truth. Lifted all the same: what
+   is under test is what a browser does with the logins it already stored,
+   and that starts from exactly these names. */
 const PEOPLE    = lift(/var PEOPLE = \[[^\]]*\];/,               'PEOPLE');
-const GH_PEOPLE = lift(/var GH_PEOPLE = PEOPLE\.concat\(\[[^\]]*\]\);/, 'GH_PEOPLE');
+const LEADS     = lift(/var LEADS = \[[^\]]*\];/,                'LEADS');
+const PAYERS    = lift(/var PAYERS = PEOPLE\.concat\(LEADS\);/,   'PAYERS');
+const GH_PEOPLE = lift(/var GH_PEOPLE = PAYERS\.slice\(\);/,      'GH_PEOPLE');
 const KEYS      = lift(/var GH_WEEKS = [\s\S]*?GH_LOGINS = "[^"]*";/, 'the storage keys');
 const SEEDED    = lift(/var GH_SEEDED = "[^"]*";/,               'GH_SEEDED');
 const DEFAULTS  = lift(/var GH_DEFAULTS = \{[\s\S]*?\};/,        'GH_DEFAULTS');
@@ -37,7 +43,7 @@ function run({stored = {}, seeded = null, defaults = null} = {}){
     },
     JSON, console
   });
-  vm.runInContext([PEOPLE, GH_PEOPLE, KEYS, SEEDED, DEFAULTS].join('\n'), ctx);
+  vm.runInContext([PEOPLE, LEADS, PAYERS, GH_PEOPLE, KEYS, SEEDED, DEFAULTS].join('\n'), ctx);
   if (defaults) vm.runInContext('GH_DEFAULTS = ' + JSON.stringify(defaults) + ';', ctx);
   store[ctx.GH_LOGINS] = JSON.stringify(stored);
   if (seeded) store[ctx.GH_SEEDED] = JSON.stringify(seeded);
