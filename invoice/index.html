@@ -6599,8 +6599,10 @@ function fillGate(out){
     : list.map(function(n){ return {name:n, role:LEADS.indexOf(n) > -1 ? "lead" : "intern", removed:""}; }));
   var sel = $("gate-who"), was = sel.value;
   sel.innerHTML = '<option value="">select your name</option>';
+  /* Only whose money it is gets said out loud here. Milo opens the console
+     too, but that is maintenance, not admin — see isOperator. */
   list.forEach(function(n){
-    sel.appendChild(new Option(n.toLowerCase() + (OPERATORS.indexOf(n) > -1 ? " · admin" : ""), n));
+    sel.appendChild(new Option(n.toLowerCase() + (n === "Arya" ? " · admin" : ""), n));
   });
   if (list.indexOf(was) > -1) sel.value = was;
 }
