@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>opening fomo…</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#08070F">
+<link rel="icon" href="/fomo/assets/favicon.svg">
+<style>
+  html,body{height:100%}
+  body{margin:0;background:#08070F;color:#8E93B5;
+    font-family:'Aeonik',system-ui,sans-serif;font-size:14px;
+    display:grid;place-items:center;text-align:center;padding:24px}
+  .ring{width:26px;height:26px;margin:0 auto 16px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.14);border-top-color:#516AF6;
+    animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.ring{animation:none}}
+  a{color:#A3B0FF}
+  .late{opacity:0;transition:opacity .4s}
+  .late.on{opacity:1}
+</style>
+</head>
+<body>
+<!-- ══════════ /r/<code> ══════════
+
+     A referral link, and the only thing on the domain that exists to be
+     left immediately. Somebody opens it, the code is written down, and
+     they land on the page they were being sent to.
+
+     It is a page and not a redirect at the edge because the code has to
+     be stored in the browser to survive the walk to whichever form they
+     eventually fill in — an edge rewrite cannot write localStorage, and
+     carrying the code forward as a query string only works if they never
+     click anything else on the way. refer.js on the far side reads what
+     this writes.
+
+     `?to=` names the door. Left off, they land on the referral page
+     itself, which explains the whole thing — the right place for a link
+     pasted with no context.
+
+     There is no call home. A click that never becomes a submission is
+     not a referral and is not worth a row; the sweep in the Apps Script
+     builds referrals out of submissions, never out of visits here. -->
+<div>
+  <div class="ring" aria-hidden="true"></div>
+  <p id="says">taking you to fomo…</p>
+  <p class="late" id="late"><a id="onward" href="/fomo/refer/">continue &rarr;</a></p>
+</div>
+
+<script>
+(function(){
+  var MAX = 24;
+
+  /* Mirrors normalizeCode in fomo/refer/tiers.js and the copy in
+     fomo/assets/refer.js — change all three together. This page is
+     served from a rewrite and has to run before anything else loads,
+     so it carries its own rather than fetching a module for one call. */
+  function normalize(value){
+    return String(value == null ? '' : value)
+      .trim().toLowerCase()
+      .replace(/^@+/, '')
+      .replace(/[^a-z0-9._-]+/g, '')
+      .replace(/^[._-]+|[._-]+$/g, '')
+      .slice(0, MAX);
+  }
+
+  /* Every door a link may name. A `?to=` that is not on it is ignored
+     rather than followed: this page takes a value straight off the URL,
+     and an open redirect is how a referral link becomes somebody else's
+     phishing link. */
+  var DOORS = {
+    clan:    '/fomo/onboard/',
+    chapter: '/fomo/onboard/',
+    creator: '/fomo/submit/',
+    intern:  '/fomo/apply/'
+  };
+
+  var params = new URLSearchParams(location.search);
+
+  /* The rewrite keeps the original path, so the code is read off it.
+     `?ref=` is the fallback for a host that rewrites the path away —
+     and for this file opened at its own address, which is how it is
+     reached in a preview and how it was reached the first time this
+     went wrong: /r/index.html read as a person called index.html. So
+     the page's own name is not a code, and never a referrer. */
+  var fromPath = decodeURIComponent((location.pathname.split('/r/')[1] || '').split('/')[0] || '');
+  if (/^index\.html?$/i.test(fromPath)) fromPath = '';
+  var code = normalize(fromPath || params.get('ref') || '');
+  var to = DOORS[String(params.get('to') || '')] || '/fomo/refer/';
+
+  if (!code) { location.replace('/fomo/refer/'); return; }
+
+  /* First link wins, exactly as the rules page promises: a code already
+     held is not replaced. Written here as well as in refer.js because
+     this is usually the first page of the two that runs. */
+  try {
+    var held = JSON.parse(localStorage.getItem('fomo.refer.seen') || 'null');
+    if (!held || !normalize(held.code)) {
+      localStorage.setItem('fomo.refer.seen',
+        JSON.stringify({code: code, at: new Date().toISOString()}));
+    }
+  } catch (e) {}
+
+  /* The code rides along on the URL too. Storage can be refused — a
+     private window, blocked site data — and the form on the far side
+     still has to know who sent them. */
+  var onward = to + (to.indexOf('?') > -1 ? '&' : '?') + 'ref=' + encodeURIComponent(code);
+  document.getElementById('onward').href = onward;
+
+  /* replace, not assign: back from the form should go wherever they
+     were before the link, never to this page and round again. */
+  location.replace(onward);
+
+  /* If it is still here a moment later, something stopped the redirect.
+     Give them the link rather than a spinner that never stops. */
+  setTimeout(function(){
+    document.getElementById('says').textContent = 'almost there —';
+    document.getElementById('late').className = 'late on';
+  }, 1500);
+})();
+</script>
+</body>
+</html>

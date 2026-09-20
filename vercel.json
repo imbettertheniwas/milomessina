@@ -36,6 +36,19 @@
           "value": "nosniff"
         }
       ]
+    },
+    {
+      "source": "/r/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -50,6 +63,10 @@
     {
       "source": "/hqvisitform",
       "destination": "/hqvisitform/index.html"
+    },
+    {
+      "source": "/r/:code",
+      "destination": "/r/index.html"
     }
   ]
 }

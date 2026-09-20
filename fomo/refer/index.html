@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refer people, get paid — fomo campus</title>
+<meta name="description" content="Claim your referral link and get paid into your fomo account when someone you sent actually finishes: $5 when they join their clan, $25 when they are approved as a creator, $100 when they are hired onto a campus team, $250 when a chapter you brought in qualifies.">
+<meta name="theme-color" content="#08070F">
+<link rel="icon" href="/fomo/assets/favicon.svg">
+<link rel="stylesheet" href="/fomo/assets/base.css">
+<link rel="stylesheet" href="/fomo/assets/campus-ui.css?v=2">
+<script src="/fomo/assets/campus-ui.js?v=1" defer></script>
+<style>
+/* Same hero, same numbered sections, same reveal as the creator page.
+   The only thing this page owns that the others do not is the ladder
+   table and the link box, so that is all there is below. */
+h2{font-size:clamp(2.4rem,6.2vw,5rem)}
+h3{font-size:clamp(1.5rem,2.6vw,2.2rem);letter-spacing:-.03em}
+h4{font-size:1.02rem;letter-spacing:-.02em}
+p{color:var(--muted)}
+section{padding-block:clamp(64px,8vw,112px);scroll-margin-top:84px}
+
+/* The header itself is campus-ui.css's, the same one every campus page
+   wears — only the section links inside it are this page's. */
+.nav-links{display:flex;align-items:center;gap:24px;font-size:.86rem;color:var(--muted)}
+.nav-links a:hover{color:var(--text)}
+@media(max-width:820px){.nav-links{display:none}}
+
+.hero{padding-top:clamp(50px,8vw,90px);padding-bottom:clamp(56px,7vw,96px);text-align:center}
+.hero .inner{max-width:900px;margin-inline:auto}
+.hero .h1{font-size:clamp(2.4rem,6.1vw,4.9rem);margin:0;line-height:1}
+.lede{font-size:clamp(1rem,1.3vw,1.16rem);max-width:58ch;margin:26px auto 0;color:#B5BADA}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px;justify-content:center}
+
+.bignum{position:relative;margin-top:clamp(30px,4.2vw,52px)}
+.bignum::before{content:'';position:absolute;left:50%;top:50%;translate:-50% -50%;z-index:-1;
+  width:min(760px,92%);height:min(340px,60vw);border-radius:50%;filter:blur(70px);opacity:.5;
+  background:radial-gradient(circle,rgba(81,106,246,.55),transparent 68%)}
+.bignum b{display:block;font-family:var(--display);font-weight:700;letter-spacing:-.05em;line-height:.85;
+  font-size:clamp(4.4rem,15vw,11rem);
+  background:linear-gradient(100deg,#fff 12%,#A3B0FF 52%,#19D97C 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.bignum .lab,.bignum .sub{display:block;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted-2)}
+.bignum .lab{margin-bottom:10px}
+.bignum .sub{margin-top:14px}
+
+.shead{margin-bottom:clamp(34px,4vw,56px);max-width:70ch}
+.shead p{margin-top:16px;font-size:clamp(.96rem,1.1vw,1.06rem)}
+
+/* ── the ladder ──
+   Four rows, one per rung, drawn from TIERS in tiers.js so the page and
+   the console cannot quote different money. The amount is the loud thing
+   on each row because it is the question the page exists to answer. */
+.ladder{display:grid;gap:14px}
+.rung{display:grid;grid-template-columns:auto 1fr auto;gap:clamp(16px,2.4vw,30px);align-items:center;
+  padding:clamp(20px,2.6vw,30px) clamp(20px,3vw,34px);border-radius:var(--r-l);
+  border:1px solid var(--line);background:var(--surface);transition:border-color .25s,background .25s,transform .25s}
+.rung:hover{border-color:var(--line-2);background:var(--surface-2);transform:translateY(-2px)}
+.rung .lvl{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted-2);width:4.2em}
+.rung h4{margin:0 0 7px;text-transform:lowercase}
+.rung p{margin:0;font-size:.88rem;line-height:1.5}
+.rung .when{display:block;margin-top:9px;font-size:.8rem;color:var(--muted-2);line-height:1.5}
+.rung .amt{font-family:var(--display);font-weight:700;letter-spacing:-.04em;
+  font-size:clamp(1.9rem,4.4vw,2.9rem);color:var(--violet-hi);white-space:nowrap}
+.rung.top{border-color:rgba(81,106,246,.4);background:rgba(81,106,246,.07)}
+.rung.top .amt{background:linear-gradient(100deg,#A3B0FF,#19D97C);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+@media(max-width:720px){
+  .rung{grid-template-columns:1fr auto;gap:12px}
+  .rung .lvl{grid-column:1/-1;width:auto}
+}
+.ladder-foot{margin-top:24px;font-size:.86rem;color:var(--muted-2);max-width:62ch;line-height:1.6}
+
+/* ── the three steps ── */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.step{padding:clamp(22px,2.6vw,30px);border-radius:var(--r-l);border:1px solid var(--line);background:var(--surface)}
+.step b{display:block;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;color:var(--violet-hi);margin-bottom:14px}
+.step h4{margin:0 0 9px;text-transform:lowercase}
+.step p{margin:0;font-size:.88rem;line-height:1.55}
+
+/* ── claim + link ── */
+.claim{max-width:620px;margin-inline:auto}
+.card{padding:clamp(24px,3.4vw,42px);border-radius:var(--r-xl);border:1px solid var(--line);background:var(--surface)}
+.ibox{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:12px;background:rgba(0,0,0,.25);
+  transition:border-color .2s}
+.ibox:focus-within{border-color:var(--violet)}
+.ibox .at{padding:0 2px 0 15px;color:var(--muted-2);font-size:.95rem}
+.ibox input{border:0;background:none;flex:1;min-width:0}
+.ibox input:focus{box-shadow:none}
+
+/* The generated link. Monospace and selectable on purpose — a link you
+   cannot read back to somebody over the phone is a link they cannot use
+   when the copy button has not worked. */
+.linkbox{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:6px}
+.linkbox code{flex:1;min-width:220px;display:flex;align-items:center;padding:13px 16px;border-radius:12px;
+  border:1px solid rgba(81,106,246,.4);background:rgba(81,106,246,.08);
+  font-family:var(--mono);font-size:.9rem;color:var(--text);word-break:break-all;user-select:all}
+.doors{display:grid;gap:9px;margin-top:22px}
+.door{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.2)}
+.door span{font-size:.85rem;color:var(--muted)}
+.door code{font-family:var(--mono);font-size:.78rem;color:var(--violet-hi);word-break:break-all;user-select:all}
+.copied{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+
+.krow{display:flex;justify-content:space-between;gap:18px;padding:13px 0;border-bottom:1px solid var(--line);
+  font-size:.88rem;align-items:baseline}
+.krow:last-of-type{border-bottom:0}
+.krow b{font-family:var(--display);font-size:1.06rem;letter-spacing:-.02em;white-space:nowrap}
+.note{font-size:.84rem;color:var(--muted-2);line-height:1.65;max-width:66ch}
+.note+.note{margin-top:14px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:8px}
+.rule{padding:clamp(20px,2.4vw,28px);border-radius:var(--r-l);border:1px solid var(--line);background:var(--surface)}
+.rule h4{margin:0 0 9px;text-transform:lowercase}
+.rule p{margin:0;font-size:.86rem;line-height:1.55}
+
+.rv{opacity:0;transform:translateY(18px);transition:opacity .7s,transform .7s}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body class="campus-page">
+<a class="campus-skip" href="#main-content">Skip to content</a>
+
+<canvas id="stars"></canvas>
+<div class="aurora"><i></i><i></i><i></i></div>
+
+<header class="campus-header" id="hdr"><div class="campus-top"><a class="logo" href="/landingpage/" aria-label="fomo campus — all programs"><span class="logo-mark"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M36.9747 24.3586C44.1067 24.3587 49.7941 27.9515 52.9484 33.5959C48.7626 38.0418 45.6617 43.7612 44.4679 50.0002C43.2743 56.2391 44.1865 61.9572 46.67 66.4026C41.3555 72.0468 34.2931 75.6408 27.1613 75.6409C18.432 75.6407 11.8659 70.2588 9.46204 62.3196H26.8478C27.4159 62.3193 28.0059 61.8593 28.1691 61.2932L34.6486 38.7043C34.8098 38.1381 34.4815 37.6782 33.9152 37.678H14.1788C19.6213 29.7404 28.2465 24.3588 36.9747 24.3586Z" fill="currentColor"/><path d="M72.3285 24.3586C85.0779 24.3586 93.2156 35.8374 90.5062 49.9993C87.7966 64.1596 75.2646 75.6409 62.515 75.6409C53.7856 75.6408 47.2196 70.2589 44.8158 62.3196H64.1537C64.7218 62.3194 65.3127 61.8594 65.476 61.2932L71.9545 38.7043C72.1157 38.138 71.7876 37.678 71.2211 37.678H49.5316C54.9741 29.7401 63.5999 24.3587 72.3285 24.3586Z" fill="currentColor"/></svg></span>fomo<span>/campus</span></a><div class="campus-actions"><nav class="nav-links" aria-label="Referral page sections"><a href="#ladder">What it pays</a><a href="#how">How it works</a><a href="#rules">The rules</a></nav><a class="btn btn-p" href="#claim">get my link &rarr;</a></div></div><nav class="campus-programs" aria-label="Campus programs"><a href="/fomo/campuswars/">Greek Wars</a><a href="/fomo/">Internship</a><a href="/fomo/submit/">Creators</a><a href="/fomo/refer/" aria-current="page">Refer</a></nav></header>
+
+<main id="main-content" tabindex="-1">
+
+<section class="hero">
+  <div class="wrap">
+    <div class="inner">
+      <h1 class="h1">bring people in.<br><span class="grad">get paid for it.</span></h1>
+      <p class="lede">Claim one link, send it to whoever you would have told anyway, and take a cut every time one of them actually finishes something. Paid into your fomo account.</p>
+      <div class="bignum">
+        <span class="lab">one person, all four rungs</span>
+        <b id="hero-total">$380</b>
+        <span class="sub">is the most a single referral can pay</span>
+      </div>
+      <div class="hero-cta">
+        <a class="btn btn-p" href="#claim">claim my link &rarr;</a>
+        <a class="btn btn-g" href="#ladder">see what each one pays</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────── the ladder ──────────
+     Drawn from TIERS, never typed here: the amounts on this page, the
+     amounts the console pays out and the amounts the sheet records are
+     one list in tiers.js. -->
+<section id="ladder">
+  <div class="wrap">
+    <div class="shead rv">
+      <span class="eyebrow">01 &mdash; what a referral is worth</span>
+      <h2>Four rungs.<br>Four price points.</h2>
+      <p>You are not paid for a click, a signup or a download. You are paid when the person you sent <b>finishes the thing</b> &mdash; and each of these four is something we already watch land.</p>
+    </div>
+    <div class="ladder rv" id="ladder-rows"></div>
+    <p class="ladder-foot" id="ladder-foot"></p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="shead rv">
+      <span class="eyebrow">02 &mdash; how it works</span>
+      <h2>Three steps,<br>then you forget about it.</h2>
+    </div>
+    <div class="steps rv">
+      <div class="step">
+        <b>01</b>
+        <h4>Claim your link</h4>
+        <p>Your fomo username becomes your code. One link, yours, and it does not expire. You can hand out the short version or a straight link to whichever programme suits the person.</p>
+      </div>
+      <div class="step">
+        <b>02</b>
+        <h4>Send it to people</h4>
+        <p>Group chat, story, in person. Anyone who opens your link carries your code with them through whichever form they fill in, so nobody has to remember to type your name.</p>
+      </div>
+      <div class="step">
+        <b>03</b>
+        <h4>Get paid when they finish</h4>
+        <p>Their approval, their hire, their chapter crossing 80% &mdash; the moment it lands, the amount is added to your fomo account. You do not have to chase it or invoice anyone.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────── the claim ──────────
+     The only form on the page. It answers with the code rather than a
+     bare confirmation, because the code is the entire point of filling
+     it in — a "thanks, we'll be in touch" here would be useless. -->
+<section id="claim">
+  <div class="wrap">
+    <div class="shead rv" style="text-align:center;margin-inline:auto">
+      <span class="eyebrow" style="justify-content:center">03 &mdash; get your link</span>
+      <h2>Claim your code.</h2>
+      <p style="margin-inline:auto">Your fomo username is your code. Takes about twenty seconds, and you keep the link for good.</p>
+    </div>
+
+    <div class="claim rv">
+      <div class="card" id="claim-card">
+        <div class="banner" id="banner" role="alert"></div>
+
+        <form id="claim-form" novalidate>
+          <label class="f">
+            <span>Your fomo username <em>&mdash; this becomes your code</em></span>
+            <div class="ibox">
+              <span class="at" aria-hidden="true">@</span>
+              <input id="username" name="fomo_username" type="text" autocomplete="username"
+                     maxlength="24" spellcheck="false" autocapitalize="none" required
+                     placeholder="jackd" aria-describedby="username-hint">
+            </div>
+            <span class="hint" id="username-hint">Letters, numbers, dots, dashes and underscores. Your link will be <code id="preview">&hellip;/r/your-username</code></span>
+            <span class="err"></span>
+          </label>
+
+          <label class="f">
+            <span>Full name</span>
+            <input id="name" name="full_name" type="text" maxlength="100" autocomplete="name" required placeholder="Jack Delaney">
+            <span class="err"></span>
+          </label>
+
+          <label class="f">
+            <span>Email <em>&mdash; where we tell you a payout landed</em></span>
+            <input id="email" name="email" type="email" maxlength="254" autocomplete="email" required placeholder="jack@school.edu">
+            <span class="err"></span>
+          </label>
+
+          <label class="f">
+            <span>School <em>&mdash; optional</em></span>
+            <input id="school" name="school" type="text" maxlength="120" autocomplete="organization" placeholder="San Diego State">
+            <span class="err"></span>
+          </label>
+
+          <!-- A bot filled a field no human can see. -->
+          <div style="position:absolute;left:-9999px" aria-hidden="true">
+            <label>Leave this empty<input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></label>
+          </div>
+
+          <button class="btn btn-p" type="submit" id="submit" style="width:100%;justify-content:center;margin-top:8px">
+            claim my link &rarr;
+          </button>
+          <p class="note" style="margin-top:16px">We use your email to tell you when a payout lands and nothing else. Your code is public by design &mdash; it is in every link you send.</p>
+        </form>
+
+        <!-- Shown in place of the form once a code comes back. -->
+        <div id="claimed" hidden>
+          <h3 style="margin:0 0 8px">your link is live.</h3>
+          <p style="margin:0 0 22px">Send this to anyone. Everything they do from here on counts as yours.</p>
+
+          <div class="linkbox">
+            <code id="my-link"></code>
+            <button class="btn btn-p btn-sm" type="button" data-copy="my-link">copy</button>
+          </div>
+
+          <div class="doors" id="doors"></div>
+
+          <p class="note" style="margin-top:22px">Bookmark this page. Open it again on this browser and your link is still here. Lost it on another device? Claim again with the same username and you get the same code back.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="rules">
+  <div class="wrap">
+    <div class="shead rv">
+      <span class="eyebrow">04 &mdash; the rules</span>
+      <h2>What counts,<br>and what does not.</h2>
+    </div>
+    <div class="rules rv">
+      <div class="rule">
+        <h4>One referrer per person</h4>
+        <p>The first link somebody opens is the one that holds. If two people send the same friend a link, the earlier one is credited &mdash; no splitting, no arguing about it afterwards.</p>
+      </div>
+      <div class="rule">
+        <h4>You cannot refer yourself</h4>
+        <p>A code used on its own owner's application is dropped. So are duplicate accounts for the same person, which is the other half of the same rule.</p>
+      </div>
+      <div class="rule">
+        <h4>The rungs stack</h4>
+        <p>One person can pay you more than once. Somebody who joins their clan, then gets approved as a creator, then gets hired pays out at each rung as they reach it.</p>
+      </div>
+      <div class="rule">
+        <h4>Completion is checked by a person</h4>
+        <p>Every payout is reviewed before it is released. It is a quick look, not an ordeal &mdash; but it means nothing pays out on a form somebody filled in twice.</p>
+      </div>
+      <div class="rule">
+        <h4>Money goes to your fomo account</h4>
+        <p>Not a bank transfer, not a cheque. It lands in the fomo account behind the username you claimed with, which is why that username has to be one that actually exists.</p>
+      </div>
+      <div class="rule">
+        <h4>We can close it</h4>
+        <p>Bought traffic, fake signups, or people who did not agree to be signed up ends the code and anything unpaid on it. It has to be said, and it is the only thing here that ever gets anyone removed.</p>
+      </div>
+    </div>
+    <p class="note" style="margin-top:28px">Referral payouts are separate from what the person you referred earns. Their $500 chapter payout, their $25 creator bonus and their pay per view are theirs in full &mdash; nothing is taken out of it to pay you.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="f-bot">
+      <span>fomo / campus</span>
+      <span><a href="/landingpage/">all programs</a></span>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="/fomo/refer/refer-page.js"></script>
+</body>
+</html>

@@ -90,6 +90,12 @@ function doPost(e) {
        this namespace never touches them. */
     if (body._api === 'forms') return formsApi(body);
 
+    /* Referrals. The one namespace here that answers a stranger as well
+       as the console: `claim` is public, because /fomo/refer is useless
+       unless it can hand somebody back the code it just minted for them.
+       Everything else in it is money and is operator-only. */
+    if (body._api === 'refer') return referApi(body);
+
     /* The hours each of them is already spoken for in a normal week,
        so /internal can work out when they could all be in the office at
        once. Recurring blocks, not dated events — the tab is small and
@@ -138,6 +144,10 @@ function doGet() {
     campus: typeof campusApi === 'function',
     posts: typeof postsApi === 'function',
     forms: typeof formsApi === 'function',
+    /* Whether this deployment can mint a referral code. /fomo/refer reads
+       it before it lets somebody claim one, so a page in front of an older
+       script says so instead of taking a claim it cannot register. */
+    refer: typeof referApi === 'function',
     /* The forms this deployment will take a submission from. Named
        rather than assumed for the same reason `payers` is: /internal
        lists every front door on the site, and a door posting to a tab
@@ -1950,7 +1960,12 @@ function campusHire(b) {
    receiver turns it away, and a manager that quietly left it out would
    be hiding exactly the thing it exists to show. It reads as a door with
    no inbox behind it, which is what it is. */
-var FORM_TABS = FORM_INBOX.concat(['onboard']);
+/* `referrers` is on here for the same reason `onboard` is: /fomo/refer
+   is a front door, so the manager that lists every front door has to be
+   able to open it. It is not on FORM_INBOX because it does not post like
+   the others — it takes the `refer` namespace, which answers with a code
+   rather than with {ok:true}. */
+var FORM_TABS = FORM_INBOX.concat(['onboard', 'referrers']);
 
 /* Newest first, and capped. Nothing on these tabs is near it; the cap is
    so a year of submissions cannot turn one page open into a timeout. */
@@ -3060,6 +3075,337 @@ function adminLogRead() {
   return sh.getRange(from, 1, last - from + 1, ADMIN_LOG_COLS.length).getValues().map(function (r) {
     return { at: String(r[0]), who: String(r[1]), action: String(r[2]), subject: String(r[3]), detail: String(r[4]) };
   }).reverse();
+}
+
+/* ══════════ referrals ══════════
+
+   Two tabs and one idea: a code belongs to a person, and a referral is
+   a row on somebody else's form that carries that code.
+
+   `referrers` is the claim — one row per person who has been to
+   /fomo/refer and taken a link. `referrals` is what came back through
+   those links, and it is not typed by anybody: referSweep reads the
+   form tabs the receiver already writes, finds the submissions with a
+   `ref` cell on them, and opens a referral row for each one it has not
+   seen before. That is the whole attribution mechanism. It means a
+   referral cannot exist without a real submission behind it, and it
+   means a door that gains referral tracking later needs a line in
+   REFER_DOORS and nothing else.
+
+   Money never moves by itself. A swept row lands at `pending`, which
+   says only that somebody arrived on a link. Somebody has to look at
+   the submission and say the person actually finished the thing before
+   it becomes `completed`, and say it again before it becomes `paid`.
+   The two steps are separate on purpose: the first is a judgement about
+   the referral, the second is a statement that the money has left. */
+
+var REFER_TAB = 'referrers';
+var REFER_COLS = ['code', 'claimed', 'full name', 'email', 'school', 'status', 'note'];
+
+var REFERRAL_TAB = 'referrals';
+var REFERRAL_COLS = ['id', 'created', 'code', 'tier', 'who', 'contact', 'via', 'source',
+                     'stage', 'amount', 'moved', 'moved by', 'note'];
+
+/* Mirrors TIERS in fomo/refer/tiers.js — change both together. The page
+   quotes these amounts to the person being asked to send the link, and
+   this is what actually gets written next to their name, so the two
+   disagreeing is the one bug here nobody would notice until a payout. */
+var REFER_TIERS = {
+  clan:    {level: 1, amount: 5},
+  creator: {level: 2, amount: 25},
+  intern:  {level: 3, amount: 100},
+  chapter: {level: 4, amount: 250}
+};
+
+/* Which tier a submission on each form tab is worth. A tab not listed
+   here is not swept, however many `ref` cells are on it — attribution
+   on a door nobody has priced would land as a referral worth nothing.
+
+   `onboard` is the clan rung. The chapter rung is not here and cannot
+   be: a chapter qualifying is not a form somebody fills in, it is 80%
+   of a house crossing a line in the campus admin, so it is opened by
+   hand from the console. */
+var REFER_DOORS = {apply: 'intern', submit: 'creator', onboard: 'clan'};
+
+var REFER_STAGES = ['pending', 'completed', 'paid', 'rejected'];
+var REFER_CODE_MAX = 24;
+
+/* Mirrors normalizeCode in fomo/refer/tiers.js. */
+function referCode(value) {
+  return String(value == null ? '' : value)
+    .trim().toLowerCase()
+    .replace(/^@+/, '')
+    .replace(/[^a-z0-9._-]+/g, '')
+    .replace(/^[._-]+|[._-]+$/g, '')
+    .slice(0, REFER_CODE_MAX);
+}
+
+function referApi(body) {
+  var action = String(body.action || 'list');
+
+  /* The public half. It carries the form turnstile rather than the
+     console passcode, because it is reached from a page a stranger is
+     looking at. */
+  if (action === 'claim') {
+    if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
+    return referClaim(body);
+  }
+
+  if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+  var actor = internalActor(body);
+  if (!actor) return reply(false, 'Session expired. Enter the passcode and select your name again.');
+  if (!internalIsAdmin(actor)) return reply(false, 'Referrals are ' + INTERNAL_ADMINS.join(' and ') + ' only.');
+
+  var err = null;
+  if (action === 'stage')       err = referStage(body, actor);
+  else if (action === 'open')   err = referOpen(body, actor);
+  else if (action === 'block')  err = referBlock(body, actor);
+  else if (action !== 'list')   return reply(false, 'unknown action');
+  if (err) return reply(false, err);
+
+  /* Every action answers with the whole picture rather than with what it
+     just changed. The console draws totals across both tabs — owed per
+     person, paid to date — and a partial answer would leave it adding a
+     new row to figures it had computed before the row existed. */
+  referSweep();
+  return reply(true, null, {
+    referrers: referrerRead(),
+    referrals: referralRead(),
+    tiers: REFER_TIERS,
+    doors: REFER_DOORS
+  });
+}
+
+/* ---------- the tabs ---------- */
+function referSheet(name, cols) {
+  var ss = campusBook();
+  var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.getRange(1, 1, sh.getMaxRows(), cols.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  /* A tab made before a column existed is topped up in place, the way
+     the week notes are: the rows already on it keep their rows and the
+     new cell reads empty rather than wrong. */
+  var head = sh.getRange(1, 1, 1, cols.length).getValues()[0];
+  for (var i = 0; i < cols.length; i++) {
+    if (String(head[i]) === cols[i]) continue;
+    sh.getRange(1, 1, sh.getMaxRows(), cols.length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold');
+    break;
+  }
+  return sh;
+}
+function referrerSheet() { return referSheet(REFER_TAB, REFER_COLS); }
+function referralSheet() { return referSheet(REFERRAL_TAB, REFERRAL_COLS); }
+
+function referRows(sh, cols) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, cols.length).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var any = false, row = {_row: i + 2};
+    for (var j = 0; j < cols.length; j++) {
+      row[cols[j]] = formsWhen(vals[i][j]);
+      if (String(vals[i][j] || '') !== '') any = true;
+    }
+    if (any) out.push(row);
+  }
+  return out;
+}
+function referrerRead() { return referRows(referrerSheet(), REFER_COLS); }
+
+/* Every cell leaves these tabs as text, which is the same defence the
+   ledger and the campus tables take against a date the spreadsheet has
+   decided to reinterpret. `amount` is the one exception: it is money,
+   the console adds it up, and a column of strings is one silent string
+   concatenation away from a total nobody can explain. */
+function referralRead() {
+  return referRows(referralSheet(), REFERRAL_COLS).map(function (r) {
+    r.amount = Number(r.amount) || 0;
+    return r;
+  });
+}
+
+/* ---------- claiming a code ----------
+
+   Idempotent by email. The page promises that claiming again with the
+   same username gets the same code back, which is how somebody who has
+   cleared their browser gets their link again — so the same person
+   asking twice must not mint a second code, and must not be told their
+   own code is taken.
+
+   A username somebody else already holds is answered with a numbered
+   variant rather than a refusal. A refusal here costs us the referrer
+   over a name collision, which is a bad trade for both of us. */
+function referClaim(body) {
+  if (body._hp) return reply(true, null, {code: referCode(body.code)});
+
+  var code = referCode(body.code);
+  if (code.length < 3) return reply(false, 'That username is too short to make a link from.');
+
+  var email = String(body.email == null ? '' : body.email).trim().toLowerCase().slice(0, 254);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(false, 'Enter an email we can reach you on.');
+
+  var name = campusSafe(String(body.full_name == null ? '' : body.full_name).trim()).slice(0, 100);
+  var school = campusSafe(String(body.school == null ? '' : body.school).trim()).slice(0, 120);
+
+  var held = referrerRead();
+  var i;
+
+  /* Already theirs — by code and email together, or by email alone. */
+  for (i = 0; i < held.length; i++) {
+    if (String(held[i]['email']).toLowerCase() === email) {
+      return reply(true, null, {code: held[i]['code'], taken: held[i]['code'] !== code, mine: true});
+    }
+  }
+
+  /* Somebody else's. Walk to the first free variant. */
+  var taken = {}, free = code;
+  for (i = 0; i < held.length; i++) taken[String(held[i]['code'])] = true;
+  if (taken[free]) {
+    var n = 2;
+    while (taken[free] && n < 200) { free = code.slice(0, REFER_CODE_MAX - 2) + n; n++; }
+  }
+
+  referrerSheet().appendRow([free, campusStamp(), name, email, school, 'active', '']);
+  return reply(true, null, {code: free, taken: free !== code, mine: false});
+}
+
+/* ---------- the sweep ----------
+
+   Everything the form tabs have that the referrals tab has not. It runs
+   on every console read, which is often enough that a referral is on
+   screen the same day it arrives and cheap enough that it does not
+   matter: the form tabs are a few hundred rows and the comparison is
+   against a set built once.
+
+   A submission is identified by its tab and its row. That is stable
+   under everything the receiver does — it only ever appends — and it is
+   what lets the console link a referral back to the submission it came
+   from. A row deleted by hand in the spreadsheet would let the row
+   beneath it be swept twice, which is the one cost of not writing an id
+   onto tabs this namespace does not own. */
+function referSweep() {
+  var seen = {}, existing = referralRead(), i;
+  for (i = 0; i < existing.length; i++) {
+    var src = String(existing[i]['source'] || '');
+    if (src) seen[src] = true;
+  }
+
+  var codes = {}, held = referrerRead();
+  for (i = 0; i < held.length; i++) codes[String(held[i]['code'])] = held[i];
+
+  var fresh = [], ss = campusBook();
+  Object.keys(REFER_DOORS).forEach(function (tab) {
+    var sh = ss.getSheetByName(tab);
+    if (!sh) return;
+    var headers = formsHeaders(sh);
+    if (headers.indexOf('ref') === -1) return;
+    var rows = applyRows(sh, headers);
+    rows.forEach(function (r) {
+      var code = referCode(r.cells['ref']);
+      if (!code) return;
+      var source = tab + ':' + r._row;
+      if (seen[source]) return;
+      seen[source] = true;
+
+      var tier = REFER_DOORS[tab];
+      var who = String(r.cells['full name'] || r.cells['name'] || r.cells['fomo username'] || '').slice(0, 120);
+      var contact = String(r.cells['email'] || r.cells['handle'] || '').slice(0, 254);
+
+      /* A code nobody has claimed still gets a row. It is somebody
+         handing out a link we have never registered — the referrer who
+         claimed while the sheet was unreachable, most likely — and the
+         console has a place to show it. Dropping it here would lose the
+         referral and the evidence of it at the same time. */
+      var note = codes[code] ? '' : 'no claim on this code';
+      if (codes[code] && String(codes[code]['status']) === 'blocked') note = 'code is blocked';
+
+      /* Somebody using their own link on their own application. The
+         rules page says it is dropped, so it is dropped — recorded as
+         rejected rather than deleted, because a thing we refused to pay
+         is worth being able to point at. */
+      if (codes[code] && contact && String(codes[code]['email']).toLowerCase() === contact.toLowerCase()) {
+        fresh.push([Utilities.getUuid().slice(0, 8), campusStamp(), code, tier, campusSafe(who),
+                    campusSafe(contact), tab, source, 'rejected', REFER_TIERS[tier].amount,
+                    campusStamp(), 'sweep', 'self-referral']);
+        return;
+      }
+
+      fresh.push([Utilities.getUuid().slice(0, 8), campusStamp(), code, tier, campusSafe(who),
+                  campusSafe(contact), tab, source, 'pending', REFER_TIERS[tier].amount,
+                  '', '', note]);
+    });
+  });
+
+  if (!fresh.length) return 0;
+  var sh = referralSheet();
+  sh.getRange(sh.getLastRow() + 1, 1, fresh.length, REFERRAL_COLS.length).setValues(fresh);
+  return fresh.length;
+}
+
+/* ---------- moving one along ---------- */
+function referStage(body, actor) {
+  var id = String(body.id || '');
+  var stage = String(body.stage || '');
+  if (REFER_STAGES.indexOf(stage) === -1) return 'that is not a stage a referral can be at';
+
+  var sh = referralSheet(), rows = referRows(sh, REFERRAL_COLS);
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i]['id']) !== id) continue;
+    /* Paid is the end of the line. Money has left; a console that can
+       walk a row back out of it would be a console that can pay twice. */
+    if (String(rows[i]['stage']) === 'paid' && stage !== 'paid') return 'that one is already paid';
+    var r = rows[i]._row;
+    sh.getRange(r, REFERRAL_COLS.indexOf('stage') + 1).setValue(stage);
+    sh.getRange(r, REFERRAL_COLS.indexOf('moved') + 1).setValue(campusStamp());
+    sh.getRange(r, REFERRAL_COLS.indexOf('moved by') + 1).setValue(actor);
+    if (typeof body.note === 'string')
+      sh.getRange(r, REFERRAL_COLS.indexOf('note') + 1).setValue(campusSafe(body.note.slice(0, 500)));
+    return null;
+  }
+  return 'no referral with that id';
+}
+
+/* The chapter rung, and anything else that did not come through a form.
+   A chapter crossing 80% is a fact about the campus admin, not a
+   submission, so there is nothing for the sweep to find and it is
+   opened by hand here. */
+function referOpen(body, actor) {
+  var code = referCode(body.code);
+  if (!code) return 'say whose code it is';
+  var tier = String(body.tier || '');
+  if (!REFER_TIERS[tier]) return 'say which rung it is';
+
+  var who = campusSafe(String(body.who == null ? '' : body.who).trim()).slice(0, 120);
+  if (!who) return 'say who was referred';
+
+  referralSheet().appendRow([
+    Utilities.getUuid().slice(0, 8), campusStamp(), code, tier, who,
+    campusSafe(String(body.contact == null ? '' : body.contact).trim()).slice(0, 254),
+    'by hand', '', 'pending', REFER_TIERS[tier].amount, campusStamp(), actor,
+    campusSafe(String(body.note == null ? '' : body.note).trim()).slice(0, 500)
+  ]);
+  return null;
+}
+
+function referBlock(body, actor) {
+  var code = referCode(body.code);
+  var status = body.blocked === true ? 'blocked' : 'active';
+  var sh = referrerSheet(), rows = referRows(sh, REFER_COLS);
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i]['code']) !== code) continue;
+    sh.getRange(rows[i]._row, REFER_COLS.indexOf('status') + 1).setValue(status);
+    sh.getRange(rows[i]._row, REFER_COLS.indexOf('note') + 1)
+      .setValue(campusSafe(status + ' by ' + actor + ' ' + campusStamp()));
+    return null;
+  }
+  return 'no referrer with that code';
 }
 
 /* ── Visit requests and visiting hours ──────────────────────────

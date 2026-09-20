@@ -721,6 +721,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/posts.css">
 <link rel="stylesheet" href="/invoice/schedules.css">
 <link rel="stylesheet" href="/invoice/portals.css">
+<link rel="stylesheet" href="/invoice/referrals.css">
 <link rel="stylesheet" href="/invoice/internal.css">
 </head>
 <body>
@@ -1513,6 +1514,56 @@ td.date.run{color:var(--good)}
           <div id="pl-detail" hidden></div>
         </div>
         <div class="aggbar" id="pl-agg"></div>
+      </section>
+
+      <!-- ────────── the referrals ──────────
+
+           Who is sending people through the front doors, how far each
+           of those people got, and what that has cost us. Two screens
+           behind the one view — the queue of referrals waiting on a
+           decision, and a row per code — drawn by referrals.js, ids
+           prefixed "rf-".
+
+           Operator-only for the same reason the portals are, and then
+           some: these rows put a referrer's email beside the amount we
+           owe them. The endpoint refuses the read from anybody else
+           regardless of what this markup says. -->
+      <section class="view" data-view="referrals">
+        <div class="toolbar">
+          <button class="mini ghost" id="rf-back" type="button" hidden>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.4 5.6 7 10l4.4 4.4"/></svg>
+            Everyone
+          </button>
+          <span class="rf-tabs" role="group" aria-label="Which referrals">
+            <button id="rf-tab-queue" class="on" type="button">Queue</button>
+            <button id="rf-tab-people" type="button">Referrers</button>
+          </span>
+          <select id="rf-stage" aria-label="Filter by stage">
+            <option value="open">Waiting on a decision</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed, not paid</option>
+            <option value="paid">Paid</option>
+            <option value="rejected">Rejected</option>
+            <option value="all">Every stage</option>
+          </select>
+          <label class="srch">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.4"/><path d="m13.2 13.2 3.3 3.3"/></svg>
+            <input id="rf-q" type="search" placeholder="Search the referrals" aria-label="Search the referrals">
+          </label>
+          <span class="tsep"></span>
+          <span class="hint" id="rf-showing"></span>
+          <span class="cm-msg" id="rf-msg" role="status" aria-live="polite"></span>
+          <span class="push">
+            <a class="mini ghost" href="/fomo/refer/" target="_blank" rel="noopener">The page</a>
+            <button class="mini ghost" id="rf-new" type="button">Open one by hand</button>
+            <button class="mini ghost" id="rf-refresh" type="button">Refresh</button>
+            <button class="mini" id="rf-csv" type="button">Export</button>
+          </span>
+        </div>
+        <div class="scroller pad">
+          <div id="rf-body"></div>
+        </div>
+        <div class="aggbar" id="rf-agg"></div>
       </section>
 
       <!-- ────────── the console ──────────
@@ -4879,6 +4930,8 @@ var ICO = {
   person:    '<circle cx="10" cy="7.2" r="2.9"/><path d="M4.4 16.6a5.6 5.6 0 0 1 11.2 0"/>',
   posts:     '<path d="M16.6 12.4a2 2 0 0 1-2 2H7.3L3.4 17.2V5.6a2 2 0 0 1 2-2h9.2a2 2 0 0 1 2 2v6.8Z"/><path d="M6.8 7.6h6.4M6.8 10.6h4"/>',
   portals:   '<path d="M4.4 3.4h8.2a1.6 1.6 0 0 1 1.6 1.6v11.6H4.4V3.4Z"/><path d="M2.8 16.6h14.4"/><circle cx="11.4" cy="10.2" r=".9" fill="currentColor" stroke="none"/>',
+  referrals: '<path d="M8.5 11.5 11.5 8.5"/><path d="M7.9 6.6 9.5 5a3.2 3.2 0 0 1 4.5 4.5l-1.6 1.6"/>'+
+             '<path d="M12.1 13.4 10.5 15A3.2 3.2 0 0 1 6 10.5l1.6-1.6"/>',
   schedules: '<rect x="2.8" y="4.6" width="14.4" height="12" rx="2.2"/><path d="M2.8 8.4h14.4M6.6 3.2v2.8M13.4 3.2v2.8"/><path d="M6.4 11.4h2.2v2.2H6.4zM11.4 11.4h2.2v2.2h-2.2z"/>'
 };
 function ico(k){
@@ -4902,6 +4955,7 @@ var VIEWS = {
   chapters:  {label:"Chapters",       sub:"every house that has come through onboarding"},
   charge:    {label:"Review spend", sub:"receipt, purchase details, and GitHub activity"},
   portals:   {label:"Portals",        sub:"every public front door, and everything that has come through it"},
+  referrals: {label:"Referrals",      sub:"who is sending people, how far those people got, and what we owe for it"},
   admin:     {label:"Console",        sub:"the roster, and the rows nobody else can reach"},
   person:    {label:"",               sub:""}
 };
@@ -4940,7 +4994,12 @@ var NAV = [
      the campus, the four of them — and this is the estate all four are
      read out of. Operator-only for the same reason the console is: it is
      the one screen that puts every form's answers side by side. */
-  {id:"doors",  label:"Front doors", items:[["portals","Portals",1]], operator:true},
+  /* Referrals sit here and not under Money because the question they
+     answer is about a door: who is sending people through one. What we
+     owe for it follows from that rather than the other way round, and
+     the money on it is going out to students rather than back to the
+     four of them, which is what everything under Money is. */
+  {id:"doors",  label:"Front doors", items:[["portals","Portals",1],["referrals","Referrals",1]], operator:true},
   {id:"admin",  label:"Maintenance", items:[["admin","Console",0]], operator:true}
 ];
 
@@ -5055,7 +5114,7 @@ function setView(id, who){
      only being left off the rail. The endpoint refuses the calls anyway;
      this is so the page does not offer a screenful of buttons that will
      all come back as no. */
-  if ((id === "admin" || id === "portals") && !isOperator()) id = "overview";
+  if ((id === "admin" || id === "portals" || id === "referrals") && !isOperator()) id = "overview";
   if (id === "person" && !who) id = "overview";
   if (view !== id || personOf !== who) profileEditing=false;
   view = id; personOf = id === "person" ? who : null; chargeOf = id === "charge" ? who : null;
@@ -5069,7 +5128,7 @@ function setView(id, who){
   markNav();
   /* Nothing on these three is a spend, so the one button that only ever
      logs one has no business sitting over them. */
-  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin","portals"].indexOf(view) > -1 ? "none" : "";
+  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin","portals","referrals"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   closeSidebar();
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : (view === "posts" || view === "charge" || view === "portals") && who ? "/" + encodeURIComponent(who) : "");
@@ -6002,7 +6061,7 @@ function palBuild(q){
     if (k === "person") return;
     /* The two the rail hides from everybody else are hidden here too:
        jump-to must not offer a door setView will turn away. */
-    if ((k === "admin" || k === "portals") && !isOperator()) return;
+    if ((k === "admin" || k === "portals" || k === "referrals") && !isOperator()) return;
     out.push({t:VIEWS[k].label, s:VIEWS[k].sub, ic:ico(k), go:k});
   });
   PAYERS.forEach(function(p){
@@ -6694,5 +6753,6 @@ $("identity-switch").addEventListener("click",async function(){
 <script type="module" src="/invoice/posts.js"></script>
 <script type="module" src="/invoice/schedules.js"></script>
 <script type="module" src="/invoice/portals.js"></script>
+<script type="module" src="/invoice/referrals.js"></script>
 </body>
 </html>

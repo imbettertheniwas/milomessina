@@ -1,0 +1,70 @@
+/* ══════════ the referral mainframe ══════════
+   Everything here is prefixed rf-. The pills, the mini buttons, the agg
+   bar and the empty state come from the console's own stylesheet — only
+   the two tables, the referrer header and the by-hand form are local. */
+
+/* ── the two screens, and the stage filter over the queue ── */
+.rf-tabs{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.rf-tabs button{height:26px;padding:0 11px;font-size:12px;background:none;border:0;
+  color:var(--muted);cursor:pointer;white-space:nowrap}
+.rf-tabs button+button{border-left:1px solid var(--line)}
+.rf-tabs button:hover{color:var(--text);background:var(--surface)}
+.rf-tabs button.on{background:var(--surface-2);color:var(--text)}
+
+/* ── one referrer, over whichever table is showing ── */
+.rf-head{padding:0 0 18px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.rf-head-t h2{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  margin:0 0 5px;font-size:19px;letter-spacing:-.01em;font-family:var(--mono)}
+.rf-head-t p{margin:0;font-size:12.5px;color:var(--muted);max-width:74ch;line-height:1.55}
+.rf-head-k{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:15px}
+.rf-head-k span{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--text)}
+.rf-head-k b{font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted-2)}
+.rf-head-k a{color:var(--accent,var(--t-blue-fg))}
+
+/* ── both tables ──
+   One rule set, because the queue and the people list differ only in
+   what is in the cells. Numbers are tabular so a column of money reads
+   as a column rather than as a ragged list. */
+.rf-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.rf-tbl th{text-align:left;padding:0 12px 9px;font-size:10.5px;font-weight:500;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted-2);white-space:nowrap;border-bottom:1px solid var(--line)}
+.rf-tbl td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.rf-tbl tbody tr:hover{background:var(--surface)}
+.rf-tbl tbody tr:last-child td{border-bottom:0}
+.rf-tbl th.r,.rf-tbl td.r{text-align:right}
+.rf-tbl td b{display:block;font-weight:500;color:var(--text)}
+.rf-tbl td small{display:block;margin-top:2px;font-size:11px;color:var(--muted-2);line-height:1.45}
+.rf-tbl td small.warn{color:var(--t-amber-fg)}
+.rf-tbl td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rf-tbl td.num.owed{color:var(--owed)}
+.rf-tbl td .mini+.mini{margin-left:5px}
+.rf-tbl .hint{font-size:11px;color:var(--muted-2)}
+
+/* A code is the join between the two screens, so it is a control on
+   both of them rather than text on one and a link on the other. */
+.rf-code{font-family:var(--mono);font-size:12px;background:none;border:0;padding:0;cursor:pointer;
+  color:var(--t-blue-fg);text-decoration:underline;text-underline-offset:2px;
+  text-decoration-color:transparent;transition:text-decoration-color .15s}
+.rf-code:hover{text-decoration-color:currentColor}
+
+/* ── opening one by hand ── */
+.rf-add{padding:18px;margin-bottom:20px;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface)}
+.rf-add h3{margin:0 0 5px;font-size:14px;font-weight:500}
+.rf-add p{margin:0 0 15px;font-size:12px;color:var(--muted);max-width:76ch;line-height:1.55}
+.rf-add-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px}
+.rf-add-g label{display:flex;flex-direction:column;gap:5px}
+.rf-add-g label.wide{grid-column:1/-1}
+.rf-add-g span{font-size:11px;color:var(--muted-2)}
+.rf-add-g span em{font-style:normal;opacity:.7}
+/* The console styles select and input[type=text] globally; these only
+   have to fill the cell they are in. */
+.rf-add-g input,.rf-add-g select{width:100%}
+.rf-add-b{display:flex;gap:8px;margin-top:14px}
+
+@media(max-width:720px){
+  .rf-head-k{gap:8px 18px}
+  .rf-tbl{font-size:12px}
+  .rf-tbl th,.rf-tbl td{padding-inline:8px}
+}

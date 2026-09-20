@@ -82,6 +82,13 @@ const PORTALS = [
     prefer:['name','school','joined','active','registered']
   },
   {
+    id:'refer', name:'Refer people, get paid', path:'/fomo/refer/',
+    blurb:'Where somebody claims a referral link. The tab holds the codes; what came back through them is a view of its own, because it is money rather than a submission.',
+    reads:{kind:'tab', tab:'referrers'},
+    view:{id:'referrals', label:'Referrals'},
+    prefer:['code','full name','email','school','status']
+  },
+  {
     id:'portal', name:'Campus portal', path:'/fomoportal',
     blurb:'Four ways into fomo at your school on one screen. It takes nothing itself — every door on it leads to one of the forms above.',
     reads:{kind:'none'}

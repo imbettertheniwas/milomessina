@@ -100,7 +100,7 @@ function harness(tabs = {}) {
   /* Signing the caller in builds the roster tab, the way it does for
      every other namespace. `built` is the question this file is actually
      asking: did reading a form's tab create one? */
-  const forms = () => made.filter(n => ['apply','submit','report','onboard'].includes(n));
+  const forms = () => made.filter(n => ['apply','submit','report','onboard','referrers'].includes(n));
   return {call, ctx, sheets, made: () => made, built: forms, tab: name => sheets[name],
           date: iso => vm.runInContext('new Date(' + JSON.stringify(iso) + ')', ctx)};
 }
@@ -129,7 +129,7 @@ test('the index names every form tab, and says which have nothing behind them', 
   const h = harness({apply:[APPLY, application(1), application(2)]});
   const out = h.call('index');
   assert.equal(out.ok, true);
-  assert.deepEqual(out.portals.map(p => p.tab), ['apply','submit','report','onboard']);
+  assert.deepEqual(out.portals.map(p => p.tab), ['apply','submit','report','onboard','referrers']);
 
   const apply = out.portals.find(p => p.tab === 'apply');
   assert.equal(apply.exists, true);

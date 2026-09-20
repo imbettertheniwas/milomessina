@@ -34,6 +34,7 @@ anything.
 | **Chapters** | Every house that has onboarded: the map, the funnel, who and where they are, and the full table — read from the campus admin, not the sheet |
 | **Applicants** | Everyone who has applied to run a campus at `/fomo/apply`: the table, the whole application beside it, and where each one has got to |
 | **Portals** | Every public front door on the domain — whether each is up, whether it has an inbox behind it, and every submission it has taken. Arya and Milo only |
+| **Referrals** | Who is sending people through those doors, how far each of them got, and what we owe for it — the queue waiting on a decision, and a row per code. Arya and Milo only |
 | **Campus team** | The interns actually running a campus, grouped by state and then by campus |
 | A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
 
@@ -41,6 +42,13 @@ The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
 `/internal#/person/Bijan` —
 so the back button works, a page can be bookmarked, and a link to somebody's
 page is a link to somebody's page.
+
+**Referral money is decided here and moved somewhere else.** A referral
+arrives at *pending*, which says only that a submission carrying somebody's
+code landed on a form tab. Marking it *completed* is a judgement that the
+person really did finish; marking it *paid* is a statement that the transfer
+has already happened in their fomo account. Nothing moves out of *paid*.
+[`fomo/refer/README.md`](../fomo/refer/README.md) is the whole programme.
 
 **Logging a spend is a drawer**, opened from **New spend** in the corner or
 by pressing `n`, and it is the same form it always was — who paid, who it
