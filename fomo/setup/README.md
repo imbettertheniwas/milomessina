@@ -79,6 +79,18 @@ Every row starts with `received` (server time) and `page`. Add a field to any
 form's HTML and the script adds the column on the next submission — you never
 edit the sheet by hand.
 
+`/fomo/onboard` posts the same way, into an `onboard` tab — but the receiver
+only accepts the three above, so it is answered with `unknown form` and nothing
+is kept. Adding `'onboard'` to `FORM_INBOX` near the top of the script and
+redeploying is the whole fix; `/internal`'s **Portals** view shows it as a door
+with no inbox until then.
+
+All three tabs are readable from `/internal`'s **Portals** view, which is where
+`submit` and `report` are read from — they have no view of their own. It only
+ever reads: no columns added, no tabs built, every cell matched to the header
+above it. Arya and Milo only, because the rows hold payout handles and phone
+numbers.
+
 The internal console at `/internal` reads the `apply` tab as its **Applicants**
 view, and adds four columns of its own on the far right of it — `id`, `status`,
 `team notes` and `decided` — without touching the form's own. Hiring somebody

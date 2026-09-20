@@ -1,0 +1,108 @@
+/* ══════════ the portal manager ══════════
+
+   Scoped to the one view portals.js owns. Everything here is built out of
+   the console's existing tokens — no new colours, no new radii — because
+   a portal card and a campus card are the same kind of object and should
+   not need to be learned twice. */
+
+/* ── the estate ── */
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+
+.pl-card{display:grid;gap:9px;align-content:start;text-align:left;min-width:0;padding:13px 14px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l);color:inherit;
+  transition:border-color .12s,background .12s}
+.pl-card:hover{border-color:var(--line-2);background:var(--raise)}
+.pl-card:focus-visible{outline:2px solid var(--violet-hi);outline-offset:3px}
+
+.pl-card-h{display:flex;align-items:center;gap:9px;min-width:0}
+.pl-card-h b{font-size:13px;font-weight:600;letter-spacing:-.005em;min-width:0;overflow-wrap:anywhere}
+.pl-card-h .pill{margin-left:auto;flex:none}
+
+.pl-path{font-family:var(--mono);font-size:11px;color:var(--violet-hi);overflow-wrap:anywhere;margin-top:-4px}
+.pl-blurb{font-size:11.5px;line-height:1.55;color:var(--muted-2)}
+
+/* The foot is the answer to "is anything coming through here", so the
+   count is the biggest thing on the card after its name. */
+.pl-foot{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+  border-top:1px solid var(--line);padding-top:9px;margin-top:2px}
+.pl-n{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:18px;letter-spacing:-.03em;
+  display:flex;align-items:baseline;gap:6px}
+.pl-n small{font-family:var(--body);font-size:11px;letter-spacing:0;color:var(--muted-2)}
+.pl-when{font-size:11px;color:var(--muted-2)}
+.pl-where{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--muted-2);
+  white-space:nowrap}
+
+/* ── one portal ── */
+.pl-head{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;
+  padding:0 2px 14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.pl-head-t{min-width:260px;flex:1}
+.pl-head-t h2{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  font-size:19px;font-weight:600;letter-spacing:-.015em}
+.pl-head-t p{margin:7px 0 0;font-size:12.5px;line-height:1.6;color:var(--muted);max-width:66ch}
+
+.pl-head-k{display:grid;gap:7px;align-content:start;font-size:11.5px}
+.pl-head-k span{display:flex;gap:9px;align-items:baseline}
+.pl-head-k b{font-weight:400;color:var(--muted-2);min-width:74px;font-size:10.5px;
+  letter-spacing:.075em;text-transform:uppercase}
+.pl-head-k a{color:var(--violet-hi);overflow-wrap:anywhere}
+.pl-head-k a:hover{text-decoration:underline}
+
+/* A sentence about the portal rather than about its rows: why it is
+   empty, why it would not read, which snapshot this is. */
+.pl-note{margin-bottom:12px;padding:11px 13px;border-radius:var(--r-m);font-size:12px;line-height:1.6;
+  background:var(--raise);border:1px solid var(--line);color:var(--muted)}
+.pl-note b{color:var(--text);font-weight:600}
+.pl-note code{font-family:var(--mono);font-size:11px;background:var(--surface);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.pl-note.warn{background:var(--t-amber-bg);border-color:var(--t-amber-bd);color:var(--t-amber-fg)}
+.pl-note.warn b,.pl-note.warn code{color:inherit}
+.pl-note.warn code{background:rgba(0,0,0,.14);border-color:transparent}
+
+.pl-head+.pl-note,.pl-note+.rail{margin-bottom:12px}
+[data-view="portals"] .rail{margin-bottom:12px}
+
+/* the table and the open submission, side by side — the same split the
+   applicants use, for the same reason */
+.pl-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,390px);gap:0;align-items:start;
+  border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden;background:var(--surface-2)}
+.pl-cols:has(.pl-rec[hidden]){grid-template-columns:1fr}
+.pl-cols>.tbl-scroll{min-width:0}
+.pl-cols table{font-size:12.5px}
+.pl-cols thead th{background:var(--surface-2)}
+.pl-row{cursor:pointer}
+.pl-row-on{background:var(--raise)}
+.pl-cols td{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-cols td a{color:var(--violet-hi)}
+.pl-cols td a:hover{text-decoration:underline}
+
+/* Scrolls with the table rather than pinned: a submission runs to two
+   long answers and a stuck panel is one whose bottom cannot be reached. */
+.pl-rec{border-left:1px solid var(--line);background:var(--surface);padding:14px;min-width:0}
+.pl-rec[hidden]{display:none}
+.pl-rec-h{display:flex;align-items:flex-start;gap:10px}
+.pl-rec-h h3{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.pl-rec-h h3 small{display:block;font-size:11px;font-weight:400;color:var(--muted-2);margin-top:3px}
+.pl-rec-h .mini{margin-left:auto;flex:none}
+.pl-rec dl{margin:10px 0 0}
+.pl-rec dt{font-size:10.5px;letter-spacing:.075em;text-transform:uppercase;color:var(--muted-2);
+  margin:13px 0 4px}
+.pl-rec dd{margin:0;font-size:12.5px;line-height:1.55;overflow-wrap:anywhere}
+.pl-rec dd.say{white-space:pre-wrap;color:var(--muted);background:var(--raise);
+  border-radius:var(--r-m);padding:9px 10px}
+.pl-rec dd a{color:var(--violet-hi)}
+.pl-rec dd a:hover{text-decoration:underline}
+.pl-rec-k{margin:18px 0 0;padding-top:12px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--muted-2)}
+
+/* A count in the rail that is a number of things wrong, not a number of
+   things — so it does not read as traffic. */
+#nav .ct.warn{color:var(--t-red-fg)}
+
+@media(max-width:1100px){
+  .pl-cols{grid-template-columns:1fr}
+  .pl-rec{border-left:0;border-top:1px solid var(--line)}
+}
+@media(max-width:700px){
+  .pl-head{gap:12px}
+  .pl-head-k{width:100%}
+}

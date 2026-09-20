@@ -33,6 +33,7 @@ anything.
 | **Breakdown** | Where the money went by category, and who it was spent on |
 | **Chapters** | Every house that has onboarded: the map, the funnel, who and where they are, and the full table — read from the campus admin, not the sheet |
 | **Applicants** | Everyone who has applied to run a campus at `/fomo/apply`: the table, the whole application beside it, and where each one has got to |
+| **Portals** | Every public front door on the domain — whether each is up, whether it has an inbox behind it, and every submission it has taken. Arya and Milo only |
 | **Campus team** | The interns actually running a campus, grouped by state and then by campus |
 | A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
 
@@ -1094,6 +1095,93 @@ reading *hired* with nobody on the campus, is worse than a refusal.
 The row remembers which application it came from, so the same person cannot be
 hired onto a second campus by accident, and taking them off the roster later
 leaves their application exactly as it was.
+
+## Portals
+
+`#/portals`, in the rail under **Front doors**, for the two names in
+`OPERATORS`. Every page on this domain the outside world can reach, on one
+screen, and everything that has come through each one.
+
+The console already had a view per subject — Applicants, Visit requests,
+Chapters — each reading the one door it cares about. What it had nowhere was
+the list of doors. Two of the forms had no reader at all: `/fomo/submit` and
+`/fomo/report` wrote into the sheet and could be read nowhere but the
+spreadsheet.
+
+**The index is the estate.** A card per portal, carrying its path, what it is
+for, how much has come through it, when the last one landed, and where that
+lands — one of the sheet's form tabs, `/api/visits`, or `/api/campuswars`. The
+pill on each card is the one thing worth knowing about it:
+
+| | |
+| --- | --- |
+| **Live this week** | something came through in the last seven days |
+| **Quiet** | it has taken submissions, none of them recently |
+| **Nothing yet** | the form is up and nobody has used it |
+| **No inbox** | it posts to a tab the deployed receiver does not accept — see below |
+| **Page 404** | the page itself did not answer |
+| **Not reading** | the page is up; this console could not read what is behind it |
+| **A door** | a page with no inbox by design, leading to the others |
+
+The page check is its own question and worth asking separately: a portal can be
+perfectly wired to its inbox and still be a 404, which no count would ever
+show. One request each, same origin, on open and again on **Refresh**.
+
+**Opening one is everything it has taken.** The table is `received` plus the
+four columns worth reading at a glance, and clicking a row opens the whole
+submission beside it — every answer the sheet holds, in the order the form asks
+them, with the console's own columns last and named as not being the
+applicant's answers. **Export** takes every column, not the four the table had
+room for.
+
+A portal lives in the URL like every other view — `/internal#/portals/submit` —
+so one of them is a link somebody can send.
+
+### Read by header name, never by position
+
+The form owns its tab. The reader behind this view adds nothing to it, builds
+nothing, and writes nothing — it matches every cell to the header above it, so
+a question added to `/fomo/apply` arrives here as one more line on the
+submission with nothing redeployed, and a question dropped costs a column and
+nothing else. `apply` is the one tab the console does own four columns on, and
+those are appended by the Applicants view, not by this one.
+
+A tab that does not exist is a form nobody has submitted yet, which is a true
+answer rather than an error — so nothing goes and builds an empty one in front
+of the form.
+
+### Only Arya and Milo
+
+Everywhere else in the console the answers are a view apart. This is the one
+screen that puts applicants' phone numbers, creators' payout handles and
+guests' contact details within a click of each other, so it takes the same
+narrow door the maintenance console takes: `OPERATORS` in the page,
+`INTERNAL_ADMINS` in the Apps Script, and the endpoint refuses the read from
+anybody else regardless of what the page offers. Nothing it reads is written to
+this browser's storage, for the same reason the applicants are not.
+
+### A door with no inbox behind it
+
+`/fomo/onboard` posts exactly like the other three forms, and the receiver
+turns it away: `doPost` accepts `apply`, `submit` and `report`, and answers
+anything else with `unknown form` — so the student is told it did not send, and
+nothing is kept. The manager shows it as **No inbox** and names the fix rather
+than showing it as a door nobody has walked through, which is what a bare count
+would have made it look like.
+
+The fix is one name in `FORM_INBOX` in `fomo/setup/apps-script.gs` and a
+redeploy. It is deliberately not taken here: which forms this receiver accepts
+is a decision about the forms, not about the page that lists them.
+
+### Before the sheet is redeployed
+
+The reader is a namespace of the same deployment as everything else, so there
+is nothing new to configure — but the script does have to be the current one.
+A deployment that predates it reads `_api:'forms'` as a submission and answers
+`unknown form`; the page recognises that answer and names the redeploy rather
+than blaming the passcode. Until then the two API-backed portals — Visit
+requests and Campus wars — read normally, because neither goes through the
+sheet.
 
 ## Changing the team
 

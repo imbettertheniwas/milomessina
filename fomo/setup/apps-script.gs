@@ -85,13 +85,18 @@ function doPost(e) {
        the feed only grows, and the ledger is read on every page open. */
     if (body._api === 'posts') return postsApi(body);
 
+    /* Every public form's own tab, read by /internal's portal manager.
+       Reading rather than writing: the receiver above owns these tabs and
+       this namespace never touches them. */
+    if (body._api === 'forms') return formsApi(body);
+
     /* The hours each of them is already spoken for in a normal week,
        so /internal can work out when they could all be in the office at
        once. Recurring blocks, not dated events — the tab is small and
        changes a few times a term. */
     if (body._api === 'schedules') return schedulesApi(body);
 
-    if (body._api || ['apply','submit','report'].indexOf(tabFor(body._page)) < 0) return reply(false, 'unknown form');
+    if (body._api || FORM_INBOX.indexOf(tabFor(body._page)) < 0) return reply(false, 'unknown form');
     if (CONFIG.SHARED_SECRET && body._key !== CONFIG.SHARED_SECRET) return reply(false, 'bad key');
 
     /* honeypot. A bot filled a field no human can see: tell it everything
@@ -132,6 +137,13 @@ function doGet() {
     visitHours: typeof visitAvailability === 'function',
     campus: typeof campusApi === 'function',
     posts: typeof postsApi === 'function',
+    forms: typeof formsApi === 'function',
+    /* The forms this deployment will take a submission from. Named
+       rather than assumed for the same reason `payers` is: /internal
+       lists every front door on the site, and a door posting to a tab
+       this receiver does not accept should read as one with no inbox
+       behind it rather than as one nobody has used yet. */
+    formInbox: FORM_INBOX,
     schedules: typeof schedulesApi === 'function',
     editline: /'edit'/.test(String(invoiceApi)),
     clock: typeof shiftIn === 'function',
@@ -163,6 +175,11 @@ function doGet() {
 }
 
 /* ── the pieces ──────────────────────────────────────────────── */
+
+/* The forms this receiver accepts, by the tab each one writes into.
+   doPost checks a submission against it and doGet names it, so the one
+   list answers both "is this ours" and "which doors have an inbox". */
+var FORM_INBOX = ['apply', 'submit', 'report'];
 
 /* '/fomo/apply/' and '/fomo/apply/index.html' both mean the apply tab */
 function tabFor(path) {
@@ -1906,6 +1923,124 @@ function campusHire(b) {
   applyWrite(hit, 'status', 'hired');
   applyWrite(hit, 'decided', campusStamp());
   return null;
+}
+
+/* ══════════ the front doors, behind /internal ══════════
+
+   Every public form on the site writes into a tab of this sheet named
+   after its own URL — the same three `tabFor` sorts the post into. Until
+   now only `apply` had a reader: `submit` and `report` were write-only,
+   so a creator's payout claim and a campus team's Sunday report landed in
+   the spreadsheet and could be read nowhere else. The portal manager is
+   the reader they never had.
+
+   It reads by header name, never by position, and it never writes — not
+   a cell, not a column, not a tab. A tab that does not exist is a form
+   nobody has submitted yet, which is a true answer rather than an error,
+   and building an empty one in front of the form would be a lie about it.
+
+   Operators only, and for a reason worth naming: one read here puts
+   applicants' phone numbers, creators' payout handles and every answer
+   anybody has typed on one screen. Everything else in the console is one
+   subject at a time; this is all of them at once, so it takes the narrow
+   door the maintenance console takes. */
+
+/* Readable here. `onboard` is on the list without being on FORM_INBOX
+   above on purpose: /fomo/onboard posts like the other three, the
+   receiver turns it away, and a manager that quietly left it out would
+   be hiding exactly the thing it exists to show. It reads as a door with
+   no inbox behind it, which is what it is. */
+var FORM_TABS = FORM_INBOX.concat(['onboard']);
+
+/* Newest first, and capped. Nothing on these tabs is near it; the cap is
+   so a year of submissions cannot turn one page open into a timeout. */
+var FORM_MAX = 400;
+
+function formsApi(body) {
+  if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+
+  var actor = internalActor(body);
+  if (!actor) return reply(false, 'Session expired. Enter the passcode and select your name again.');
+  if (!internalIsAdmin(actor)) return reply(false, 'The portals are ' + INTERNAL_ADMINS.join(' and ') + ' only.');
+
+  var action = String(body.action || 'index');
+  if (action === 'index') {
+    return reply(true, null, { inbox: FORM_INBOX, portals: FORM_TABS.map(formsTally) });
+  }
+  if (action === 'rows') {
+    var tab = String(body.tab || '');
+    if (FORM_TABS.indexOf(tab) === -1) return reply(false, 'that is not one of the form tabs');
+    return reply(true, null, formsRead(tab));
+  }
+  return reply(false, 'unknown action');
+}
+
+/* The header row as the form left it. applyHeaders widens the apply tab
+   with the console's own four columns; this one must not — it is reading
+   three tabs it does not own, and a reader that edits what it reads is
+   how a form's own columns end up somewhere it did not put them. */
+function formsHeaders(sh) {
+  var width = Math.max(sh.getLastColumn(), 1);
+  var headers = sh.getRange(1, 1, 1, width).getValues()[0].map(function (h) { return String(h); });
+  while (headers.length && !headers[headers.length - 1]) headers.pop();
+  return headers;
+}
+
+/* What the index needs and no more: whether the tab is there, how much is
+   on it, and when the last one landed. The rows are read to count them —
+   getLastRow counts a hand-deleted submission's leftover blank row, and
+   `apply` says 12 in one place and 11 in another the moment it does. */
+function formsTally(tab) {
+  var sh = campusBook().getSheetByName(tab);
+  if (!sh) return { tab: tab, exists: false, total: 0, last: '', fields: [] };
+  var headers = formsHeaders(sh);
+  var rows = applyRows(sh, headers);
+  var last = '';
+  rows.forEach(function (r) {
+    var when = formsWhen(r.cells['received']);
+    if (when > last) last = when;
+  });
+  return { tab: tab, exists: true, total: rows.length, last: last, fields: headers.filter(String) };
+}
+
+function formsRead(tab) {
+  var sh = campusBook().getSheetByName(tab);
+  if (!sh) return { tab: tab, exists: false, headers: [], rows: [], total: 0, capped: false };
+  var headers = formsHeaders(sh);
+  /* applyRows is already generic — every cell matched to the header above
+     it, blank rows skipped — so it is borrowed rather than written twice. */
+  var rows = applyRows(sh, headers);
+  /* The sheet appends, so the newest submissions are the last ones. Take
+     from the end, then turn it round: the cap has to drop the oldest. */
+  var take = rows.slice(Math.max(0, rows.length - FORM_MAX)).reverse();
+  return {
+    tab: tab, exists: true, headers: headers.filter(String),
+    total: rows.length, capped: rows.length > take.length,
+    rows: take.map(function (r) { return formsPublic(r, headers); })
+  };
+}
+
+/* A date typed into the sheet by hand comes back as a Date, one the
+   receiver wrote comes back as the string it wrote. Both leave as text —
+   the same defence the ledger and the campus tables already take. */
+function formsWhen(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+  return String(v == null ? '' : v);
+}
+
+/* Every answer, keyed by the question above it, with the blanks left out
+   — a field somebody skipped is not an answer, and carrying it would
+   make every payload the width of the widest form. `_row` is what the
+   spreadsheet calls this submission, so a row on screen can be found in
+   the sheet by somebody who has to go and look at it. */
+function formsPublic(r, headers) {
+  var out = { _row: r._row, received: formsWhen(r.cells['received']), cells: {} };
+  headers.forEach(function (h) {
+    if (!h) return;
+    var v = formsWhen(r.cells[h]);
+    if (v !== '') out.cells[h] = v;
+  });
+  return out;
 }
 
 /* ══════════ the week notes ══════════
