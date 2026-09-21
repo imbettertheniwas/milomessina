@@ -59,12 +59,80 @@ const team = card => [
   {name:'Arya', role:'lead', ...(card ? {card:true} : {})}
 ];
 
-test('a stored head start with no answer about the card is not a head start', () => {
-  const before = {url:'https://script.google.com/exec', full:true, rows:[], payers:['Milo','Arya']};
-  assert.equal(page({stored:before}).seenSnapshot(), null);
-  // One that does answer still opens the short way round, either way it answers.
-  assert.equal(page({stored:{...before, card:true}}).seenSnapshot().card, true);
-  assert.equal(page({stored:{...before, card:false}}).seenSnapshot().card, false);
+const SNAP = {url:'https://script.google.com/exec', full:true, rows:[], payers:['Milo','Arya']};
+
+test('a stored head start is kept whatever it says about the card', () => {
+  /* The card is one line of a snapshot that is otherwise all facts about
+     the sheet. Throwing the whole thing away over it costs the load its
+     head start and puts the browser through a probe whose other answers
+     were never in doubt — so the snapshot stands and the one question is
+     asked on its own. */
+  assert.ok(page({stored:SNAP}).seenSnapshot(), 'a snapshot older than the field is still a head start');
+  assert.equal(page({stored:{...SNAP, card:true}}).seenSnapshot().card, true);
+  assert.equal(page({stored:{...SNAP, card:false}}).seenSnapshot().card, false);
+  // Another deployment's snapshot is still no head start at all.
+  assert.equal(page({stored:{...SNAP, url:'https://script.google.com/other'}}).seenSnapshot(), null);
+  assert.equal(page({stored:{...SNAP, full:false}}).seenSnapshot(), null);
+});
+
+/* refreshCard is the ask. It reaches for fetch, repaints, and writes the
+   answer down, so all three are watched here. */
+function asking(answer, over = {}){
+  const ctx = page({answer, asked:0, saved:0, ...over});
+  vm.runInContext([
+    'function saveSeen(){ saved++; }',
+    'function fetch(){ asked++; return Promise.resolve(' +
+      'answer === null ? {ok:false} : {ok:true, json:function(){ return Promise.resolve(answer); }}); }',
+    lift('refreshCard')
+  ].join('\n'), ctx);
+  return ctx;
+}
+const settled = () => new Promise(r => setTimeout(r, 0));
+
+test('a browser whose head start cannot vouch for the card asks, and comes back knowing', async () => {
+  const c = asking({cardSpends:true});
+  c.refreshCard();
+  await settled();
+  assert.equal(c.asked, 1, 'the deployment has to actually be asked');
+  assert.equal(c.sheetCard, true);
+  assert.equal(c.canPay(CARD), true);
+  assert.ok(c.painted > 0, 'the chip is greyed on screen and has to be repainted');
+  assert.equal(c.saved, 1, 'the answer is written down so the next load opens knowing');
+});
+
+test('a deployment that really will not lend the card is left saying so', async () => {
+  const c = asking({cardSpends:false});
+  c.refreshCard();
+  await settled();
+  assert.equal(c.asked, 1);
+  assert.equal(c.sheetCard, false);
+  assert.equal(c.canPay(CARD), false);
+  assert.equal(c.saved, 0, 'nothing was learned, so nothing is written');
+  // An endpoint that could not be reached is not a refusal either.
+  const off = asking(null);
+  off.refreshCard();
+  await settled();
+  assert.equal(off.sheetCard, false);
+  assert.equal(off.saved, 0);
+});
+
+test('a page that already knows the card is lendable does not ask again', async () => {
+  const c = asking({cardSpends:true}, {sheetCard:true});
+  c.refreshCard();
+  await settled();
+  assert.equal(c.asked, 0);
+  // Nor does the browser keeping its own ledger, which has no deployment to ask.
+  const local = asking({cardSpends:true}, {mode:'device'});
+  local.refreshCard();
+  await settled();
+  assert.equal(local.asked, 0);
+});
+
+test('the fast path is the one that asks — it is the one that skipped the probe', () => {
+  const at = html.indexOf('goSheet(seen);');
+  assert.ok(at > -1, 'the short way round should still open from the snapshot');
+  assert.ok(html.slice(at, at + 400).includes('refreshCard()'),
+    'the load that opened from a snapshot has to ask about the card');
 });
 
 test('a snapshot may raise the card answer, never lower one already given', () => {

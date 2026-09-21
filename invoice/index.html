@@ -2227,15 +2227,11 @@ function saveSeen(){
 function seenSnapshot(){
   var s = lsGet(LS_SEEN);
   if (!s || s.url !== ENDPOINT || s.full !== true || !s.rows) return null;
-  /* A snapshot taken before the card was lendable has nothing to say about
-     it, and silence is not a no. Read as one it was permanent: the fast
-     path skips the probe, so nothing ever asked the deployment, and the
-     answer this page saved on the way past was the same false again. Every
-     browser that had used the ledger once was left unable to put Arya's
-     name on a line, under a banner telling somebody to redeploy a script
-     that was already current. A snapshot that cannot answer is not a head
-     start — the long way round costs one load and comes back knowing. */
-  if (typeof s.card !== "boolean") return null;
+  /* What a snapshot says about the card is a head start and never a
+     verdict — see refreshCard, which asks when it has to. Dropping the
+     snapshot over it would cost the load its head start and, worse, put
+     every one of these browsers through the probe, whose other answers
+     (the console door among them) were never the thing in doubt. */
   return s;
 }
 function forgetSeen(){ try { localStorage.removeItem(LS_SEEN); } catch(e){} }
@@ -4440,6 +4436,41 @@ var OLD_DEPLOY = "<b>The days aren't shared yet.</b> This browser is keeping its
   "the forms-only one. Redeploy <b>fomo/setup/apps-script.gs</b> — Deploy → Manage deployments → " +
   "New version — and this page moves itself over, on its own, next time it loads.";
 
+/* ---------- the one thing a snapshot cannot vouch for ----------
+
+   Everything else in a snapshot is a fact about the sheet, which does not
+   un-happen. `card` is a fact about the deployment, and the deployment is
+   the half that changes underneath this page — so a false there means one
+   of two opposite things: the script really will not take Arya's name on
+   somebody else's line, or nobody has asked it since the redeploy that
+   made it.
+
+   Read as the first it was permanent. The fast path skips the probe, so
+   nothing asked; the false was then written back into the next snapshot on
+   the way past, and the one after that. Every browser that had used the
+   ledger once had Arya's chip struck through under a banner sending
+   somebody off to redeploy a script that was already current, and no
+   number of reloads could tell it otherwise.
+
+   So when the snapshot cannot say yes, ask — behind the paint, off the one
+   question, and only ever upward. A no changes nothing and says nothing:
+   the banner under the chips is already the truth in that case. A yes
+   un-greys the chip where it stands and is saved, so the next load opens
+   knowing. */
+function refreshCard(){
+  if (cardLendable()) return;
+  fetch(ENDPOINT, {method:"GET"}).then(function(res){
+    return res.ok ? res.json() : null;
+  }).then(function(out){
+    if (!out || out.cardSpends !== true || sheetCard) return;
+    sheetCard = true;
+    applyRosterUi();
+    /* so the browser that has just been told does not have to be told
+       again on the next load */
+    saveSeen();
+  })["catch"](function(){ /* offline or a Google error page — ask again next load */ });
+}
+
 function probeSheet(){
   return fetch(ENDPOINT, {method:"GET"}).then(function(res){
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -6318,6 +6349,10 @@ function open_(){
       applyModeUi();
       render();
       goSheet(seen);
+      /* The snapshot got the board up without a round trip. This is the
+         one question it may have been wrong about, so it is the one
+         question worth a round trip of its own. */
+      refreshCard();
     } else {
       setLive(true, "on this device · checking");
       /* Two round trips to the same place, neither waiting on the other's
