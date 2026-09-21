@@ -222,6 +222,11 @@ svg{display:block}
 .nav-i .av{width:17px;height:17px;flex:none;border-radius:50%;display:grid;place-items:center;
   font-size:9px;font-weight:600;letter-spacing:0;color:#0C0C0E}
 .nav-i .dotc{width:7px;height:7px;flex:none;border-radius:50%;margin:0 4px}
+/* An item that leaves the console is a link, not a view, so it never wears
+   the on state and it says where it goes with a small arrow out. */
+.nav-i.out{text-decoration:none}
+.nav-i .oa{width:12px;height:12px;opacity:.45}
+.nav-i.out:hover .oa{opacity:.9}
 .side-foot{flex:none;border-top:1px solid var(--line);padding:10px 12px;display:flex;
   align-items:center;gap:8px}
 .side-foot .who3{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
@@ -4932,6 +4937,8 @@ var ICO = {
   portals:   '<path d="M4.4 3.4h8.2a1.6 1.6 0 0 1 1.6 1.6v11.6H4.4V3.4Z"/><path d="M2.8 16.6h14.4"/><circle cx="11.4" cy="10.2" r=".9" fill="currentColor" stroke="none"/>',
   referrals: '<path d="M8.5 11.5 11.5 8.5"/><path d="M7.9 6.6 9.5 5a3.2 3.2 0 0 1 4.5 4.5l-1.6 1.6"/>'+
              '<path d="M12.1 13.4 10.5 15A3.2 3.2 0 0 1 6 10.5l1.6-1.6"/>',
+  irrigation:'<path d="M10 2.8s4.6 4.6 4.6 7.8a4.6 4.6 0 0 1-9.2 0C5.4 7.4 10 2.8 10 2.8Z"/>'+
+             '<path d="M8 10.9a2 2 0 0 0 2 2"/>',
   schedules: '<rect x="2.8" y="4.6" width="14.4" height="12" rx="2.2"/><path d="M2.8 8.4h14.4M6.6 3.2v2.8M13.4 3.2v2.8"/><path d="M6.4 11.4h2.2v2.2H6.4zM11.4 11.4h2.2v2.2h-2.2z"/>'
 };
 function ico(k){
@@ -4983,7 +4990,10 @@ var NAV = [
   /* The chapters are the one group that is not about the four of them or
      their money — it is the campus the bootcamp is selling to, read from
      the admin rather than from the sheet. Its own heading says so. */
-  {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0]]},
+  /* Irrigation is a campus page too, but it lives on its own domain rather
+     than in this console, so it is a link out rather than a view in. */
+  {id:"campus", label:"The campus", items:[["applicants","Applicants",1],["campus","Campus team",1],["chapters","Chapters",0],
+    {out:"https://bijanizadian.com/irrigation", ico:"irrigation", label:"Irrigation"}]},
   {id:"team",   label:"The team",   items:[["posts","This week",1],["attendance","Attendance",1],["schedules","Schedules",1],["commits","Commits",1]], roster:true},
   /* Last, and only for the two who hold it. A group rather than an item on
      an existing one because it does not belong under any of them: nothing
@@ -5022,6 +5032,17 @@ function buildNav(){
          '<i class="spot" aria-hidden="true"></i></button>';
     h += '<div class="nav-fold" id="' + gid + '"><div class="nav-in"' + (shut ? " inert" : "") + ">";
     g.items.forEach(function(v){
+      /* A link out of the console opens as a link opens: an anchor in a new
+         tab, with no count and no on state, since there is no view here to
+         be on. */
+      if (v.out) {
+        h += '<a class="nav-i out" href="' + esc(v.out) + '" target="_blank" rel="noopener noreferrer">' +
+             ico(v.ico) + '<span class="tx">' + esc(v.label) + "</span>" +
+             '<svg class="oa" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+             'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<path d="M7.4 12.6 12.6 7.4"/><path d="M8.4 7.4h4.2v4.2"/></svg></a>';
+        return;
+      }
       h += '<button class="nav-i" data-go="' + v[0] + '">' + ico(v[0]) +
            '<span class="tx">' + v[1] + "</span>" +
            (v[2] ? '<span class="ct" data-ct="' + v[0] + '"></span>' : "") + "</button>";
