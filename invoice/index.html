@@ -1825,6 +1825,26 @@ function rosterFill(arr, next){ arr.length = 0; next.forEach(function(v){ if (ar
 function applyRoster(list){
   if (!list || !list.length) return false;
   roster = list.slice();
+  /* The second place the card is answered, and the one that reaches a page
+     the probe never ran for. Every roster entry names whether it is the
+     card, and the field is newer than the change that let the card go on
+     somebody else's line — so a roster carrying it is, by definition, a
+     deployment that lends it.
+
+     Only a true is read, the same way `operator` is: a roster without the
+     field is an older script and no evidence either way, and reading its
+     silence as a refusal is exactly the mistake that stuck the chip in the
+     first place. This runs on the sign-in and on the session resumed at
+     every load, so a browser that got the answer wrong once is right again
+     the next time somebody opens the page. */
+  if (!sheetCard && roster.some(function(p){ return !!p && p.card === true; })) {
+    sheetCard = true;
+    /* The roster is usually unchanged, and an unchanged one returns below
+       without rebuilding anything — so the chip that has just become
+       pickable has to be told here, or it stays grey until something else
+       repaints it. */
+    applyRosterUi();
+  }
   var people = [], leads = [], known = [];
   roster.forEach(function(p){
     var name = String(p && p.name || "");
@@ -1865,6 +1885,12 @@ function rebuildRosterUi(){
      refuse. */
   if (picked && PAYERS.indexOf(picked) === -1) picked = identity ? identity.who : (PAYERS[0] || "");
   resetSplit();
+  /* Chips are built pickable and greyed out afterwards, so a rebuild that
+     stopped here handed back a full row of live-looking names — including
+     Arya's on a deployment that will not take it. Tapping one did nothing
+     at all and said nothing either, which is a worse way to find out than
+     the grey. */
+  applyRosterUi();
 }
 
 /* ---------- the card that isn't yours ----------
@@ -2201,6 +2227,15 @@ function saveSeen(){
 function seenSnapshot(){
   var s = lsGet(LS_SEEN);
   if (!s || s.url !== ENDPOINT || s.full !== true || !s.rows) return null;
+  /* A snapshot taken before the card was lendable has nothing to say about
+     it, and silence is not a no. Read as one it was permanent: the fast
+     path skips the probe, so nothing ever asked the deployment, and the
+     answer this page saved on the way past was the same false again. Every
+     browser that had used the ledger once was left unable to put Arya's
+     name on a line, under a banner telling somebody to redeploy a script
+     that was already current. A snapshot that cannot answer is not a head
+     start — the long way round costs one load and comes back knowing. */
+  if (typeof s.card !== "boolean") return null;
   return s;
 }
 function forgetSeen(){ try { localStorage.removeItem(LS_SEEN); } catch(e){} }
@@ -6261,7 +6296,13 @@ function open_(){
          off the sheet and says the same thing. */
       carried = {rows: rows.slice(), days: days.slice(), subs: subs.slice()};
       sheetPayers = (seen.payers && seen.payers.length) ? seen.payers.map(String) : PEOPLE.slice();
-      sheetCard = seen.card === true;
+      /* Raised, never lowered. Signing in happens before this runs and can
+         already have had the answer off the roster it came back with; a
+         snapshot older than the redeploy must not be allowed to talk the
+         page back out of it. A false here is only ever "this was true once
+         and is no longer known", which is what the probe and the roster are
+         for. */
+      if (seen.card === true) sheetCard = true;
       sheetDays = true;
       profiles = seen.profiles || [];
       rows = seen.rows || [];
