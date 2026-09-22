@@ -1124,6 +1124,13 @@ td.date.run{color:var(--good)}
               <div class="panel-h"><h2>Who was here</h2><span class="note" id="at-wk-note"></span><div class="attendance-nav"><button class="mini" id="at-prev" aria-label="Previous week">←</button><button class="mini" id="at-today">This week</button><button class="mini" id="at-next" aria-label="Next week">→</button></div></div>
               <div class="panel-b" id="at-weeks"></div>
             </div>
+            <div class="panel">
+              <div class="panel-h"><h2>Days in, by person</h2><span class="note" id="at-cal-note"></span></div>
+              <div class="panel-b" style="display:grid;gap:10px">
+                <div class="gh-team" id="at-cal-team"></div>
+                <div class="gh-people" id="at-cal-people"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="scroller" id="at-record" hidden>
@@ -4178,7 +4185,11 @@ function refreshGh(force){
 var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 var DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
-function buildCal(counts){
+/* `tip` names a cell's count and `lvl` shades it; both default to commits,
+   so the attendance calendars can draw on the same grid with their own words. */
+function buildCal(counts, tip, lvl){
+  tip = tip || function(n){ return n + (n === 1 ? " commit" : " commits"); };
+  lvl = lvl || level;
   var weeks = calWeeks();
   var cal = document.createElement("div");
   cal.className = "cal";
@@ -4210,9 +4221,9 @@ function buildCal(counts){
       var cell = document.createElement("div");
       if (!k) { cell.className = "cell void"; col.appendChild(cell); return; }
       var n = counts[k] || 0;
-      cell.className = "cell" + (n ? " l" + level(n) : "");
+      cell.className = "cell" + (n ? " l" + lvl(n) : "");
       var d = new Date(k.split("-")[0], Number(k.split("-")[1]) - 1, k.split("-")[2]);
-      bindTip(cell, n + (n === 1 ? " commit" : " commits"),
+      bindTip(cell, tip(n),
         [DOW[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate()]);
       col.appendChild(cell);
     });
@@ -5944,6 +5955,56 @@ function paintAttendance(){
   $("at-wk-note").textContent='Week of '+niceDate(isoOf(start))+' · '+total+' person-days';
   $("at-next").disabled=attendanceOffset===0;
   $("at-n").textContent=days.length || "";
+  paintAttendanceCals();
+}
+
+/* The commit calendars' grid, filled with days in instead. The team one
+   shades by how many were in; a person's is simply in or not, so a day
+   there is full green rather than a pale one-of-anything. */
+function paintAttendanceCals(){
+  var start = dayKey(calStart()), now = today(), team = {}, mine = {}, total = 0;
+  PEOPLE.forEach(function(p){ mine[p] = {}; });
+  days.forEach(function(d){
+    if (d.day < start || d.day > now || !mine[d.who]) return;
+    mine[d.who][d.day] = 1;
+    team[d.day] = (team[d.day] || 0) + 1;
+    total++;
+  });
+  var span = PEOPLE.length;
+  var teamLvl = function(n){ return Math.max(1, Math.min(4, Math.ceil(n / span * 4))); };
+  var inTip = function(n){ return n ? "in" : "not in"; };
+
+  var head = function(name, count){
+    var h = document.createElement("div");
+    h.className = "gh-person-h";
+    var nm = document.createElement("span");
+    nm.className = "who2"; nm.textContent = name;
+    var n2 = document.createElement("span");
+    n2.className = "n2"; n2.textContent = count;
+    h.appendChild(nm); h.appendChild(n2);
+    return h;
+  };
+
+  var teamBox = $("at-cal-team");
+  teamBox.innerHTML = "";
+  var th = head("Everyone", dayCountText(Object.keys(team).length) + " with someone in");
+  th.className = "gh-team-h";
+  th.appendChild(legend());
+  teamBox.appendChild(th);
+  teamBox.appendChild(buildCal(team, function(n){
+    return n ? n + " of " + span + " in" : "nobody in";
+  }, teamLvl));
+
+  var box = $("at-cal-people");
+  box.innerHTML = "";
+  PEOPLE.forEach(function(p){
+    var card = document.createElement("div");
+    card.className = "gh-person";
+    card.appendChild(head(p, dayCountText(Object.keys(mine[p]).length)));
+    card.appendChild(buildCal(mine[p], inTip, function(){ return 4; }));
+    box.appendChild(card);
+  });
+  $("at-cal-note").textContent = "last " + GH_WEEKS + " weeks · " + total + " person-days";
 }
 $("at-prev").addEventListener("click",function(){attendanceOffset--;paintAttendance();});
 $("at-next").addEventListener("click",function(){attendanceOffset=Math.min(0,attendanceOffset+1);paintAttendance();});
