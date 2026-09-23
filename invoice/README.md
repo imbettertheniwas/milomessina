@@ -323,7 +323,7 @@ The `invoice` tab:
 | `note` | optional |
 | `receipt` | a link, if one was pasted in — see below |
 | `reimbursed` | when it was marked paid |
-| `shared` | who the line was *for* — see below. Blank on anything logged before this column existed |
+| `shared` | who the line was *for* — roster names, plus anyone outside the team written as `Sam (guest)`; see below. Blank on anything logged before this column existed |
 | `logged_by` | who typed it, which is only ever different from `who` on Arya's card. Blank on anything logged before this column existed, where the payer is also the one who logged it |
 
 The `subs` tab — one row per monthly subscription, and none of them a spend:
@@ -551,6 +551,18 @@ ledger, and each person's page carries their own share of it.
 owed all of it, split or not — the bootcamp is what reimburses them, so the
 split is a record of where the money went, not a claim on anyone. The
 who-fronted-it panel and the settle buttons are untouched by it.
+
+**Other** is the last chip in the row, for somebody who isn't on the team — a
+guest at lunch, a visitor's coffee. Ticking it opens a box for their name (a
+few, separated by commas), and each one is saved into `shared` as
+`Sam (guest)`. A guest counts toward the split like anyone ticked, so a $45
+lunch for Milo and two guests reads **3 ways · $15.00 each**, and they get a
+bar of their own under **who it was spent on**. They have no page, no card
+and no GitHub, so the purchase review leaves them out of the commit check. A
+roster name is letters only and never holds a bracket, so a guest can't be
+mistaken for somebody on the roster, and renaming an intern never touches one.
+An older script drops guest names without saying so; until the deployment
+says it keeps them, the chip is greyed out with the usual redeploy note.
 
 Lines with nobody ticked are left out of the per-person totals rather than
 guessed at. A spend that does not say who it was for is not evidence that the

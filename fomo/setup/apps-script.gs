@@ -180,7 +180,11 @@ function doGet() {
        line. Named rather than assumed for the same reason `payers` is:
        a page ahead of the script behind it can grey the chip out instead
        of taking the line and losing it to a refusal. */
-    cardSpends: typeof invoiceSettled === 'function'
+    cardSpends: typeof invoiceSettled === 'function',
+    /* Whether this deployment keeps a name from outside the roster in
+       `shared`. An older one drops it silently, so the page greys out its
+       Other chip rather than let the name vanish on save. */
+    guests: typeof guestEntry === 'function'
   });
 }
 
@@ -915,6 +919,24 @@ function invoiceSheet() {
   return sh;
 }
 
+/* Somebody outside the roster a line was bought for — a guest at lunch, a
+   visitor's coffee. They sit in `shared` beside the roster names so they
+   count toward the split like anyone else, written as `Sam (guest)`. A
+   roster name is letters and never holds a bracket, so the two can never
+   be mistaken for each other, and a rename never touches a guest. */
+var GUEST_TAG = ' (guest)';
+function isGuestEntry(n) {
+  n = String(n || '');
+  return n.length > GUEST_TAG.length && n.slice(-GUEST_TAG.length) === GUEST_TAG;
+}
+/* the cleaned `Name (guest)` form of one entry, or '' when it is not a guest */
+function guestEntry(n) {
+  n = String(n || '').trim();
+  if (!isGuestEntry(n)) return '';
+  var name = n.slice(0, -GUEST_TAG.length).replace(/[,()\n\r]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+  return name ? name + GUEST_TAG : '';
+}
+
 /* Nothing reaches the sheet unchecked — the endpoint is open to the web.
    `actor` is the signed-in name, kept apart from `who`: one is whose card
    it was, the other is whose hands typed it, and on Arya's card they are
@@ -930,9 +952,12 @@ function invoiceClean(b, actor) {
   /* Unknown names are dropped rather than refused: a line that is otherwise
      good should not bounce over who it was for, and a silent drop shows up
      on screen as a missing name where a refusal shows up as lost typing. */
-  var shared = String(b.shared || '').split(',').map(function (n) { return n.trim(); })
+  var shared = String(b.shared || '').split(',').map(function (n) {
+      n = n.trim();
+      return isGuestEntry(n) ? guestEntry(n) : n;
+    })
     .filter(function (n, i, all) {
-      return rosterPayers().indexOf(n) > -1 && all.indexOf(n) === i;
+      return n && (rosterPayers().indexOf(n) > -1 || isGuestEntry(n)) && all.indexOf(n) === i;
     });
 
   if (rosterPayers().indexOf(who) === -1) return { error: 'that name is not on the bootcamp' };
@@ -3025,7 +3050,7 @@ function adminAudit() {
     }
     if (!(Number(r.amount) > 0)) flag('amount', 'a spend with no amount on it', r, 'invoice');
     String(r.shared || '').split(',').map(function (n) { return n.trim(); }).filter(String).forEach(function (n) {
-      if (n && known.indexOf(n) === -1) flag('stranger', 'a spend split with ' + n + ', who is not on the roster', r, 'invoice');
+      if (n && known.indexOf(n) === -1 && !isGuestEntry(n)) flag('stranger', 'a spend split with ' + n + ', who is not on the roster', r, 'invoice');
     });
   });
   dayRead(daySheet()).forEach(function (r) {

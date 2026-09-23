@@ -9,6 +9,7 @@ function reviewContext(){
  const ctx=vm.createContext({
    ghData:{},ghErrors:{},ghBusy:false,ghAt:Date.parse('2026-09-17T12:00:00Z'),
    sharedOf:r=>String(r.shared||'').split(',').map(n=>n.trim()).filter(Boolean),
+   isGuest:n=>/ \(guest\)$/.test(n),
    ghNames:p=>p==='Arya'?[]:[p.toLowerCase()],
    esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
    niceDate:d=>d,dayKey:d=>d.toISOString().slice(0,10),calStart:()=>new Date('2026-06-14'),

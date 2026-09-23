@@ -1695,6 +1695,7 @@ td.date.run{color:var(--good)}
       <div class="field">
         <span class="lbl">who it was for</span>
         <div class="who" id="split" role="group" aria-label="Who the spend was for"></div>
+        <input id="f-guests" placeholder="their name — a few, separated by commas" maxlength="120" aria-label="Who else it was for" hidden>
         <span class="split-hint" id="split-hint"></span>
       </div>
       <div class="grid pair">
@@ -2041,8 +2042,19 @@ function safeUrl(u){ u = String(u||"").trim(); return /^https?:\/\//i.test(u) ? 
    totals rather than guessed at. */
 function sharedOf(r){
   return String(r && r.shared || "").split(",").map(function(n){ return n.trim(); })
-    .filter(function(n){ return SHARERS.indexOf(n) > -1; });
+    .filter(function(n){ return SHARERS.indexOf(n) > -1 || isGuest(n); });
 }
+/* Somebody from outside the roster the line was also for — a guest at
+   lunch, a visitor's coffee — written into `shared` as `Sam (guest)`.
+   They count toward the split like anyone ticked; they have no page, no
+   card and no GitHub. A roster name never holds a bracket, so the two
+   cannot be confused. */
+var GUEST_TAG = " (guest)";
+function isGuest(n){
+  n = String(n || "");
+  return n.length > GUEST_TAG.length && n.slice(-GUEST_TAG.length) === GUEST_TAG;
+}
+function guestName(n){ return isGuest(n) ? n.slice(0, -GUEST_TAG.length) : n; }
 function headsOf(r){ return sharedOf(r).length; }
 /* the money is split evenly; the remainder is a rounding artefact, so the
    per-head figure is shown to the cent and never re-totalled from */
@@ -2099,6 +2111,11 @@ var BACKEND = 'auto';
    serve the ledger, so everything below asks `mode`, never BACKEND. */
 var mode = BACKEND === 'sheet' ? 'sheet' : 'device';
 var sheetCard = false;
+/* Whether the deployment keeps a name from outside the roster in `shared`.
+   An older script drops it without a word, so until it says yes the Other
+   chip is greyed out rather than taking a name it will lose. */
+var sheetGuests = false;
+function guestsOk(){ return mode !== "sheet" || sheetGuests; }
 
 /* Whether the deployment behind ENDPOINT keeps the monthly rules too.
    Same shape of question as `mode`, and asked the same way: the endpoint
@@ -2202,6 +2219,7 @@ function saveSeen(){
     full: sheetDays === true,
     payers: sheetPayers,
     card: sheetCard,
+    guests: sheetGuests,
     rows: rows,
     profiles:profiles,
     days: sheetDays ? days : null,
@@ -2588,14 +2606,28 @@ try {
    me" gets recorded rather than fudged into the note. */
 var splitBox = document.getElementById("split");
 var sharedWith = {};
+/* Other: somebody off the roster, named in the box it opens */
+var otherOn = false, otherChip = null, guestBox = document.getElementById("f-guests");
 
+/* the names typed into the Other box, cleaned the way the script cleans
+   them, as they will sit in `shared` */
+function typedGuests(){
+  if (!otherOn) return [];
+  var out = [];
+  guestBox.value.split(",").forEach(function(n){
+    n = n.replace(/[()]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+    if (n && out.indexOf(n + GUEST_TAG) === -1) out.push(n + GUEST_TAG);
+  });
+  return out;
+}
 function splitNames(){
-  return SHARERS.filter(function(n){ return sharedWith[n]; });
+  return SHARERS.filter(function(n){ return sharedWith[n]; }).concat(typedGuests());
 }
 function renderSplit(){
   Array.prototype.forEach.call(splitBox.children, function(c){
-    c.setAttribute("aria-pressed", String(!!sharedWith[c.textContent]));
+    c.setAttribute("aria-pressed", String(c === otherChip ? otherOn : !!sharedWith[c.textContent]));
   });
+  guestBox.hidden = !otherOn;
   var names = splitNames(), h = document.getElementById("split-hint");
   var amt = Math.round(parseFloat(document.getElementById("f-amt").value) * 100) / 100;
   if (!names.length) {
@@ -2620,12 +2652,24 @@ function buildSplitChips(){
     });
     splitBox.appendChild(b);
   });
+  otherChip = document.createElement("button");
+  otherChip.type = "button"; otherChip.className = "chip sm"; otherChip.textContent = "Other";
+  otherChip.title = "Somebody who isn't on the team — add their name";
+  otherChip.addEventListener("click", function(){
+    otherOn = !otherOn;
+    renderSplit();
+    if (otherOn) guestBox.focus();
+  });
+  splitBox.appendChild(otherChip);
 }
 buildSplitChips();
+guestBox.addEventListener("input", renderSplit);
 /* changing who paid starts the split over rather than leaving the last
    person's name ticked on somebody else's line */
 function resetSplit(){
   sharedWith = {};
+  otherOn = false;
+  guestBox.value = "";
   /* Whose card it was does not answer whose coffee it was: on Arya's
      card the likelier default is the person standing at the till. */
   var first = (picked === CARD && identity && identity.who !== CARD) ? identity.who : picked;
@@ -2654,6 +2698,7 @@ function applyRosterUi(){
   var lost = SHARERS.filter(function(n){ return !payerOk(n); });
   [whoBox, splitBox].forEach(function(box){
     Array.prototype.forEach.call(box.children, function(c){
+      if (c === otherChip) return;
       var ok = payerOk(c.textContent) && (box !== whoBox || canPay(c.textContent));
       c.disabled = !ok;
       c.classList.toggle("stale", !ok);
@@ -2673,6 +2718,12 @@ function applyRosterUi(){
   }
   var dropped = false;
   SHARERS.forEach(function(n){ if (sharedWith[n] && !payerOk(n)) { delete sharedWith[n]; dropped = true; } });
+  if (otherChip) {
+    otherChip.disabled = !guestsOk();
+    otherChip.classList.toggle("stale", !guestsOk());
+    otherChip.title = guestsOk() ? "Somebody who isn't on the team — add their name" : STALE_ROSTER;
+    if (otherOn && !guestsOk()) { otherOn = false; dropped = true; }
+  }
   if (dropped) renderSplit();
   /* Not the banner: that is cleared by the next successful sync, and this
      is a standing condition rather than news about one request. It lives
@@ -2693,6 +2744,10 @@ function applyRosterUi(){
     said.push("<b>Arya</b>'s card can't go on somebody else's line yet — same reason, same fix: " +
       "redeploy <b>fomo/setup/apps-script.gs</b> (Deploy \u2192 Manage deployments \u2192 New version). " +
       "Your own lines are unaffected.");
+  }
+  if (!guestsOk()) {
+    said.push("<b>Other</b> can't take a name yet — the shared sheet would drop it. Same fix: " +
+      "redeploy <b>fomo/setup/apps-script.gs</b> (Deploy \u2192 Manage deployments \u2192 New version).");
   }
   note.hidden = !said.length;
   if (said.length) note.innerHTML = said.join(" ");
@@ -2775,6 +2830,7 @@ document.getElementById("form").addEventListener("submit", function(ev){
   var date = document.getElementById("f-date").value || today();
   if (!what) { hint("Add a short description of the spend.", true); return; }
   if (!isFinite(amt) || amt <= 0) { hint("Enter an amount greater than zero.", true); return; }
+  if (otherOn && !typedGuests().length) { hint("Type who else it was for, or untick Other.", true); guestBox.focus(); return; }
   /* the toggle decides what this button means: one line, or the rule that
      writes one every month from here on */
   if (repeat) { startSub(what, amt, date); return; }
@@ -3114,8 +3170,14 @@ function openEdit(id){
     c.setAttribute("aria-pressed", String(c.textContent === r.who));
   });
   sharedWith = {};
+  var guests = [];
   String(r.shared || "").split(",").map(function(n){ return n.trim(); })
-    .forEach(function(n){ if (SHARERS.indexOf(n) > -1) sharedWith[n] = true; });
+    .forEach(function(n){
+      if (SHARERS.indexOf(n) > -1) sharedWith[n] = true;
+      else if (isGuest(n)) guests.push(guestName(n));
+    });
+  otherOn = guests.length > 0;
+  guestBox.value = guests.join(", ");
   renderSplit();
 
   document.getElementById("f-what").value = r.what || "";
@@ -3543,9 +3605,9 @@ function render(){
     if (!names.length) return;
     splitLines++;
     var each = (Number(r.amount) || 0) / names.length;
-    names.forEach(function(n){ byHead[n] += each; headTotal += each; });
+    names.forEach(function(n){ byHead[n] = (byHead[n] || 0) + each; headTotal += each; });
   });
-  var headRank = SHARERS.map(function(n){ return {id:n, v:byHead[n]}; })
+  var headRank = Object.keys(byHead).map(function(n){ return {id:n, v:byHead[n]}; })
     .filter(function(h){ return h.v > 0.005; })
     .sort(function(a,b){ return b.v - a.v; });
 
@@ -4469,12 +4531,16 @@ var OLD_DEPLOY = "<b>The days aren't shared yet.</b> This browser is keeping its
    un-greys the chip where it stands and is saved, so the next load opens
    knowing. */
 function refreshCard(){
-  if (cardLendable()) return;
+  if (cardLendable() && guestsOk()) return;
   fetch(ENDPOINT, {method:"GET"}).then(function(res){
     return res.ok ? res.json() : null;
   }).then(function(out){
-    if (!out || out.cardSpends !== true || sheetCard) return;
-    sheetCard = true;
+    if (!out) return;
+    /* the Other chip is the same question about a later deployment */
+    var raised = false;
+    if (out.cardSpends === true && !sheetCard) { sheetCard = true; raised = true; }
+    if (out.guests === true && !sheetGuests) { sheetGuests = true; raised = true; }
+    if (!raised) return;
     applyRosterUi();
     /* so the browser that has just been told does not have to be told
        again on the next load */
@@ -4501,6 +4567,7 @@ function probeSheet(){
          and then the other a second later. */
       sheetDays = out.days === true;
       sheetCard = out.cardSpends === true;
+      sheetGuests = out.guests === true;
       /* Whether the console is deployed at all. Said here rather than
          discovered by pressing one of its buttons, so the rail can leave
          the door off instead of opening onto a page whose every control
@@ -4853,7 +4920,7 @@ function paintMoneyUndo(){
 }
 function reviewedCharge(r){return JSON.stringify([r.date,r.who,r.what,r.category,Number(r.amount),r.note||'',r.receipt||'',r.shared||'']);}
 var chargePaintKey="";
-function purchasePeople(r){return [r.who].concat(sharedOf(r)).filter(function(name,i,all){return name && all.indexOf(name)===i;});}
+function purchasePeople(r){return [r.who].concat(sharedOf(r)).filter(function(name,i,all){return name && !isGuest(name) && all.indexOf(name)===i;});}
 function purchaseGitHtml(r){
   return '<div class="purchase-git-head"><h3>GitHub on '+esc(niceDate(r.date))+'</h3><p>'+esc(r.date)+' · UTC · public commits in their own repositories</p></div><div class="purchase-git-grid">'+purchasePeople(r).map(function(name){
     var names=ghNames(name), got=ghData[name], error=ghErrors[name], summary='', details='';
@@ -6395,6 +6462,7 @@ function open_(){
          and is no longer known", which is what the probe and the roster are
          for. */
       if (seen.card === true) sheetCard = true;
+      if (seen.guests === true) sheetGuests = true;
       sheetDays = true;
       profiles = seen.profiles || [];
       rows = seen.rows || [];

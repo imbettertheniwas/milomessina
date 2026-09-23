@@ -37,7 +37,7 @@ const CARD = 'Arya';
 function page(over = {}){
   const ctx = vm.createContext({
     ENDPOINT:'https://script.google.com/exec', LS_SEEN:'fomo.seen',
-    CARD, roster:null, mode:'sheet', sheetCard:false, sheetPayers:null,
+    CARD, roster:null, mode:'sheet', sheetCard:false, sheetGuests:false, sheetPayers:null,
     identity:{who:'Milo'}, stored:null, painted:0, rebuilt:0,
     PEOPLE:[], LEADS:[], PAYERS:[], SHARERS:[], GH_PEOPLE:[], KNOWN:[],
     ...over
@@ -48,7 +48,7 @@ function page(over = {}){
     'function rebuildRosterUi(){ rebuilt++; }',
     'function applyRosterUi(){ painted++; }',
     'function isAdmin(){ return !!identity && identity.who === CARD; }',
-    lift('seenSnapshot'), lift('applyRoster'), lift('cardLendable'),
+    lift('seenSnapshot'), lift('applyRoster'), lift('cardLendable'), lift('guestsOk'),
     lift('own'), lift('canPay')
   ].join('\n'), ctx);
   return ctx;
@@ -117,7 +117,7 @@ test('a deployment that really will not lend the card is left saying so', async 
 });
 
 test('a page that already knows the card is lendable does not ask again', async () => {
-  const c = asking({cardSpends:true}, {sheetCard:true});
+  const c = asking({cardSpends:true, guests:true}, {sheetCard:true, sheetGuests:true});
   c.refreshCard();
   await settled();
   assert.equal(c.asked, 0);
@@ -126,6 +126,22 @@ test('a page that already knows the card is lendable does not ask again', async 
   local.refreshCard();
   await settled();
   assert.equal(local.asked, 0);
+});
+
+test('the same ask raises the Other chip once the deployment keeps guests', async () => {
+  const c = asking({cardSpends:true, guests:true}, {sheetCard:true});
+  c.refreshCard();
+  await settled();
+  assert.equal(c.asked, 1, 'a page that only knows the card still has the guests to ask about');
+  assert.equal(c.sheetGuests, true);
+  assert.equal(c.guestsOk(), true);
+  assert.equal(c.saved, 1);
+  // An older script says nothing about guests, and nothing is raised.
+  const old = asking({cardSpends:true}, {sheetCard:true});
+  old.refreshCard();
+  await settled();
+  assert.equal(old.sheetGuests, false);
+  assert.equal(old.saved, 0);
 });
 
 test('the fast path is the one that asks — it is the one that skipped the probe', () => {
