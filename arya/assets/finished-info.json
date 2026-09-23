@@ -1,0 +1,9 @@
+{
+  "final_triangles": 335412,
+  "glb_mb": 22.881,
+  "named_assets": 87,
+  "editable_parts": 1133,
+  "scale_factor": 1.0,
+  "note": "Object reconstruction aligned by eye to the new scan at original scale. Visible furniture and architecture modeled individually. Obscured details and material finishes interpreted. Not a measured 1:1 survey.",
+  "materials_source": "CC0 photo materials from Poly Haven: old_wooden_floor_03, wood_table_001, brick_wall_001, fabric_pattern_07, leather_white, coated_pine_02, white_maple_veneer; analytic corduroy and marble"
+}

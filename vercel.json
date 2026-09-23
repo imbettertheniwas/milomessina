@@ -49,6 +49,15 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
+    },
+    {
+      "source": "/arya/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -67,6 +76,14 @@
     {
       "source": "/r/:code",
       "destination": "/r/index.html"
+    },
+    {
+      "source": "/arya",
+      "destination": "/arya/index.html"
+    },
+    {
+      "source": "/arya/",
+      "destination": "/arya/index.html"
     }
   ]
 }

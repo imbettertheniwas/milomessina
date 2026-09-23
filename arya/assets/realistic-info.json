@@ -1,0 +1,34 @@
+{
+  "source_triangles": 465670,
+  "final_triangles": 356444,
+  "glb_mb": 12.813,
+  "source_texture_dimensions": [
+    [
+      4096,
+      3136
+    ],
+    [
+      4096,
+      4096
+    ]
+  ],
+  "removed_floating_faces": 2752,
+  "removed_exterior_spill_faces": 5514,
+  "cleaned_wall_vertices": 6528,
+  "removed_speck_vertices": 16,
+  "dimensions_preserved": true,
+  "source_scale_factor": 1.0,
+  "floor_offset": 0.72,
+  "ceiling_opening_height": 2.27,
+  "min": [
+    -2.9800000190734863,
+    -5.505084037780762,
+    -2.666224718093872
+  ],
+  "max": [
+    2.984544038772583,
+    5.291752815246582,
+    2.2699999809265137
+  ],
+  "note": "New scan geometry and original photographic textures. No stylized furniture or invented walls; no mesh decimation. Ceiling opened, exterior spill trimmed, a disconnected scan ghost removed, and only near-planar wall ripples locally reduced. Supplied scale retained without independent measurement."
+}

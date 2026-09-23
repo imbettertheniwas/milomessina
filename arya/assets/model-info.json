@@ -1,0 +1,11 @@
+{
+  "source_triangles": 203080,
+  "after_cleanup_triangles": 144431,
+  "final_triangles": 79887,
+  "removed_fragment_vertices": 0,
+  "glb_mb": 3.511,
+  "ceiling_cut_height_m": 2.32,
+  "floor_origin_offset_m": 1.27,
+  "texture_max_dimension": 2048,
+  "note": "Original scan has unobserved surfaces. These remain unfilled; the display base provides a neutral backdrop."
+}
