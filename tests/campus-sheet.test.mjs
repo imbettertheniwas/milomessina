@@ -93,6 +93,12 @@ test('the passcode is checked before anything is read or built', () => {
   assert.deepEqual(h.made(), []);
 });
 
+test('applicant reads require a session before reading or creating tables', () => {
+  const h = harness();
+  assert.equal(h.call('list', {_session:''}).ok, false);
+  assert.deepEqual(h.made(), []);
+});
+
 test('an empty sheet answers with two empty tables and builds no apply tab', () => {
   const h = harness();
   const out = h.call('list');
@@ -101,7 +107,7 @@ test('an empty sheet answers with two empty tables and builds no apply tab', () 
   assert.deepEqual(out.team, []);
   /* The form owns the apply tab and builds it on its first submission —
      the console must never put an empty one in front of it. */
-  assert.deepEqual(h.made(), ['campus_team']);
+  assert.deepEqual(h.made(), ['internal_roster', 'campus_team']);
 });
 
 test('reading the apply tab widens its header and gives every row an id', () => {

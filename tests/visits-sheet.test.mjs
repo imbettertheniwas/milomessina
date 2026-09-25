@@ -164,10 +164,10 @@ test('unset availability leaves every day open, as before the setting existed',(
 
 // The file handed to the owner must work on its own, without a second paste.
 test('the complete main script includes visits and every existing service',()=>{
-  const ctx=vm.createContext({ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType(){return JSON.parse(body);}})}});
+  const ctx=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType(){return JSON.parse(body);}})}});
   const main=fs.readFileSync(new URL('../fomo/setup/apps-script.gs',import.meta.url),'utf8');
   vm.runInContext(main,ctx);
-  for(const key of ['visits','visitHours','ledger','campus','posts','identity','moneyUndo','purchaseApproval'])
+  for(const key of ['visits','visitHours','ledger','campus','posts','identity','moneyUndo','purchaseApproval','beta'])
     assert.equal(ctx.doGet()[key],true,key+' is missing from the combined deployment');
   for(const name of ['doPost','doGet','invoiceApi','campusApi','postsApi','internalSessionApi'])
     assert.equal(typeof ctx[name],'function');

@@ -36,12 +36,20 @@ anything.
 | **Portals** | Every public front door on the domain — whether each is up, whether it has an inbox behind it, and every submission it has taken. Arya and Milo only |
 | **Referrals** | Who is sending people through those doors, how far each of them got, and what we owe for it — the queue waiting on a decision, and a row per code. Arya and Milo only |
 | **Campus team** | The interns actually running a campus, grouped by state and then by campus |
+| **Beta batch** | Arya and Milo manage separate two-week batches, shared invite links, attendance, public GitHub activity, recaps, private notes, and access status |
 | A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
 
 The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
 `/internal#/person/Bijan` —
 so the back button works, a page can be bookmarked, and a link to somebody's
 page is a link to somebody's page.
+
+**Beta interns have their own workspace at `/internal/beta`.** A shared
+batch invite lets them join immediately. They see their own batch's attendance
+and public GitHub activity, and save or submit their own two-week recap.
+They stay off the main roster and cannot read the main internal APIs.
+See [BETA.md](BETA.md) for setup and deployment; beta access requires a
+private server-side team sign-in secret before any invitations can be created.
 
 **Referral money is decided here and moved somewhere else.** A referral
 arrives at *pending*, which says only that a submission carrying somebody's

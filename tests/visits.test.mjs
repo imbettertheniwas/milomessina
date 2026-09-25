@@ -22,6 +22,10 @@ test('internal identity checks the console deployment and never posts to a legac
     const fetchIdentity=async(url,options)=>({ok:true,json:async()=>options.method==='POST'?{ok:true,who,admin}:{identity:true}});
     assert.deepEqual(await verifyInternalIdentity(env,'session-token',fetchIdentity),expected);
   }
+  for(const who of ['Milo','Arya','Beta intern']) {
+    const fetchBeta=async(url,options)=>({ok:true,json:async()=>options.method==='POST'?{ok:true,who,admin:true,beta:true,memberId:'beta-member'}:{identity:true}});
+    assert.equal(await verifyInternalIdentity(env,'beta-session-token',fetchBeta),false);
+  }
 });
 const guest={requestId:'00000000-0000-4000-8000-000000000001',name:'Guest',email:'guest@example.invalid',social:'@guest',notes:'A collaboration',website:'',date:'2026-09-17',time:'2:15 PM'};
 function harness(overrides={}) {
@@ -85,6 +89,22 @@ test('unauthenticated reads and writes never reach guest storage',async()=>{
   for(const [action,method] of [['list','GET'],['session','GET'],['update','POST'],['saveAvailability','POST']])
     assert.equal((await h.call(action,{}, {method})).status,401);
   assert.equal(touched,false);
+});
+test('beta sessions cannot read or manage visits, even when their display name matches Arya',async()=>{
+  const calls=[];
+  const h=harness({verifyIdentity:async()=>({who:'Arya',admin:true,beta:true,memberId:'beta-member'}),store:async(action)=>{
+    calls.push(action);
+    if(action==='settings')return {availability:null};
+    if(action==='submit')return {reference:guest.requestId,status:'pending'};
+    throw new Error('Protected guest storage must not be reached');
+  }});
+  const headers={'x-fomo-internal-session':'beta-session-token'};
+  for(const [action,method] of [['list','GET'],['session','GET'],['update','POST'],['saveAvailability','POST']])
+    assert.equal((await h.call(action,{}, {method,headers})).status,401);
+  assert.deepEqual(calls,[]);
+  assert.equal((await h.call('availability',null,{method:'GET',headers})).status,200);
+  assert.equal((await h.call('submit',guest,{headers})).status,201);
+  assert.deepEqual(calls,['settings','submit']);
 });
 test('public submissions keep their address rate limit',async()=>{
   const calls=[];

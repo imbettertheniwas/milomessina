@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#111112">
+  <meta name="description" content="Your FOMO beta intern workspace.">
+  <title>Beta workspace · FOMO</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B091F'/%3E%3Cpath d='M36.97 24.36c7.13 0 12.82 3.59 15.97 9.24-4.19 4.44-7.29 10.16-8.48 16.4-1.19 6.24-.28 11.96 2.21 16.4-5.32 5.65-12.38 9.24-19.51 9.24-8.73 0-15.3-5.38-17.7-13.32h17.39c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H14.18c5.44-7.94 14.07-13.32 22.79-13.32Z' fill='%23EAEDFF'/%3E%3Cpath d='M72.33 24.36c12.75 0 20.89 11.48 18.18 25.64-2.71 14.16-15.24 25.64-27.99 25.64-8.73 0-15.3-5.38-17.7-13.32h19.34c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H49.53c5.44-7.94 14.07-13.32 22.8-13.32Z' fill='%23EAEDFF'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/fomo/assets/fonts.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/invoice/beta.css">
+  <script type="module" src="/invoice/beta-portal.js"></script>
+</head>
+<body>
+  <svg class="svg-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><symbol id="fomo-mark" viewBox="0 0 100 100"><path d="M36.97 24.36c7.13 0 12.82 3.59 15.97 9.24-4.19 4.44-7.29 10.16-8.48 16.4-1.19 6.24-.28 11.96 2.21 16.4-5.32 5.65-12.38 9.24-19.51 9.24-8.73 0-15.3-5.38-17.7-13.32h17.39c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H14.18c5.44-7.94 14.07-13.32 22.79-13.32Z"/><path d="M72.33 24.36c12.75 0 20.89 11.48 18.18 25.64-2.71 14.16-15.24 25.64-27.99 25.64-8.73 0-15.3-5.38-17.7-13.32h19.34c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H49.53c5.44-7.94 14.07-13.32 22.8-13.32Z"/></symbol></svg>
+
+  <main id="beta-gate" class="gate">
+    <div class="gate-card">
+      <div class="brand"><span class="brand-mark"><svg aria-hidden="true"><use href="#fomo-mark"></use></svg></span><span>fomo <span class="brand-secondary">/ beta</span></span></div>
+      <ol id="beta-join-progress" class="join-progress" aria-label="Join your beta group" hidden><li aria-current="step"><span>1</span> Welcome</li><li><span>2</span> Your details</li><li><span>3</span> Review</li></ol>
+      <span id="beta-gate-eyebrow" class="eyebrow gate-eyebrow">Two weeks to learn and build</span>
+      <h1 id="beta-gate-title" tabindex="-1">Arya’s two-week beta internship.</h1>
+      <p id="beta-gate-intro" class="gate-intro">Join a small group, track your attendance, build public internship projects on GitHub, and share what you learned at the end.</p>
+      <div id="beta-invite-needed" class="invite-needed"><strong>Start with Arya’s invite link.</strong><p>Ask Arya for your group’s shared invitation, then open it to add your details and join.</p></div>
+      <form id="beta-join-form" novalidate hidden>
+        <div id="beta-invite-summary" class="invite-summary"></div>
+        <div id="beta-join-welcome">
+          <ol class="join-expectations"><li><span class="expectation-number">01</span><div><h2>Show up with your group.</h2><p>Record your attendance and see how the rest of your beta group is doing.</p></div></li><li><span class="expectation-number">02</span><div><h2>Make your internship projects public.</h2><p>Build your internship projects in public GitHub repositories so Arya and your group can follow your work.</p></div></li><li><span class="expectation-number">03</span><div><h2>Tell us what changed.</h2><p>Submit a recap of what you learned and accomplished by <strong id="beta-recap-due">the end of your two weeks</strong>.</p></div></li></ol>
+          <button class="button primary" id="beta-join-start" type="button">Get started <span aria-hidden="true">↗</span></button>
+        </div>
+        <div id="beta-join-details" hidden>
+          <div class="join-field"><label for="beta-join-name">Full name</label><input id="beta-join-name" name="name" autocomplete="name" required maxlength="80" placeholder="Your name"></div>
+          <div class="join-field"><label for="beta-join-email">Email</label><input id="beta-join-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="Your email address"></div>
+          <div class="join-field"><label for="beta-join-phone">Phone number</label><input id="beta-join-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="40" placeholder="Your number, including country code" aria-describedby="beta-phone-help"><p id="beta-phone-help" class="field-help">Use a number where Arya can reach you.</p></div>
+          <div class="join-field"><label for="beta-join-github">GitHub username</label><input id="beta-join-github" name="github" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="39" pattern="[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}" placeholder="Your GitHub username" aria-describedby="beta-github-help"><p id="beta-github-help" class="field-help">Make the repositories for your internship projects public so your progress can appear here. Keep secrets and unrelated private work out of those repositories. <a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">Create a GitHub account ↗</a></p></div>
+          <p class="join-privacy">Your contact details are visible to Arya and Milo; your group sees your name, GitHub and attendance.</p>
+          <div class="join-actions"><button class="button" id="beta-details-back" type="button">Back</button><button class="button primary" id="beta-details-next" type="button">Review your details <span aria-hidden="true">↗</span></button></div>
+        </div>
+        <div id="beta-join-review" hidden>
+          <dl id="beta-review-details" class="join-review-details"></dl>
+          <p class="join-review-note">Joining saves your details to Arya’s beta dashboard. You’ll get your own return code next.</p>
+          <div class="join-actions"><button class="button" id="beta-review-back" type="button">Edit details</button><button class="button primary" id="beta-join" type="submit">Join this group <span aria-hidden="true">↗</span></button></div>
+        </div>
+      </form>
+      <button class="gate-switch" id="beta-use-code" type="button">Already joined? Open with your personal code</button>
+      <form id="beta-login-form" hidden>
+        <label for="beta-code">Personal access code</label>
+        <input id="beta-code" name="code" type="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" placeholder="Enter your code" required maxlength="200" aria-describedby="beta-login-error">
+        <button class="button primary" id="beta-login" type="submit">Open workspace <span aria-hidden="true">↗</span></button>
+        <button class="gate-switch" id="beta-return-join" type="button">Back</button>
+      </form>
+      <p id="beta-login-error" class="form-message" role="alert" aria-live="polite"></p>
+      <div class="gate-footer"><span class="status-dot" aria-hidden="true"></span> FOMO beta internship <span>Two weeks. Real progress.</span></div>
+    </div>
+  </main>
+
+  <div id="beta-workspace" class="workspace" hidden>
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <div class="brand"><span class="brand-mark"><svg aria-hidden="true"><use href="#fomo-mark"></use></svg></span><span>fomo <span class="brand-secondary">/ beta</span></span></div>
+      <div class="sidebar-group"><span class="eyebrow">Your group</span><nav id="beta-nav" aria-label="Your sections"></nav></div>
+      <div class="sidebar-bottom"><span class="eyebrow">Your batch</span><strong id="beta-batch-side"></strong><span class="sidebar-note">Built for your first steps.</span></div>
+    </aside>
+    <div class="workspace-main">
+      <header class="topbar"><span class="breadcrumb">Internal <span aria-hidden="true">/</span> <strong>Beta workspace</strong></span><div class="topbar-actions"><button class="button subtle" id="beta-refresh" type="button">Refresh</button><button class="button subtle" id="beta-signout" type="button">Sign out</button></div></header>
+      <main class="content" id="beta-main">
+        <div class="intro"><div><div class="intro-meta"><span class="pill">Two-week beta</span><span id="beta-batch"></span></div><h1 id="beta-greeting" tabindex="-1">Your workspace</h1><p>Show up. Build something. Share what you learned.</p></div><span class="profile-avatar" id="beta-avatar" aria-hidden="true"></span></div>
+        <section id="beta-recovery" class="recovery-card" aria-labelledby="beta-recovery-heading" hidden><div><span class="eyebrow">One last thing</span><h2 id="beta-recovery-heading">Save your personal code.</h2><p>Use this code to return to your workspace. Keep it somewhere private.</p><label class="sr-only" for="beta-recovery-code">Your personal access code</label><input id="beta-recovery-code" readonly autocomplete="off" spellcheck="false"></div><div class="recovery-actions"><button id="beta-copy-code" class="button" type="button">Copy code</button><button id="beta-saved-code" class="button primary" type="button">I’ve saved it</button></div></section>
+        <p id="beta-error" class="page-message" role="alert" hidden></p>
+        <p id="beta-notice" class="save-notice" role="status" aria-live="polite"></p>
+        <div id="beta-summary" class="summary-grid" aria-label="Your progress"></div>
+        <div id="beta-sections"></div>
+        <footer class="workspace-footer"><span>FOMO <span aria-hidden="true">/</span> Beta internship</span><span id="beta-updated"></span></footer>
+      </main>
+    </div>
+  </div>
+  <noscript><p class="noscript">Please enable JavaScript to open your beta workspace.</p></noscript>
+</body>
+</html>

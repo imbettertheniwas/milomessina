@@ -62,6 +62,7 @@ function doPost(e) {
        bare confirmation, so it takes its branch here and never touches the
        form tabs below. */
     if (body._api === 'internal') return internalSessionApi(body);
+    if (body._api === 'beta') return betaApi(body);
     if (body._api === 'invoice') return invoiceApi(body);
 
     /* The console that fixes the rest of it when it has gone wrong. Its own
@@ -135,6 +136,8 @@ function doGet() {
   return reply(true, null, {
     hint: 'fomo campus form receiver is live',
     identity: true,
+    beta: typeof betaApi === 'function',
+    privateLogin: !!internalLoginSecret(),
     approvals: true,
     moneyUndo: true,
     purchaseApproval: true,
@@ -294,20 +297,30 @@ function notify(tabName, row) {
    This is a trusted-team selector, not verification of a person's identity. */
 function internalSessionApi(body) {
   if (body.action === 'logout') {
-    if (body._session) CacheService.getScriptCache().remove('internal:' + body._session);
+    if (body._session) {
+      CacheService.getScriptCache().remove(internalSessionPrefix() + body._session);
+      if(betaConfigured())CacheService.getScriptCache().remove(betaSessionPrefix() + body._session);
+    }
     return reply(true);
   }
+  if (body.action === 'betalogin') return betaLogin(body);
+  if (body.action === 'betainvite') return betaInviteApi(body);
+  if (body.action === 'betajoin') return betaJoin(body);
   if (body.action === 'session') {
+    var beta = betaActor(body);
+    if(beta)return reply(true,null,{who:beta.name,beta:true,member:betaPublicMember(beta,false),permissions:betaMemberPermissions(beta)});
     var current = internalActor(body);
     return current ? reply(true, null, {who:current, admin:current === 'Arya', operator:internalIsAdmin(current), roster:rosterRead().map(rosterPublic)})
       : reply(false, 'Session expired. Enter the passcode and select your name again.');
   }
   if (body.action !== 'login') return reply(false, 'unknown action');
-  if (body.passcode !== CONFIG.INVOICE_KEY) return reply(false, 'That passcode does not match.');
+  var privateSecret=internalLoginSecret();
+  if(internalPrivateRequired() && !betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
+  if (!internalSame(String(body.passcode||''), privateSecret || CONFIG.INVOICE_KEY)) return reply(false, 'That passcode does not match.');
   var who = String(body.who || '');
   if (rosterPayers().indexOf(who) === -1) return reply(false, 'Select your name.');
   var token = Utilities.getUuid() + Utilities.getUuid();
-  CacheService.getScriptCache().put('internal:' + token, who, 21600);
+  CacheService.getScriptCache().put(internalSessionPrefix() + token, who, 21600);
   /* Two different questions, deliberately answered separately. `admin` is
      whose money it is, and it is Arya's alone: approving a purchase, settling
      a person up. `operator` is who may open the console that fixes the sheet
@@ -318,9 +331,304 @@ function internalSessionApi(body) {
 function internalActor(body) {
   var token = String(body._session || '');
   if (!token || token.length > 100) return null;
-  var who = CacheService.getScriptCache().get('internal:' + token);
+  if(internalPrivateRequired() && !betaConfigured())return null;
+  var who = CacheService.getScriptCache().get(internalSessionPrefix() + token);
   return rosterPayers().indexOf(who) >= 0 ? who : null;
 }
+/* ── beta intern access ────────────────────────────────────────
+   Beta participants stay out of internal_roster. Their individual codes
+   are shown once and stored only as a digest. Every beta request rereads
+   membership and its access epoch so pausing or changing access revokes
+   existing sessions immediately. */
+var BETA_PERMISSIONS = ['attendance', 'github', 'recap'];
+var BETA_STATUSES = ['active', 'paused', 'graduated'];
+var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone'];
+var BETA_SETUP_MESSAGE = 'Set a private INTERNAL_LOGIN_SECRET of at least 16 characters in Apps Script properties, then sign in again with that secret before enabling beta access.';
+function internalLoginSecret() {
+  return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_LOGIN_SECRET') || '');
+}
+function internalPrivateRequired() {
+  return PropertiesService.getScriptProperties().getProperty('INTERNAL_PRIVATE_AUTH_REQUIRED') === 'true';
+}
+function internalDigest(value) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8)
+    .map(function(n){ return ('0' + ((n + 256) % 256).toString(16)).slice(-2); }).join('');
+}
+function internalSame(a, b) {
+  a=String(a); b=String(b);
+  var different=a.length ^ b.length;
+  for(var i=0;i<a.length;i++) different |= a.charCodeAt(i) ^ (b.charCodeAt(i)||0);
+  return different === 0;
+}
+function internalSessionPrefix() {
+  var secret=internalLoginSecret();
+  return secret ? 'internal:v2:' + internalDigest(secret).slice(0,24) + ':' : 'internal:';
+}
+function betaConfigured() {
+  var secret=internalLoginSecret();
+  return secret.length >= 16 && secret !== CONFIG.INVOICE_KEY;
+}
+function betaBook() {
+  return CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+}
+function betaTable(name, columns, create) {
+  var book=betaBook(), sheet=book.getSheetByName(name);
+  if(!sheet && create) {
+    sheet=book.insertSheet(name);
+    sheet.getRange(1,1,1,columns.length).setValues([columns]).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  if(sheet) {
+    var head=sheet.getRange(1,1,1,columns.length).getValues()[0];
+    // The first beta release had no phone column. Extend that exact schema
+    // in place; never rewrite existing headers, rows, or an occupied column.
+    var phoneIndex=columns.length-1;
+    if(name==='internal_beta_members' && columns[phoneIndex]==='phone' && head[phoneIndex]==='' &&
+       sheet.getLastColumn()<=phoneIndex && JSON.stringify(head.slice(0,phoneIndex))===JSON.stringify(columns.slice(0,phoneIndex))) {
+      sheet.getRange(1,phoneIndex+1).setValue('phone').setFontWeight('bold');
+      head[phoneIndex]='phone';
+    }
+    if(JSON.stringify(head)!==JSON.stringify(columns))
+      throw new Error('The ' + name + ' columns do not match. Restore the beta table headers before continuing.');
+  }
+  return sheet;
+}
+function betaRead(name,columns) {
+  var sheet=betaTable(name,columns,false);
+  if(!sheet || sheet.getLastRow()<2)return [];
+  return sheet.getRange(2,1,sheet.getLastRow()-1,columns.length).getValues().map(function(row,index){
+    var out={_row:index+2};
+    columns.forEach(function(key,n){var v=row[n];out[key]=typeof v==='string' && v.charCodeAt(0)===8203?v.slice(1):v;});
+    return out;
+  }).filter(function(row){return !!row.id;});
+}
+function betaWrite(name,columns,record) {
+  var sheet=betaTable(name,columns,true), values=columns.map(function(key){
+    var v=record[key] === undefined ? '' : record[key];
+    // Explicit text encoding also protects operator-entered notes from sheet formulas.
+    return typeof v==='string' ? '\u200b'+v : v;
+  });
+  if(record._row) sheet.getRange(record._row,1,1,columns.length).setValues([values]);
+  else sheet.appendRow(values);
+}
+function betaMemberPermissions(member) {return BETA_PERMISSIONS.slice();}
+function betaPublicMember(member,manager) {
+  var actualBatch=betaFindBatch(member);
+  var out={id:member.id,name:member.name,email:member.email,phone:String(member.phone||''),batch:actualBatch?actualBatch.name:member.batch,batchId:member.batchId,github:member.github,status:member.status,
+    permissions:betaMemberPermissions(member),createdAt:member.createdAt,updatedAt:member.updatedAt};
+  if(manager)out.notes=member.notes;
+  return out;
+}
+function betaCleanRow(row,columns) {
+  var out={};columns.forEach(function(key){out[key]=row[key];});return out;
+}
+function betaCodeHash(code) {return internalDigest(internalLoginSecret()+'\n'+String(code||'').trim().toUpperCase());}
+function betaNewCode() {return 'BETA-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
+function betaSessionPrefix() {return 'beta:v1:'+internalDigest(internalLoginSecret()).slice(0,24)+':';}
+function betaActor(body) {
+  if(!betaConfigured())return null;
+  var token=String(body._session||'');
+  if(!token || token.length>100)return null;
+  var cached;
+  try {cached=JSON.parse(CacheService.getScriptCache().get(betaSessionPrefix()+token)||'null');}catch(e){return null;}
+  if(!cached)return null;
+  var member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return m.id===cached.id;})[0];
+  if(!member || member.status!=='active' || Number(member.epoch)!==Number(cached.epoch))return null;
+  var batch=betaFindBatch(member);
+  if(!batch || !betaActive(batch.active) || Number(cached.batchEpoch)!==Number(batch.epoch))return null;
+  return member;
+}
+function betaLogin(body) {
+  if(!betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
+  var code=String(body.code||'').trim();
+  if(!/^BETA-[a-f0-9]{32}$/i.test(code))return reply(false,'That beta access code is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+  var hash=betaCodeHash(code), member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){
+    return m.status==='active' && internalSame(String(m.codeHash||''),hash);
+  })[0];
+  if(!member)return reply(false,'That beta access code is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+  var batch=betaFindBatch(member);
+  if(!batch || !betaActive(batch.active))return reply(false,'This beta batch is paused. Contact Arya for access.',{code:'AUTH_REQUIRED'});
+  var token=betaMintSession(member);
+  return reply(true,null,{token:token,who:member.name,beta:true,member:betaPublicMember(member,false),permissions:betaMemberPermissions(member)});
+}
+function betaString(body,key,max,required) {
+  var value=String(body[key]===undefined?'':body[key]).trim();
+  if((required && !value)||value.length>max)throw new Error('Enter '+(required?'a ':'')+key+' of '+(required?'1–':'at most ')+max+' characters.');
+  return value;
+}
+var BETA_BATCHES = ['id','name','startDate','endDate','active','inviteHash','inviteVersion','epoch','createdAt','updatedAt','createdBy'];
+var BETA_ATTENDANCE = ['id','memberId','day','createdAt'];
+var BETA_RECAPS = ['id','memberId','learned','accomplished','links','submitted','submittedAt','updatedAt'];
+function betaActive(value) {return value===true || value==='true';}
+function betaPublicBatch(batch) {
+  return {id:batch.id,name:batch.name,startDate:batch.startDate,endDate:batch.endDate,active:betaActive(batch.active),createdAt:batch.createdAt,updatedAt:batch.updatedAt};
+}
+function betaFindBatch(member) {
+  if(!member || !member.batchId)return null;
+  return betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return b.id===member.batchId;})[0]||null;
+}
+function betaDate(value) {
+  var text=String(value||'');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(text)||isNaN(Date.parse(text+'T00:00:00Z'))||new Date(text+'T00:00:00Z').toISOString().slice(0,10)!==text)
+    throw new Error('Choose a valid calendar date.');
+  return text;
+}
+function betaEndDate(start) {return new Date(Date.parse(betaDate(start)+'T00:00:00Z')+13*86400000).toISOString().slice(0,10);}
+function betaGithub(value) {
+  var username=String(value||'').trim().replace(/^https:\/\/github\.com\//i,'').replace(/\/$/,'').replace(/^@/,'');
+  if(!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(username))throw new Error('Enter a valid GitHub username.');
+  return username;
+}
+function betaPhone(value) {
+  var phone=typeof value==='string'?value.trim():'';
+  var digits=phone.replace(/\D/g,'');
+  if(phone.length>40 || !/^\+?[\d\s().-]+$/.test(phone) || digits.length<7 || digits.length>15)
+    throw new Error('Enter a phone number with 7–15 digits. You can include a country code and normal phone formatting.');
+  return phone;
+}
+function betaNewInvite() {return 'BATCH-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
+function betaInviteHash(invite) {return internalDigest(internalLoginSecret()+'\nbatch-invite\n'+String(invite||'').trim().toUpperCase());}
+function betaInviteBatch(invite) {
+  if(!betaConfigured() || !/^BATCH-[a-f0-9]{32}$/i.test(String(invite||'').trim()))return null;
+  var hash=betaInviteHash(invite);
+  return betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return betaActive(b.active)&&internalSame(String(b.inviteHash||''),hash);})[0]||null;
+}
+function betaInviteApi(body) {
+  if(!betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
+  var batch=betaInviteBatch(body.invite);
+  return batch?reply(true,null,{batch:betaPublicBatch(batch)}):reply(false,'This beta invite is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+}
+function betaJoin(body) {
+  if(!betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
+  var batch=betaInviteBatch(body.invite);
+  if(!batch)return reply(false,'This beta invite is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+  try {
+    var name=betaString(body,'name',80,true),email=betaString(body,'email',254,true),github=betaGithub(body.github),phone=betaPhone(body.phone);
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+    if(betaRead('internal_beta_members',BETA_MEMBERS).some(function(m){return m.batchId===batch.id && String(m.email).toLowerCase()===email.toLowerCase();}))
+      throw new Error('You already joined this beta batch. Use your personal access code to return, or ask Arya to reset it.');
+    var stamp=new Date().toISOString(),code=betaNewCode();
+    var member={id:Utilities.getUuid(),name:name,email:email,phone:phone,github:github,batchId:batch.id,batch:batch.name,status:'active',
+      notes:'',codeHash:betaCodeHash(code),epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:'self-join'};
+    PropertiesService.getScriptProperties().setProperty('INTERNAL_PRIVATE_AUTH_REQUIRED','true');
+    betaWrite('internal_beta_members',BETA_MEMBERS,member);
+    return reply(true,null,{token:betaMintSession(member),code:code,who:member.name,beta:true,member:betaPublicMember(member,false),permissions:betaMemberPermissions(member)});
+  }catch(e){return reply(false,String(e.message||e),{code:'INVALID'});}
+}
+function betaMintSession(member) {
+  var token=Utilities.getUuid()+Utilities.getUuid(),batch=betaFindBatch(member);
+  CacheService.getScriptCache().put(betaSessionPrefix()+token,JSON.stringify({id:member.id,epoch:Number(member.epoch),batchEpoch:batch?Number(batch.epoch):null}),21600);
+  return token;
+}
+function betaManageBatch(body,operator) {
+  var action=body.action,stamp=new Date().toISOString(),batch,invite,extra={};
+  if(action==='batchadd') {
+    var start=betaDate(body.startDate);
+    invite=betaNewInvite();
+    batch={id:Utilities.getUuid(),name:betaString(body,'name',80,true),startDate:start,endDate:betaEndDate(start),active:true,
+      inviteHash:betaInviteHash(invite),inviteVersion:1,epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:operator};
+    PropertiesService.getScriptProperties().setProperty('INTERNAL_PRIVATE_AUTH_REQUIRED','true');
+    extra={invite:invite,createdBatchId:batch.id};
+  } else {
+    batch=betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return b.id===String(body.id);})[0];
+    if(!batch)throw new Error('Beta batch not found.');
+    if(action==='rotateinvite') {
+      invite=betaNewInvite();batch.inviteHash=betaInviteHash(invite);batch.inviteVersion=Number(batch.inviteVersion)+1;
+      extra={invite:invite,createdBatchId:batch.id};
+    } else {
+      if(body.name!==undefined)batch.name=betaString(body,'name',80,true);
+      if(body.startDate!==undefined){batch.startDate=betaDate(body.startDate);batch.endDate=betaEndDate(batch.startDate);}
+      if(body.active!==undefined) {
+        if(typeof body.active!=='boolean')throw new Error('Choose active or paused.');
+        if(betaActive(batch.active)!==body.active)batch.epoch=Number(batch.epoch)+1;
+        batch.active=body.active;
+      }
+    }
+    batch.updatedAt=stamp;
+  }
+  betaWrite('internal_beta_batches',BETA_BATCHES,batch);
+  return extra;
+}
+function betaAttendanceWrite(body,member) {
+  var batch=betaFindBatch(member),day=betaDate(body.day),today=Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd').slice(0,10);
+  if(!batch || day<batch.startDate || day>batch.endDate || day>today)throw new Error('Attendance must be a past or current day within your two-week batch.');
+  var existing=betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return a.memberId===member.id && a.day===day;})[0];
+  if(body.action==='attendanceremove') {
+    if(existing)betaTable('internal_beta_attendance',BETA_ATTENDANCE,false).deleteRow(existing._row);
+  } else if(!existing)betaWrite('internal_beta_attendance',BETA_ATTENDANCE,{id:Utilities.getUuid(),memberId:member.id,day:day,createdAt:new Date().toISOString()});
+}
+function betaRecapWrite(body,member) {
+  if(body.submit!==undefined && typeof body.submit!=='boolean')throw new Error('Choose save draft or submit recap.');
+  var submit=body.submit===true,learned=betaString(body,'learned',12000,submit),accomplished=betaString(body,'accomplished',12000,submit);
+  var links=body.links===undefined?[]:body.links;
+  if(!Array.isArray(links)||links.length>12||links.some(function(link){return typeof link!=='string'||link.length>2000||!/^https?:\/\/[^\s/]+(?:\/[^\s]*)?$/.test(link);}))
+    throw new Error('Add up to 12 valid http or https links.');
+  var stamp=new Date().toISOString(),recap=betaRead('internal_beta_recaps',BETA_RECAPS).filter(function(r){return r.memberId===member.id;})[0]||{id:Utilities.getUuid(),memberId:member.id};
+  recap.learned=learned;recap.accomplished=accomplished;recap.links=JSON.stringify(links);recap.submitted=submit;
+  recap.submittedAt=submit?stamp:'';recap.updatedAt=stamp;
+  betaWrite('internal_beta_recaps',BETA_RECAPS,recap);
+}
+function betaRecapPublic(recap) {
+  var out=betaCleanRow(recap,BETA_RECAPS);
+  try{out.links=JSON.parse(String(recap.links||'[]'));}catch(e){out.links=[];}
+  if(!Array.isArray(out.links))out.links=[];
+  out.submitted=betaActive(recap.submitted);return out;
+}
+function betaGroupData(manager,member) {
+  var members=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES),batch=member?betaFindBatch(member):null;
+  var peers=members.filter(function(m){return manager || member && member.batchId && m.batchId===member.batchId;});
+  var ids=peers.map(function(m){return m.id;});
+  return {batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
+    peers:peers.map(function(m){return {id:m.id,name:m.name,github:m.github,status:m.status,batchId:m.batchId};}),
+    attendance:betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return manager||ids.indexOf(a.memberId)>=0;}).map(function(a){return betaCleanRow(a,BETA_ATTENDANCE);}),
+    recaps:betaRead('internal_beta_recaps',BETA_RECAPS).filter(function(r){return manager||member&&r.memberId===member.id;}).map(betaRecapPublic)};
+}
+
+function betaApi(body) {
+  var operator=internalActor(body), manager=internalIsAdmin(operator), member=manager?null:betaActor(body);
+  if(!manager && !member)return reply(false,'Beta session expired or access changed. Sign in again.',{code:'AUTH_REQUIRED'});
+  var action=String(body.action||'list'), configured=betaConfigured();
+  if(!configured && action!=='list')return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
+  if(!manager && ['list','attendance','attendanceremove','recap'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
+  var members=betaRead('internal_beta_members',BETA_MEMBERS), target, stamp=new Date().toISOString(), extra={};
+  try {
+    if(['batchadd','batchupdate','rotateinvite'].indexOf(action)>=0)extra=betaManageBatch(body,operator);
+    else if(action==='attendance' || action==='attendanceremove') {
+      if(manager)return reply(false,'Attendance is recorded by each beta participant.',{code:'FORBIDDEN'});
+      betaAttendanceWrite(body,member);
+    } else if(action==='recap') {
+      if(manager)return reply(false,'A recap must be written by its participant.',{code:'FORBIDDEN'});
+      betaRecapWrite(body,member);
+    } else if(action==='memberupdate' || action==='rotatecode') {
+      target=members.filter(function(m){return m.id===String(body.id);})[0];
+      if(!target)throw new Error('Beta participant not found.');
+      var revoke=action==='rotatecode';
+      if(action==='rotatecode') {var rotated=betaNewCode();target.codeHash=betaCodeHash(rotated);extra={code:rotated,createdMemberId:target.id};}
+      else {
+        ['name','email','notes'].forEach(function(k){if(body[k]!==undefined)target[k]=betaString(body,k,k==='notes'?5000:k==='email'?254:80,k==='name'||k==='batch');});
+        if(body.github!==undefined)target.github=betaGithub(body.github);
+        if(body.phone!==undefined)target.phone=betaPhone(body.phone);
+        if(target.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target.email))throw new Error('Enter a valid email address.');
+        if(target.email && members.some(function(m){return m.id!==target.id && m.batchId===target.batchId && String(m.email).toLowerCase()===String(target.email).toLowerCase();}))throw new Error('That email already belongs to another beta participant.');
+        if(body.status!==undefined) {
+          if(BETA_STATUSES.indexOf(body.status)<0)throw new Error('Choose active, paused or graduated.');
+          revoke=revoke||target.status!==body.status;target.status=body.status;
+        }
+      }
+      if(revoke)target.epoch=Number(target.epoch)+1;
+      target.updatedAt=stamp;betaWrite('internal_beta_members',BETA_MEMBERS,target);
+    } else if(action!=='list')throw new Error('Unknown beta action.');
+  } catch(e) {return reply(false,String(e.message||e),{code:'INVALID'});}
+  var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
+  var visibleMembers=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return manager || m.id===member.id;});
+  var result={manager:manager,configured:configured,setupMessage:configured?'':BETA_SETUP_MESSAGE,permissions:permissions,
+    members:visibleMembers.map(function(m){return betaPublicMember(m,manager);}),member:member?betaPublicMember(member,false):null};
+  var group=betaGroupData(manager,member);
+  Object.keys(group).forEach(function(k){result[k]=group[k];});
+  Object.keys(extra).forEach(function(k){result[k]=extra[k];});
+  return reply(true,null,result);
+}
+
 function invoicePermission(action, body, actor, sh) {
   if (!actor) return 'Session expired. Enter the passcode and select your name again.';
   if (action === 'approve' || action === 'unapprove') return 'Share approvals have been replaced by Arya purchase approval. Reload the site.';
@@ -549,11 +857,12 @@ var INVOICE_CATS = ['lunch', 'coffee', 'ai', 'software', 'travel', 'supplies', '
 function invoiceApi(body) {
   if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
 
+  var actor = internalActor(body);
+  if(!actor)return reply(false, 'Session expired. Sign in again.', {code:'AUTH_REQUIRED'});
   var sh = invoiceSheet();
   var action = String(body.action || 'list');
   /* Who is asking, taken from the session rather than the payload: the
      page says whose card a line went on, never whose hands typed it. */
-  var actor = internalActor(body);
   if (action !== 'list') {
     var denied = invoicePermission(action, body, actor, sh);
     if (denied) return reply(false, denied);
@@ -1624,6 +1933,7 @@ var TEAM_SEATS = ['pres', 'growth', 'partner', 'content', 'culture'];
    guessing what its own change did to the sheet. */
 function campusApi(body) {
   if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+  if(!internalActor(body))return reply(false, 'Session expired. Sign in again.', {code:'AUTH_REQUIRED'});
 
   var action = String(body.action || 'list'), err = null;
 
@@ -2103,6 +2413,7 @@ var POST_MAX_TAGS = 8;
 
 function postsApi(body) {
   if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+  if(!internalActor(body))return reply(false, 'Session expired. Sign in again.', {code:'AUTH_REQUIRED'});
 
   var action = String(body.action || 'list'), err = null;
   if (action !== 'list') {
@@ -2360,6 +2671,7 @@ var SCHED_MAX_LABEL = 80;
 
 function schedulesApi(body) {
   if (CONFIG.INVOICE_KEY && body._key !== CONFIG.INVOICE_KEY) return reply(false, 'wrong passcode');
+  if(!internalActor(body))return reply(false, 'Session expired. Sign in again.', {code:'AUTH_REQUIRED'});
 
   var action = String(body.action || 'list'), err = null;
   if (action !== 'list') {

@@ -12,6 +12,14 @@
   },
   "headers": [
     {
+      "source": "/internal/beta/:path*",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
       "source": "/internal",
       "headers": [
         {
@@ -61,6 +69,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/internal/beta", "destination": "/invoice/beta.html" },
+    { "source": "/internal/beta/", "destination": "/invoice/beta.html" },
     {
       "source": "/internal",
       "destination": "/invoice/index.html"

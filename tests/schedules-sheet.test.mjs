@@ -5,7 +5,7 @@ import {harness} from './support/internal-harness.mjs';
 const block = (over = {}) => ({who:'Milo', label:'CS 106', kind:'class',
   days:[1,3,5], start:'09:00', end:'10:15', ...over});
 const add = (h, token, over = {}) => h.call(token, 'add', block(over), 'schedules');
-const list = h => h.call('', 'list', {}, 'schedules').schedules;
+const list = h => h.call(h.login('Milo'), 'list', {}, 'schedules').schedules;
 const mine = (h, who) => list(h).filter(s => s.who === who);
 
 test('a block goes on with its days in order, and reads back as a week', () => {
@@ -142,9 +142,10 @@ test('a name the bootcamp has never heard of cannot take a slot', () => {
   assert.equal(add(h, a, {who:'Nobody'}).error, 'that name is not on the bootcamp');
 });
 
-test('the list is readable without a session, and an unknown action is named', () => {
+test('the list requires a session, and an unknown action is named', () => {
   const h = harness(), m = h.login('Milo');
   add(h, m);
+  assert.equal(h.call('', 'list', {}, 'schedules').ok, false);
   assert.equal(list(h).length, 1);
   assert.equal(h.call(m, 'shuffle', {}, 'schedules').error, 'unknown action');
   assert.equal(h.call('', 'shuffle', {}, 'schedules').error, 'Session expired. Sign in again.');

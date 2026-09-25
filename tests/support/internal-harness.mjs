@@ -1,6 +1,6 @@
 import vm from 'node:vm';
 import fs from 'node:fs';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 function fakeSheet(grid) {
   const rows = grid.map(r => [...r]);
   const cell = (r, c) => (rows[r-1] && rows[r-1][c-1] !== undefined ? rows[r-1][c-1] : '');
@@ -40,21 +40,21 @@ function fakeSheet(grid) {
 }
 
 
-export function harness(){
-  const sheets={}, sessions=new Map();
+export function harness(initialProperties={}){
+  const sheets={}, sessions=new Map(), properties={...initialProperties};
   const book={getSheetByName:name=>sheets[name]||null,insertSheet(name){return sheets[name]=fakeSheet([]);}};
   const ctx=vm.createContext({
     SpreadsheetApp:{getActiveSpreadsheet:()=>book,openById:()=>book},
-    Utilities:{getUuid:randomUUID,formatDate:d=>d.toISOString().slice(0,19)},
+    Utilities:{getUuid:randomUUID,formatDate:d=>d.toISOString().slice(0,19),DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(algorithm,value,encoding)=>Array.from(createHash(algorithm).update(value,encoding).digest())},
     Session:{getScriptTimeZone:()=>"America/New_York"},
     ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType:()=>JSON.parse(body)})},
     CacheService:{getScriptCache:()=>({get:k=>sessions.get(k)||null,put:(k,v)=>sessions.set(k,v),remove:k=>sessions.delete(k)})},
     LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},
-    PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
+    PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties[key]||null,setProperty:(key,value)=>{properties[key]=value;}})},
     DriveApp:{},MailApp:{}
   });
   vm.runInContext(fs.readFileSync(new URL('../../fomo/setup/apps-script.gs',import.meta.url),'utf8'),ctx);
-  const login=who=>ctx.internalSessionApi({action:'login',who,passcode:'monkey'}).token;
+  const login=who=>ctx.internalSessionApi({action:'login',who,passcode:properties.INTERNAL_LOGIN_SECRET||'monkey'}).token;
   const call=(who,action,p={},namespace='invoice')=>ctx[namespace+'Api']({_key:'monkey',_session:who,action,...p});
-  return {ctx,login,call,sheets,sessions};
+  return {ctx,login,call,sheets,sessions,properties};
 }

@@ -728,6 +728,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/portals.css">
 <link rel="stylesheet" href="/invoice/referrals.css">
 <link rel="stylesheet" href="/invoice/internal.css">
+<link rel="stylesheet" href="/invoice/beta-manager.css">
 </head>
 <body>
 <div id="gate">
@@ -743,6 +744,7 @@ td.date.run{color:var(--good)}
       <button class="btn btn-p" type="submit">open</button>
     </form>
     <div class="err" id="gate-err" role="alert"></div>
+    <a class="beta-gate-link" href="/internal/beta">Joining the beta batch? Open your workspace →</a>
   </div>
 </div>
 
@@ -1660,6 +1662,19 @@ td.date.run{color:var(--good)}
         </div>
       </section>
 
+      <section class="view" data-view="beta">
+        <div class="toolbar"><span class="hint">A separate batch, with access you control.</span><span class="push"><a class="mini ghost" href="/internal/beta" target="_blank" rel="noopener">Open intern workspace ↗</a><button class="mini ghost" id="bt-refresh" type="button">Refresh</button></span></div>
+        <div class="scroller pad" id="bt-root">
+          <div class="bt-intro"><div><span class="bt-eyebrow">ARYA’S BOOTCAMP</span><h2>Beta batch</h2><p>Two weeks of showing up, building, and learning together.</p></div><button class="btn btn-p" id="bt-new" type="button">Create beta batch</button></div>
+          <p id="bt-message" role="status" aria-live="polite"></p>
+          <div id="bt-code" hidden></div>
+          <div id="bt-summary" class="bt-summary"></div>
+          <div class="bt-filter"><label>Batch <select id="bt-batch"><option value="">All batches</option></select></label><label class="bt-search">Find an intern <input id="bt-search" type="search" placeholder="Search names, email, phone, or GitHub"></label></div>
+          <div id="bt-batch-actions" class="bt-batch-actions"></div>
+          <div class="bt-layout"><div id="bt-roster" class="bt-roster"></div><div id="bt-detail" class="bt-detail"></div></div>
+        </div>
+      </section>
+
       <!-- ────────── one person ────────── -->
       <section class="view" data-view="person">
         <div class="toolbar">
@@ -2076,7 +2091,7 @@ function toast(msg, bad){
    across once here instead of being written out again over there. The
    roster, the colour each of them is drawn in, and the photo shrinker go
    with them for the same reason: one copy, defined where it is used most. */
-window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast,
+window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast, operator:isOperator,
   people:PAYERS, tone:tone, shrink:shrinkShot,
   identity:function(){return identity;}, admin:isAdmin, own:own,
   session:function(){return identity ? identity.token : "";}};
@@ -5108,9 +5123,11 @@ var VIEWS = {
   portals:   {label:"Portals",        sub:"every public front door, and everything that has come through it"},
   referrals: {label:"Referrals",      sub:"who is sending people, how far those people got, and what we owe for it"},
   admin:     {label:"Console",        sub:"the roster, and the rows nobody else can reach"},
+  beta:      {label:"Beta batch",     sub:"new interns, their progress, and their access"},
   person:    {label:"",               sub:""}
 };
 
+var initialBetaRoute = location.hash === "#/beta";
 var view = "overview", personOf = null, chargeOf = null, moneyHistory = [], recentMoneyUndo = null;
 
 /* The rail is a menu, so every item sits under a heading that names the
@@ -5154,6 +5171,7 @@ var NAV = [
      the money on it is going out to students rather than back to the
      four of them, which is what everything under Money is. */
   {id:"doors",  label:"Front doors", items:[["portals","Portals",1],["referrals","Referrals",1]], operator:true},
+  {id:"beta",   label:"Pilot program", items:[["beta","Beta batch",0]], operator:true},
   {id:"admin",  label:"Maintenance", items:[["admin","Console",0]], operator:true}
 ];
 
@@ -5279,7 +5297,7 @@ function setView(id, who){
      only being left off the rail. The endpoint refuses the calls anyway;
      this is so the page does not offer a screenful of buttons that will
      all come back as no. */
-  if ((id === "admin" || id === "portals" || id === "referrals") && !isOperator()) id = "overview";
+  if ((id === "admin" || id === "portals" || id === "referrals" || id === "beta") && !isOperator()) id = "overview";
   if (id === "person" && !who) id = "overview";
   if (view !== id || personOf !== who) profileEditing=false;
   view = id; personOf = id === "person" ? who : null; chargeOf = id === "charge" ? who : null;
@@ -5293,7 +5311,7 @@ function setView(id, who){
   markNav();
   /* Nothing on these three is a spend, so the one button that only ever
      logs one has no business sitting over them. */
-  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin","portals","referrals"].indexOf(view) > -1 ? "none" : "";
+  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin","portals","referrals","beta"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   closeSidebar();
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : (view === "posts" || view === "charge" || view === "portals") && who ? "/" + encodeURIComponent(who) : "");
@@ -6276,7 +6294,7 @@ function palBuild(q){
     if (k === "person") return;
     /* The two the rail hides from everybody else are hidden here too:
        jump-to must not offer a door setView will turn away. */
-    if ((k === "admin" || k === "portals" || k === "referrals") && !isOperator()) return;
+    if ((k === "admin" || k === "portals" || k === "referrals" || k === "beta") && !isOperator()) return;
     out.push({t:VIEWS[k].label, s:VIEWS[k].sub, ic:ico(k), go:k});
   });
   PAYERS.forEach(function(p){
@@ -6491,7 +6509,7 @@ function open_(){
          between a few seconds and rather more than a few. Dropped
          unread if the verdict is that there is nothing to move onto. */
       listAhead = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(
-        {_api:"invoice", action:"list", _key:PASSCODE})});
+        {_api:"invoice", action:"list", _key:PASSCODE, _session:identity ? identity.token : ""})});
       /* A branch off it rather than a handler on the way through, so the
          answer itself is still there to be read. It does two things: an
          answer nobody ends up asking for stops being an unhandled
@@ -6907,6 +6925,7 @@ async function sessionCall(body){
   return out;
 }
 function signedIn(out, token){
+  if (out.beta) { location.replace("/internal/beta"); return; }
   identity={who:out.who,token:out.token || token};
   try { sessionStorage.setItem("fomo.identity",JSON.stringify(identity)); } catch(e){}
   /* The roster comes back with the sign-in rather than being asked for
@@ -6943,6 +6962,7 @@ function signedIn(out, token){
   if(view==='person' && personOf===identity.who) $("pg-title").textContent='Your page';
   resetSplit();
   open_();
+  if (initialBetaRoute && isOperator()) { initialBetaRoute=false; setView("beta"); }
   window.dispatchEvent(new Event("fomo:identity"));
 }
 $("gate-form").addEventListener("submit",async function(ev){
@@ -6980,5 +7000,6 @@ $("identity-switch").addEventListener("click",async function(){
 <script type="module" src="/invoice/schedules.js"></script>
 <script type="module" src="/invoice/portals.js"></script>
 <script type="module" src="/invoice/referrals.js"></script>
+<script type="module" src="/invoice/beta-manager.js"></script>
 </body>
 </html>

@@ -55,7 +55,9 @@ export async function verifyInternalIdentity(env, token, fetchImpl=fetch) {
   });
   if(!response.ok)return false;
   const identity=await response.json();
-  if(identity?.ok!==true || !['Milo','Bijan','Jesse','Luchi','Arya'].includes(identity.who))return false;
+  // A beta member can share a display name with somebody on the core team.
+  // Their scoped session never grants access to guest contact information.
+  if(identity?.ok!==true || identity.beta===true || !['Milo','Bijan','Jesse','Luchi','Arya'].includes(identity.who))return false;
   return {who:identity.who,admin:identity.who==='Arya' && identity.admin===true};
 }
 export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyIdentity=token=>verifyInternalIdentity(env,token)}={}) {
@@ -95,7 +97,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       }
       if(action!=='submit'){
         const identity=await verifyIdentity(req.headers?.['x-fomo-internal-session']);
-        if(!identity)return fail(401,'Sign in to Internal to view visit requests.');
+        if(!identity || identity.beta===true)return fail(401,'Sign in to Internal to view visit requests.');
         if(['update','saveAvailability'].includes(action) && !(identity.who==='Arya' && identity.admin===true))
           return fail(403,'Only Arya can change visit requests or opening hours.');
       }
