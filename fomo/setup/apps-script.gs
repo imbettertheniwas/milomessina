@@ -140,6 +140,9 @@ function doGet() {
     betaPasswordless: true,
     betaPermanentGroup: true,
     betaDelete: true,
+    betaSchedules: true,
+    recurringEdit: true,
+    recurringReceipts: true,
     approvals: true,
     moneyUndo: true,
     purchaseApproval: true,
@@ -339,8 +342,10 @@ function internalActor(body) {
    existing sessions immediately. */
 var BETA_PERMISSIONS = ['attendance', 'github', 'recap'];
 var BETA_STATUSES = ['active', 'paused', 'graduated'];
-var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone','joinRequestHash','website'];
+var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone','joinRequestHash','website','joinScheduleHash'];
 var BETA_DELETIONS = ['id','joinRequestHash','deletedAt'];
+var BETA_SCHEDULES = ['id','memberId','timezone','mode','blocks','noCommitments','fileName','fileType','fileSize','fileHash','uploads','ready','signature','updatedAt'];
+var BETA_SCHEDULE_MAX_BYTES = 2 * 1024 * 1024;
 var BETA_SETUP_MESSAGE = 'This beta invitation is not available. Ask Arya for the current link.';
 function betaSecret() {
   return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_SECRET') || '');
@@ -564,9 +569,10 @@ function betaJoinRequest(body) {
 function betaJoinRequestHash(batchId,request) {
   return internalDigest(betaSecret()+'\nbeta-join-request-v1\n'+batchId+'\n'+request);
 }
-function betaJoinIdentity(name,email,phone,github,website) {
+function betaJoinIdentity(name,email,phone,github,website,scheduleHash) {
   var identity=[name,email.toLowerCase(),phone,github.toLowerCase()];
   if(website)identity.push(website); // Preserve earlier retry hashes when no website was supplied.
+  if(scheduleHash)identity.push({schedule:scheduleHash});
   return JSON.stringify(identity);
 }
 function betaJoin(body) {
@@ -577,7 +583,9 @@ function betaJoin(body) {
   try {
     var request=betaJoinRequest(body),name=betaString(body,'name',80,true),email=betaString(body,'email',254,true),github=betaGithub(body.github),phone=betaPhone(body.phone),website=betaWebsite(body.website);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
-    var identity=betaJoinIdentity(name,email,phone,github,website),requestHash=request?betaJoinRequestHash(batch.id,request):'';
+    var schedule=body.schedule===undefined?null:betaScheduleClean(body.schedule,null,false);
+    var scheduleHash=schedule?schedule.signature:'';
+    var identity=betaJoinIdentity(name,email,phone,github,website,scheduleHash),requestHash=request?betaJoinRequestHash(batch.id,request):'';
     if(requestHash && betaRead('internal_beta_deletions',BETA_DELETIONS).some(function(d){return internalSame(String(d.joinRequestHash||''),requestHash);}))
       throw new Error('This join attempt belongs to a deleted profile. Start a new signup to join again.');
     var code=request?'BETA-'+internalDigest(betaSecret()+'\nbeta-join-access-v1\n'+batch.id+'\n'+request+'\n'+identity).slice(0,32).toUpperCase():betaNewCode();
@@ -590,16 +598,18 @@ function betaJoin(body) {
       // identity and still-active personal capability must all agree.
       if(existing.length!==1 || !requestHash || saved.status!=='active' ||
          !internalSame(String(saved.joinRequestHash||''),requestHash) || !internalSame(String(saved.codeHash||''),codeHash) ||
-         betaJoinIdentity(String(saved.name),String(saved.email),String(saved.phone),String(saved.github),betaPublicWebsite(saved.website))!==identity)
+         betaJoinIdentity(String(saved.name),String(saved.email),String(saved.phone),String(saved.github),betaPublicWebsite(saved.website),String(saved.joinScheduleHash||''))!==identity)
         throw new Error('You already joined this beta batch. Open your personal workspace link, or ask Arya to reset it.');
       joinMayBeSaved=true;
+      if(schedule)betaScheduleWrite(saved,schedule,true);
       return reply(true,null,{token:betaMintSession(saved),code:code,who:saved.name,beta:true,recovered:true,member:betaPublicMember(saved,false),permissions:betaMemberPermissions(saved)});
     }
     var stamp=new Date().toISOString();
     var member={id:Utilities.getUuid(),name:name,email:email,phone:phone,github:github,website:website,batchId:batch.id,batch:batch.name,status:'active',
-      notes:'',codeHash:codeHash,joinRequestHash:requestHash,epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:'self-join'};
+      notes:'',codeHash:codeHash,joinRequestHash:requestHash,joinScheduleHash:scheduleHash,epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:'self-join'};
     joinMayBeSaved=true; // A write can succeed even if its confirmation fails.
     betaWrite('internal_beta_members',BETA_MEMBERS,member);
+    if(schedule)betaScheduleWrite(member,schedule,true);
     return reply(true,null,{token:betaMintSession(member),code:code,who:member.name,beta:true,member:betaPublicMember(member,false),permissions:betaMemberPermissions(member)});
   }catch(e){
     var errorInfo={code:'INVALID'};
@@ -668,6 +678,146 @@ function betaRecapPublic(recap) {
   if(!Array.isArray(out.links))out.links=[];
   out.submitted=betaActive(recap.submitted);return out;
 }
+function betaScheduleFind(memberId) {
+  return betaRead('internal_beta_schedules',BETA_SCHEDULES).filter(function(s){return s.memberId===memberId;})[0]||null;
+}
+function betaScheduleFileClean(file) {
+  if(!file || typeof file!=='object' || typeof file.name!=='string' || typeof file.data!=='string')throw new Error('Choose a schedule file.');
+  var name=file.name.trim(),type=String(file.type||'').toLowerCase().split(';')[0].trim();
+  if(!name || name.length>180 || /[\x00-\x1f\x7f/\\]/.test(name))throw new Error('Use a schedule filename of at most 180 characters.');
+  var extension=(/\.([a-z0-9]+)$/i.exec(name)||[])[1],types={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',ics:'text/calendar'};
+  extension=String(extension||'').toLowerCase();
+  if(!types[extension] || type && type!==types[extension] && !(extension==='ics' && type==='text/plain'))throw new Error('Upload a PDF, PNG, JPEG or calendar (.ics) file.');
+  type=types[extension];
+  if(!file.data || file.data.length>Math.ceil(BETA_SCHEDULE_MAX_BYTES/3)*4 || file.data.length%4!==0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(file.data))
+    throw new Error('The schedule upload must be a valid file no larger than 2 MB.');
+  var bytes;
+  try{bytes=Utilities.base64Decode(file.data);}catch(e){throw new Error('The schedule upload could not be read.');}
+  if(!bytes.length || bytes.length>BETA_SCHEDULE_MAX_BYTES)throw new Error('The schedule upload must be no larger than 2 MB.');
+  var head=bytes.slice(0,8).map(function(b){return (b+256)%256;}),valid=false;
+  if(type==='application/pdf')valid=head.slice(0,5).join(',')==='37,80,68,70,45';
+  if(type==='image/png')valid=head.join(',')==='137,80,78,71,13,10,26,10';
+  if(type==='image/jpeg')valid=head[0]===255 && head[1]===216 && head[2]===255;
+  if(type==='text/calendar') {
+    var calendar=Utilities.newBlob(bytes).getDataAsString('UTF-8').replace(/^\uFEFF/,'').trim();
+    valid=/^BEGIN:VCALENDAR(?:\r?\n|$)/.test(calendar) && /(?:\r?\n)END:VCALENDAR$/.test(calendar) && calendar.indexOf('\u0000')<0;
+  }
+  if(!valid)throw new Error('The file contents do not match its PDF, image or calendar format.');
+  return {name:name,type:type,size:bytes.length,hash:internalDigest(Utilities.base64Encode(bytes)),bytes:bytes};
+}
+function betaScheduleClean(input,previous,allowKeepFile) {
+  if(!input || typeof input!=='object' || Array.isArray(input))throw new Error('Add your weekly schedule.');
+  var mode=String(input.mode||''),timezone=String(input.timezone||'America/New_York');
+  if(['manual','file'].indexOf(mode)<0)throw new Error('Choose manual schedule or a schedule file.');
+  if(timezone.length>80 || !/^[a-z0-9_+\/-]+$/i.test(timezone))throw new Error('Choose a valid schedule timezone.');
+  try{new Intl.DateTimeFormat('en-US',{timeZone:timezone}).format(new Date());}catch(e){throw new Error('Choose a valid schedule timezone.');}
+  if(input.blocks!==undefined && !Array.isArray(input.blocks))throw new Error('Use a list of weekly schedule blocks.');
+  var source=input.blocks||[];
+  if(source.length>80)throw new Error('Use at most 80 weekly schedule blocks.');
+  var blocks=source.map(function(b){
+    if(!b || typeof b.day!=='number' || b.day%1!==0 || b.day<0 || b.day>6 ||
+       typeof b.start!=='string' || typeof b.end!=='string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(b.start) ||
+       !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(b.end) || b.start>=b.end)throw new Error('Each block needs a weekday and a start time before its end time.');
+    var label=b.label===undefined?'':String(b.label).trim();
+    if(label.length>100 || /[\x00-\x1f\x7f]/.test(label))throw new Error('Keep schedule labels under 100 characters.');
+    return {day:b.day,start:b.start,end:b.end,label:label};
+  }).sort(function(a,b){return a.day-b.day || a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || a.label.localeCompare(b.label);});
+  blocks=blocks.filter(function(b,index){return index===0 || JSON.stringify(b)!==JSON.stringify(blocks[index-1]);});
+  if(mode==='manual' && !blocks.length && input.noCommitments!==true)throw new Error('Add a schedule block or confirm you have no fixed commitments.');
+  if(input.noCommitments===true && (mode!=='manual' || blocks.length))throw new Error('No fixed commitments cannot be combined with schedule blocks or a file.');
+  var file=null;
+  if(mode==='file') {
+    if(input.keepFile===true) {
+      if(!allowKeepFile || !previous || !previous.fileHash)throw new Error('Upload a schedule file first.');
+      var kept=betaScheduleUploads(previous).filter(function(f){return f.hash===previous.fileHash;})[0];
+      var stored=kept?betaScheduleOwnedFile(kept,false):null,keptBytes=stored?stored.getBlob().getBytes():[];
+      if(!stored || keptBytes.length>BETA_SCHEDULE_MAX_BYTES || internalDigest(Utilities.base64Encode(keptBytes))!==previous.fileHash)
+        throw new Error('The private schedule attachment is missing or changed. Upload it again.');
+      file={name:String(previous.fileName),type:String(previous.fileType),size:Number(previous.fileSize),hash:String(previous.fileHash)};
+    }else file=betaScheduleFileClean(input.file);
+  } else if(input.file || input.keepFile)throw new Error('Choose either manual blocks or a schedule file.');
+  var clean={timezone:timezone,mode:mode,blocks:blocks,noCommitments:mode==='manual'&&!blocks.length,file:file};
+  clean.signature=internalDigest(JSON.stringify({timezone:timezone,mode:mode,blocks:blocks,noCommitments:clean.noCommitments,file:file?{name:file.name,type:file.type,size:file.size,hash:file.hash}:null}));
+  return clean;
+}
+function betaScheduleUploads(row) {
+  var uploads;
+  try{uploads=JSON.parse(String(row.uploads||'[]'));}catch(e){throw new Error('The stored schedule file record needs repair.');}
+  if(!Array.isArray(uploads) || uploads.some(function(f){return !f || !/^[a-f0-9]{64}$/.test(String(f.hash)) || f.storageName!=='internal-beta-schedule-'+row.memberId+'-'+f.hash;}))
+    throw new Error('The stored schedule file record needs repair.');
+  return uploads;
+}
+function betaScheduleOwnedFile(upload,includeTrashed) {
+  var file=null;
+  if(upload.fileId) {
+    file=DriveApp.getFileById(String(upload.fileId));
+    if(file.getName()!==upload.storageName)throw new Error('The private schedule attachment does not match its record.');
+    if(includeTrashed || !file.isTrashed())return file;
+  }
+  var files=DriveApp.getFilesByName(upload.storageName);
+  while(files.hasNext()) {var candidate=files.next();if(includeTrashed || !candidate.isTrashed())return candidate;}
+  return null;
+}
+function betaScheduleWrite(member,clean,joining) {
+  var row=betaScheduleFind(member.id);
+  // A successful signup retry never overwrites a schedule edited afterwards.
+  if(joining && row && betaActive(row.ready))return;
+  if(joining && row && String(row.signature)!==clean.signature)throw new Error('Your schedule changed after signup. Open your workspace to finish editing it.');
+  row=row||{id:member.id,memberId:member.id,uploads:'[]'};
+  var uploads=betaScheduleUploads(row),wanted=null;
+  if(clean.file) {
+    wanted=uploads.filter(function(f){return f.hash===clean.file.hash;})[0];
+    if(!wanted) {wanted={hash:clean.file.hash,storageName:'internal-beta-schedule-'+member.id+'-'+clean.file.hash,fileId:''};uploads.push(wanted);}
+  }
+  row.timezone=clean.timezone;row.mode=clean.mode;row.blocks=JSON.stringify(clean.blocks);row.noCommitments=clean.noCommitments;
+  row.fileName=clean.file?clean.file.name:'';row.fileType=clean.file?clean.file.type:'';row.fileSize=clean.file?clean.file.size:0;row.fileHash=clean.file?clean.file.hash:'';
+  row.uploads=JSON.stringify(uploads);row.ready=false;row.signature=clean.signature;row.updatedAt=new Date().toISOString();
+  // Save the deterministic file locator before creating anything in Drive.
+  // A lost create response is recovered by name, and deletion can find it.
+  betaWrite('internal_beta_schedules',BETA_SCHEDULES,row);
+  if(wanted) {
+    var file=betaScheduleOwnedFile(wanted,false);
+    if(!file) {
+      if(!clean.file.bytes)throw new Error('The private schedule attachment is missing. Upload it again.');
+      file=DriveApp.createFile(Utilities.newBlob(clean.file.bytes,clean.file.type,wanted.storageName));
+    }
+    wanted.fileId=file.getId();
+  }
+  uploads.forEach(function(upload){
+    if(upload===wanted)return;
+    var old=betaScheduleOwnedFile(upload,true);
+    if(old && !old.isTrashed())old.setTrashed(true);
+  });
+  row.uploads=JSON.stringify(wanted?[wanted]:[]);row.ready=true;
+  // A newly appended row needs its sheet position before finalization.
+  if(!row._row)row._row=betaScheduleFind(member.id)._row;
+  betaWrite('internal_beta_schedules',BETA_SCHEDULES,row);
+}
+function betaSchedulePublic(row) {
+  var blocks;
+  try{blocks=JSON.parse(String(row.blocks||'[]'));}catch(e){blocks=[];}
+  return {memberId:row.memberId,timezone:row.timezone,mode:row.mode,blocks:blocks,noCommitments:betaActive(row.noCommitments),ready:betaActive(row.ready),
+    file:row.fileHash?{name:row.fileName,type:row.fileType,size:Number(row.fileSize)}:null,updatedAt:row.updatedAt};
+}
+function betaScheduleFile(body,manager,member) {
+  var id=manager?String(body.id||''):member.id;
+  if(!manager && body.id!==undefined && String(body.id)!==member.id)return reply(false,'You can only open your own schedule attachment.',{code:'FORBIDDEN'});
+  var owner=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return m.id===id;})[0],row=owner?betaScheduleFind(id):null;
+  if(!row || !betaActive(row.ready) || !row.fileHash)throw new Error('This intern does not have a saved schedule attachment.');
+  var upload=betaScheduleUploads(row).filter(function(f){return f.hash===row.fileHash;})[0];
+  if(!upload)throw new Error('The private schedule attachment is missing.');
+  var file=betaScheduleOwnedFile(upload,false);
+  if(!file)throw new Error('The private schedule attachment is missing.');
+  var bytes=file.getBlob().getBytes(),data=Utilities.base64Encode(bytes);
+  if(bytes.length>BETA_SCHEDULE_MAX_BYTES || internalDigest(data)!==row.fileHash)throw new Error('The private schedule attachment changed. Upload it again.');
+  return reply(true,null,{file:{name:row.fileName,type:row.fileType,size:bytes.length,data:data}});
+}
+function betaScheduleDelete(memberId) {
+  var row=betaScheduleFind(memberId);
+  if(!row)return;
+  betaScheduleUploads(row).forEach(function(upload){var file=betaScheduleOwnedFile(upload,true);if(file && !file.isTrashed())file.setTrashed(true);});
+  betaTable('internal_beta_schedules',BETA_SCHEDULES,false).deleteRow(row._row);
+}
 function betaDeleteMember(body) {
   if(typeof body.id!=='string' || !body.id.trim() || body.id.length>100)throw new Error('Select the beta intern to delete.');
   var id=body.id.trim(),member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return m.id===id;})[0];
@@ -678,6 +828,7 @@ function betaDeleteMember(body) {
   betaWrite('internal_beta_members',BETA_MEMBERS,member);
   var deleted=betaRead('internal_beta_deletions',BETA_DELETIONS).filter(function(d){return d.id===id;})[0];
   if(!deleted)betaWrite('internal_beta_deletions',BETA_DELETIONS,{id:id,joinRequestHash:String(member.joinRequestHash||''),deletedAt:new Date().toISOString()});
+  betaScheduleDelete(id);
   // Keep only the consumed join-attempt hash so a stale retry cannot recreate
   // the deleted profile's deterministic personal capability.
   [['internal_beta_attendance',BETA_ATTENDANCE],['internal_beta_recaps',BETA_RECAPS]].forEach(function(table){
@@ -694,6 +845,7 @@ function betaGroupData(manager,member) {
   var ids=peers.map(function(m){return m.id;});
   return {group:group?betaPublicBatch(group):null,batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
     peers:peers.map(function(m){var period=betaMemberPeriod(m);return {id:m.id,name:m.name,github:m.github,website:betaPublicWebsite(m.website),status:m.status,batchId:m.batchId,startDate:period.startDate,endDate:period.endDate};}),
+    schedules:betaRead('internal_beta_schedules',BETA_SCHEDULES).filter(function(s){return manager || member&&s.memberId===member.id;}).map(betaSchedulePublic),
     attendance:betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return manager||ids.indexOf(a.memberId)>=0;}).map(function(a){return betaCleanRow(a,BETA_ATTENDANCE);}),
     recaps:betaRead('internal_beta_recaps',BETA_RECAPS).filter(function(r){return manager||member&&r.memberId===member.id;}).map(betaRecapPublic)};
 }
@@ -703,10 +855,11 @@ function betaApi(body) {
   if(!manager && !member)return reply(false,'Beta session expired or access changed. Sign in again.',{code:'AUTH_REQUIRED'});
   var action=String(body.action||'list'), configured=betaConfigured();
   if(!configured && action!=='list' && !(manager && action==='batchadd'))return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
-  if(!manager && ['list','attendance','attendanceremove','recap','memberprofile'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
+  if(!manager && ['list','attendance','attendanceremove','recap','memberprofile','schedulesave','schedulefile'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
   var members=betaRead('internal_beta_members',BETA_MEMBERS), target, stamp=new Date().toISOString(), extra={};
   try {
     if(manager && action==='list')betaEnsureGroup(operator);
+    if(action==='schedulefile')return betaScheduleFile(body,manager,member);
     if(['batchadd','batchupdate','rotateinvite'].indexOf(action)>=0)extra=betaManageBatch(body,operator);
     else if(action==='attendance' || action==='attendanceremove') {
       if(manager)return reply(false,'Attendance is recorded by each beta participant.',{code:'FORBIDDEN'});
@@ -714,6 +867,9 @@ function betaApi(body) {
     } else if(action==='recap') {
       if(manager)return reply(false,'A recap must be written by its participant.',{code:'FORBIDDEN'});
       betaRecapWrite(body,member);
+    } else if(action==='schedulesave') {
+      if(manager)return reply(false,'Schedules are provided by each beta intern.',{code:'FORBIDDEN'});
+      betaScheduleWrite(member,betaScheduleClean(body.schedule,betaScheduleFind(member.id),true),false);
     } else if(action==='memberprofile') {
       if(manager)return reply(false,'Select an intern in the Beta manager to edit their website.',{code:'FORBIDDEN'});
       if(body.website===undefined)throw new Error('Include a website, or an empty value to clear it.');
@@ -744,7 +900,7 @@ function betaApi(body) {
   } catch(e) {return reply(false,String(e.message||e),{code:'INVALID'});}
   var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
   var visibleMembers=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return manager || m.id===member.id;});
-  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,permissions:permissions,
+  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,betaSchedules:true,permissions:permissions,
     members:visibleMembers.map(function(m){return betaPublicMember(m,manager);}),member:member?betaPublicMember(member,false):null};
   var group=betaGroupData(manager,member);
   Object.keys(group).forEach(function(k){result[k]=group[k];});
@@ -776,6 +932,11 @@ function invoicePermission(action, body, actor, sh) {
   }
   if (action === 'daydelete') record = dayRead(daySheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
   if (action === 'shiftdelete') record = shiftRead(shiftSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
+  if (action === 'subsave') {
+    record = subRead(subSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
+    if(!record || invoiceLogger(record)!==actor)return 'You can only change your own recurring spends.';
+    return body.who===undefined || body.who===actor || body.who===CARD_PAYER ? null : 'You can only log a spend on your own card or on Arya’s.';
+  }
   if (action === 'subpause' || action === 'subdelete') record = subRead(subSheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
   if (record) return invoiceLogger(record) === actor ? null : 'You can only change your own records.';
   if (action === 'dayimport' || action === 'shiftimport') {
@@ -984,7 +1145,7 @@ function invoiceApi(body) {
   var trackMoney = MONEY_ACTIONS.indexOf(action) >= 0;
   if (trackMoney) {
     // Finish already-due recurring charges before isolating this person's change.
-    subsRoll(sh);
+    if(action!=='subsave')subsRoll(sh);
     moneyHistorySheet(true);
   }
   var beforeMoney = trackMoney ? moneySnapshot() : null;
@@ -1141,9 +1302,14 @@ function invoiceApi(body) {
   } else if (action === 'subadd') {
     var rule = subClean(body, actor);
     if (rule.error) return reply(false, rule.error);
+    try{rule.row.receipts=subReceiptUpdate({},body);}catch(receiptError){return reply(false,String(receiptError.message||receiptError));}
     subSheet().appendRow(SUB_COLS.map(function (c) {
       return rule.row[c] === undefined ? '' : rule.row[c];
     }));
+
+  } else if (action === 'subsave') {
+    var subError=subSave(body);
+    if(subError)return reply(false,subError);
 
   } else if (action === 'subpause') {
     var bsh = subSheet();
@@ -1166,7 +1332,7 @@ function invoiceApi(body) {
      open /invoice in the morning and one of them has to be the one that
      writes September's Cursor bill. A rule that cannot be turned into a
      line is skipped rather than allowed to take the ledger down with it. */
-  if (action !== 'moneyundo') { try { subsRoll(sh); } catch (rollErr) {} }
+  if (action !== 'moneyundo' && action !== 'subsave') { try { subsRoll(sh); } catch (rollErr) {} }
   if (trackMoney) {
     try { moneyRemember(beforeMoney, moneySnapshot(), internalActor(body), action); }
     catch (historyError) {
@@ -1181,6 +1347,9 @@ function invoiceApi(body) {
     moneyHistory: moneyHistoryPublic(internalActor(body)),
     moneyUndo: true,
     purchaseApproval: true,
+    recurringEdit: true,
+    recurringReceipts: true,
+    createdSubId: action==='subadd' ? rule.row.id : undefined,
     profiles: profileRead(),
     rows: invoiceRead(sh).map(invoicePublic),
     days: dayRead(daySheet()).map(dayPublic),
@@ -1190,7 +1359,7 @@ function invoiceApi(body) {
 
 /* Financial changes keep their exact before/after values. No history is invented
    for old rows. A reversal checks the entire group before touching any record. */
-var MONEY_ACTIONS = ['purchaseapprove','purchaseunapprove','add','edit','delete','update','settle','subadd','subpause','subdelete'];
+var MONEY_ACTIONS = ['purchaseapprove','purchaseunapprove','add','edit','delete','update','settle','subadd','subsave','subpause','subdelete'];
 var MONEY_COLS = ['id','actor','action','created','table','record','before','after','undone'];
 function moneyHistorySheet(create) {
   var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
@@ -1264,11 +1433,11 @@ function moneyUndo(id, actor) {
   if (entries.every(function(r){return !!r.undone;})) return null;
   var current=moneySnapshot();
   for (var i=0;i<entries.length;i++) {
-    var r=entries[i], expected=JSON.parse(r.after), actual=current[r.table+':'+r.record] || null;
+    var r=entries[i], expected=moneyCurrentShape(JSON.parse(r.after)), actual=current[r.table+':'+r.record] || null;
     if (r.undone || JSON.stringify(actual)!==JSON.stringify(expected)) return 'This record changed afterwards. Review its latest details before changing it; nothing was undone.';
   }
   entries.forEach(function(r){
-    var before=JSON.parse(r.before), sh=r.table===INVOICE_TAB?invoiceSheet():subSheet();
+    var before=moneyCurrentShape(JSON.parse(r.before)), sh=r.table===INVOICE_TAB?invoiceSheet():subSheet();
     var row=r.table===INVOICE_TAB?invoiceFind(sh,r.record):subFind(sh,r.record);
     if (!before) { if (row) sh.deleteRow(row); }
     else if (row) sh.getRange(row,1,1,before.values.length).setValues([before.values]);
@@ -1277,6 +1446,12 @@ function moneyUndo(id, actor) {
   var history=moneyHistorySheet(false), stamp=invoiceStamp();
   entries.forEach(function(r){history.getRange(r._row,MONEY_COLS.length).setValue(stamp);});
   return null;
+}
+function moneyCurrentShape(record) {
+  // An appended, empty receipt collection is not a later financial edit.
+  // Older undo records remain usable after the additive subscription upgrade.
+  if(record && record.table===SUB_TAB && record.values.length===SUB_COLS.length-1)record.values.push('');
+  return record;
 }
 
 /* Team profiles use stable roster names, never display text, as ownership. */
@@ -1477,7 +1652,7 @@ function invoiceStamp() {
    device storage has no sheet to do it for them. */
 var SUB_TAB = 'subs';
 var SUB_COLS = ['id', 'created', 'who', 'what', 'category', 'amount',
-                'day', 'next', 'active', 'note', 'shared', 'last', 'logged_by'];
+                'day', 'next', 'active', 'note', 'shared', 'last', 'logged_by', 'receipts'];
 
 /* A rule left alone for two years should not wake up and write two years
    of lines. It catches up a year at a time and the page says so. */
@@ -1495,7 +1670,7 @@ function subSheet() {
   if (sh && sh.getLastColumn() < SUB_COLS.length) {
     var had = sh.getLastColumn();
     sh.getRange(1, had + 1, sh.getMaxRows(), SUB_COLS.length - had).setNumberFormat('@');
-    sh.getRange(1, 1, 1, SUB_COLS.length).setValues([SUB_COLS]).setFontWeight('bold');
+    sh.getRange(1, had + 1, 1, SUB_COLS.length - had).setValues([SUB_COLS.slice(had)]).setFontWeight('bold');
   }
 
   if (!sh) {
@@ -1566,12 +1741,91 @@ function subFind(sh, id) {
 }
 
 function subPublic(s) {
+  var receipts=subReceipts(s);
   return {
     id: s.id, who: String(s.who), what: String(s.what), category: String(s.category),
     amount: s.amount, day: s.day, next: s.next, active: s.active,
     note: String(s.note || ''), shared: String(s.shared || ''), last: s.last || '',
-    loggedBy: invoiceLogger(s)
+    loggedBy: invoiceLogger(s),receipt:receipts.length?receipts[0].url:'',
+    receipts:receipts.map(function(r){return {id:r.id,name:r.name,url:r.url,addedAt:r.addedAt};})
   };
+}
+function subReceiptUrl(value) {
+  var url=String(value||'').trim();
+  if(url.length>500 || !/^https?:\/\/[^\s/?#@]+(?:[/?#][^\s]*)?$/i.test(url) || /[\x00-\x1f\x7f\\<>"'`]/.test(url))throw new Error('Use an http or https receipt link of at most 500 characters.');
+  return url;
+}
+function subReceipts(rule) {
+  var list=[];
+  try{list=JSON.parse(String(rule.receipts||'[]'));}catch(e){}
+  if(!Array.isArray(list))list=[];
+  if(!list.length && rule.receipt)list=[{id:'legacy-'+internalDigest(String(rule.receipt)).slice(0,16),url:String(rule.receipt),name:'Receipt',addedAt:''}];
+  return list.filter(function(r){try{return r && r.id && subReceiptUrl(r.url);}catch(e){return false;}}).map(function(r){
+    return {id:String(r.id),name:String(r.name||'Receipt').slice(0,180),url:String(r.url),addedAt:String(r.addedAt||''),uploadHash:String(r.uploadHash||'')};
+  });
+}
+function subReceiptFile(file) {
+  if(!file || typeof file.data!=='string' || !file.data || file.data.length>8*1024*1024 || file.data.length%4!==0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(file.data))throw new Error('A receipt file is missing, invalid or too large.');
+  var type=String(file.type||'').toLowerCase(),name=String(file.name||'Receipt').trim();
+  if(type==='image/jpg')type='image/jpeg';
+  if(['application/pdf','image/png','image/jpeg','image/gif','image/webp'].indexOf(type)<0)throw new Error('Upload a PDF or a PNG, JPEG, GIF or WebP receipt image.');
+  if(!name || name.length>180 || /[\x00-\x1f\x7f]/.test(name))throw new Error('Use a receipt filename of at most 180 characters.');
+  var bytes=Utilities.base64Decode(file.data),head=bytes.slice(0,12).map(function(b){return (b+256)%256;}),ascii=String.fromCharCode.apply(null,head),valid=false;
+  if(type==='application/pdf')valid=ascii.indexOf('%PDF-')===0;
+  if(type==='image/png')valid=head.slice(0,8).join(',')==='137,80,78,71,13,10,26,10';
+  if(type==='image/jpeg')valid=head[0]===255 && head[1]===216 && head[2]===255;
+  if(type==='image/gif')valid=/^GIF8[79]a/.test(ascii);
+  if(type==='image/webp')valid=ascii.slice(0,4)==='RIFF' && ascii.slice(8,12)==='WEBP';
+  if(!valid)throw new Error('The receipt file does not match its PDF or image format.');
+  return {name:name,type:type,data:file.data,hash:internalDigest(type+'\n'+file.data)};
+}
+function subReceiptUpdate(rule,body) {
+  var current=subReceipts(rule),remove=body.receiptRemove===undefined?[]:body.receiptRemove,links=body.receiptLinks===undefined?[]:body.receiptLinks,files=body.receiptFiles===undefined?[]:body.receiptFiles;
+  if(!Array.isArray(remove) || remove.length>20 || remove.some(function(id){return typeof id!=='string' || !current.some(function(r){return r.id===id;});}))throw new Error('A receipt selected for removal is no longer on this recurring spend. Reload it.');
+  if(!Array.isArray(links) || links.length>20 || !Array.isArray(files) || files.length>8)throw new Error('Add at most 20 receipt links or 8 receipt files at a time.');
+  links=links.slice();files=files.slice();
+  if(body.receipt)links.push({url:body.receipt,name:'Receipt'});
+  if(body.receiptFile)files.push(body.receiptFile);
+  if(files.length>8)throw new Error('Upload at most 8 receipt files at a time.');
+  var additions=links.map(function(link){
+    if(!link || typeof link!=='object')throw new Error('Each receipt link needs a URL.');
+    var name=String(link.name||'Receipt').trim();
+    if(name.length>180 || /[\x00-\x1f\x7f]/.test(name))throw new Error('Keep receipt names under 180 characters.');
+    return {url:subReceiptUrl(link.url),name:name||'Receipt'};
+  }),uploads=files.map(subReceiptFile);
+  var kept=current.filter(function(r){return remove.indexOf(r.id)<0;}),newLinks=[],newFiles=[];
+  additions.forEach(function(link){if(!kept.concat(newLinks).some(function(r){return r.url===link.url;}))newLinks.push(link);});
+  uploads.forEach(function(file){if(!kept.concat(newFiles).some(function(r){return (r.uploadHash||r.hash)===file.hash;}))newFiles.push(file);});
+  if(kept.length+newLinks.length+newFiles.length>20)throw new Error('Keep at most 20 receipts on a recurring spend.');
+  newLinks.forEach(function(link){kept.push({id:Utilities.getUuid(),name:link.name,url:link.url,addedAt:invoiceStamp()});});
+  newFiles.forEach(function(file){kept.push({id:Utilities.getUuid(),name:file.name,url:subReceiptUrl(saveReceipt(file)),addedAt:invoiceStamp(),uploadHash:file.hash});});
+  return kept.length?JSON.stringify(kept):'';
+}
+function subSave(body) {
+  var sh=subSheet(),was=subRead(sh).filter(function(s){return s.id===String(body.id||'');})[0];
+  if(!was)return 'That recurring spend is no longer on the sheet.';
+  var today=Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd');
+  if(was.active==='yes' && was.next<=today)return 'A charge is already due. Reload the ledger before editing this recurring spend so it records the charge at its previous amount.';
+  var input={date:was.next};
+  ['who','what','category','amount','note','shared'].forEach(function(k){input[k]=body[k]===undefined?was[k]:body[k];});
+  var clean=invoiceClean(input,invoiceLogger(was));
+  if(clean.error)return clean.error;
+  var day=was.day,next=was.next;
+  if(body.day!==undefined) {
+    day=Number(body.day);
+    if(day%1!==0 || day<1 || day>31)return 'Choose a billing day from 1 to 31.';
+  }
+  if(body.next!==undefined) {
+    next=String(body.next);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(next) || isNaN(Date.parse(next+'T00:00:00Z')) || new Date(next+'T00:00:00Z').toISOString().slice(0,10)!==next || next<=today)
+      return 'Choose a next billing date after today. Past charges are kept separately.';
+  }
+  var receipts;
+  try{receipts=subReceiptUpdate(was,body);}catch(e){return String(e.message||e);}
+  ['who','what','category','amount','note','shared'].forEach(function(k){was[k]=clean.row[k];});
+  was.day=day;was.next=next;was.receipts=receipts;
+  sh.getRange(was._row,1,1,SUB_COLS.length).setValues([SUB_COLS.map(function(c){return was[c]===undefined?'':was[c];})]);
+  return null;
 }
 
 /* The day of the month is kept as the rule's own number rather than read

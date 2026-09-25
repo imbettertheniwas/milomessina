@@ -720,6 +720,8 @@ td.date.run{color:var(--good)}
 .share .bar{flex:1;height:5px;background:var(--raise);border-radius:99px;overflow:hidden}
 .share .bar i{display:block;height:100%;border-radius:99px}
 .share span{font-size:11px;color:var(--muted-2);font-family:var(--mono);width:30px;text-align:right}
+
+#subs-body .acts{opacity:1;flex-wrap:wrap}.sub-receipt-list{display:grid;gap:8px}.sub-receipt-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px}.sub-receipt-item>span,.sub-receipt-item>a{min-width:0;flex:1;overflow-wrap:anywhere}.sub-receipt-item small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.sub-receipt-link{display:flex;align-items:center;gap:8px;margin-top:10px}.sub-receipt-link input{min-width:0;flex:1}.sub-receipt-link button{flex:none}.sub-schedule-toggle{display:flex;align-items:center;gap:8px;font-size:12px;margin:10px 0}.sub-schedule-toggle input{width:16px;height:16px}.sub-receipt-links{margin-top:5px}.sub-receipt-links summary{cursor:pointer;font-size:11px;color:var(--muted)}.sub-receipt-links a{display:block;margin-top:5px;font-size:11px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="/invoice/visits.css">
 <link rel="stylesheet" href="/invoice/campus.css">
@@ -1723,18 +1725,36 @@ td.date.run{color:var(--good)}
           <input id="f-amt" name="amount" type="number" min="0.01" max="100000" step="0.01" inputmode="decimal" placeholder="0.00" required></label>
       </div>
       <div class="grid">
-        <label class="field"><span class="lbl">date</span>
+        <label class="field" id="f-date-field"><span class="lbl">date</span>
           <input id="f-date" name="date" type="date" required></label>
         <label class="field"><span class="lbl">note (optional)</span>
           <input id="f-note" placeholder="e.g. covered Bijan + Jesse too" maxlength="120"></label>
       </div>
-      <div class="field"><span class="lbl">receipt photo (optional)</span>
+      <div class="field" id="f-single-receipt"><span class="lbl">receipt photo (optional)</span>
         <div class="shot-row">
           <input id="f-file" type="file" accept="image/*" class="offscreen">
           <button type="button" class="pick" id="f-pick"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15.5V6a1.5 1.5 0 0 1 1.5-1.5h2L8 2.8h4l1.5 1.7h2A1.5 1.5 0 0 1 17 6v9.5A1.5 1.5 0 0 1 15.5 17h-11A1.5 1.5 0 0 1 3 15.5Z"/><circle cx="10" cy="10.4" r="2.9"/></svg>Add a photo</button>
           <span class="picked" id="f-picked"></span>
         </div>
         <span class="drop" id="f-drop">Snap the receipt — it is shrunk before it is stored.</span>
+      </div>
+      <div class="field" id="f-sub-schedule" hidden>
+        <span class="lbl">billing schedule</span><p class="drop" id="f-sub-cadence"></p>
+        <label class="sub-schedule-toggle"><input id="f-sub-schedule-change" type="checkbox"> Change billing schedule</label>
+        <div class="grid" id="f-sub-schedule-fields" hidden>
+          <label class="field"><span class="lbl">day of the month</span><input id="f-sub-day" type="number" min="1" max="31" step="1" inputmode="numeric"></label>
+          <label class="field"><span class="lbl">next charge</span><input id="f-sub-next" type="date"></label>
+        </div>
+        <span class="drop">Changes apply to future charges. Spends already on the ledger keep their original amounts, people and receipts.</span>
+      </div>
+      <div class="field" id="f-sub-receipts" hidden>
+        <span class="lbl">receipts &amp; account changes</span>
+        <span class="drop">Keep invoices and proof of new people added to this account together. Attach up to 20 receipts.</span>
+        <div id="f-sub-receipt-list" class="sub-receipt-list"></div>
+        <input id="f-sub-files" type="file" accept="image/*,application/pdf,.pdf" multiple class="offscreen">
+        <button class="pick" id="f-sub-pick" type="button">Add photos or PDFs</button>
+        <div class="sub-receipt-link"><input id="f-sub-link" type="url" placeholder="https://… receipt link" aria-label="Receipt link"><button class="mini" id="f-sub-link-add" type="button">Add link</button></div>
+        <p class="drop" id="f-sub-receipt-message" role="status"></p>
       </div>
       <div class="form-foot">
         <button class="btn btn-p" type="submit" id="f-submit">Add to ledger</button>
@@ -1975,6 +1995,7 @@ function permission(action, p){
   if (["profileupdate","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
   if (action === "edit" || action === "delete") return canEdit(byId(rows,p.id)) && (action !== "edit" || canPay(p.who)) ? "" : "Only your own unpaid spends can be changed.";
   if (action === "daydelete") return own((byId(days,p.id)||{}).who) ? "" : "You can only change your own attendance.";
+  if (action === "subsave") return ownRow(byId(subs,p.id)) && (p.who === undefined || canPay(p.who)) ? "" : "You can only edit your own recurring spends and choose an allowed payer.";
   if (action === "subpause" || action === "subdelete") return ownRow(byId(subs,p.id)) ? "" : "You can only change your own recurring spends.";
   if (action === "dayimport") return Array.isArray(p.days) && p.days.every(function(d){return own(d.who);}) ? "" : "You can only import your own attendance.";
   return "Only Milo and Arya can do that.";
@@ -2512,7 +2533,7 @@ function apiSheet(action, payload){
             what:String(b.what), category:String(b.category),
             amount:Number(b.amount)||0, day:Number(b.day)||1, next:String(b.next||""),
             active: String(b.active) === "no" ? "no" : "yes",
-            note:String(b.note||""), shared:String(b.shared||""), last:String(b.last||"")
+            note:String(b.note||""), shared:String(b.shared||""), last:String(b.last||""), receipts:subReceiptsOf(b), receipt:String(b.receipt||"")
           };
         });
       }
@@ -2798,6 +2819,7 @@ function hint(msg, bad){
   h.className = "hint" + (bad ? " err" : "");
 }
 function defaultHint(){
+  if (editingSub) return "Editing this recurring rule. Past ledger charges stay unchanged.";
   if (editing) return "Editing a line already on the ledger. Whether it has been paid back is not changed here.";
   if (!repeat) return picked === CARD ? "On Arya’s card — nothing to pay back."
     : picked ? "Logging as " + picked + "." : "Pick who paid, then add the line.";
@@ -2820,6 +2842,7 @@ hint("");
 /* ---------- add ---------- */
 document.getElementById("form").addEventListener("submit", function(ev){
   ev.preventDefault();
+  if (busy || subReceiptReading) return;
   if (!picked) { hint("Tap a name above so we know who to pay back.", true); return; }
   var what = document.getElementById("f-what").value.trim();
   var amt = Math.round(parseFloat(document.getElementById("f-amt").value) * 100) / 100;
@@ -2829,6 +2852,7 @@ document.getElementById("form").addEventListener("submit", function(ev){
   if (otherOn && !typedGuests().length) { hint("Type who else it was for, or untick Other.", true); guestBox.focus(); return; }
   /* the toggle decides what this button means: one line, or the rule that
      writes one every month from here on */
+  if (editingSub) { saveSubEdit(what, amt); return; }
   if (repeat) { startSub(what, amt, date); return; }
   if (editing) { saveEdit(what, amt, date); return; }
   var btn = document.getElementById("f-submit");
@@ -2886,7 +2910,8 @@ document.getElementById("form").addEventListener("submit", function(ev){
    that has been waiting three months writes all three the moment one of
    them does. */
 var SUB_CATCHUP = 12;
-var repeat = false, subsBusy = false;
+var repeat = false, subsBusy = false, editingSub = null;
+var subReceiptSaved = [], subReceiptFiles = [], subReceiptLinks = [], subReceiptRemove = [], subReceiptReading = false, subReceiptEpoch = 0;
 
 /* device or sheet, asked the same way `mode` is: the rules are the
    sheet's only once the endpoint has proved it keeps them. */
@@ -2915,21 +2940,120 @@ function subStep(iso, day){
 function subApi(action, p){
   return subsMode() === "sheet" ? apiSheet(action, p) : localMoneyAction(action,p,true);
 }
+function subReceiptUrl(value){
+  value=String(value||'');
+  if(/^data:(?:image\/(?:jpeg|png|webp|gif)|application\/pdf);base64,[a-z0-9+/]+=*$/i.test(value))return value;
+  try{var url=new URL(value);return ['http:','https:'].indexOf(url.protocol)>-1 && url.hostname && !url.username && !url.password?url.href:'';}catch(error){return '';}
+}
+function subReceiptsOf(rule){
+  return (Array.isArray(rule && rule.receipts)?rule.receipts:[]).filter(function(receipt){return receipt && receipt.id && subReceiptUrl(receipt.url);}).map(function(receipt){return {id:String(receipt.id),name:String(receipt.name||'Receipt'),url:subReceiptUrl(receipt.url),addedAt:String(receipt.addedAt||'')};});
+}
+function subReceiptLinksHtml(rule){
+  var receipts=subReceiptsOf(rule);
+  return receipts.length?'<details class="sub-receipt-links"><summary>'+receipts.length+' receipt'+(receipts.length===1?'':'s')+'</summary>'+receipts.map(function(receipt){return '<a href="'+esc(receipt.url)+'" target="_blank" rel="noopener noreferrer"'+(/^data:/.test(receipt.url)?' download="'+esc(receipt.name)+'"':'')+'>'+esc(receipt.name)+' ↗</a>';}).join('')+'</details>':'';
+}
+function clearSubReceiptDraft(){
+  subReceiptEpoch++;subReceiptSaved=[];subReceiptFiles=[];subReceiptLinks=[];subReceiptRemove=[];subReceiptReading=false;
+  $('f-sub-files').value='';$('f-sub-link').value='';$('f-sub-receipt-message').textContent='';
+  $('f-submit').disabled=busy;
+  renderSubReceipts();
+}
+function subReceiptCount(){return subReceiptSaved.filter(function(receipt){return subReceiptRemove.indexOf(receipt.id)<0;}).length+subReceiptFiles.length+subReceiptLinks.length;}
+function renderSubReceipts(){
+  var entries=subReceiptSaved.filter(function(receipt){return subReceiptRemove.indexOf(receipt.id)<0;}).map(function(receipt){return {key:'saved:'+receipt.id,name:receipt.name,url:receipt.url,state:'Saved receipt'};})
+    .concat(subReceiptFiles.map(function(file,index){return {key:'file:'+index,name:file.name,state:'New upload · saved with this rule'};}))
+    .concat(subReceiptLinks.map(function(link,index){return {key:'link:'+index,name:link.name||link.url,url:link.url,state:'New receipt link'};}));
+  $('f-sub-receipt-list').innerHTML=entries.map(function(entry){return '<div class="sub-receipt-item">'+(entry.url?'<a href="'+esc(entry.url)+'" target="_blank" rel="noopener noreferrer"'+(/^data:/.test(entry.url)?' download="'+esc(entry.name)+'"':'')+'>':'<span>')+esc(entry.name)+'<small>'+esc(entry.state)+'</small>'+(entry.url?'</a>':'</span>')+'<button class="mini danger" type="button" data-sub-receipt-remove="'+esc(entry.key)+'">Remove</button></div>';}).join('');
+  $('f-sub-pick').disabled=busy || subReceiptReading || subReceiptFiles.length>=8 || subReceiptCount()>=20;
+  $('f-sub-link-add').disabled=busy || subReceiptReading || subReceiptCount()>=20;
+}
+function subReceiptPayload(){
+  var payload={};
+  if(subReceiptFiles.length)payload.receiptFiles=subReceiptFiles.map(function(file){return {name:file.name,type:file.type,data:file.data};});
+  if(subReceiptLinks.length)payload.receiptLinks=subReceiptLinks.map(function(link){return {name:link.name,url:link.url};});
+  if(subReceiptRemove.length)payload.receiptRemove=subReceiptRemove.slice();
+  return payload;
+}
+function storedSubReceiptPayload(rule){
+  var files=[],links=[];
+  subReceiptsOf(rule).forEach(function(receipt){
+    var inline=/^data:([^;]+);base64,(.+)$/.exec(receipt.url);
+    if(inline)files.push({name:receipt.name,type:inline[1],data:inline[2]});else links.push({name:receipt.name,url:receipt.url});
+  });
+  return {receiptFiles:files,receiptLinks:links};
+}
+function readSubReceipt(file){
+  if(/^image\//i.test(file.type||''))return shrinkShot(file).then(function(uri){var out=shotPayload(uri,today());out.name=(file.name||'receipt').replace(/\.[^.]*$/,'').slice(0,160)+'.jpg';return out;});
+  if(file.type!=='application/pdf' && !/\.pdf$/i.test(file.name||''))return Promise.reject(new Error('Choose a photo or PDF receipt.'));
+  if(file.size>6*1024*1024)return Promise.reject(new Error('Choose a PDF no larger than 6 MB.'));
+  return new Promise(function(resolve,reject){var reader=new FileReader();reader.onerror=function(){reject(new Error('That receipt could not be read.'));};reader.onload=function(){resolve({name:String(file.name||'receipt.pdf').slice(0,180),type:'application/pdf',data:String(reader.result).split(',')[1]||''});};reader.readAsDataURL(file);});
+}
+async function addSubReceiptFiles(files){
+  if(busy || subReceiptReading || (!repeat && !editingSub))return;
+  files=Array.from(files||[]);if(!files.length)return;
+  if(files.length+subReceiptFiles.length>8 || files.length+subReceiptCount()>20){$('f-sub-receipt-message').textContent='Keep up to 20 receipts per rule and add up to 8 uploads in one save.';return;}
+  var revision=subReceiptEpoch;subReceiptReading=true;renderSubReceipts();$('f-submit').disabled=true;$('f-sub-receipt-message').textContent='Preparing receipts…';
+  try {
+    var prepared=[];
+    for(var i=0;i<files.length;i++)prepared.push(await readSubReceipt(files[i]));
+    if(revision!==subReceiptEpoch)return;
+    subReceiptFiles=subReceiptFiles.concat(prepared);$('f-sub-receipt-message').textContent='Receipts are ready. Save the recurring spend to attach them.';
+  }catch(error){if(revision===subReceiptEpoch)$('f-sub-receipt-message').textContent=error.message||'The receipts could not be prepared.';}
+  finally{if(revision===subReceiptEpoch){subReceiptReading=false;$('f-sub-files').value='';$('f-submit').disabled=false;renderSubReceipts();}}
+}
+function addSubReceiptLink(){
+  if(busy || subReceiptReading || subReceiptCount()>=20)return;
+  var raw=$('f-sub-link').value.trim(),url=/^https?:\/\//i.test(raw)?subReceiptUrl(raw):'';
+  if(!url){$('f-sub-receipt-message').textContent='Enter a complete http:// or https:// receipt link.';return;}
+  if(subReceiptSaved.concat(subReceiptLinks).some(function(receipt){return receipt.url===url && subReceiptRemove.indexOf(receipt.id)<0;})){$('f-sub-receipt-message').textContent='That receipt link is already attached.';return;}
+  subReceiptLinks.push({name:'Receipt · '+new URL(url).hostname,url:url});$('f-sub-link').value='';$('f-sub-receipt-message').textContent='The link will be attached when you save.';renderSubReceipts();
+}
+function applyLocalSubReceipts(rule,payload){
+  var receipts=subReceiptsOf(rule).filter(function(receipt){return (payload.receiptRemove||[]).indexOf(receipt.id)<0;}),stamp=new Date().toISOString();
+  (payload.receiptLinks||[]).forEach(function(link){var url=/^https?:\/\//i.test(link.url)?subReceiptUrl(link.url):'';if(!url)throw new Error('Use an http or https receipt link.');if(!receipts.some(function(receipt){return receipt.url===url;}))receipts.push({id:newId(),name:link.name||'Receipt',url:url,addedAt:stamp});});
+  (payload.receiptFiles||[]).forEach(function(file){var url='data:'+file.type+';base64,'+file.data;if(!subReceiptUrl(url))throw new Error('Choose a photo or PDF receipt.');receipts.push({id:newId(),name:file.name||'Receipt',url:url,addedAt:stamp});});
+  if(receipts.length>20)throw new Error('Keep up to 20 receipts per recurring spend.');
+  rule.receipts=receipts;rule.receipt=receipts[0]?.url || '';
+}
+$('f-sub-pick').addEventListener('click',function(){if(!busy && !subReceiptReading)$('f-sub-files').click();});
+$('f-sub-files').addEventListener('change',function(){addSubReceiptFiles(this.files);});
+$('f-sub-link-add').addEventListener('click',addSubReceiptLink);
+$('f-sub-link').addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();addSubReceiptLink();}});
+function removeSubReceipt(key){
+  if(busy || subReceiptReading)return;
+  var kind=key.slice(0,key.indexOf(':')),id=key.slice(key.indexOf(':')+1);
+  if(kind==='saved'){if(subReceiptRemove.indexOf(id)<0)subReceiptRemove.push(id);}else if(kind==='file')subReceiptFiles.splice(Number(id),1);else if(kind==='link')subReceiptLinks.splice(Number(id),1);
+  $('f-sub-receipt-message').textContent='Receipt changes take effect when you save.';renderSubReceipts();
+}
+$('f-sub-receipt-list').addEventListener('click',function(event){
+  var button=event.target.closest('[data-sub-receipt-remove]');if(button)removeSubReceipt(button.getAttribute('data-sub-receipt-remove'));
+});
+$('f-sub-schedule-change').addEventListener('change',function(){$('f-sub-schedule-fields').hidden=!this.checked;});
 
 /* Same call signature as the sheet's, so the buttons don't know which
    one they are talking to. */
 function subLocal(action, p){
   var denied = requirePermission(action, p); if (denied) return denied;
   return new Promise(function(resolve, reject){
+    var before=JSON.stringify(subs);
+    try {
     if (action === "subadd") {
       if (PAYERS.indexOf(p.who) === -1) return reject(new Error("that name is not on the bootcamp"));
-      subs.push({
+      var added={
         id:newId(), who:p.who, loggedBy:(identity && identity.who) || p.who,
         what:p.what, category:p.category,
         amount:Math.round((Number(p.amount)||0) * 100) / 100,
         day:Math.min(31, Math.max(1, Number(p.day) || subDay(p.date))),
         next:p.date, active:"yes", note:p.note || "", shared:p.shared || "", last:""
-      });
+      };applyLocalSubReceipts(added,p);subs.push(added);
+    } else if (action === "subsave") {
+      var current=byId(subs,p.id);if(!current)throw new Error('That recurring spend is no longer here.');
+      if(subOn(current) && current.next && current.next<=today())throw new Error('A charge is already due. Reload the ledger before editing this recurring spend so it records the charge at its previous amount.');
+      ['who','what','category','note','shared'].forEach(function(key){if(p[key]!==undefined)current[key]=String(p[key]);});
+      if(p.amount!==undefined){if(!Number.isFinite(Number(p.amount)) || Number(p.amount)<=0 || Number(p.amount)>100000)throw new Error('Enter an amount between 0.01 and 100,000.');current.amount=Math.round(Number(p.amount)*100)/100;}
+      if(p.day!==undefined){if(!Number.isInteger(p.day) || p.day<1 || p.day>31)throw new Error('Choose a billing day from 1 to 31.');current.day=p.day;}
+      if(p.next!==undefined){if(!validSubNext(p.next))throw new Error('Choose a next charge after today.');current.next=p.next;}
+      applyLocalSubReceipts(current,p);
     } else if (action === "subpause") {
       var hit = byId(subs, p.id);
       if (!hit) return reject(new Error("that subscription is no longer here"));
@@ -2937,9 +3061,10 @@ function subLocal(action, p){
     } else if (action === "subdelete") {
       subs = subs.filter(function(b){ return b.id !== p.id; });
     }
-    if (!saveSubs()) return reject(new Error("this browser is out of room. Delete a receipt photo or an old line and try again"));
+    if (!saveSubs())throw new Error("This browser is out of room. Try smaller receipts or use the shared sheet.");
     renderSubs();
     resolve({ok:true});
+    } catch(error){subs=JSON.parse(before);reject(error);}
   });
 }
 
@@ -3024,6 +3149,7 @@ function renderSubs(){
           ? "split " + names.length + " ways · <b>" + esc(names.join(", ")) + "</b>"
           : "for <b>" + esc(names[0]) + "</b>") + "</small>" : "") +
         (s.note ? "<small>" + esc(s.note) + "</small>" : "") +
+        subReceiptLinksHtml(s) +
       "</div></td>" +
       '<td class="amt">' + esc(money(s.amount)) +
         (names.length > 1 ? "<small>" + esc(money((Number(s.amount)||0) / names.length)) + " each</small>" : "") + "</td>" +
@@ -3031,6 +3157,7 @@ function renderSubs(){
       '<td class="next">' + (on ? esc(niceDate(s.next)) : "—") + "</td>" +
       '<td><span class="pill ' + (on ? "good" : "hold") + '"><i></i>' + (on ? "running" : "paused") + "</span></td>" +
       '<td><div class="acts">' +
+        (ownRow(s)?'<button class="mini" data-sub="edit" data-id="'+esc(s.id)+'" aria-label="Edit recurring spend '+esc(s.what)+'">Edit</button>':'') +
         '<button class="mini" data-sub="' + (on ? "pause" : "resume") + '" data-id="' + esc(s.id) + '">' +
           (on ? "Pause" : "Resume") + "</button>" +
         '<button class="mini danger" data-sub="del" data-id="' + esc(s.id) + '">Delete</button>' +
@@ -3057,7 +3184,9 @@ function renderSubs(){
 
 document.getElementById("subs-body").addEventListener("click", function(ev){
   var btn = ev.target.closest("button[data-sub]"); if (!btn) return;
+  if(busy)return;
   var id = btn.getAttribute("data-id"), act = btn.getAttribute("data-sub");
+  if(act==='edit'){openSubEdit(id);return;}
   if (act === "del") {
     arm("b" + id, btn, "Delete?", function(){
       busy = true;
@@ -3094,8 +3223,13 @@ function setRepeat(v){
 }
 function syncRepeat(){
   var d = document.getElementById("f-date");
+  $('f-single-receipt').hidden=repeat || !!editingSub;
+  $('f-sub-receipts').hidden=!(repeat || editingSub);
+  $('f-sub-schedule').hidden=!editingSub;
+  $('f-date-field').hidden=!!editingSub;
+  $('f-repeat').hidden=!!(editing || editingSub);
   document.getElementById("f-repeat").setAttribute("aria-pressed", String(repeat));
-  document.getElementById("f-submit").textContent = editing
+  document.getElementById("f-submit").textContent = editingSub ? "Save recurring spend" : editing
     ? "Save changes" : (repeat ? "Start the subscription" : "Add to ledger");
   document.getElementById("f-pick").disabled = repeat;
   if (repeat) {
@@ -3105,19 +3239,20 @@ function syncRepeat(){
     if (d.value > d.max) d.value = d.max;
   }
   applyModeUi();
+  if(repeat || editingSub)renderSubReceipts();
   hint("");
 }
 document.getElementById("f-repeat").addEventListener("click", function(){ setRepeat(!repeat); });
 
 function startSub(what, amt, date){
-  var btn = document.getElementById("f-submit");
+  var btn = document.getElementById("f-submit"),saveError='';
   btn.disabled = true; busy = true; btn.textContent = "Setting it up…";
   var names = splitNames(), day = subDay(date);
-  subApi("subadd", {
+  subApi("subadd", Object.assign({
     who: picked, what: what, category: document.getElementById("f-cat").value,
     amount: amt, date: date, day: day,
     note: document.getElementById("f-note").value.trim(), shared: names.join(", ")
-  }).then(function(){
+  },subReceiptPayload())).then(function(){
     document.getElementById("f-what").value = "";
     document.getElementById("f-amt").value = "";
     document.getElementById("f-note").value = "";
@@ -3131,8 +3266,49 @@ function startSub(what, amt, date){
     hint("");
     closeDrawer();
     toast(what + " repeats — " + money(amt) + " on the " + ord(day) + " of every month.");
-  })["catch"](function(e){ hint("That didn't save — " + fail(e) + ".", true); })
-   .then(function(){ busy = false; btn.disabled = false; syncRepeat(); paint(); });
+  })["catch"](function(e){ saveError="That didn't save — " + fail(e) + "."; })
+   .then(function(){ busy = false; btn.disabled = false; syncRepeat(); paint();if(saveError)hint(saveError,true); });
+}
+
+function openSubEdit(id){
+  if(busy)return;
+  var rule=byId(subs,id);
+  if(!rule){toast('That recurring spend is no longer here.',true);return;}
+  if(!ownRow(rule)){toast('You can only edit your own recurring spends.',true);return;}
+  exitEdit();clearSubReceiptDraft();editingSub=id;repeat=false;
+  subReceiptSaved=subReceiptsOf(rule);
+  picked=rule.who;
+  Array.prototype.forEach.call(whoBox.children,function(chip){chip.setAttribute('aria-pressed',String(chip.textContent===picked));});
+  sharedWith={};var guests=[];
+  String(rule.shared||'').split(',').map(function(name){return name.trim();}).forEach(function(name){if(SHARERS.indexOf(name)>-1)sharedWith[name]=true;else if(isGuest(name))guests.push(guestName(name));});
+  otherOn=guests.length>0;guestBox.value=guests.join(', ');
+  $('f-what').value=rule.what||'';$('f-cat').value=cat(rule.category).id;$('f-amt').value=(Number(rule.amount)||0).toFixed(2);$('f-note').value=rule.note||'';
+  $('f-sub-cadence').textContent='Every '+ord(rule.day)+' of the month · Next charge '+niceDate(rule.next)+(subOn(rule)?'':' · Paused');
+  $('f-sub-schedule-change').checked=false;$('f-sub-schedule-fields').hidden=true;
+  $('f-sub-day').value=String(rule.day||1);$('f-sub-next').value=rule.next||'';$('f-sub-next').min=tomorrow();
+  $('drawer-t').textContent='Edit recurring spend';
+  renderSplit();syncRepeat();renderSubReceipts();openDrawer();
+}
+function subEditPayload(what,amount){
+  var payload={id:editingSub,who:picked,what:what,category:$('f-cat').value,amount:amount,note:$('f-note').value.trim(),shared:splitNames().join(', ')};
+  if($('f-sub-schedule-change').checked){
+    var day=Number($('f-sub-day').value),next=$('f-sub-next').value;
+    if(!Number.isInteger(day) || day<1 || day>31)throw new Error('Choose a billing day from 1 to 31.');
+    if(!validSubNext(next))throw new Error('Choose a next charge after today.');
+    payload.day=day;payload.next=next;
+  }
+  return Object.assign(payload,subReceiptPayload());
+}
+function validSubNext(next){return /^\d{4}-\d{2}-\d{2}$/.test(next) && Number.isFinite(Date.parse(next+'T12:00:00Z')) && new Date(next+'T12:00:00Z').toISOString().slice(0,10)===next && next>today();}
+function saveSubEdit(what,amount){
+  var payload;try{payload=subEditPayload(what,amount);}catch(error){hint(error.message,true);return;}
+  var button=$('f-submit'),id=editingSub,revision=subReceiptEpoch,errorMessage='';
+  busy=true;button.disabled=true;button.textContent=subReceiptFiles.length?'Uploading receipts…':'Saving…';renderSubReceipts();
+  return subApi('subsave',payload).then(function(){
+    if(editingSub===id && revision===subReceiptEpoch){exitEdit();closeDrawer();}
+    toast('Recurring spend updated. Past ledger charges are unchanged.');
+  }).catch(function(error){if(editingSub===id && revision===subReceiptEpoch)errorMessage='That did not save — '+fail(error)+'.';else toast(fail(error),true);})
+    .then(function(){busy=false;button.disabled=false;syncRepeat();renderSubReceipts();paint();if(errorMessage && editingSub===id)hint(errorMessage,true);});
 }
 
 /* ---------- editing a line already on the ledger ----------
@@ -3151,6 +3327,7 @@ function openEdit(id){
   if (!r) { toast("That line is no longer on the ledger.", true); return; }
 
   if (!canEdit(r)) { toast("Only your own unpaid spends can be changed.", true); return; }
+  if(editingSub)exitEdit();
   editing = id;
   keptShot = ""; dropShot = false;
 
@@ -3228,7 +3405,8 @@ function saveEdit(what, amt, date){
 /* Back to being the log-a-spend drawer. Called on every close, so an edit
    abandoned with the X cannot leave the next new line prefilled. */
 function exitEdit(){
-  if (!editing) return;
+  if (!editing && !editingSub) return;
+  editingSub=null;clearSubReceiptDraft();$('f-sub-schedule-change').checked=false;$('f-sub-schedule-fields').hidden=true;
   editing = null; keptShot = ""; dropShot = false;
   pendingShot = null;
   document.getElementById("f-file").value = "";
@@ -3461,7 +3639,7 @@ function applyModeUi(){
   if (pendingShot) return;
   if (repeat) {
     document.getElementById("f-drop").textContent =
-      "A line that repeats can't carry a photo — each month's receipt goes on the line it belongs to.";
+      "Recurring receipts are kept with the rule. Each month's ledger line keeps its own receipt.";
     return;
   }
   document.getElementById("f-drop").textContent = mode === "sheet"
@@ -4757,10 +4935,10 @@ function sendCarry(extraRows, extraDays, extraSubs){
      lines are going up in the same breath. */
   extraSubs.forEach(function(b){
     chain = chain.then(function(){
-      return apiSheet("subadd", {
+      return apiSheet("subadd", Object.assign({
         who:b.who, what:b.what, category:b.category, amount:b.amount,
         date:b.next, day:b.day, note:b.note || "", shared:b.shared || ""
-      });
+      },storedSubReceiptPayload(b)));
     });
   });
 
@@ -4867,7 +5045,7 @@ function tint(label, v){
 }
 
 /* Money changes remain reversible after the confirmation toast disappears. */
-var MONEY_ACTION_LABELS={purchaseapprove:'Purchase approved',purchaseunapprove:'Approval removed',add:'Spend logged',edit:'Spend edited',delete:'Spend deleted',update:'Reimbursement changed',settle:'Spends settled',subadd:'Recurring spend added',subpause:'Recurring spend changed',subdelete:'Recurring spend stopped'};
+var MONEY_ACTION_LABELS={purchaseapprove:'Purchase approved',purchaseunapprove:'Approval removed',add:'Spend logged',edit:'Spend edited',delete:'Spend deleted',update:'Reimbursement changed',settle:'Spends settled',subadd:'Recurring spend added',subsave:'Recurring spend edited',subpause:'Recurring spend changed',subdelete:'Recurring spend stopped'};
 function localMoneyHistory(){ try{return JSON.parse(localStorage.getItem('fomo.money.history')||'[]');}catch(e){return [];} }
 function moneyState(){var out={};[['rows',rows],['subs',subs]].forEach(function(pair){pair[1].forEach(function(r){out[pair[0]+':'+r.id]={table:pair[0],id:r.id,value:JSON.parse(JSON.stringify(r))};});});return out;}
 function restoreLocalChange(changes, side){changes.forEach(function(c){var record=c[side], list=c.table==='rows'?rows:subs, at=list.findIndex(function(r){return r.id===c.id;});if(at>=0)list.splice(at,1);if(record)list.push(record.value);});}
@@ -5344,12 +5522,13 @@ function openDrawer(){
 }
 function closeDrawer(){
   exitEdit();
+  clearSubReceiptDraft();
   $("scrim").classList.remove("on"); $("drawer").classList.remove("on");
   $("drawer").setAttribute("aria-hidden", "true");
   setTimeout(function(){ $("scrim").hidden = true; }, 200);
 }
 $("btn-new").addEventListener("click", function(){ exitEdit(); setRepeat(false); openDrawer(); });
-$("subs-new").addEventListener("click", function(){ exitEdit(); setRepeat(true); openDrawer(); });
+$("subs-new").addEventListener("click", function(){ exitEdit(); clearSubReceiptDraft(); setRepeat(true); openDrawer(); });
 $("drawer-x").addEventListener("click", closeDrawer);
 $("scrim").addEventListener("click", closeDrawer);
 

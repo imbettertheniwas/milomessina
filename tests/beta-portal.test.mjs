@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
+import {normalizeSchedule, scheduleFile} from '../invoice/beta-schedule.js';
 
 const source = readFileSync(new URL('../invoice/beta-portal.js', import.meta.url), 'utf8')
-  .replace(/^import[^\n]*\n/, '')
-  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, saveWebsite, websiteUrl, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy})};');
+  .replace(/^import[^\n]*\n/gm, '')
+  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, saveWebsite, websiteUrl, scheduleDraft, scheduleChange, scheduleAction, readScheduleFile, saveSchedule, downloadSchedule, joinFields, validateJoinSchedule, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy, scheduleDrafts})};');
 const ACCESS = 'BETA-' + 'a'.repeat(32);
 const INVITE_A = 'BATCH-' + '1'.repeat(32), INVITE_B = 'BATCH-' + '2'.repeat(32);
 const fields = {name:'Example Intern', email:'intern@example.invalid', phone:'+1 202 555 0100', github:'example-intern'};
@@ -19,26 +20,27 @@ function storage(values={}) {
   const map=new Map(Object.entries(values));
   return {getItem:key=>map.get(key) || null,setItem:(key,value)=>map.set(key,String(value)),removeItem:key=>map.delete(key),map};
 }
-function harness(fetchImpl, {session=storage(), local=storage(), hash=''}={}) {
+function harness(fetchImpl, {session=storage(), local=storage(), hash='', readFile=scheduleFile}={}) {
   const githubRequests=[];
+  const downloads=[];
   const elements=new Map(), events=new Map(); let document;
-  const makeElement=id=>({id,name:id.replace('beta-join-',''),value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,
+  const makeElement=id=>({id,name:id.replace('beta-join-',''),value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,dataset:{},tagName:'INPUT',
     classList:{toggle(){}},setAttribute(){},removeAttribute(){},replaceChildren(){this.innerHTML='';this.textContent='';},
     focus(){document.activeElement=this;},select(){},setCustomValidity(value){this.validityMessage=value;},checkValidity(){return !this.validityMessage;},reportValidity(){},
     matches(){return false;},contains(element){return element===this || id==='beta-website-form' && element?.id==='beta-website';},closest(){return null;},
     addEventListener(name,fn){events.set(id+':'+name,fn);},
     reset(){['name','email','phone','github','website'].forEach(name=>get('beta-join-'+name).value='');},
-    querySelectorAll(selector){if(id==='beta-join-progress')return [get('step1'),get('step2'),get('step3')];if(id==='beta-join-details'||id==='beta-join-form')return ['name','email','phone','github','website'].map(name=>get('beta-join-'+name));if(id==='beta-profile')return [get('beta-website'),get('beta-website-save')];return [];}});
+    querySelectorAll(selector){if(id==='beta-join-progress')return [get('step1'),get('step2'),get('step3'),get('step4')];if(id==='beta-join-details'||id==='beta-join-form')return ['name','email','phone','github','website'].map(name=>get('beta-join-'+name));if(id==='beta-profile')return [get('beta-website'),get('beta-website-save')];return [];}});
   const get=id=>{if(!elements.has(id))elements.set(id,makeElement(id));return elements.get(id);};
-  document={getElementById:get,activeElement:null,hidden:false,addEventListener(){}};
+  document={getElementById:get,activeElement:null,hidden:false,addEventListener(){},createElement(){return {click(){downloads.push({href:this.href,name:this.download});}};}};
   const location={origin:'https://example.invalid',pathname:'/internal/beta',search:'',hash};
   const context=vm.createContext({document,location,history:{replaceState(_a,_b,url){location.hash=url.includes('#')?url.slice(url.indexOf('#')):'';}},
     window:{addEventListener(name,fn){events.set('window:'+name,fn);}},sessionStorage:session,localStorage:local,
-    fetch:async(_url,options)=>reply(await fetchImpl(JSON.parse(options.body))),crypto:webcrypto,URL,URLSearchParams,AbortController,Uint8Array,Date,Intl,TypeError,Error,
+    fetch:async(_url,options)=>reply(await fetchImpl(JSON.parse(options.body))),crypto:webcrypto,URL:class extends URL{static createObjectURL(){return 'blob:private-download';}static revokeObjectURL(){}},URLSearchParams,AbortController,Uint8Array,Date,Intl,TypeError,Error,Blob,atob,
     setTimeout,clearTimeout,setInterval(){},navigator:{clipboard:{writeText:async()=>{}}},
-    loadBetaGithub:async(peers,options)=>{githubRequests.push({peers,options});return [];},betaGithubInitial:()=>[]});
+    loadBetaGithub:async(peers,options)=>{githubRequests.push({peers,options});return [];},betaGithubInitial:()=>[],normalizeSchedule,scheduleFile:readFile});
   vm.runInContext(source,context,{filename:'beta-portal.js'});
-  return {portal:context.portal,get,session,local,location,events,githubRequests};
+  return {portal:context.portal,get,session,local,location,events,githubRequests,downloads};
 }
 function deferred(){let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};}
 
@@ -256,11 +258,14 @@ test('onboarding collects an optional website and reviews it without weakening r
   for(const [key,value] of Object.entries(fields))h.get('beta-join-'+key).value=value;
   h.get('beta-join-website').value='my-portfolio.example/work';
   h.events.get('beta-details-next:click')();
+  assert.equal(h.get('beta-join-schedule').hidden,false);
+  h.portal.scheduleDraft('join').noCommitments=true;h.events.get('beta-schedule-next:click')();
   assert.equal(h.get('beta-join-review').hidden,false);
   assert.match(h.get('beta-review-details').innerHTML,/<dt>Website<\/dt><dd>my-portfolio.example\/work/);
   h.get('beta-join-website').value='javascript:alert(1)';h.events.get('beta-details-next:click')();
   assert.equal(h.get('beta-join-details').hidden,false);assert.match(h.get('beta-login-error').textContent,/public website/);
   h.get('beta-join-website').value='';h.events.get('beta-details-next:click')();
+  h.events.get('beta-schedule-next:click')();
   assert.equal(h.get('beta-join-review').hidden,false);assert.doesNotMatch(h.get('beta-review-details').innerHTML,/<dt>Website/);
   h.get('beta-join-email').value='';h.events.get('beta-details-next:click')();
   assert.equal(h.get('beta-join-details').hidden,false);assert.match(h.get('beta-login-error').textContent,/email address/);
@@ -378,4 +383,132 @@ test('denied website editing clears the old profile while retaining its personal
   await h.portal.signInWithAccess(ACCESS);revoked=true;await h.portal.saveWebsite('new.example');
   assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-profile').innerHTML,'');
   assert.equal(h.get('beta-workspace').hidden,true);assert.equal(h.local.getItem('fomo.beta.access'),ACCESS);
+});
+
+const manualSchedule=()=>({timezone:'America/New_York',mode:'manual',blocks:[{day:1,start:'09:00',end:'11:30',label:'Class'}],noCommitments:false});
+const pdfFile={name:'Schedule.pdf',type:'application/pdf',data:Buffer.from('%PDF-1.4\nprivate schedule').toString('base64')};
+const inputFile=(name,type,text)=>({name,type,size:Buffer.byteLength(text),arrayBuffer:async()=>Uint8Array.from(Buffer.from(text)).buffer});
+function changeSchedule(h,scope,field,value,index){
+  const target={dataset:{scheduleScope:scope,scheduleField:field},value,checked:Boolean(value)};
+  if(index!==undefined)target.dataset.scheduleIndex=String(index);
+  h.portal.scheduleChange({target});
+}
+function scheduleButton(h,scope,action,index){
+  const button={dataset:{scheduleScope:scope,scheduleAction:action,scheduleIndex:String(index??0)}};
+  h.portal.scheduleAction({target:{closest:()=>button}});
+}
+
+test('four-step onboarding requires a schedule before review while allowing an explicit empty week',async()=>{
+  const html=readFileSync(new URL('../invoice/beta.html',import.meta.url),'utf8');
+  assert.match(html,/<span>3<\/span> Schedule/);assert.match(html,/<span>4<\/span> Review/);
+  const h=harness(()=>({ok:true,batch:batch('A')}));await h.portal.loadInvite(INVITE_A);
+  for(const [key,value] of Object.entries(fields))h.get('beta-join-'+key).value=value;
+  h.events.get('beta-details-next:click')();assert.equal(h.get('beta-join-schedule').hidden,false);
+  assert.equal(h.portal.scheduleDraft('join').timezone,'America/New_York');
+  h.events.get('beta-schedule-next:click')();assert.equal(h.get('beta-join-review').hidden,true);
+  assert.match(h.get('beta-join-schedule-error').textContent,/time block|regular commitments/);
+  changeSchedule(h,'join','noCommitments',true);h.events.get('beta-schedule-next:click')();
+  assert.equal(h.get('beta-join-review').hidden,false);assert.match(h.get('beta-review-details').innerHTML,/No regular weekly commitments/);
+  assert.equal(h.portal.joinFields().schedule.noCommitments,true);assert.equal(h.portal.joinFields().schedule.blocks.length,0);
+});
+
+test('manual schedule rows validate time ranges, cap at 80, and appear escaped in signup review and payload',async()=>{
+  const h=harness(()=>({ok:true,batch:batch('A')}));await h.portal.loadInvite(INVITE_A);
+  scheduleButton(h,'join','add');changeSchedule(h,'join','start','12:00',0);changeSchedule(h,'join','end','09:00',0);
+  assert.equal(h.portal.validateJoinSchedule(),false);assert.match(h.get('beta-join-schedule-error').textContent,/end after the start/);
+  changeSchedule(h,'join','start','08:00',0);changeSchedule(h,'join','label','Class <studio>',0);
+  h.events.get('beta-schedule-next:click')();assert.match(h.get('beta-review-details').innerHTML,/Monday 08:00–09:00 · Class &lt;studio&gt;/);
+  assert.equal(h.portal.joinFields().schedule.blocks[0].label,'Class <studio>');
+  for(let i=0;i<90;i++)scheduleButton(h,'join','add');assert.equal(h.portal.scheduleDraft('join').blocks.length,80);
+  scheduleButton(h,'join','remove',2);assert.equal(h.portal.scheduleDraft('join').blocks.length,79);
+});
+
+test('a schedule file can be selected or dropped and is summarized without exposing its contents',async()=>{
+  const h=harness(()=>({ok:true,batch:batch('A')}));await h.portal.loadInvite(INVITE_A);
+  await h.portal.readScheduleFile('join',[inputFile('Personal <week>.ics','text/plain','BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR')]);
+  assert.equal(h.portal.scheduleDraft('join').file.type,'text/calendar');assert.equal(h.portal.scheduleDraft('join').mode,'file');
+  assert.equal(h.portal.validateJoinSchedule(),true);h.events.get('beta-schedule-next:click')();
+  assert.match(h.get('beta-review-details').innerHTML,/Personal &lt;week&gt;.ics/);
+  assert.doesNotMatch(h.get('beta-review-details').innerHTML,/BEGIN:VCALENDAR|QkVHSU4/);
+  assert.match(h.get('beta-join-schedule-editor').innerHTML,/type="file"/);assert.match(h.get('beta-join-schedule-editor').innerHTML,/\.ics/);
+  assert.ok(h.events.has('beta-join-schedule-editor:drop'));assert.ok(h.events.has('beta-join-schedule-editor:dragover'));
+  await h.portal.readScheduleFile('join',[inputFile('fake.pdf','application/pdf','not a PDF')]);
+  assert.match(h.get('beta-join-schedule-error').textContent,/contents/);assert.equal(h.portal.scheduleDraft('join').file.name,'Personal <week>.ics');
+  await h.portal.readScheduleFile('join',[{name:'large.pdf',type:'application/pdf',size:2097153}]);
+  assert.match(h.get('beta-join-schedule-error').textContent,/2 MB/);
+});
+
+test('file selection completed after changing identities cannot restore the previous private schedule',async()=>{
+  const pending=deferred();const h=harness(body=>body.action==='betalogin'?identity('B'):body.action==='list'?workspace('B'):{ok:true,batch:batch('A')},{readFile:()=>pending.promise});
+  await h.portal.loadInvite(INVITE_A);const upload=h.portal.readScheduleFile('join',[{name:'old.pdf'}]);
+  await h.portal.signInWithAccess(ACCESS);pending.resolve(pdfFile);await upload;
+  assert.equal(h.portal.state().workspace.member.id,'member-B');assert.equal(h.portal.state().scheduleDrafts.join,null);
+  assert.equal(h.get('beta-join-schedule-editor').innerHTML,'');assert.doesNotMatch(h.get('beta-sections').innerHTML,/Schedule.pdf/);
+});
+
+test('a lost signup response retries the exact original file schedule after reload',async()=>{
+  const session=storage(),attempts=[],original={...fields,schedule:{timezone:'America/New_York',mode:'file',blocks:[],file:pdfFile}};
+  const first=harness(body=>{if(body.action==='betainvite')return {ok:true,batch:batch('A')};attempts.push(body);throw new TypeError('Lost saved response');},{session});
+  await first.portal.loadInvite(INVITE_A);await first.portal.submitJoin(original);
+  const second=harness(body=>{if(body.action==='betainvite')return {ok:true,batch:batch('A')};if(body.action==='betajoin'){attempts.push(body);return {...identity('A'),code:ACCESS};}return workspace('A');},{session});
+  await second.portal.loadInvite(INVITE_A);assert.equal(second.get('beta-join-review').hidden,false);
+  assert.equal(second.portal.scheduleDraft('join').file.data,pdfFile.data);
+  await second.portal.submitJoin({...original,schedule:manualSchedule()});assert.deepEqual(attempts[1],attempts[0]);
+  assert.equal(second.portal.pendingJoin(INVITE_A),null);assert.equal(second.get('beta-join-schedule-editor').innerHTML,'');
+});
+
+test('a legacy pending signup keeps schedule absent instead of changing the recoverable identity',async()=>{
+  const request='d'.repeat(32),session=storage({'fomo.beta.pendingJoins':JSON.stringify({beta:{joinRequest:request,fields}})});
+  const h=harness(()=>({ok:true,batch:batch('A')}),{session});await h.portal.handleLocationChange();
+  assert.equal(h.get('beta-join-review').hidden,false);assert.match(h.get('beta-review-details').innerHTML,/earlier join/);
+  assert.equal(Object.hasOwn(h.portal.joinFields(),'schedule'),false);
+});
+
+test('signup never sends a schedule when browser storage cannot preserve a safe retry',async()=>{
+  const session=storage(),attempts=[];session.setItem=()=>{throw Error('Storage quota');};
+  const h=harness(body=>{attempts.push(body);return {ok:true,batch:batch('A')};},{session});await h.portal.loadInvite(INVITE_A);
+  await assert.rejects(h.portal.submitJoin({...fields,schedule:manualSchedule()}),/safely remember/);
+  assert.equal(attempts.some(body=>body.action==='betajoin'),false);assert.equal(h.portal.pendingJoin(INVITE_A),null);
+});
+
+test('schedule edits save only the owner and peer schedules never enter the participant view',async()=>{
+  const calls=[];let data={...workspace('A'),schedules:[{...manualSchedule(),memberId:'member-A',updatedAt:'2026-09-25T12:00:00Z'},{...manualSchedule(),memberId:'peer',blocks:[{day:1,start:'10:00',end:'11:00',label:'Secret peer class'}]}]};
+  const h=harness(body=>{calls.push(body);if(body.action==='betalogin')return identity('A');if(body.action==='schedulesave')data={...data,schedules:[{...body.schedule,memberId:'member-A'}]};return data;});
+  await h.portal.signInWithAccess(ACCESS);assert.equal(h.portal.state().workspace.schedules.length,1);assert.doesNotMatch(h.get('beta-sections').innerHTML,/Secret peer class/);
+  changeSchedule(h,'own','label','Updated <work>',0);await h.portal.saveSchedule();
+  const sent=calls.find(body=>body.action==='schedulesave');assert.equal(sent._session,'session-A');assert.equal(Object.hasOwn(sent,'id'),false);assert.equal(sent.schedule.blocks[0].label,'Updated <work>');
+  assert.match(h.get('beta-sections').innerHTML,/Updated &lt;work&gt;/);assert.match(h.get('beta-notice').textContent,/private schedule is saved/);
+  assert.match(h.get('beta-sections').innerHTML,/Only you, Arya, and Milo/);
+});
+
+test('an existing file can keep its private attachment when changing timezone and download is authenticated',async()=>{
+  const calls=[],saved={memberId:'member-A',mode:'file',timezone:'America/New_York',blocks:[],ready:true,file:{name:pdfFile.name,type:pdfFile.type,size:24}};
+  const h=harness(body=>{calls.push(body);if(body.action==='betalogin')return identity('A');if(body.action==='schedulefile')return {ok:true,file:pdfFile};return {...workspace('A'),schedules:[{...saved,timezone:body.schedule?.timezone||saved.timezone}]};});
+  await h.portal.signInWithAccess(ACCESS);changeSchedule(h,'own','timezone','America/Chicago');await h.portal.saveSchedule();
+  const sent=calls.find(body=>body.action==='schedulesave');assert.deepEqual(sent.schedule,{mode:'file',timezone:'America/Chicago',blocks:[],keepFile:true});
+  assert.equal(Object.hasOwn(sent.schedule,'file'),false);await h.portal.downloadSchedule();
+  assert.deepEqual(calls.find(body=>body.action==='schedulefile'),{id:'member-A',_api:'beta',action:'schedulefile',_session:'session-A'});
+  assert.deepEqual(h.downloads,[{href:'blob:private-download',name:'Schedule.pdf'}]);assert.doesNotMatch(h.get('beta-sections').innerHTML,/JVBER|data:application|<iframe/);
+});
+
+test('schedule failures retain drafts, refresh respects edits, and a late save cannot revive a signed-out profile',async()=>{
+  let fail=true,pending=null;const saved={...manualSchedule(),memberId:'member-A'};
+  const h=harness(body=>{if(body.action==='betalogin')return identity('A');if(body.action==='schedulesave'){if(pending)return pending.promise;if(fail)throw new TypeError('Offline');}return {...workspace('A'),schedules:[saved]};});
+  await h.portal.signInWithAccess(ACCESS);changeSchedule(h,'own','label','Draft work',0);await h.portal.saveSchedule();
+  assert.match(h.get('beta-own-schedule-error').textContent,/Could not connect/);await h.portal.refresh();assert.equal(h.portal.scheduleDraft('own').blocks[0].label,'Draft work');
+  assert.equal(h.portal.state().workspace.schedules[0].blocks[0].label,'Class');
+  fail=false;pending=deferred();const save=h.portal.saveSchedule();h.events.get('beta-signout:click')();pending.resolve({...workspace('A'),schedules:[saved]});await save;
+  assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-sections').innerHTML,'');assert.equal(h.get('beta-notice').textContent,'');
+});
+
+test('a reloaded staged file can finish saving without uploading its intact attachment again',async()=>{
+  const calls=[],saved={memberId:'member-A',mode:'file',timezone:'America/New_York',blocks:[],ready:false,file:{name:pdfFile.name,type:pdfFile.type,size:24}};
+  const h=harness(body=>{calls.push(body);if(body.action==='betalogin')return identity('A');return {...workspace('A'),schedules:[{...saved,ready:body.action==='schedulesave'}]};});
+  await h.portal.signInWithAccess(ACCESS);
+  assert.match(h.get('beta-sections').innerHTML,/Try Save schedule again/);
+  assert.doesNotMatch(h.get('beta-sections').innerHTML,/id="beta-schedule-download"/);
+  await h.portal.saveSchedule();
+  assert.equal(calls.find(body=>body.action==='schedulesave').schedule.keepFile,true);
+  assert.equal(h.portal.state().workspace.schedules[0].ready,true);
+  assert.match(h.get('beta-sections').innerHTML,/id="beta-schedule-download"/);
 });

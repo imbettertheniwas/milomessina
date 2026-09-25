@@ -30,3 +30,26 @@
 .portfolio-names a span{font-size:12px;text-decoration:none}
 .portfolio-empty{font-size:12px;line-height:1.7;color:var(--subtle)}
 @media(max-width:650px){.website-input-row{flex-wrap:wrap}.website-input-row input{flex-basis:100%}.website-input-row .button{min-height:38px}.portfolio-names{gap:13px 24px}.portfolio-names a{font-size:14px}}
+/* Private schedule entry is shared by signup and the owner's editor. */
+.schedule-form{padding:22px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.schedule-options{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.schedule-options label,.schedule-row label{display:block;font-size:10px;margin-bottom:7px;color:var(--muted)}
+.schedule-options select,.schedule-row input,.schedule-row select{width:100%;font-size:11px;min-width:0}
+.schedule-none{display:flex;align-items:flex-start;gap:9px;font-size:11px;line-height:1.6;margin:0 0 19px}
+.schedule-none input{width:15px;height:15px;min-height:0;margin:2px 0 0;flex-shrink:0;accent-color:var(--accent)}
+.schedule-row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1.4fr auto;gap:10px;align-items:end;padding:15px 0;border-top:1px solid var(--line)}
+.schedule-remove{font-size:10px;padding:8px 0;min-height:40px}
+.schedule-row+.button{margin-top:8px;font-size:11px}
+.schedule-help,.schedule-privacy,.schedule-footer p,.schedule-drop p{font-size:10px;line-height:1.7;color:var(--subtle);margin-top:12px}
+.schedule-privacy{padding-top:14px;border-top:1px solid var(--line);margin-top:18px}
+.schedule-drop{border:1px dashed var(--subtle);border-radius:8px;background:var(--surface);padding:22px 16px}
+.schedule-drop label{display:block;font-size:12px;line-height:1.6;margin-bottom:12px}
+.schedule-drop input{width:100%;font-size:10px;padding:9px;cursor:pointer}
+.schedule-selected{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:8px}
+.schedule-selected span{font-size:11px;overflow-wrap:anywhere;min-width:0}
+.schedule-selected .button{flex-shrink:0;font-size:10px}
+.schedule-error{font-size:11px;line-height:1.6;color:var(--danger);margin-top:13px}
+.schedule-footer{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-top:18px}
+.schedule-footer p{margin:0}.schedule-footer .button{font-size:11px;flex-shrink:0}
+.gate .schedule-row{grid-template-columns:1.1fr 1fr 1fr}.gate .schedule-row-label{grid-column:1/3}.gate .schedule-remove{justify-self:end}
+@media(max-width:650px){.join-progress{gap:10px;font-size:8px}.join-progress li{gap:4px}.schedule-form{padding:18px 15px}.schedule-options{grid-template-columns:1fr;gap:15px}.schedule-row{grid-template-columns:1.1fr 1fr 1fr}.schedule-row-label{grid-column:1/3}.schedule-remove{justify-self:end}.schedule-footer{align-items:flex-start;flex-direction:column;gap:12px}}

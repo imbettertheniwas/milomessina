@@ -1,4 +1,5 @@
 import {loadBetaGithub, betaGithubInitial} from './beta-github.js';
+import {normalizeSchedule, scheduleFile} from './beta-schedule.js';
 
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 const SESSION_KEY = 'fomo.beta.session';
@@ -12,6 +13,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&am
 let token = '', workspace = null, busy = false, generation = 0, invite = '', inviteBatch = null;
 let recapDraft = null, githubStates = [], githubKey = '', githubGeneration = 0, accessCapability = '', showReturnLink = false, attendanceDay = '';
 let joinStep = 0, gateBusy = false, websiteDraft = null;
+let scheduleDrafts = {join: null, own: null}, scheduleRead = 0, scheduleDirty = false;
 const WEBSITE_ERROR = 'Enter a public website such as yourname.com or https://yourname.com, up to 300 characters.';
 function websiteUrl(value) {
   let url = String(value || '').trim();
@@ -25,6 +27,86 @@ function websiteUrl(value) {
       labels.some(label => !/^[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?$/i.test(label)) ||
       authority[2] && (Number(authority[2]) < 1 || Number(authority[2]) > 65535)) return '';
   return parts[1].toLowerCase() + '://' + hostname + (authority[2] ? ':' + authority[2] : '') + (parts[3] || '');
+}
+const SCHEDULE_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const SCHEDULE_ZONES = [['America/New_York', 'New York / Eastern'], ['America/Chicago', 'Chicago / Central'], ['America/Denver', 'Denver / Mountain'], ['America/Los_Angeles', 'Los Angeles / Pacific'], ['UTC', 'UTC']];
+function scheduleDraft(scope) {
+  if (!scheduleDrafts[scope]) {
+    const saved = scope === 'own' ? workspace?.schedules?.find(item => item.memberId === workspace.member.id) : null;
+    scheduleDrafts[scope] = saved ? JSON.parse(JSON.stringify(saved)) : {timezone: 'America/New_York', mode: 'manual', blocks: [], noCommitments: false};
+    // The server can finish a staged save after proving the owned file's hash.
+    if (saved?.mode === 'file') scheduleDrafts[scope].keepFile = Boolean(saved.file);
+  }
+  return scheduleDrafts[scope];
+}
+function scheduleSummary(schedule) {
+  if (!schedule) return 'Not provided on this earlier join. You can add it in your profile.';
+  if (schedule.mode === 'file') return (schedule.file?.name || 'Schedule file') + ' · ' + schedule.timezone + ' · Private';
+  return (schedule.noCommitments ? 'No regular weekly commitments' : (schedule.blocks || []).map(block => SCHEDULE_DAYS[block.day] + ' ' + block.start + '–' + block.end + (block.label ? ' · ' + block.label : '')).join('; ')) + ' · ' + schedule.timezone + ' · Private';
+}
+function scheduleEditor(scope) {
+  const draft = scheduleDraft(scope), prefix = 'beta-' + scope + '-schedule';
+  const attrs = field => ' data-schedule-scope="' + scope + '" data-schedule-field="' + field + '"';
+  const zones = SCHEDULE_ZONES.slice();
+  if (draft.timezone && !zones.some(([value]) => value === draft.timezone)) zones.push([draft.timezone, draft.timezone]);
+  const timezone = '<label for="' + prefix + '-timezone">Time zone</label><select id="' + prefix + '-timezone"' + attrs('timezone') + '>' + zones.map(([value, label]) => '<option value="' + esc(value) + '"' + (draft.timezone === value ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select>';
+  const mode = '<label for="' + prefix + '-mode">Add your schedule</label><select id="' + prefix + '-mode"' + attrs('mode') + '><option value="manual"' + (draft.mode === 'manual' ? ' selected' : '') + '>Enter weekly times</option><option value="file"' + (draft.mode === 'file' ? ' selected' : '') + '>Upload a schedule file</option></select>';
+  const row = (block, index) => '<div class="schedule-row"><div><label for="' + prefix + '-day-' + index + '">Day</label><select id="' + prefix + '-day-' + index + '"' + attrs('day') + ' data-schedule-index="' + index + '">' + SCHEDULE_DAYS.map((day, value) => '<option value="' + value + '"' + (Number(block.day) === value ? ' selected' : '') + '>' + day + '</option>').join('') + '</select></div><div><label for="' + prefix + '-start-' + index + '">From</label><input type="time" id="' + prefix + '-start-' + index + '" value="' + esc(block.start) + '"' + attrs('start') + ' data-schedule-index="' + index + '"></div><div><label for="' + prefix + '-end-' + index + '">To</label><input type="time" id="' + prefix + '-end-' + index + '" value="' + esc(block.end) + '"' + attrs('end') + ' data-schedule-index="' + index + '"></div><div class="schedule-row-label"><label for="' + prefix + '-label-' + index + '">Commitment</label><input id="' + prefix + '-label-' + index + '" maxlength="100" placeholder="Class, work, busy…" value="' + esc(block.label) + '"' + attrs('label') + ' data-schedule-index="' + index + '"></div><button class="button subtle schedule-remove" type="button" data-schedule-action="remove" data-schedule-scope="' + scope + '" data-schedule-index="' + index + '" aria-label="Remove commitment ' + (index + 1) + '">Remove</button></div>';
+  const manual = '<div' + (draft.mode === 'manual' ? '' : ' hidden') + '><label class="schedule-none"><input type="checkbox"' + attrs('noCommitments') + (draft.noCommitments ? ' checked' : '') + '> I have no regular weekly commitments</label><div' + (draft.noCommitments ? ' hidden' : '') + '>' + (draft.blocks || []).map(row).join('') + '<button class="button" type="button" data-schedule-action="add" data-schedule-scope="' + scope + '"' + ((draft.blocks || []).length >= 80 ? ' disabled' : '') + '>Add a weekly time</button><p class="schedule-help">Enter the times you’re busy. For an overnight commitment, add a separate time for each day.</p></div></div>';
+  const file = '<div' + (draft.mode === 'file' ? '' : ' hidden') + '><div class="schedule-drop" data-schedule-drop="' + scope + '"><label for="' + prefix + '-file">Drop your schedule here, or choose a file</label><input type="file" id="' + prefix + '-file" accept=".pdf,.png,.jpg,.jpeg,.ics,application/pdf,image/png,image/jpeg,text/calendar"' + attrs('file') + '><p>PDF, PNG, JPG, or calendar (.ics) · Up to 2 MB</p></div>' + (draft.file ? '<div class="schedule-selected"><span>' + esc(draft.file.name) + (draft.ready === false ? ' · Saving is incomplete. Try Save schedule again, or choose the file again.' : '') + '</span><button class="button subtle" type="button" data-schedule-action="clear-file" data-schedule-scope="' + scope + '">Remove file</button></div>' : '') + '<p class="schedule-help">The original file is saved privately. Calendar files are kept as uploaded.</p></div>';
+  return '<div class="schedule-options"><div>' + timezone + '</div><div>' + mode + '</div></div>' + manual + file + '<p class="schedule-privacy">Only you, Arya, and Milo can see your schedule.</p><p id="' + prefix + '-error" class="schedule-error" role="alert" hidden></p>';
+}
+function renderScheduleEditor(scope) { const host = $('beta-' + scope + '-schedule-editor'); if (host) host.innerHTML = scheduleEditor(scope); }
+function scheduleError(scope, message = '') { const element = $('beta-' + scope + '-schedule-error'); if (element) { element.textContent = message; element.hidden = !message; } }
+function scheduleChange(event) {
+  const target = event.target, scope = target.dataset.scheduleScope, field = target.dataset.scheduleField;
+  if (!scope || !field || (scope === 'join' ? gateBusy : busy)) return;
+  if (field === 'file') { readScheduleFile(scope, target.files); return; }
+  const draft = scheduleDraft(scope), index = target.dataset.scheduleIndex;
+  if (scope === 'own') scheduleDirty = true;
+  if (index !== undefined && draft.blocks[Number(index)]) draft.blocks[Number(index)][field] = field === 'day' ? Number(target.value) : target.value;
+  else if (field === 'noCommitments') { draft.noCommitments = target.checked; if (target.checked) draft.blocks = []; }
+  else draft[field] = target.value;
+  scheduleError(scope);
+  if (field === 'mode' || field === 'noCommitments') renderScheduleEditor(scope);
+}
+function scheduleAction(event) {
+  const button = event.target.closest('[data-schedule-action]');
+  if (!button) return false;
+  const scope = button.dataset.scheduleScope;
+  if (scope === 'join' ? gateBusy : busy) return true;
+  const draft = scheduleDraft(scope), action = button.dataset.scheduleAction;
+  if (scope === 'own') scheduleDirty = true;
+  if (action === 'add' && draft.blocks.length < 80) { draft.noCommitments = false; draft.blocks.push({day: 1, start: '', end: '', label: ''}); }
+  if (action === 'remove') draft.blocks.splice(Number(button.dataset.scheduleIndex), 1);
+  if (action === 'clear-file') { delete draft.file; delete draft.keepFile; delete draft.ready; scheduleRead++; }
+  renderScheduleEditor(scope); return true;
+}
+async function readScheduleFile(scope, files) {
+  if (scope === 'join' ? gateBusy : busy || !workspace) return;
+  if (!files?.length) return;
+  if (files.length !== 1) { scheduleError(scope, 'Choose one schedule file at a time.'); return; }
+  const requestGeneration = generation, requestRead = ++scheduleRead;
+  scheduleError(scope);
+  if (scope === 'join') setGateBusy(true, 'Reading your schedule…'); else setBusy(true);
+  try {
+    const file = await scheduleFile(files[0]);
+    if (requestGeneration !== generation || requestRead !== scheduleRead) return;
+    const draft = scheduleDraft(scope); draft.mode = 'file'; draft.file = file; delete draft.keepFile; delete draft.ready;
+    if (scope === 'own') scheduleDirty = true;
+    renderScheduleEditor(scope);
+  } catch (error) { if (requestGeneration === generation && requestRead === scheduleRead) scheduleError(scope, error.message || 'This file could not be read. Try again.'); }
+  finally { if (requestGeneration === generation && requestRead === scheduleRead) { if (scope === 'join') setGateBusy(false); else setBusy(false); } }
+}
+function scheduleDrop(event) {
+  const drop = event.target.closest('[data-schedule-drop]');
+  if (!drop) return;
+  event.preventDefault();
+  if (event.type === 'drop') readScheduleFile(drop.dataset.scheduleDrop, event.dataTransfer?.files);
+}
+function validateJoinSchedule() {
+  try { normalizeSchedule(scheduleDraft('join')); scheduleError('join'); return true; }
+  catch (error) { setJoinStep(2, false); scheduleError('join', error.message); return false; }
 }
 function savedSession() { try { return sessionStorage.getItem(SESSION_KEY) || ''; } catch (_) { return ''; } }
 function forgetSession() { try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {} }
@@ -40,20 +122,35 @@ function forgetIdentity() {
 }
 let pendingJoins = {};
 try { const stored = JSON.parse(sessionStorage.getItem(JOIN_KEY) || '{}'); if (stored && typeof stored === 'object' && !Array.isArray(stored)) pendingJoins = stored; } catch (_) {}
-function writePendingJoins() { try { sessionStorage.setItem(JOIN_KEY, JSON.stringify(pendingJoins)); } catch (_) {} }
+function writePendingJoins() { try { const value = JSON.stringify(pendingJoins); sessionStorage.setItem(JOIN_KEY, value); return sessionStorage.getItem(JOIN_KEY) === value; } catch (_) { return false; } }
 function pendingJoin(invitation) {
   const pending = pendingJoins[invitation];
   return pending && /^[a-f0-9]{32}$/.test(pending.joinRequest || '') && pending.fields && ['name','email','phone','github'].every(key => typeof pending.fields[key] === 'string') &&
     (pending.fields.website === undefined || typeof pending.fields.website === 'string') ? {...pending, fields: {website: '', ...pending.fields}} : null;
 }
-function joinFields() { return Object.fromEntries(JOIN_FIELDS.map(key => [key, $('beta-join-' + key).value.trim()])); }
-function restoreJoinFields(fields) { JOIN_FIELDS.forEach(key => { $('beta-join-' + key).value = fields[key] || ''; }); }
+function joinFields() {
+  const fields = Object.fromEntries(JOIN_FIELDS.map(key => [key, $('beta-join-' + key).value.trim()]));
+  const pending = pendingJoin(invite);
+  // A retry from before schedules were added must preserve its original identity.
+  if (pending && pending.fields.schedule === undefined) return fields;
+  fields.schedule = normalizeSchedule(scheduleDraft('join')); return fields;
+}
+function restoreJoinFields(fields) {
+  JOIN_FIELDS.forEach(key => { $('beta-join-' + key).value = fields[key] || ''; });
+  scheduleDrafts.join = fields.schedule ? JSON.parse(JSON.stringify(fields.schedule)) : null;
+  renderScheduleEditor('join');
+}
 function makeJoinAttempt(invitation, fields) {
   const previous = pendingJoin(invitation);
   if (previous) return previous;
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   const pending = {joinRequest: Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join(''), fields: {website: '', ...fields}};
-  pendingJoins[invitation] = pending; writePendingJoins(); return pending;
+  pendingJoins[invitation] = pending;
+  if (!writePendingJoins() && fields.schedule) {
+    delete pendingJoins[invitation];
+    throw new Error('This browser could not safely remember your schedule for a retry. Allow site storage, or try a smaller file or manual entry.');
+  }
+  return pending;
 }
 function clearJoinAttempt(invitation) { delete pendingJoins[invitation]; writePendingJoins(); }
 function returnLink(access = accessCapability) { return access ? location.origin + '/internal/beta#access=' + encodeURIComponent(access) : ''; }
@@ -85,30 +182,32 @@ function setError(message = '') { $('beta-error').textContent = message; $('beta
 function setBusy(value, preserveEditor = false) {
   busy = value; $('beta-refresh').disabled = value;
   $('beta-refresh').textContent = value ? 'Updating…' : 'Refresh';
-  $('beta-sections').querySelectorAll('select, textarea, input, button').forEach(element => { element.disabled = value && !(preserveEditor && element.matches('#beta-recap-form textarea')); });
+  $('beta-sections').querySelectorAll('select, textarea, input, button').forEach(element => { element.disabled = value && !(preserveEditor && (element.matches('#beta-recap-form textarea') || element.dataset.scheduleScope === 'own' && element.tagName !== 'BUTTON')); });
   $('beta-profile').querySelectorAll('input,button').forEach(element => { element.disabled = value && !(preserveEditor && element.id === 'beta-website'); });
   $('beta-main').setAttribute('aria-busy', String(value));
 }
 function setGateBusy(value, message = '') {
   gateBusy = value;
-  $('beta-join-form').querySelectorAll('input,button').forEach(element => { element.disabled = value; });
+  $('beta-join-form').querySelectorAll('input,select,button').forEach(element => { element.disabled = value; });
   $('beta-join').textContent = value ? message || 'Opening…' : 'Join this group ↗';
 }
 function setJoinStep(step, focus = true) {
   joinStep = step;
-  ['beta-join-welcome', 'beta-join-details', 'beta-join-review'].forEach((id, index) => { $(id).hidden = index !== step; });
+  ['beta-join-welcome', 'beta-join-details', 'beta-join-schedule', 'beta-join-review'].forEach((id, index) => { $(id).hidden = index !== step; });
   $('beta-join-progress').querySelectorAll('li').forEach((item, index) => {
     item.classList.toggle('completed', index < step);
     if (index === step) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
   });
-  const titles = ['Arya’s two-week beta internship.', 'Let’s get to know you.', 'You’re ready to join.'];
-  const intros = ['One beta group, your own two weeks, and room to build. The day you join is day 1.', 'Add your contact details and the GitHub account you’ll use for your internship projects.', 'Check your details below. Joining starts your two weeks and saves your place in the group.'];
-  $('beta-gate-eyebrow').textContent = 'Step ' + (step + 1) + ' of 3';
+  const titles = ['Arya’s two-week beta internship.', 'Let’s get to know you.', 'When are you busy?', 'You’re ready to join.'];
+  const intros = ['One beta group, your own two weeks, and room to build. The day you join is day 1.', 'Add your contact details and the GitHub account you’ll use for your internship projects.', 'Add your weekly classes, work, or other commitments, or upload a schedule. Only you, Arya, and Milo can see it.', 'Check your details below. Joining starts your two weeks and saves your place in the group.'];
+  $('beta-gate-eyebrow').textContent = 'Step ' + (step + 1) + ' of 4';
   $('beta-gate-title').textContent = titles[step];
   $('beta-gate-intro').textContent = intros[step];
   $('beta-login-error').textContent = '';
-  if (step === 2) {
-    $('beta-review-details').innerHTML = [['Name', 'name'], ['Email', 'email'], ['Phone', 'phone'], ['GitHub', 'github'], ['Website', 'website']].filter(([, field]) => field !== 'website' || $('beta-join-website').value.trim()).map(([label, field]) => '<div><dt>' + label + '</dt><dd>' + esc((field === 'github' ? '@' : '') + $('beta-join-' + field).value.trim()) + '</dd></div>').join('');
+  if (step === 2) renderScheduleEditor('join');
+  if (step === 3) {
+    const pending = pendingJoin(invite), reviewSchedule = pending && pending.fields.schedule === undefined ? null : scheduleDrafts.join;
+    $('beta-review-details').innerHTML = [['Name', 'name'], ['Email', 'email'], ['Phone', 'phone'], ['GitHub', 'github'], ['Website', 'website']].filter(([, field]) => field !== 'website' || $('beta-join-website').value.trim()).map(([label, field]) => '<div><dt>' + label + '</dt><dd>' + esc((field === 'github' ? '@' : '') + $('beta-join-' + field).value.trim()) + '</dd></div>').join('') + '<div><dt>Schedule</dt><dd>' + esc(scheduleSummary(reviewSchedule)) + '</dd></div>';
   }
   if (focus) $('beta-gate-title').focus({preventScroll: false});
 }
@@ -146,10 +245,11 @@ function validateJoinDetails() {
 }
 function showGate(message = '', join = false, forget = false) {
   generation++; githubGeneration++;
-  token = ''; workspace = null; recapDraft = null; websiteDraft = null; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
+  token = ''; workspace = null; recapDraft = null; websiteDraft = null; scheduleDrafts = {join: null, own: null}; scheduleDirty = false; scheduleRead++; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
   if (forget) forgetIdentity();
   $('beta-workspace').hidden = true; $('beta-gate').hidden = false;
   ['beta-summary', 'beta-sections', 'beta-nav', 'beta-profile'].forEach(id => $(id).replaceChildren());
+  $('beta-join-schedule-editor').replaceChildren();
   ['beta-batch-side', 'beta-batch', 'beta-avatar', 'beta-updated', 'beta-notice'].forEach(id => { $(id).textContent = ''; });
   $('beta-profile').hidden = true; $('beta-greeting').textContent = 'Your workspace';
   $('beta-recovery').hidden = true; $('beta-return-link').value = '';
@@ -204,7 +304,7 @@ function normalize(out) {
   }
   const permissions = Array.isArray(out.permissions) ? out.permissions.filter(value => ['attendance', 'github', 'recap'].includes(value)) : [];
   const period = {startDate: out.member.startDate || out.batch.startDate, endDate: out.member.endDate || out.batch.endDate};
-  return {...out, group: out.group || out.batch, period, permissions, peers: Array.isArray(out.peers) ? out.peers : [], attendance: Array.isArray(out.attendance) ? out.attendance : [], recaps: (out.recaps || []).filter(recap => recap.memberId === out.member.id)};
+  return {...out, group: out.group || out.batch, period, permissions, peers: Array.isArray(out.peers) ? out.peers : [], attendance: Array.isArray(out.attendance) ? out.attendance : [], recaps: (out.recaps || []).filter(recap => recap.memberId === out.member.id), schedules: (Array.isArray(out.schedules) ? out.schedules : []).filter(schedule => schedule.memberId === out.member.id)};
 }
 function emptyState(title, description) { return '<div class="empty-state"><h3>' + esc(title) + '</h3><p>' + esc(description) + '</p></div>'; }
 function initials(name) { return String(name || '?').trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase(); }
@@ -213,6 +313,10 @@ function websitesSection() {
   const links = workspace.peers.map(peer => ({peer, url: websiteUrl(peer.website)})).filter(item => item.url);
   const names = links.map(({peer, url}) => '<li><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(peer.name) + '<span aria-hidden="true">↗</span></a></li>').join('');
   return '<section class="section websites-section" id="beta-section-websites" aria-labelledby="beta-heading-websites">' + heading('websites', 'Personal sites', 'Your group’s websites and portfolios.') + (links.length ? '<ul class="portfolio-names">' + names + '</ul>' : '<p class="portfolio-empty">Add your website in your profile to be the first name here.</p>') + '</section>';
+}
+function scheduleSection() {
+  const saved = workspace.schedules[0], download = saved?.mode === 'file' && saved.ready !== false ? '<button type="button" class="button" id="beta-schedule-download">Download saved file ↗</button>' : '';
+  return '<section class="section" id="beta-section-schedule" aria-labelledby="beta-heading-schedule">' + heading('schedule', 'Your schedule', 'Your weekly commitments. Visible only to you, Arya, and Milo.', download) + '<form id="beta-schedule-form" class="schedule-form" novalidate><div id="beta-own-schedule-editor">' + scheduleEditor('own') + '</div><div class="schedule-footer"><p>' + (saved ? 'Last saved ' + esc(dateLabel(saved.updatedAt, true) || '') : 'You haven’t added a schedule yet.') + '</p><button class="button primary" type="submit">Save schedule</button></div></form></section>';
 }
 function attendanceSection() {
   const days = batchDays(), currentDay = today();
@@ -256,10 +360,10 @@ function render() {
   $('beta-greeting').textContent = 'Hey, ' + String(member.name || 'there').trim().split(/\s+/)[0] + '.';
   $('beta-batch').textContent = workspace.group.name || member.batch || 'Beta group';
   $('beta-batch-side').textContent = workspace.group.name || member.batch || 'Beta group'; $('beta-avatar').textContent = initials(member.name);
-  $('beta-nav').innerHTML = [['websites', 'Personal sites'], ['attendance', 'Group attendance'], ['github', 'GitHub activity'], ['recap', 'Your recap']].filter(([module]) => module === 'websites' || allowed(module)).map(([module, label]) => '<a href="#beta-section-' + module + '">' + label + '<span aria-hidden="true">↗</span></a>').join('');
+  $('beta-nav').innerHTML = [['websites', 'Personal sites'], ['attendance', 'Group attendance'], ['github', 'GitHub activity'], ['schedule', 'Your schedule'], ['recap', 'Your recap']].filter(([module]) => ['websites', 'schedule'].includes(module) || allowed(module)).map(([module, label]) => '<a href="#beta-section-' + module + '">' + label + '<span aria-hidden="true">↗</span></a>').join('');
   const myDays = new Set(workspace.attendance.filter(record => record.memberId === member.id).map(record => record.day));
   $('beta-summary').innerHTML = '<div class="summary-card"><span>Your beta period</span><div class="summary-dates">' + esc(dateLabel(workspace.period.startDate)) + '<span>—</span>' + esc(dateLabel(workspace.period.endDate)) + '</div><p>Two weeks to learn and build</p></div><div class="summary-card"><span>In your group</span><div class="summary-value">' + workspace.peers.length + '<small> ' + (workspace.peers.length === 1 ? 'intern' : 'interns') + '</small></div><p>Progress happens together</p></div>' + (allowed('attendance') ? '<div class="summary-card"><span>You showed up</span><div class="summary-value">' + myDays.size + '<small> ' + (myDays.size === 1 ? 'day' : 'days') + '</small></div><p>Your recorded attendance</p></div>' : '');
-  $('beta-sections').innerHTML = websitesSection() + (allowed('attendance') ? attendanceSection() : '') + (allowed('github') ? githubSection() : '') + (allowed('recap') ? recapSection() : '');
+  $('beta-sections').innerHTML = websitesSection() + (allowed('attendance') ? attendanceSection() : '') + (allowed('github') ? githubSection() : '') + scheduleSection() + (allowed('recap') ? recapSection() : '');
   if (allowed('recap')) {
     const recap = recapDraft || workspace.recaps[0] || {};
     $('beta-learned').value = recap.learned || ''; $('beta-accomplished').value = recap.accomplished || '';
@@ -292,13 +396,15 @@ async function fetchWorkspace(requestGeneration, preserveEditor = false) {
   if (!allowed('github')) { githubGeneration++; githubStates = []; githubKey = ''; }
   // An automatic access check must leave a focused editor and its cursor intact.
   // Changed identity, access, or a failed session still clears the old view.
-  if (!(preserveEditor && previousMember === workspace.member.id && previousBatch === workspace.batch.id && (allowed('recap') && $('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement)))) render();
+  if (previousMember !== workspace.member.id) scheduleDirty = false;
+  if (!scheduleDirty) scheduleDrafts.own = null;
+  if (!(preserveEditor && previousMember === workspace.member.id && previousBatch === workspace.batch.id && (allowed('recap') && $('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement) || $('beta-schedule-form')?.contains(document.activeElement)))) render();
   refreshGithub(); return true;
 }
 async function refresh(preserveEditor = false) {
   if (!token || busy) return;
   const requestGeneration = generation;
-  const keepEditor = preserveEditor && Boolean($('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement));
+  const keepEditor = preserveEditor && Boolean($('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement) || $('beta-schedule-form')?.contains(document.activeElement));
   setError(); $('beta-notice').textContent = ''; setBusy(true, keepEditor);
   try { await fetchWorkspace(requestGeneration, keepEditor); }
   catch (error) { if (requestGeneration === generation) handleError(error); }
@@ -328,7 +434,7 @@ async function openIdentity(identity, requestGeneration, joined = false) {
   if (data.member.id !== identity.out.member.id) throw new Error('Your profile could not be verified. Open your personal return link again.');
   workspace = data; token = identity.session; accessCapability = identity.access || ''; showReturnLink = joined;
   rememberIdentity(token, accessCapability); render(); refreshGithub(); clearRouteFragment();
-  $('beta-join-form').reset(); $('beta-review-details').replaceChildren(); $('beta-greeting').focus({preventScroll: true});
+  $('beta-join-form').reset(); $('beta-review-details').replaceChildren(); $('beta-join-schedule-editor').replaceChildren(); scheduleDrafts.join = null; $('beta-greeting').focus({preventScroll: true});
   return true;
 }
 async function signInWithAccess(access) {
@@ -363,7 +469,7 @@ async function submitJoin(fields) {
       setError('Your profile is saved. Use Refresh to load your group, or save your personal return link.');
     } else {
       if (error.joinSaved === false) clearJoinAttempt(invitation);
-      restoreJoinFields(attempt.fields); setJoinStep(error.joinSaved === false ? 1 : 2, false);
+      restoreJoinFields(attempt.fields); setJoinStep(error.joinSaved === false ? 1 : 3, false);
       $('beta-login-error').textContent = (error.message || 'Your join was not confirmed.') + (!error.code ? ' Retry to safely reopen the same profile.' : '');
     }
   } finally { if (requestGeneration === generation) setGateBusy(false); }
@@ -405,6 +511,39 @@ async function saveWebsite(value) {
     else { $('beta-website-error').textContent = error.message || 'Your website could not be saved. Please try again.'; $('beta-website-error').hidden = false; }
   } finally { if (requestGeneration === generation) setBusy(false); }
 }
+async function saveSchedule() {
+  if (!token || !workspace || busy) return;
+  let schedule;
+  try { schedule = normalizeSchedule(scheduleDraft('own'), {allowExistingFile: true}); }
+  catch (error) { scheduleError('own', error.message); return; }
+  const requestGeneration = generation, memberId = workspace.member.id;
+  scheduleError('own'); setError(); $('beta-notice').textContent = ''; setBusy(true);
+  try {
+    const out = await betaCall('schedulesave', {schedule}, requestGeneration);
+    if (requestGeneration !== generation) return;
+    const next = normalize(out);
+    if (next.member.id !== memberId) throw new Error('Your profile could not be verified. Refresh and try again.');
+    workspace = next; scheduleDrafts.own = null; scheduleDirty = false; render(); refreshGithub(); $('beta-notice').textContent = 'Your private schedule is saved.';
+  } catch (error) {
+    if (requestGeneration !== generation) return;
+    if (isAccessError(error)) handleError(error); else scheduleError('own', error.message || 'Your schedule could not be saved. Please try again.');
+  } finally { if (requestGeneration === generation) setBusy(false); }
+}
+async function downloadSchedule() {
+  if (!token || !workspace || busy) return;
+  const requestGeneration = generation, memberId = workspace.member.id, timezone = workspace.schedules[0]?.timezone || 'America/New_York';
+  setBusy(true); scheduleError('own');
+  try {
+    const out = await betaCall('schedulefile', {id: memberId}, requestGeneration);
+    if (requestGeneration !== generation || workspace?.member.id !== memberId) return;
+    const file = normalizeSchedule({mode: 'file', timezone, file: out.file}).file;
+    const bytes = Uint8Array.from(atob(file.data), character => character.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], {type: file.type}));
+    const link = document.createElement('a'); link.href = url; link.download = file.name; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) { if (requestGeneration === generation) { if (isAccessError(error)) handleError(error); else scheduleError('own', error.message || 'This file could not be downloaded. Try again.'); } }
+  finally { if (requestGeneration === generation) setBusy(false); }
+}
 async function loadInvite(invitation = PERMANENT_INVITE) {
   invite = invitation; inviteBatch = null; joinStep = 0; showGate('', true);
   const requestGeneration = generation; setGateBusy(true, 'Opening Beta…');
@@ -434,7 +573,7 @@ async function loadInvite(invitation = PERMANENT_INVITE) {
     $('beta-invite-summary').innerHTML = '<strong>' + esc(out.group?.name || inviteBatch.name || 'Beta') + '</strong><span>14 days, starting the day you join</span>';
     $('beta-recap-due').textContent = 'day 14 of your internship';
     const pending = pendingJoin(invitation);
-    if (pending) { restoreJoinFields(pending.fields); setJoinStep(2); $('beta-login-error').textContent = 'Your previous join was not confirmed. Retry with these details to safely reopen the same profile.'; }
+    if (pending) { restoreJoinFields(pending.fields); setJoinStep(3); $('beta-login-error').textContent = 'Your previous join was not confirmed. Retry with these details to safely reopen the same profile.'; }
     else { setJoinStep(0); $('beta-login-error').textContent = resumeError; }
   } catch (error) { if (requestGeneration === generation) showGate(error.message || 'Beta could not be opened. Please reload to try again.'); }
   finally { if (requestGeneration === generation) setGateBusy(false); }
@@ -454,9 +593,13 @@ $('beta-join-form').addEventListener('submit', event => {
   if (joinStep === 0) { setJoinStep(1); return; }
   if (!validateJoinDetails()) return;
   if (joinStep === 1) { setJoinStep(2); return; }
-  const fields = joinFields(), pending = pendingJoin(invite);
-  if (pending && Object.keys(fields).some(key => fields[key] !== pending.fields[key])) {
-    restoreJoinFields(pending.fields); setJoinStep(2, false);
+  if (joinStep === 2) { if (validateJoinSchedule()) setJoinStep(3); return; }
+  const pending = pendingJoin(invite);
+  if ((!pending || pending.fields.schedule !== undefined) && !validateJoinSchedule()) return;
+  let fields;
+  try { fields = joinFields(); } catch (error) { scheduleError('join', error.message); return; }
+  if (pending && Object.keys(fields).some(key => JSON.stringify(fields[key]) !== JSON.stringify(pending.fields[key]))) {
+    restoreJoinFields(pending.fields); setJoinStep(3, false);
     $('beta-login-error').textContent = 'Your previous join may already be saved. Retry with the original details shown here so we can safely reopen that profile.';
     return;
   }
@@ -466,7 +609,14 @@ $('beta-join-form').addEventListener('submit', event => {
 $('beta-join-start').addEventListener('click', () => { if (!gateBusy && inviteBatch) setJoinStep(1); });
 $('beta-details-back').addEventListener('click', () => { if (!gateBusy) setJoinStep(0); });
 $('beta-details-next').addEventListener('click', () => { if (!gateBusy && validateJoinDetails()) setJoinStep(2); });
+$('beta-schedule-back').addEventListener('click', () => { if (!gateBusy) setJoinStep(1); });
+$('beta-schedule-next').addEventListener('click', () => { if (!gateBusy && validateJoinSchedule()) setJoinStep(3); });
 $('beta-review-back').addEventListener('click', () => { if (!gateBusy) setJoinStep(1); });
+$('beta-join-schedule-editor').addEventListener('input', event => { if (event.target.dataset.scheduleField === 'label' || event.target.dataset.scheduleField === 'start' || event.target.dataset.scheduleField === 'end') scheduleChange(event); });
+$('beta-join-schedule-editor').addEventListener('change', scheduleChange);
+$('beta-join-schedule-editor').addEventListener('click', scheduleAction);
+$('beta-join-schedule-editor').addEventListener('dragover', scheduleDrop);
+$('beta-join-schedule-editor').addEventListener('drop', scheduleDrop);
 $('beta-refresh').addEventListener('click', () => refresh());
 $('beta-signout').addEventListener('click', () => {
   const previousToken = token; showGate('', false, true); invite = ''; inviteBatch = null; clearRouteFragment();
@@ -486,18 +636,24 @@ $('beta-profile').addEventListener('input', event => {
   websiteDraft = event.target.value; $('beta-website-error').textContent = ''; $('beta-website-error').hidden = true;
 });
 $('beta-sections').addEventListener('click', event => {
+  if (scheduleAction(event)) return;
+  if (event.target.closest('#beta-schedule-download')) { downloadSchedule(); return; }
   if (event.target.closest('#beta-github-refresh')) { refreshGithub(true); return; }
   const button = event.target.closest('#beta-today');
   if (button && allowed('attendance') && !busy) mutate(button.dataset.present === 'true' ? 'attendanceremove' : 'attendance', {day: attendanceDay}, button.dataset.present === 'true' ? 'Your attendance was removed for ' + dateLabel(attendanceDay) + '.' : 'You’re marked as attended on ' + dateLabel(attendanceDay) + '.');
 });
 $('beta-sections').addEventListener('change', event => {
+  if (event.target.dataset.scheduleScope) { scheduleChange(event); return; }
   if (event.target.id !== 'beta-attendance-day' || !workspace || busy) return;
   const value = event.target.value;
   if (!batchDays().includes(value) || value > today()) { setError('Choose a date within your beta period, up to today.'); return; }
   attendanceDay = value; setError(); render();
 });
-$('beta-sections').addEventListener('input', event => { if (event.target.closest('#beta-recap-form')) recapDraft = {learned: $('beta-learned').value, accomplished: $('beta-accomplished').value, links: $('beta-recap-links').value}; });
+$('beta-sections').addEventListener('input', event => { if (event.target.dataset.scheduleScope) { if (['label', 'start', 'end'].includes(event.target.dataset.scheduleField)) scheduleChange(event); return; } if (event.target.closest('#beta-recap-form')) recapDraft = {learned: $('beta-learned').value, accomplished: $('beta-accomplished').value, links: $('beta-recap-links').value}; });
+$('beta-sections').addEventListener('dragover', scheduleDrop);
+$('beta-sections').addEventListener('drop', scheduleDrop);
 $('beta-sections').addEventListener('submit', event => {
+  if (event.target.id === 'beta-schedule-form') { event.preventDefault(); saveSchedule(); return; }
   if (event.target.id !== 'beta-recap-form') return;
   event.preventDefault(); if (!allowed('recap') || busy) return;
   const submit = event.submitter?.value === 'submit';
