@@ -6,7 +6,7 @@ import {webcrypto} from 'node:crypto';
 
 const source = readFileSync(new URL('../invoice/beta-portal.js', import.meta.url), 'utf8')
   .replace(/^import[^\n]*\n/, '')
-  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy})};');
+  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, saveWebsite, websiteUrl, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy})};');
 const ACCESS = 'BETA-' + 'a'.repeat(32);
 const INVITE_A = 'BATCH-' + '1'.repeat(32), INVITE_B = 'BATCH-' + '2'.repeat(32);
 const fields = {name:'Example Intern', email:'intern@example.invalid', phone:'+1 202 555 0100', github:'example-intern'};
@@ -24,11 +24,11 @@ function harness(fetchImpl, {session=storage(), local=storage(), hash=''}={}) {
   const elements=new Map(), events=new Map(); let document;
   const makeElement=id=>({id,name:id.replace('beta-join-',''),value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,
     classList:{toggle(){}},setAttribute(){},removeAttribute(){},replaceChildren(){this.innerHTML='';this.textContent='';},
-    focus(){document.activeElement=this;},select(){},setCustomValidity(){},checkValidity(){return true;},reportValidity(){},
-    matches(){return false;},contains(element){return element===this;},closest(){return null;},
+    focus(){document.activeElement=this;},select(){},setCustomValidity(value){this.validityMessage=value;},checkValidity(){return !this.validityMessage;},reportValidity(){},
+    matches(){return false;},contains(element){return element===this || id==='beta-website-form' && element?.id==='beta-website';},closest(){return null;},
     addEventListener(name,fn){events.set(id+':'+name,fn);},
-    reset(){['name','email','phone','github'].forEach(name=>get('beta-join-'+name).value='');},
-    querySelectorAll(selector){if(id==='beta-join-progress')return [get('step1'),get('step2'),get('step3')];if(id==='beta-join-details'||id==='beta-join-form')return ['name','email','phone','github'].map(name=>get('beta-join-'+name));return [];}});
+    reset(){['name','email','phone','github','website'].forEach(name=>get('beta-join-'+name).value='');},
+    querySelectorAll(selector){if(id==='beta-join-progress')return [get('step1'),get('step2'),get('step3')];if(id==='beta-join-details'||id==='beta-join-form')return ['name','email','phone','github','website'].map(name=>get('beta-join-'+name));if(id==='beta-profile')return [get('beta-website'),get('beta-website-save')];return [];}});
   const get=id=>{if(!elements.has(id))elements.set(id,makeElement(id));return elements.get(id);};
   document={getElementById:get,activeElement:null,hidden:false,addEventListener(){}};
   const location={origin:'https://example.invalid',pathname:'/internal/beta',search:'',hash};
@@ -245,4 +245,137 @@ test('a lost permanent-link join safely retries the same request after a root-pa
   assert.equal(second.get('beta-join-review').hidden,false);assert.equal(second.get('beta-join-phone').value,fields.phone);
   await second.portal.submitJoin(fields);
   assert.deepEqual(attempts[0],attempts[1]);assert.equal(second.portal.pendingJoin('beta'),null);
+});
+
+test('onboarding collects an optional website and reviews it without weakening required details',async()=>{
+  const html=readFileSync(new URL('../invoice/beta.html',import.meta.url),'utf8');
+  const input=html.match(/<input\b[^>]*id="beta-join-website"[^>]*>/)?.[0];
+  assert.ok(input);assert.doesNotMatch(input,/\brequired\b/);assert.match(input,/maxlength="300"/);
+  for(const name of ['name','email','phone','github'])assert.match(html,new RegExp('<input\\b[^>]*id="beta-join-'+name+'"[^>]*\\brequired\\b'));
+  const h=harness(()=>({ok:true,batch:batch('A')}));await h.portal.loadInvite(INVITE_A);
+  for(const [key,value] of Object.entries(fields))h.get('beta-join-'+key).value=value;
+  h.get('beta-join-website').value='my-portfolio.example/work';
+  h.events.get('beta-details-next:click')();
+  assert.equal(h.get('beta-join-review').hidden,false);
+  assert.match(h.get('beta-review-details').innerHTML,/<dt>Website<\/dt><dd>my-portfolio.example\/work/);
+  h.get('beta-join-website').value='javascript:alert(1)';h.events.get('beta-details-next:click')();
+  assert.equal(h.get('beta-join-details').hidden,false);assert.match(h.get('beta-login-error').textContent,/public website/);
+  h.get('beta-join-website').value='';h.events.get('beta-details-next:click')();
+  assert.equal(h.get('beta-join-review').hidden,false);assert.doesNotMatch(h.get('beta-review-details').innerHTML,/<dt>Website/);
+  h.get('beta-join-email').value='';h.events.get('beta-details-next:click')();
+  assert.equal(h.get('beta-join-details').hidden,false);assert.match(h.get('beta-login-error').textContent,/email address/);
+});
+
+test('a lost join response preserves its original website along with the same retry request',async()=>{
+  const session=storage(),attempts=[],original={...fields,website:'My-Portfolio.example/work?ref=beta'};
+  const first=harness(body=>{
+    if(body.action==='betagroup')return {ok:true,batch:batch('A'),invite:'beta'};
+    attempts.push(body);throw new TypeError('Connection lost');
+  },{session});
+  await first.portal.handleLocationChange();await first.portal.submitJoin(original);
+  const second=harness(body=>{
+    if(body.action==='betagroup')return {ok:true,batch:batch('A'),invite:'beta'};
+    if(body.action==='betajoin'){attempts.push(body);return {...identity('A'),code:ACCESS};}
+    return workspace('A');
+  },{session});
+  await second.portal.handleLocationChange();
+  assert.equal(second.get('beta-join-website').value,original.website);
+  await second.portal.submitJoin({...original,website:'changed.example'});
+  assert.deepEqual(attempts[1],attempts[0]);assert.equal(attempts[1].website,original.website);
+});
+
+test('an older four-field pending join remains retryable with an empty website',async()=>{
+  const request='c'.repeat(32),session=storage({'fomo.beta.pendingJoins':JSON.stringify({beta:{joinRequest:request,fields}})});
+  const attempts=[];const h=harness(body=>{
+    if(body.action==='betagroup')return {ok:true,batch:batch('A'),invite:'beta'};
+    if(body.action==='betajoin'){attempts.push(body);return {...identity('A'),code:ACCESS};}
+    return workspace('A');
+  },{session});
+  await h.portal.handleLocationChange();assert.equal(h.portal.pendingJoin('beta').fields.website,'');
+  assert.equal(h.get('beta-join-website').value,'');await h.portal.submitJoin(fields);
+  assert.equal(attempts[0].joinRequest,request);assert.equal(attempts[0].website,'');
+});
+
+test('website links accept domains and http URLs while rejecting unsafe or malformed destinations',()=>{
+  const h=harness(()=>{throw Error('No requests expected');});
+  for(const [raw,expected] of [['My-Portfolio.example','https://my-portfolio.example'],[' HTTP://Site.example:8080/Work?x=1&y=2#Bio ','http://site.example:8080/Work?x=1&y=2#Bio'],['','']])assert.equal(h.portal.websiteUrl(raw),expected,raw);
+  for(const raw of ['javascript:alert(1)','data:text/html,hello','//evil.example','https://person:secret@site.example','site.example\\@evil.example','https://site.example/a b','https://site.example/\npath','http://localhost','http://127.0.0.1','https://[::1]','https://site..example','https://-site.example','https://site.example:0','https://site.example:65536','https://site.example/<script>','https://site.example/"','https://site.example/\'','https://site.example/`', 'a'.repeat(64)+'.example', 'https://site.example/'+ 'x'.repeat(300)])assert.equal(h.portal.websiteUrl(raw),'',raw);
+});
+
+test('the beta home shows simple escaped peer names with safe website links before attendance',async()=>{
+  const own={...member('A'),website:'https://own.example'},data={...workspace('A'),member:own,permissions:['attendance'],peers:[
+    own,{id:'peer',name:'Lee <Builder>',website:'https://lee.example/work?a=1&b=2',email:'private@example.invalid'},
+    {id:'missing',name:'No website'}, {id:'unsafe',name:'Unsafe site',website:'javascript:alert(1)'},
+    {id:'credential',name:'Credential site',website:'https://person:secret@site.example'}]};
+  const h=harness(body=>body.action==='betalogin'?identity('A'):data);await h.portal.signInWithAccess(ACCESS);
+  const markup=h.get('beta-sections').innerHTML,sites=markup.slice(0,markup.indexOf('id="beta-section-attendance"'));
+  assert.match(sites,/<ul class="portfolio-names">/);assert.match(sites,/href="https:\/\/lee.example\/work\?a=1&amp;b=2"/);
+  assert.match(sites,/Lee &lt;Builder&gt;/);assert.match(sites,/rel="noopener noreferrer"/);
+  assert.doesNotMatch(sites,/private@example|Unsafe site|Credential site|No website|<iframe|<img|javascript:/);
+  assert.ok(markup.indexOf('id="beta-section-websites"')<markup.indexOf('id="beta-section-attendance"'));
+  assert.equal(h.get('beta-website').value,own.website);
+});
+
+test('own-profile website save normalizes a bare domain and preserves private profile and recap data',async()=>{
+  const requests=[];let current={...workspace('A'),permissions:['recap'],recaps:[{memberId:'member-A',learned:'Learning',accomplished:'Built work',links:[]}]};
+  const h=harness(body=>{
+    requests.push(body);if(body.action==='betalogin')return identity('A');
+    if(body.action==='memberprofile'){current={...current,member:{...current.member,website:body.website},peers:[{...current.member,website:body.website}]};}
+    return current;
+  });
+  await h.portal.signInWithAccess(ACCESS);h.get('beta-website').value='MY-SITE.example/work';
+  await h.portal.saveWebsite(h.get('beta-website').value);
+  assert.deepEqual(requests.find(body=>body.action==='memberprofile'),{website:'https://my-site.example/work',_api:'beta',action:'memberprofile',_session:'session-A'});
+  assert.equal(h.get('beta-website').value,'https://my-site.example/work');
+  assert.match(h.get('beta-sections').innerHTML,/href="https:\/\/my-site.example\/work"/);
+  assert.match(h.get('beta-profile').innerHTML,/intern@example.invalid/);assert.equal(h.get('beta-learned').value,'Learning');
+  assert.equal(h.portal.state().workspace.member.email,fields.email);assert.match(h.get('beta-notice').textContent,/saved/);
+  await h.portal.saveWebsite('');
+  assert.equal(requests.at(-1).website,'');assert.equal(h.get('beta-website').value,'');
+  assert.doesNotMatch(h.get('beta-sections').innerHTML,/https:\/\/my-site.example/);assert.match(h.get('beta-notice').textContent,/removed/);
+});
+
+test('invalid and failed website saves keep the existing link and allow correction without losing the draft',async()=>{
+  let fail=true;const calls=[],data={...workspace('A'),member:{...member('A'),website:'https://saved.example'},peers:[{...member('A'),website:'https://saved.example'}]};
+  const h=harness(body=>{
+    calls.push(body);if(body.action==='betalogin')return identity('A');
+    if(body.action==='memberprofile'&&fail)throw new TypeError('Network unavailable');
+    if(body.action==='memberprofile')return {...data,member:{...data.member,website:body.website},peers:[{...data.member,website:body.website}]};
+    return data;
+  });
+  await h.portal.signInWithAccess(ACCESS);
+  await h.portal.saveWebsite('javascript:alert(1)');
+  assert.equal(calls.filter(body=>body.action==='memberprofile').length,0);assert.equal(h.get('beta-website-error').hidden,false);
+  h.get('beta-website').value='new.example';h.events.get('beta-profile:input')({target:h.get('beta-website')});
+  assert.equal(h.get('beta-website-error').hidden,true);await h.portal.saveWebsite('new.example');
+  assert.equal(h.get('beta-website').value,'new.example');assert.match(h.get('beta-website-error').textContent,/Could not connect/);
+  assert.equal(h.portal.state().workspace.member.website,'https://saved.example');assert.match(h.get('beta-sections').innerHTML,/https:\/\/saved.example/);
+  fail=false;await h.portal.saveWebsite('new.example');
+  assert.equal(h.portal.state().workspace.member.website,'https://new.example');assert.equal(h.get('beta-website-error').hidden,true);
+});
+
+test('a focused website draft survives automatic refresh and unrelated saved data',async()=>{
+  const h=harness(body=>body.action==='betalogin'?identity('A'):{...workspace('A'),member:{...member('A'),website:'https://saved.example'}});
+  await h.portal.signInWithAccess(ACCESS);h.get('beta-website').value='unsaved.example';h.get('beta-website').focus();
+  h.events.get('beta-profile:input')({target:h.get('beta-website')});
+  await h.portal.refresh(true);assert.equal(h.get('beta-website').value,'unsaved.example');assert.equal(h.get('beta-website').disabled,false);
+  await h.portal.refresh();assert.equal(h.get('beta-website').value,'unsaved.example');
+});
+
+test('a website save cannot restore private data after signout',async()=>{
+  const pending=deferred();const h=harness(body=>body.action==='betalogin'?identity('A'):body.action==='memberprofile'?pending.promise:body.action==='logout'?{ok:true}:workspace('A'));
+  await h.portal.signInWithAccess(ACCESS);const save=h.portal.saveWebsite('new.example');
+  h.events.get('beta-signout:click')();pending.resolve({...workspace('A'),member:{...member('A'),website:'https://new.example'}});await save;
+  assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-workspace').hidden,true);
+  assert.equal(h.get('beta-profile').innerHTML,'');assert.equal(h.get('beta-sections').innerHTML,'');assert.equal(h.get('beta-notice').textContent,'');
+});
+
+test('denied website editing clears the old profile while retaining its personal return capability',async()=>{
+  let revoked=false;const h=harness(body=>{
+    if(revoked)return {ok:false,code:'AUTH_REQUIRED',error:'This profile is paused.'};
+    return body.action==='betalogin'?identity('A'):workspace('A');
+  });
+  await h.portal.signInWithAccess(ACCESS);revoked=true;await h.portal.saveWebsite('new.example');
+  assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-profile').innerHTML,'');
+  assert.equal(h.get('beta-workspace').hidden,true);assert.equal(h.local.getItem('fomo.beta.access'),ACCESS);
 });

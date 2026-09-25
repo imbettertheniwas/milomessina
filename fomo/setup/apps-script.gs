@@ -139,6 +139,7 @@ function doGet() {
     beta: typeof betaApi === 'function',
     betaPasswordless: true,
     betaPermanentGroup: true,
+    betaDelete: true,
     approvals: true,
     moneyUndo: true,
     purchaseApproval: true,
@@ -338,7 +339,8 @@ function internalActor(body) {
    existing sessions immediately. */
 var BETA_PERMISSIONS = ['attendance', 'github', 'recap'];
 var BETA_STATUSES = ['active', 'paused', 'graduated'];
-var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone','joinRequestHash'];
+var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone','joinRequestHash','website'];
+var BETA_DELETIONS = ['id','joinRequestHash','deletedAt'];
 var BETA_SETUP_MESSAGE = 'This beta invitation is not available. Ask Arya for the current link.';
 function betaSecret() {
   return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_SECRET') || '');
@@ -377,8 +379,8 @@ function betaTable(name, columns, create) {
   }
   if(sheet) {
     var head=sheet.getRange(1,1,1,columns.length).getValues()[0];
-    // Extend either earlier exact member schema (before phone, or before
-    // retry hashes). Never overwrite an existing header, row or occupied column.
+    // Extend earlier exact member schemas with appended fields. Never
+    // overwrite an existing header, row or occupied column.
     var prefix=0;
     while(prefix<columns.length && head[prefix]===columns[prefix])prefix++;
     if(name==='internal_beta_members' && prefix>=13 && prefix<columns.length &&
@@ -413,7 +415,7 @@ function betaMemberPermissions(member) {return BETA_PERMISSIONS.slice();}
 function betaPublicMember(member,manager) {
   var actualBatch=betaFindBatch(member),period=betaMemberPeriod(member);
   var out={id:member.id,name:member.name,email:member.email,phone:String(member.phone||''),batch:actualBatch?actualBatch.name:member.batch,batchId:member.batchId,github:member.github,status:member.status,
-    permissions:betaMemberPermissions(member),createdAt:member.createdAt,updatedAt:member.updatedAt,startDate:period.startDate,endDate:period.endDate};
+    permissions:betaMemberPermissions(member),createdAt:member.createdAt,updatedAt:member.updatedAt,startDate:period.startDate,endDate:period.endDate,website:betaPublicWebsite(member.website)};
   if(manager)out.notes=member.notes;
   return out;
 }
@@ -517,6 +519,27 @@ function betaPhone(value) {
     throw new Error('Enter a phone number with 7–15 digits. You can include a country code and normal phone formatting.');
   return phone;
 }
+function betaWebsite(value) {
+  if(value===undefined || value==='')return '';
+  if(typeof value!=='string')throw new Error('Enter a website such as example.com, or leave it blank.');
+  var website=value.trim();
+  if(!website)return '';
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(website))website='https://'+website;
+  var parts=/^(https?):\/\/([^/?#]+)([/?#].*)?$/i.exec(website);
+  if(website.length>300 || /[\s\x00-\x1f\x7f\\<>"'`]/.test(website) || !parts)
+    throw new Error('Use an http or https website of at most 300 characters, without sign-in details.');
+  var authority=/^([a-z0-9.-]+)(?::([0-9]{1,5}))?$/i.exec(parts[2]);
+  var hostname=authority?authority[1].toLowerCase():'',labels=hostname.split('.');
+  if(!authority || hostname.length>253 || labels.length<2 || /^\d+$/.test(labels[labels.length-1]) ||
+     labels.some(function(label){return !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label);}) ||
+     authority[2] && (Number(authority[2])<1 || Number(authority[2])>65535))
+    throw new Error('Enter a valid website domain, such as example.com.');
+  return parts[1].toLowerCase()+'://'+hostname+(authority[2]?':'+authority[2]:'')+(parts[3]||'');
+}
+function betaPublicWebsite(value) {
+  // Old or manually edited sheet values must not become unsafe links.
+  try{return betaWebsite(value);}catch(e){return '';}
+}
 function betaNewInvite() {return 'BATCH-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
 function betaInviteHash(invite) {return internalDigest(betaSecret()+'\nbatch-invite\n'+String(invite||'').trim().toUpperCase());}
 function betaInviteBatch(invite) {
@@ -541,8 +564,10 @@ function betaJoinRequest(body) {
 function betaJoinRequestHash(batchId,request) {
   return internalDigest(betaSecret()+'\nbeta-join-request-v1\n'+batchId+'\n'+request);
 }
-function betaJoinIdentity(name,email,phone,github) {
-  return JSON.stringify([name,email.toLowerCase(),phone,github.toLowerCase()]);
+function betaJoinIdentity(name,email,phone,github,website) {
+  var identity=[name,email.toLowerCase(),phone,github.toLowerCase()];
+  if(website)identity.push(website); // Preserve earlier retry hashes when no website was supplied.
+  return JSON.stringify(identity);
 }
 function betaJoin(body) {
   if(!betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
@@ -550,9 +575,11 @@ function betaJoin(body) {
   if(!batch)return reply(false,'This beta invite is invalid or no longer active.',{code:'AUTH_REQUIRED'});
   var joinMayBeSaved=false;
   try {
-    var request=betaJoinRequest(body),name=betaString(body,'name',80,true),email=betaString(body,'email',254,true),github=betaGithub(body.github),phone=betaPhone(body.phone);
+    var request=betaJoinRequest(body),name=betaString(body,'name',80,true),email=betaString(body,'email',254,true),github=betaGithub(body.github),phone=betaPhone(body.phone),website=betaWebsite(body.website);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
-    var identity=betaJoinIdentity(name,email,phone,github),requestHash=request?betaJoinRequestHash(batch.id,request):'';
+    var identity=betaJoinIdentity(name,email,phone,github,website),requestHash=request?betaJoinRequestHash(batch.id,request):'';
+    if(requestHash && betaRead('internal_beta_deletions',BETA_DELETIONS).some(function(d){return internalSame(String(d.joinRequestHash||''),requestHash);}))
+      throw new Error('This join attempt belongs to a deleted profile. Start a new signup to join again.');
     var code=request?'BETA-'+internalDigest(betaSecret()+'\nbeta-join-access-v1\n'+batch.id+'\n'+request+'\n'+identity).slice(0,32).toUpperCase():betaNewCode();
     var codeHash=betaCodeHash(code),members=betaRead('internal_beta_members',BETA_MEMBERS);
     var existing=members.filter(function(m){return m.batchId===batch.id &&
@@ -563,13 +590,13 @@ function betaJoin(body) {
       // identity and still-active personal capability must all agree.
       if(existing.length!==1 || !requestHash || saved.status!=='active' ||
          !internalSame(String(saved.joinRequestHash||''),requestHash) || !internalSame(String(saved.codeHash||''),codeHash) ||
-         betaJoinIdentity(String(saved.name),String(saved.email),String(saved.phone),String(saved.github))!==identity)
+         betaJoinIdentity(String(saved.name),String(saved.email),String(saved.phone),String(saved.github),betaPublicWebsite(saved.website))!==identity)
         throw new Error('You already joined this beta batch. Open your personal workspace link, or ask Arya to reset it.');
       joinMayBeSaved=true;
       return reply(true,null,{token:betaMintSession(saved),code:code,who:saved.name,beta:true,recovered:true,member:betaPublicMember(saved,false),permissions:betaMemberPermissions(saved)});
     }
     var stamp=new Date().toISOString();
-    var member={id:Utilities.getUuid(),name:name,email:email,phone:phone,github:github,batchId:batch.id,batch:batch.name,status:'active',
+    var member={id:Utilities.getUuid(),name:name,email:email,phone:phone,github:github,website:website,batchId:batch.id,batch:batch.name,status:'active',
       notes:'',codeHash:codeHash,joinRequestHash:requestHash,epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:'self-join'};
     joinMayBeSaved=true; // A write can succeed even if its confirmation fails.
     betaWrite('internal_beta_members',BETA_MEMBERS,member);
@@ -641,13 +668,32 @@ function betaRecapPublic(recap) {
   if(!Array.isArray(out.links))out.links=[];
   out.submitted=betaActive(recap.submitted);return out;
 }
+function betaDeleteMember(body) {
+  if(typeof body.id!=='string' || !body.id.trim() || body.id.length>100)throw new Error('Select the beta intern to delete.');
+  var id=body.id.trim(),member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return m.id===id;})[0];
+  if(!member)return {deletedMemberId:id,alreadyDeleted:true};
+  // Revoke access before touching dependent rows. If a later sheet operation
+  // fails, a retry continues cleanup while old sessions and links stay invalid.
+  member.status='paused';member.epoch=Number(member.epoch)+1;member.codeHash='';member.updatedAt=new Date().toISOString();
+  betaWrite('internal_beta_members',BETA_MEMBERS,member);
+  var deleted=betaRead('internal_beta_deletions',BETA_DELETIONS).filter(function(d){return d.id===id;})[0];
+  if(!deleted)betaWrite('internal_beta_deletions',BETA_DELETIONS,{id:id,joinRequestHash:String(member.joinRequestHash||''),deletedAt:new Date().toISOString()});
+  // Keep only the consumed join-attempt hash so a stale retry cannot recreate
+  // the deleted profile's deterministic personal capability.
+  [['internal_beta_attendance',BETA_ATTENDANCE],['internal_beta_recaps',BETA_RECAPS]].forEach(function(table){
+    var rows=betaRead(table[0],table[1]).filter(function(r){return r.memberId===id;});
+    rows.sort(function(a,b){return b._row-a._row;}).forEach(function(r){betaTable(table[0],table[1],false).deleteRow(r._row);});
+  });
+  betaTable('internal_beta_members',BETA_MEMBERS,false).deleteRow(member._row);
+  return {deletedMemberId:id,alreadyDeleted:false};
+}
 function betaGroupData(manager,member) {
   var members=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES),batch=member?betaFindBatch(member):null;
   var group=betaPrimaryBatch();
   var peers=members.filter(function(m){return manager || member && member.batchId && m.batchId===member.batchId;});
   var ids=peers.map(function(m){return m.id;});
   return {group:group?betaPublicBatch(group):null,batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
-    peers:peers.map(function(m){var period=betaMemberPeriod(m);return {id:m.id,name:m.name,github:m.github,status:m.status,batchId:m.batchId,startDate:period.startDate,endDate:period.endDate};}),
+    peers:peers.map(function(m){var period=betaMemberPeriod(m);return {id:m.id,name:m.name,github:m.github,website:betaPublicWebsite(m.website),status:m.status,batchId:m.batchId,startDate:period.startDate,endDate:period.endDate};}),
     attendance:betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return manager||ids.indexOf(a.memberId)>=0;}).map(function(a){return betaCleanRow(a,BETA_ATTENDANCE);}),
     recaps:betaRead('internal_beta_recaps',BETA_RECAPS).filter(function(r){return manager||member&&r.memberId===member.id;}).map(betaRecapPublic)};
 }
@@ -657,7 +703,7 @@ function betaApi(body) {
   if(!manager && !member)return reply(false,'Beta session expired or access changed. Sign in again.',{code:'AUTH_REQUIRED'});
   var action=String(body.action||'list'), configured=betaConfigured();
   if(!configured && action!=='list' && !(manager && action==='batchadd'))return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
-  if(!manager && ['list','attendance','attendanceremove','recap'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
+  if(!manager && ['list','attendance','attendanceremove','recap','memberprofile'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
   var members=betaRead('internal_beta_members',BETA_MEMBERS), target, stamp=new Date().toISOString(), extra={};
   try {
     if(manager && action==='list')betaEnsureGroup(operator);
@@ -668,6 +714,13 @@ function betaApi(body) {
     } else if(action==='recap') {
       if(manager)return reply(false,'A recap must be written by its participant.',{code:'FORBIDDEN'});
       betaRecapWrite(body,member);
+    } else if(action==='memberprofile') {
+      if(manager)return reply(false,'Select an intern in the Beta manager to edit their website.',{code:'FORBIDDEN'});
+      if(body.website===undefined)throw new Error('Include a website, or an empty value to clear it.');
+      member.website=betaWebsite(body.website);member.updatedAt=stamp;
+      betaWrite('internal_beta_members',BETA_MEMBERS,member);
+    } else if(action==='memberdelete') {
+      extra=betaDeleteMember(body);
     } else if(action==='memberupdate' || action==='rotatecode') {
       target=members.filter(function(m){return m.id===String(body.id);})[0];
       if(!target)throw new Error('Beta participant not found.');
@@ -677,6 +730,7 @@ function betaApi(body) {
         ['name','email','notes'].forEach(function(k){if(body[k]!==undefined)target[k]=betaString(body,k,k==='notes'?5000:k==='email'?254:80,k==='name'||k==='batch');});
         if(body.github!==undefined)target.github=betaGithub(body.github);
         if(body.phone!==undefined)target.phone=betaPhone(body.phone);
+        if(body.website!==undefined)target.website=betaWebsite(body.website);
         if(target.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target.email))throw new Error('Enter a valid email address.');
         if(target.email && members.some(function(m){return m.id!==target.id && m.batchId===target.batchId && String(m.email).toLowerCase()===String(target.email).toLowerCase();}))throw new Error('That email already belongs to another beta participant.');
         if(body.status!==undefined) {
@@ -690,7 +744,7 @@ function betaApi(body) {
   } catch(e) {return reply(false,String(e.message||e),{code:'INVALID'});}
   var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
   var visibleMembers=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return manager || m.id===member.id;});
-  var result={manager:manager,configured:true,setupMessage:'',permissions:permissions,
+  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,permissions:permissions,
     members:visibleMembers.map(function(m){return betaPublicMember(m,manager);}),member:member?betaPublicMember(member,false):null};
   var group=betaGroupData(manager,member);
   Object.keys(group).forEach(function(k){result[k]=group[k];});

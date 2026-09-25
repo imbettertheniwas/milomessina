@@ -5,12 +5,27 @@ const SESSION_KEY = 'fomo.beta.session';
 const ACCESS_KEY = 'fomo.beta.access';
 const JOIN_KEY = 'fomo.beta.pendingJoins';
 const PERMANENT_INVITE = 'beta';
+const JOIN_FIELDS = ['name', 'email', 'phone', 'github', 'website'];
 const BETA_SETUP_MESSAGE = 'Beta access is not available yet. Ask Arya to finish setup.';
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
 let token = '', workspace = null, busy = false, generation = 0, invite = '', inviteBatch = null;
 let recapDraft = null, githubStates = [], githubKey = '', githubGeneration = 0, accessCapability = '', showReturnLink = false, attendanceDay = '';
-let joinStep = 0, gateBusy = false;
+let joinStep = 0, gateBusy = false, websiteDraft = null;
+const WEBSITE_ERROR = 'Enter a public website such as yourname.com or https://yourname.com, up to 300 characters.';
+function websiteUrl(value) {
+  let url = String(value || '').trim();
+  if (!url) return '';
+  if (!/^[a-z][a-z\d+.-]*:/i.test(url)) url = 'https://' + url;
+  const parts = /^(https?):\/\/([^/?#]+)([/?#].*)?$/i.exec(url);
+  if (url.length > 300 || /[\s\u0000-\u001f\u007f\\<>"'`]/.test(url) || !parts) return '';
+  const authority = /^([a-z\d.-]+)(?::(\d{1,5}))?$/i.exec(parts[2]);
+  const hostname = authority ? authority[1].toLowerCase() : '', labels = hostname.split('.');
+  if (!authority || hostname.length > 253 || labels.length < 2 || /^\d+$/.test(labels.at(-1)) ||
+      labels.some(label => !/^[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?$/i.test(label)) ||
+      authority[2] && (Number(authority[2]) < 1 || Number(authority[2]) > 65535)) return '';
+  return parts[1].toLowerCase() + '://' + hostname + (authority[2] ? ':' + authority[2] : '') + (parts[3] || '');
+}
 function savedSession() { try { return sessionStorage.getItem(SESSION_KEY) || ''; } catch (_) { return ''; } }
 function forgetSession() { try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {} }
 function sessionAccess() { try { return sessionStorage.getItem(ACCESS_KEY) || ''; } catch (_) { return ''; } }
@@ -28,15 +43,16 @@ try { const stored = JSON.parse(sessionStorage.getItem(JOIN_KEY) || '{}'); if (s
 function writePendingJoins() { try { sessionStorage.setItem(JOIN_KEY, JSON.stringify(pendingJoins)); } catch (_) {} }
 function pendingJoin(invitation) {
   const pending = pendingJoins[invitation];
-  return pending && /^[a-f0-9]{32}$/.test(pending.joinRequest || '') && pending.fields && ['name','email','phone','github'].every(key => typeof pending.fields[key] === 'string') ? pending : null;
+  return pending && /^[a-f0-9]{32}$/.test(pending.joinRequest || '') && pending.fields && ['name','email','phone','github'].every(key => typeof pending.fields[key] === 'string') &&
+    (pending.fields.website === undefined || typeof pending.fields.website === 'string') ? {...pending, fields: {website: '', ...pending.fields}} : null;
 }
-function joinFields() { return Object.fromEntries(['name','email','phone','github'].map(key => [key, $('beta-join-' + key).value.trim()])); }
-function restoreJoinFields(fields) { ['name','email','phone','github'].forEach(key => { $('beta-join-' + key).value = fields[key] || ''; }); }
+function joinFields() { return Object.fromEntries(JOIN_FIELDS.map(key => [key, $('beta-join-' + key).value.trim()])); }
+function restoreJoinFields(fields) { JOIN_FIELDS.forEach(key => { $('beta-join-' + key).value = fields[key] || ''; }); }
 function makeJoinAttempt(invitation, fields) {
   const previous = pendingJoin(invitation);
   if (previous) return previous;
   const bytes = crypto.getRandomValues(new Uint8Array(16));
-  const pending = {joinRequest: Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join(''), fields: {...fields}};
+  const pending = {joinRequest: Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join(''), fields: {website: '', ...fields}};
   pendingJoins[invitation] = pending; writePendingJoins(); return pending;
 }
 function clearJoinAttempt(invitation) { delete pendingJoins[invitation]; writePendingJoins(); }
@@ -70,6 +86,7 @@ function setBusy(value, preserveEditor = false) {
   busy = value; $('beta-refresh').disabled = value;
   $('beta-refresh').textContent = value ? 'Updating…' : 'Refresh';
   $('beta-sections').querySelectorAll('select, textarea, input, button').forEach(element => { element.disabled = value && !(preserveEditor && element.matches('#beta-recap-form textarea')); });
+  $('beta-profile').querySelectorAll('input,button').forEach(element => { element.disabled = value && !(preserveEditor && element.id === 'beta-website'); });
   $('beta-main').setAttribute('aria-busy', String(value));
 }
 function setGateBusy(value, message = '') {
@@ -91,7 +108,7 @@ function setJoinStep(step, focus = true) {
   $('beta-gate-intro').textContent = intros[step];
   $('beta-login-error').textContent = '';
   if (step === 2) {
-    $('beta-review-details').innerHTML = [['Name', 'name'], ['Email', 'email'], ['Phone', 'phone'], ['GitHub', 'github']].map(([label, field]) => '<div><dt>' + label + '</dt><dd>' + esc((field === 'github' ? '@' : '') + $('beta-join-' + field).value.trim()) + '</dd></div>').join('');
+    $('beta-review-details').innerHTML = [['Name', 'name'], ['Email', 'email'], ['Phone', 'phone'], ['GitHub', 'github'], ['Website', 'website']].filter(([, field]) => field !== 'website' || $('beta-join-website').value.trim()).map(([label, field]) => '<div><dt>' + label + '</dt><dd>' + esc((field === 'github' ? '@' : '') + $('beta-join-' + field).value.trim()) + '</dd></div>').join('');
   }
   if (focus) $('beta-gate-title').focus({preventScroll: false});
 }
@@ -107,6 +124,10 @@ function setGateMode(mode) {
   }
 }
 function validateJoinDetails() {
+  const website = $('beta-join-website');
+  const validWebsite = !website.value.trim() || Boolean(websiteUrl(website.value));
+  website.setCustomValidity(validWebsite ? '' : WEBSITE_ERROR);
+  if (!validWebsite) { setJoinStep(1, false); website.focus(); website.reportValidity(); $('beta-login-error').textContent = WEBSITE_ERROR; return false; }
   const phone = $('beta-join-phone'), digits = phone.value.replace(/\D/g, '');
   const validPhone = /^\+?[0-9\s().-]+$/.test(phone.value.trim()) && digits.length >= 7 && digits.length <= 15;
   phone.setCustomValidity(validPhone ? '' : 'Enter a phone number with 7 to 15 digits, including your country code if needed.');
@@ -115,7 +136,7 @@ function validateJoinDetails() {
   const email = $('beta-join-email');
   email.setCustomValidity(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()) ? '' : 'Enter a complete email address, including its domain.');
   const inputs = Array.from($('beta-join-details').querySelectorAll('input'));
-  const invalid = inputs.find(input => !input.checkValidity() || !input.value.trim());
+  const invalid = inputs.find(input => !input.checkValidity() || (input.id !== 'beta-join-website' && !input.value.trim()));
   if (invalid) {
     setJoinStep(1, false); invalid.focus(); invalid.reportValidity();
     if (!invalid.value.trim()) $('beta-login-error').textContent = 'Fill in your ' + ({name: 'name', email: 'email address', phone: 'phone number', github: 'GitHub username'}[invalid.name] || 'details') + ' to continue.';
@@ -125,7 +146,7 @@ function validateJoinDetails() {
 }
 function showGate(message = '', join = false, forget = false) {
   generation++; githubGeneration++;
-  token = ''; workspace = null; recapDraft = null; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
+  token = ''; workspace = null; recapDraft = null; websiteDraft = null; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
   if (forget) forgetIdentity();
   $('beta-workspace').hidden = true; $('beta-gate').hidden = false;
   ['beta-summary', 'beta-sections', 'beta-nav', 'beta-profile'].forEach(id => $(id).replaceChildren());
@@ -188,6 +209,11 @@ function normalize(out) {
 function emptyState(title, description) { return '<div class="empty-state"><h3>' + esc(title) + '</h3><p>' + esc(description) + '</p></div>'; }
 function initials(name) { return String(name || '?').trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase(); }
 function heading(id, title, detail, aside = '') { return '<div class="section-head"><div><h2 id="beta-heading-' + id + '">' + title + '</h2><p class="section-description">' + detail + '</p></div>' + aside + '</div>'; }
+function websitesSection() {
+  const links = workspace.peers.map(peer => ({peer, url: websiteUrl(peer.website)})).filter(item => item.url);
+  const names = links.map(({peer, url}) => '<li><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(peer.name) + '<span aria-hidden="true">↗</span></a></li>').join('');
+  return '<section class="section websites-section" id="beta-section-websites" aria-labelledby="beta-heading-websites">' + heading('websites', 'Personal sites', 'Your group’s websites and portfolios.') + (links.length ? '<ul class="portfolio-names">' + names + '</ul>' : '<p class="portfolio-empty">Add your website in your profile to be the first name here.</p>') + '</section>';
+}
 function attendanceSection() {
   const days = batchDays(), currentDay = today();
   const lastAllowedDay = workspace.period.endDate < currentDay ? workspace.period.endDate : currentDay;
@@ -230,10 +256,10 @@ function render() {
   $('beta-greeting').textContent = 'Hey, ' + String(member.name || 'there').trim().split(/\s+/)[0] + '.';
   $('beta-batch').textContent = workspace.group.name || member.batch || 'Beta group';
   $('beta-batch-side').textContent = workspace.group.name || member.batch || 'Beta group'; $('beta-avatar').textContent = initials(member.name);
-  $('beta-nav').innerHTML = [['attendance', 'Group attendance'], ['github', 'GitHub activity'], ['recap', 'Your recap']].filter(([module]) => allowed(module)).map(([module, label]) => '<a href="#beta-section-' + module + '">' + label + '<span aria-hidden="true">↗</span></a>').join('');
+  $('beta-nav').innerHTML = [['websites', 'Personal sites'], ['attendance', 'Group attendance'], ['github', 'GitHub activity'], ['recap', 'Your recap']].filter(([module]) => module === 'websites' || allowed(module)).map(([module, label]) => '<a href="#beta-section-' + module + '">' + label + '<span aria-hidden="true">↗</span></a>').join('');
   const myDays = new Set(workspace.attendance.filter(record => record.memberId === member.id).map(record => record.day));
   $('beta-summary').innerHTML = '<div class="summary-card"><span>Your beta period</span><div class="summary-dates">' + esc(dateLabel(workspace.period.startDate)) + '<span>—</span>' + esc(dateLabel(workspace.period.endDate)) + '</div><p>Two weeks to learn and build</p></div><div class="summary-card"><span>In your group</span><div class="summary-value">' + workspace.peers.length + '<small> ' + (workspace.peers.length === 1 ? 'intern' : 'interns') + '</small></div><p>Progress happens together</p></div>' + (allowed('attendance') ? '<div class="summary-card"><span>You showed up</span><div class="summary-value">' + myDays.size + '<small> ' + (myDays.size === 1 ? 'day' : 'days') + '</small></div><p>Your recorded attendance</p></div>' : '');
-  $('beta-sections').innerHTML = (allowed('attendance') ? attendanceSection() : '') + (allowed('github') ? githubSection() : '') + (allowed('recap') ? recapSection() : '') || emptyState('Your group is being set up.', 'Arya can open the sections you need when the group is ready.');
+  $('beta-sections').innerHTML = websitesSection() + (allowed('attendance') ? attendanceSection() : '') + (allowed('github') ? githubSection() : '') + (allowed('recap') ? recapSection() : '');
   if (allowed('recap')) {
     const recap = recapDraft || workspace.recaps[0] || {};
     $('beta-learned').value = recap.learned || ''; $('beta-accomplished').value = recap.accomplished || '';
@@ -243,8 +269,8 @@ function render() {
   $('beta-gate').hidden = true; $('beta-workspace').hidden = false;
   $('beta-recovery').hidden = !(showReturnLink && accessCapability); $('beta-return-link').value = returnLink();
   $('beta-profile').hidden = false;
-  $('beta-profile').innerHTML = '<div><span class="eyebrow">Your profile</span><h2>' + esc(member.name) + '</h2><p>' + esc(workspace.group.name || member.batch) + '</p></div><div class="profile-contact"><span>' + esc(member.email) + '</span><span>' + esc(member.phone) + '</span></div><div class="profile-links">' + (member.github ? '<a href="https://github.com/' + encodeURIComponent(member.github) + '" target="_blank" rel="noopener noreferrer">@' + esc(member.github) + ' ↗</a>' : '') + (accessCapability ? '<button class="button subtle" id="beta-show-link" type="button">Personal return link</button>' : '') + '</div>';
-
+  $('beta-profile').innerHTML = '<div><span class="eyebrow">Your profile</span><h2>' + esc(member.name) + '</h2><p>' + esc(workspace.group.name || member.batch) + '</p></div><div class="profile-contact"><span>' + esc(member.email) + '</span><span>' + esc(member.phone) + '</span></div><div class="profile-links">' + (member.github ? '<a href="https://github.com/' + encodeURIComponent(member.github) + '" target="_blank" rel="noopener noreferrer">@' + esc(member.github) + ' ↗</a>' : '') + (accessCapability ? '<button class="button subtle" id="beta-show-link" type="button">Personal return link</button>' : '') + '</div><form id="beta-website-form" class="profile-website" novalidate><label for="beta-website">Website / portfolio <span>(optional)</span></label><div class="website-input-row"><input id="beta-website" name="website" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" maxlength="300" placeholder="yourname.com" aria-describedby="beta-website-help beta-website-error"><button class="button" type="submit">Save website</button></div><p id="beta-website-help">Your name links to this site on the beta home page. Leave it blank and save to remove it.</p><p id="beta-website-error" class="website-error" role="alert" hidden></p></form>';
+  $('beta-website').value = websiteDraft === null ? member.website || '' : websiteDraft;
 }
 function refreshGithub(force = false) {
   if (!allowed('github')) return;
@@ -264,15 +290,15 @@ async function fetchWorkspace(requestGeneration, preserveEditor = false) {
   workspace = normalize(out);
   if (!allowed('recap')) recapDraft = null;
   if (!allowed('github')) { githubGeneration++; githubStates = []; githubKey = ''; }
-  // An automatic access check must leave a focused recap and its cursor intact.
+  // An automatic access check must leave a focused editor and its cursor intact.
   // Changed identity, access, or a failed session still clears the old view.
-  if (!(preserveEditor && allowed('recap') && previousMember === workspace.member.id && previousBatch === workspace.batch.id && $('beta-recap-form')?.contains(document.activeElement))) render();
+  if (!(preserveEditor && previousMember === workspace.member.id && previousBatch === workspace.batch.id && (allowed('recap') && $('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement)))) render();
   refreshGithub(); return true;
 }
 async function refresh(preserveEditor = false) {
   if (!token || busy) return;
   const requestGeneration = generation;
-  const keepEditor = preserveEditor && Boolean($('beta-recap-form')?.contains(document.activeElement));
+  const keepEditor = preserveEditor && Boolean($('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement));
   setError(); $('beta-notice').textContent = ''; setBusy(true, keepEditor);
   try { await fetchWorkspace(requestGeneration, keepEditor); }
   catch (error) { if (requestGeneration === generation) handleError(error); }
@@ -355,6 +381,30 @@ async function mutate(action, fields, successMessage) {
   } catch (error) { if (requestGeneration === generation) handleError(error); }
   finally { if (requestGeneration === generation) setBusy(false); }
 }
+async function saveWebsite(value) {
+  if (!token || !workspace || busy) return;
+  const raw = String(value || '').trim(), website = websiteUrl(raw), requestGeneration = generation;
+  websiteDraft = raw;
+  $('beta-website-error').textContent = '';
+  $('beta-website-error').hidden = true;
+  if (raw && !website) {
+    $('beta-website-error').textContent = WEBSITE_ERROR; $('beta-website-error').hidden = false;
+    $('beta-website').focus(); return;
+  }
+  setError(); $('beta-notice').textContent = ''; setBusy(true);
+  try {
+    const out = await betaCall('memberprofile', {website}, requestGeneration);
+    if (requestGeneration !== generation) return;
+    const next = normalize(out);
+    if (next.member.id !== workspace.member.id) throw new Error('Your profile could not be verified. Refresh and try again.');
+    workspace = next; websiteDraft = null; render(); refreshGithub();
+    $('beta-notice').textContent = website ? 'Your website is saved.' : 'Your website was removed.';
+  } catch (error) {
+    if (requestGeneration !== generation) return;
+    if (isAccessError(error)) handleError(error);
+    else { $('beta-website-error').textContent = error.message || 'Your website could not be saved. Please try again.'; $('beta-website-error').hidden = false; }
+  } finally { if (requestGeneration === generation) setBusy(false); }
+}
 async function loadInvite(invitation = PERMANENT_INVITE) {
   invite = invitation; inviteBatch = null; joinStep = 0; showGate('', true);
   const requestGeneration = generation; setGateBusy(true, 'Opening Beta…');
@@ -430,6 +480,11 @@ $('beta-copy-link').addEventListener('click', async () => {
 });
 $('beta-hide-link').addEventListener('click', () => { showReturnLink = false; $('beta-return-link').value = ''; $('beta-recovery').hidden = true; });
 $('beta-profile').addEventListener('click', event => { if (event.target.closest('#beta-show-link')) { showReturnLink = true; $('beta-return-link').value = returnLink(); $('beta-recovery').hidden = false; } });
+$('beta-profile').addEventListener('submit', event => { if (event.target.id === 'beta-website-form') { event.preventDefault(); saveWebsite($('beta-website').value); } });
+$('beta-profile').addEventListener('input', event => {
+  if (event.target.id !== 'beta-website') return;
+  websiteDraft = event.target.value; $('beta-website-error').textContent = ''; $('beta-website-error').hidden = true;
+});
 $('beta-sections').addEventListener('click', event => {
   if (event.target.closest('#beta-github-refresh')) { refreshGithub(true); return; }
   const button = event.target.closest('#beta-today');

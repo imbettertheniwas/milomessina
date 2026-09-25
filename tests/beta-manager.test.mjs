@@ -36,6 +36,8 @@ function assertPrivateCleared(h) {
   assert.equal(h.get('bt-code').hidden,true);
   assert.equal(h.get('bt-code').dataset.invite,undefined);
 }
+const button=attributes=>({dataset:Object.fromEntries(Object.entries(attributes).filter(([key])=>key.startsWith('data-')).map(([key,value])=>[key.slice(5).replace(/-([a-z])/g,(_all,c)=>c.toUpperCase()),value])),hasAttribute:key=>key in attributes});
+const click=(h,b)=>h.events.get('bt-root:click')({target:{closest:()=>b}});
 
 test('manager has one permanent invite and no batch creation, selector or rotation controls',()=>{
   const html=readFileSync(new URL('../invoice/index.html',import.meta.url),'utf8');
@@ -128,4 +130,101 @@ test('late GitHub results cannot return private detail after identity changes',a
   await h.manager.load();h.setIdentity('',false);
   pending.resolve([{memberId:'a',status:'ready',total:3,startDate:'2026-09-25',endDate:'2026-10-08',commits:[],message:'Old account activity'}]);
   await settle();assertPrivateCleared(h);assert.doesNotMatch(h.get('bt-github').innerHTML,/Old account activity/);
+});
+
+test('delete confirmation names the intern and cancel preserves unsaved form content without a write',async()=>{
+  const h=harness(()=>view([member('a',{name:'Alex <One>'})]));await h.manager.load();
+  h.get('bt-member-form').fields={name:'Unsaved name',notes:'Unsaved private notes'};
+  const initialDetails=h.get('bt-detail').innerHTML;
+  await click(h,button({'data-delete-member':'a'}));
+  const confirmation=h.get('bt-delete-controls').innerHTML;
+  assert.match(confirmation,/Delete Alex &lt;One&gt;\?/);
+  assert.match(confirmation,/profile, attendance, recap and private notes will be permanently removed/);
+  assert.match(confirmation,/personal return link and Beta access will be closed/);
+  assert.match(confirmation,/data-confirm-delete="a"/);assert.match(confirmation,/cannot be undone/);
+  await click(h,button({'data-cancel-delete':''}));
+  assert.doesNotMatch(h.get('bt-delete-controls').innerHTML,/data-confirm-delete/);
+  assert.equal(h.get('bt-detail').innerHTML,initialDetails,'opening/cancelling does not rebuild the editing form');
+  assert.equal(h.get('bt-member-form').fields.notes,'Unsaved private notes');
+  assert.deepEqual(h.requests.map(request=>request.action),['list']);
+});
+
+test('switching or filtering the selected intern invalidates an earlier delete confirmation',async()=>{
+  const h=harness(()=>view([member('a'),member('b')]));await h.manager.load();
+  await click(h,button({'data-delete-member':'a'}));const stale=button({'data-confirm-delete':'a'});
+  await click(h,button({'data-member':'b'}));await click(h,stale);
+  assert.equal(h.manager.state().selected,'b');assert.equal(h.requests.length,1);
+  await click(h,button({'data-delete-member':'b'}));const second=button({'data-confirm-delete':'b'});
+  h.get('bt-search').value='Intern a';h.events.get('bt-search:input')();await click(h,second);
+  assert.equal(h.manager.state().selected,'a');assert.equal(h.requests.length,1);
+});
+
+test('confirmed delete uses the captured id, clears visible return links, and updates counts and selection',async()=>{
+  let removed=false;const first=member('a'),second=member('b');
+  const h=harness(body=>{
+    if(body.action==='memberdelete'){assert.equal(body.id,'a');removed=true;}
+    return view(removed?[second]:[first,second],{
+      attendance:removed?[]:[{memberId:'a',day:'2026-09-25'}],recaps:removed?[]:[{memberId:'a',submittedAt:'2026-09-25T16:00:00Z'}],
+      ...(body.action==='rotatecode'?{code:'BETA-'+'a'.repeat(32)}:{})});
+  });
+  await h.manager.load();await h.manager.change('rotatecode',{id:'a'},'Replaced');
+  assert.equal(h.get('bt-code').hidden,false);
+  await click(h,button({'data-delete-member':'a'}));await click(h,button({'data-confirm-delete':'a'}));
+  assert.deepEqual(h.requests.filter(request=>request.action==='memberdelete').map(request=>request.id),['a']);
+  assert.equal(h.manager.state().selected,'b');assert.deepEqual(h.manager.state().data.members.map(m=>m.id),['b']);
+  assert.match(h.get('bt-summary').innerHTML,/Beta interns<\/span><strong>1/);
+  assert.match(h.get('bt-summary').innerHTML,/Days attended<\/span><strong>0/);
+  assert.match(h.get('bt-summary').innerHTML,/Recaps submitted<\/span><strong>0/);
+  assert.equal(h.get('bt-code').hidden,true);assert.equal(h.get('bt-code').innerHTML,'');assert.equal(h.get('bt-code').dataset.invite,undefined);
+  assert.match(h.get('bt-message').textContent,/Intern a was deleted/);
+  assert.doesNotMatch(h.get('bt-detail').innerHTML,/Private evaluation a/);
+});
+
+test('deleting the final intern leaves the permanent signup link and a clean empty state',async()=>{
+  const h=harness(body=>view(body.action==='memberdelete'?[]:undefined));await h.manager.load();
+  await click(h,button({'data-delete-member':'a'}));await click(h,button({'data-confirm-delete':'a'}));
+  assert.equal(h.manager.state().selected,'');assert.match(h.get('bt-roster').innerHTML,/Ready for the first arrival/);
+  assert.doesNotMatch(h.get('bt-detail').innerHTML,/bt-member-form|data-delete-member/);
+  assert.equal(h.get('bt-invite-link').value,'https://example.invalid/internal/beta');
+});
+
+test('a failed deletion keeps its confirmation and a repeated click cannot duplicate an in-flight deletion',async()=>{
+  const pending=deferred();const h=harness(body=>body.action==='list'?view():pending.promise);await h.manager.load();
+  await click(h,button({'data-delete-member':'a'}));const confirm=button({'data-confirm-delete':'a'});
+  const deleting=click(h,confirm);await click(h,confirm);
+  assert.equal(h.requests.filter(request=>request.action==='memberdelete').length,1);
+  pending.resolve({ok:false,code:'INVALID',error:'Could not delete this intern. Try again.'});await deleting;
+  assert.equal(h.manager.state().data.members[0].id,'a');assert.equal(h.manager.state().busy,false);
+  assert.match(h.get('bt-delete-controls').innerHTML,/data-confirm-delete="a"/);
+  assert.match(h.get('bt-message').textContent,/Could not delete/);
+});
+
+test('a late delete response cannot restore private data after an identity change',async()=>{
+  const pending=deferred();const h=harness(body=>body.action==='list'?view([member('a'),member('b')]):pending.promise);await h.manager.load();
+  await click(h,button({'data-delete-member':'a'}));const deleting=click(h,button({'data-confirm-delete':'a'}));
+  h.setIdentity('',false);pending.resolve(view([member('b')]));await deleting;
+  assertPrivateCleared(h);
+});
+
+test('an explicit unsupported-delete feature flag hides the control',async()=>{
+  const h=harness(()=>view(undefined,{betaDelete:false}));await h.manager.load();
+  assert.doesNotMatch(h.get('bt-detail').innerHTML,/data-delete-member/);
+});
+
+test('an optional portfolio domain is submitted with the profile and safely linked after normalization',async()=>{
+  const h=harness(body=>view([member('a',{website:body.action==='memberupdate'?'https://portfolio.example/':'https://portfolio.example/work'})]));
+  await h.manager.load();
+  assert.match(h.get('bt-detail').innerHTML,/name="website" type="text" inputmode="url"/);
+  assert.match(h.get('bt-detail').innerHTML,/href="https:\/\/portfolio\.example\/work"/);
+  await h.events.get('bt-root:submit')({preventDefault(){},target:{id:'bt-member-form',fields:{website:'portfolio.example',name:'Intern a'}}});
+  await settle();
+  const update=h.requests.find(request=>request.action==='memberupdate');assert.equal(update.id,'a');assert.equal(update.website,'portfolio.example');
+  assert.match(h.get('bt-detail').innerHTML,/href="https:\/\/portfolio\.example\/"/);
+});
+
+test('unsafe portfolio protocols and embedded credentials are never rendered as clickable links',async()=>{
+  for(const website of ['javascript:alert(1)','https://user:secret@example.invalid/','data:text/html,test']) {
+    const h=harness(()=>view([member('a',{website})]));await h.manager.load();
+    assert.doesNotMatch(h.get('bt-detail').innerHTML,/class="bt-portfolio"/);
+  }
 });

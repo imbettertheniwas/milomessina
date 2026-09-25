@@ -3,7 +3,7 @@ import {loadBetaGithub} from './beta-github.js';
 const $ = id => document.getElementById(id);
 const bridge = () => window.FOMO_SHEET || {};
 const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let data=null, selected='', busy=false, loadedFor='', githubRun=0, generation=0;
+let data=null, selected='', busy=false, loadedFor='', githubRun=0, generation=0, deleteTarget=null;
 const active=()=>document.body.dataset.consoleView==='beta' && bridge().operator?.();
 const batchOf=m=>(data?.batches || []).find(b=>b.id===m?.batchId) || data?.group;
 const periodOf=m=>({startDate:m?.startDate,endDate:m?.endDate});
@@ -11,6 +11,10 @@ const attendanceOf=id=>(data?.attendance || []).filter(a=>a.memberId===id);
 const recapOf=id=>(data?.recaps || []).find(r=>r.memberId===id);
 const message=(text,bad=false)=>{$('bt-message').textContent=text;$('bt-message').classList.toggle('bad',bad);};
 const dateLabel=value=>value?new Date(value+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—';
+function portfolioUrl(value) {
+  try {const url=new URL(value);return ['https:','http:'].includes(url.protocol) && url.hostname && !url.username && !url.password?url.href:'';}
+  catch{return '';}
+}
 async function api(action,payload={}) {
   const b=bridge(),requestToken=b.session?.(),revision=generation;
   const res=await fetch(b.endpoint,{method:'POST',body:JSON.stringify({_api:'beta',_key:b.key,_session:requestToken,action,...payload}),signal:AbortSignal.timeout(20000)});
@@ -31,16 +35,26 @@ function render() {
   $('bt-invite-link').value=location.origin+'/internal/beta';
   $('bt-summary').innerHTML=[['Beta interns',group.length],['Active',group.filter(m=>m.status==='active' && batchOf(m)?.active!==false).length],['Days attended',(data.attendance || []).filter(a=>ids.has(a.memberId)).length],['Recaps submitted',(data.recaps || []).filter(r=>ids.has(r.memberId) && r.submittedAt).length]].map(([label,n])=>`<div><span>${label}</span><strong>${n}</strong></div>`).join('');
   if(!shown.some(m=>m.id===selected))selected=shown[0]?.id || '';
+  if(deleteTarget?.id!==selected)deleteTarget=null;
   $('bt-roster').innerHTML=shown.length?shown.map(m=>`<button type="button" class="bt-person ${selected===m.id?'on':''}" data-member="${esc(m.id)}" aria-pressed="${selected===m.id}"><span class="bt-avatar">${esc(m.name.slice(0,1).toUpperCase())}</span><span><strong>${esc(m.name)}</strong><small>${attendanceOf(m.id).length} days in · Recap due ${esc(dateLabel(periodOf(m).endDate))}</small><small>${recapOf(m.id)?.submittedAt?'Recap submitted':'Recap pending'}</small></span><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></button>`).join(''):`<div class="bt-empty"><b>${group.length?'No matches':'Ready for the first arrival'}</b><p>${group.length?'Try another name, email, phone, or GitHub.':'Share the permanent invite above. Interns appear here when they join.'}</p></div>`;
   renderMember(group.find(m=>m.id===selected));
   if(data.configured===false)message(data.setupMessage || 'Beta access needs to be configured.',true);
   setBusy(busy);
 }
+function deleteControls(m) {
+  if(data.betaDelete===false)return '';
+  if(deleteTarget?.id===m.id)return `<div class="bt-delete-confirm" role="group" aria-labelledby="bt-delete-title"><h4 id="bt-delete-title">Delete ${esc(deleteTarget.name)}?</h4><p>Their profile, attendance, recap and private notes will be permanently removed. Their personal return link and Beta access will be closed. This cannot be undone.</p><div class="bt-actions"><button class="btn btn-g" type="button" data-cancel-delete>Cancel</button><button class="btn btn-g" type="button" data-confirm-delete="${esc(deleteTarget.id)}">Delete ${esc(deleteTarget.name)}</button></div></div>`;
+  return `<div class="bt-delete-row"><button class="btn btn-g bt-delete" type="button" data-delete-member="${esc(m.id)}">Delete intern</button></div>`;
+}
+function renderDeleteControls() {
+  const member=(data?.members || []).find(m=>m.id===selected);
+  if(member)$('bt-delete-controls').innerHTML=deleteControls(member);
+}
 function renderMember(m) {
   githubRun++;
   if(!m){$('bt-detail').innerHTML='<div class="bt-card bt-empty"><b>One view of the whole two weeks</b><p>Choose an intern to see attendance, GitHub activity, their recap, and your private evaluation notes.</p></div>';return;}
-  const batch=periodOf(m),days=attendanceOf(m.id).map(a=>a.day).sort(),recap=recapOf(m.id);
-  $('bt-detail').innerHTML=`<form id="bt-member-form" class="bt-card"><div class="bt-card-head"><div><h3>${esc(m.name)}</h3><p>Your first two weeks · ${esc(dateLabel(batch?.startDate))} – ${esc(dateLabel(batch?.endDate))}</p></div><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></div><div class="bt-fields"><label>Name<input name="name" value="${esc(m.name)}" required maxlength="80"></label><label>Email<input name="email" value="${esc(m.email)}" type="email" maxlength="254"></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(m.phone)}" placeholder="Not provided"></label><label>GitHub username<input name="github" value="${esc(m.github)}" maxlength="39" placeholder="username"></label><label>Access status<select name="status">${['active','paused','graduated'].map(s=>`<option ${s===m.status?'selected':''}>${s}</option>`).join('')}</select></label></div><p class="bt-foot bt-contact-note">Contact details are visible to Arya and Milo only.${m.createdAt?` Joined ${esc(new Date(m.createdAt).toLocaleString())}.`:""}</p><label>Private evaluation notes<textarea name="notes" rows="4" maxlength="5000" placeholder="Progress, feedback, and follow-ups…">${esc(m.notes)}</textarea><span>Visible to Arya and Milo only.</span></label><div class="bt-actions"><button class="btn btn-p" type="submit">Save intern</button><button class="btn btn-g" data-code type="button">Replace personal return link</button></div><p class="bt-foot">Pausing or graduating closes their beta access and keeps their record. It does not add them to the main team.</p></form><section class="bt-card"><div class="bt-card-head"><h3>Attendance</h3><span>${days.length} days in</span></div><div class="bt-days">${days.length?days.map(day=>`<span>${esc(dateLabel(day))}</span>`).join(''):'<p class="bt-muted">No attendance marked yet.</p>'}</div></section><section class="bt-card"><div class="bt-card-head"><h3>GitHub activity</h3>${m.github?`<a href="https://github.com/${encodeURIComponent(m.github)}" target="_blank" rel="noopener noreferrer">@${esc(m.github)} ↗</a>`:''}</div><div id="bt-github"><p class="bt-muted">Loading public activity…</p></div></section><section class="bt-card"><div class="bt-card-head"><h3>Two-week recap</h3><span>${recap?.submittedAt?'Submitted':recap?'Draft':'Not started'}</span></div><p class="bt-muted">Due ${esc(dateLabel(batch?.endDate))}</p>${recap?`<h4>What they learned</h4><p class="bt-long">${esc(recap.learned || 'Not added yet.')}</p><h4>What they accomplished</h4><p class="bt-long">${esc(recap.accomplished || 'Not added yet.')}</p>${recap.links?.length?`<h4>Work & links</h4><p class="bt-long">${recap.links.map(link=>`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`).join('<br>')}</p>`:''}`:'<p class="bt-muted">Their recap will appear here as they write it.</p>'}</section>`;
+  const batch=periodOf(m),days=attendanceOf(m.id).map(a=>a.day).sort(),recap=recapOf(m.id),website=portfolioUrl(m.website);
+  $('bt-detail').innerHTML=`<form id="bt-member-form" class="bt-card"><div class="bt-card-head"><div><h3>${esc(m.name)}</h3><p>Your first two weeks · ${esc(dateLabel(batch?.startDate))} – ${esc(dateLabel(batch?.endDate))}</p>${website?`<a class="bt-portfolio" href="${esc(website)}" target="_blank" rel="noopener noreferrer">${esc(new URL(website).hostname)} ↗</a>`:""}</div><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></div><div class="bt-fields"><label>Name<input name="name" value="${esc(m.name)}" required maxlength="80"></label><label>Email<input name="email" value="${esc(m.email)}" type="email" maxlength="254"></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(m.phone)}" placeholder="Not provided"></label><label>GitHub username<input name="github" value="${esc(m.github)}" maxlength="39" placeholder="username"></label><label>Portfolio website <span>(optional)</span><input name="website" type="text" inputmode="url" autocomplete="url" maxlength="300" value="${esc(m.website)}" placeholder="yourname.com"></label><label>Access status<select name="status">${['active','paused','graduated'].map(s=>`<option ${s===m.status?'selected':''}>${s}</option>`).join('')}</select></label></div><p class="bt-foot bt-contact-note">Contact details are visible to Arya and Milo only.${m.createdAt?` Joined ${esc(new Date(m.createdAt).toLocaleString())}.`:""}</p><label>Private evaluation notes<textarea name="notes" rows="4" maxlength="5000" placeholder="Progress, feedback, and follow-ups…">${esc(m.notes)}</textarea><span>Visible to Arya and Milo only.</span></label><div class="bt-actions"><button class="btn btn-p" type="submit">Save intern</button><button class="btn btn-g" data-code type="button">Replace personal return link</button></div><p class="bt-foot">Pausing or graduating closes their beta access and keeps their record. It does not add them to the main team.</p><div id="bt-delete-controls">${deleteControls(m)}</div></form><section class="bt-card"><div class="bt-card-head"><h3>Attendance</h3><span>${days.length} days in</span></div><div class="bt-days">${days.length?days.map(day=>`<span>${esc(dateLabel(day))}</span>`).join(''):'<p class="bt-muted">No attendance marked yet.</p>'}</div></section><section class="bt-card"><div class="bt-card-head"><h3>GitHub activity</h3>${m.github?`<a href="https://github.com/${encodeURIComponent(m.github)}" target="_blank" rel="noopener noreferrer">@${esc(m.github)} ↗</a>`:''}</div><div id="bt-github"><p class="bt-muted">Loading public activity…</p></div></section><section class="bt-card"><div class="bt-card-head"><h3>Two-week recap</h3><span>${recap?.submittedAt?'Submitted':recap?'Draft':'Not started'}</span></div><p class="bt-muted">Due ${esc(dateLabel(batch?.endDate))}</p>${recap?`<h4>What they learned</h4><p class="bt-long">${esc(recap.learned || 'Not added yet.')}</p><h4>What they accomplished</h4><p class="bt-long">${esc(recap.accomplished || 'Not added yet.')}</p>${recap.links?.length?`<h4>Work & links</h4><p class="bt-long">${recap.links.map(link=>`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`).join('<br>')}</p>`:''}`:'<p class="bt-muted">Their recap will appear here as they write it.</p>'}</section>`;
   paintGithub(m,batch,githubRun);
 }
 async function paintGithub(member,batch,run) {
@@ -78,11 +92,14 @@ function revealPersonalLink(out) {
   $('bt-code').innerHTML=`<div class="bt-card-head"><b>Personal return link replaced</b><button class="mini ghost" type="button" data-dismiss-code>Dismiss</button></div><p>Share this personal link directly with this intern. It opens their profile without a password. Their previous personal link and sessions are closed.</p><div class="bt-code-row"><code>${esc(text)}</code><button class="btn btn-g" data-copy-code type="button">Copy personal link</button></div>`;
   $('bt-code').dataset.invite=text;$('bt-code').scrollIntoView({block:'nearest'});
 }
+function clearPersonalLink() {
+  $('bt-code').hidden=true;$('bt-code').innerHTML='';delete $('bt-code').dataset.invite;
+}
 function clearPrivate() {
-  generation++;data=null;loadedFor='';selected='';githubRun++;
+  generation++;data=null;loadedFor='';selected='';githubRun++;deleteTarget=null;
   paintGithub.controller?.abort();
   ['bt-summary','bt-roster','bt-detail','bt-code'].forEach(id=>$(id).innerHTML='');
-  $('bt-code').hidden=true;delete $('bt-code').dataset.invite;
+  clearPersonalLink();
   setBusy(false);
 }
 function requestError(error) {
@@ -96,6 +113,7 @@ async function change(action,payload,success) {
   try{
     const out=await api(action,payload);
     if(revision!==generation)return;
+    if(action==='memberdelete'){deleteTarget=null;clearPersonalLink();}
     render();revealPersonalLink(out);message(success);
   }catch(error){if(revision===generation)requestError(error);}
   finally{if(revision===generation)setBusy(false);}
@@ -121,11 +139,22 @@ $('bt-root').addEventListener('submit',event=>{
 });
 $('bt-root').addEventListener('click',async event=>{
   const b=event.target.closest('button');if(!b || busy)return;
-  if(b.dataset.member){selected=b.dataset.member;render();}
+  if(b.dataset.member){selected=b.dataset.member;deleteTarget=null;render();}
+  if(b.hasAttribute('data-delete-member')){
+    const member=(data?.members || []).find(m=>m.id===b.dataset.deleteMember);
+    if(!member || selected!==member.id)return;
+    deleteTarget={id:member.id,name:member.name};renderDeleteControls();
+  }
+  if(b.hasAttribute('data-cancel-delete')){deleteTarget=null;renderDeleteControls();}
+  if(b.hasAttribute('data-confirm-delete')){
+    const target=deleteTarget;
+    if(!target || target.id!==b.dataset.confirmDelete || selected!==target.id || !(data?.members || []).some(m=>m.id===target.id))return;
+    await change('memberdelete',{id:target.id},target.name+' was deleted. Their Beta access is closed.');
+  }
   if(b.hasAttribute('data-cancel'))render();
   if(b.hasAttribute('data-code'))b.outerHTML='<div class="bt-rotate-confirm"><p>Replace this intern’s personal link and sign them out?</p><button class="mini" type="button" data-confirm-code>Replace</button><button class="mini ghost" type="button" data-cancel>Cancel</button></div>';
   if(b.hasAttribute('data-confirm-code'))await change('rotatecode',{id:selected},'Personal return link replaced.');
-  if(b.hasAttribute('data-dismiss-code')){$('bt-code').hidden=true;$('bt-code').innerHTML='';delete $('bt-code').dataset.invite;}
+  if(b.hasAttribute('data-dismiss-code'))clearPersonalLink();
   if(b.hasAttribute('data-copy-code')){try{await navigator.clipboard.writeText($('bt-code').dataset.invite);message('Copied.');}catch{message('Copy the personal link shown above.',true);}}
 });
 window.addEventListener('fomo:view-change',()=>load());
