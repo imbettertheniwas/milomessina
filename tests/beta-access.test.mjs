@@ -2,10 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {harness} from './support/internal-harness.mjs';
 
-const SECRET='private operator access secret 2026';
 const beta=(h,token,action,p={})=>h.ctx.betaApi({_session:token,action,...p});
 const setup=()=>{
- const h=harness({INTERNAL_LOGIN_SECRET:SECRET});h.operator=h.login('Arya');
+ const h=harness();h.operator=h.login('Arya');
  h.invite=beta(h,h.operator,'batchadd',{name:'September trial',startDate:'2026-09-21'}).invite;return h;
 };
 const login=(h,code)=>h.ctx.internalSessionApi({action:'betalogin',code});
@@ -18,40 +17,41 @@ const add=(h,name='Beta One',over={})=>{
 const id=out=>out.createdMemberId;
 const post=(h,body)=>h.ctx.doPost({postData:{contents:JSON.stringify(body)}});
 
-test('beta activation requires a real private secret and stays separate from the main roster',()=>{
- const h=harness(),operator=h.login('Arya');
+test('only valid operator batch creation initializes the independent beta secret',()=>{
+ const h=harness(),operator=h.login('Arya');h.operator=operator;
  const list=beta(h,operator,'list');
- assert.equal(list.ok,true);assert.equal(list.configured,false);assert.match(list.setupMessage,/INTERNAL_LOGIN_SECRET/);
- const denied=beta(h,operator,'batchadd',{name:'Trial',startDate:'2026-09-21'});
- assert.equal(denied.code,'BETA_UNCONFIGURED');
- assert.equal(login(h,'BETA-'+ 'A'.repeat(32)).code,'BETA_UNCONFIGURED');
- assert.equal(h.sheets.internal_beta_members,undefined);
- h.properties.INTERNAL_LOGIN_SECRET='too short';
- assert.equal(beta(h,h.login('Arya'),'batchadd',{name:'Trial',startDate:'2026-09-21'}).code,'BETA_UNCONFIGURED');
- h.properties.INTERNAL_LOGIN_SECRET=SECRET;h.operator=h.login('Arya');
- h.invite=beta(h,h.operator,'batchadd',{name:'Trial',startDate:'2026-09-21'}).invite;
+ assert.equal(list.ok,true);assert.equal(list.configured,true);assert.equal(list.setupMessage,'');
+ assert.equal(h.ctx.doGet().betaPasswordless,true);assert.equal(h.ctx.doGet().privateLogin,undefined);
+ assert.equal(login(h,'BETA-'+ 'A'.repeat(32)).ok,false);
+ assert.equal(beta(h,'','batchadd',{name:'Trial',startDate:'2026-09-21'}).ok,false);
+ assert.equal(beta(h,h.login('Bijan'),'batchadd',{name:'Trial',startDate:'2026-09-21'}).ok,false);
+ assert.equal(beta(h,operator,'batchadd',{name:'',startDate:'2026-09-21'}).ok,false);
+ assert.equal(h.properties.INTERNAL_BETA_SECRET,undefined);assert.equal(h.sheets.internal_beta_members,undefined);
+ h.invite=beta(h,operator,'batchadd',{name:'Trial',startDate:'2026-09-21'}).invite;
+ assert.match(h.properties.INTERNAL_BETA_SECRET,/^[a-f0-9]{64}$/);
+ const secret=h.properties.INTERNAL_BETA_SECRET;
  assert.equal(add(h).ok,true);assert.equal(h.ctx.rosterPayers().includes('Beta One'),false);
- assert.equal(h.properties.INTERNAL_PRIVATE_AUTH_REQUIRED,'true');
+ beta(h,operator,'batchadd',{name:'Second',startDate:'2026-09-21'});
+ assert.equal(h.properties.INTERNAL_BETA_SECRET,secret);
+ assert.equal(h.properties.INTERNAL_PRIVATE_AUTH_REQUIRED,undefined);assert.equal(h.properties.INTERNAL_LOGIN_SECRET,undefined);
+ assert.equal(JSON.stringify(beta(h,operator,'list')).includes(secret),false);
 });
 
-test('private core secret rejects public fallback and invalidates legacy or changed-secret sessions',()=>{
- const h=harness(),weak=h.login('Arya');
- h.properties.INTERNAL_LOGIN_SECRET=SECRET;
- assert.equal(h.ctx.internalActor({_session:weak}),null);
- assert.equal(h.ctx.internalSessionApi({action:'login',who:'Arya',passcode:'monkey'}).ok,false);
- const strong=h.login('Arya');h.operator=strong;
- assert.equal(h.ctx.internalActor({_session:strong}),'Arya');
- h.invite=beta(h,strong,'batchadd',{name:'Trial',startDate:'2026-09-21'}).invite;
- const added=add(h),b=login(h,added.code).token;
- h.properties.INTERNAL_LOGIN_SECRET='a different strong private secret';
- assert.equal(h.ctx.internalActor({_session:strong}),null);
- assert.equal(beta(h,b,'list').code,'AUTH_REQUIRED');assert.equal(login(h,added.code).ok,false);
- for(const insecure of ['', 'monkey', 'too short']) {
-   h.properties.INTERNAL_LOGIN_SECRET=insecure;
-   assert.equal(h.ctx.internalSessionApi({action:'login',who:'Arya',passcode:insecure||'monkey'}).ok,false);
-   assert.equal(h.ctx.internalActor({_session:weak}),null);
-   assert.equal(h.ctx.internalActor({_session:strong}),null);
- }
+test('core password and existing sessions survive beta setup, key changes and obsolete private properties',()=>{
+ const obsolete={INTERNAL_LOGIN_SECRET:'obsolete private value',INTERNAL_PRIVATE_AUTH_REQUIRED:'true',VISITS_SERVICE_SECRET:'preserve the visits property exactly'};
+ const h=harness(obsolete),core=h.login('Arya');h.operator=core;
+ assert.ok(core);assert.equal(h.sessions.get('internal:'+core),'Arya');
+ assert.equal(h.ctx.internalSessionApi({action:'login',who:'Arya',passcode:'monkey'}).ok,true);
+ assert.equal(h.ctx.internalSessionApi({action:'login',who:'Arya',passcode:obsolete.INTERNAL_LOGIN_SECRET}).ok,false);
+ h.invite=beta(h,core,'batchadd',{name:'Trial',startDate:'2026-09-21'}).invite;
+ assert.equal(h.ctx.internalActor({_session:core}),'Arya');
+ const added=add(h),token=login(h,added.code).token;
+ h.properties.INTERNAL_BETA_SECRET='a'.repeat(64);
+ assert.equal(h.ctx.internalActor({_session:core}),'Arya');assert.ok(h.login('Arya'));
+ assert.equal(beta(h,token,'list').code,'AUTH_REQUIRED');assert.equal(login(h,added.code).ok,false);
+ for(const [key,value] of Object.entries(obsolete))assert.equal(h.properties[key],value);
+ delete h.properties.INTERNAL_BETA_SECRET;
+ assert.equal(h.ctx.internalActor({_session:core}),'Arya');assert.ok(h.login('Arya'));
 });
 
 test('member codes are random, hashed at rest and disclosed only on join or rotate',()=>{

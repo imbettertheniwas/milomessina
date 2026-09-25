@@ -47,9 +47,10 @@ page is a link to somebody's page.
 **Beta interns have their own workspace at `/internal/beta`.** A shared
 batch invite lets them join immediately. They see their own batch's attendance
 and public GitHub activity, and save or submit their own two-week recap.
-They stay off the main roster and cannot read the main internal APIs.
-See [BETA.md](BETA.md) for setup and deployment; beta access requires a
-private server-side team sign-in secret before any invitations can be created.
+They stay off the main roster; beta sessions cannot read the main internal APIs.
+Their device remembers their profile, with a personal return link for another
+device. No beta password or change to the regular team's passcode is needed.
+See [BETA.md](BETA.md) for setup and deployment.
 
 **Referral money is decided here and moved somewhere else.** A referral
 arrives at *pending*, which says only that a submission carrying somebody's

@@ -24,7 +24,7 @@
       <span id="beta-gate-eyebrow" class="eyebrow gate-eyebrow">Two weeks to learn and build</span>
       <h1 id="beta-gate-title" tabindex="-1">Arya’s two-week beta internship.</h1>
       <p id="beta-gate-intro" class="gate-intro">Join a small group, track your attendance, build public internship projects on GitHub, and share what you learned at the end.</p>
-      <div id="beta-invite-needed" class="invite-needed"><strong>Start with Arya’s invite link.</strong><p>Ask Arya for your group’s shared invitation, then open it to add your details and join.</p></div>
+      <div id="beta-invite-needed" class="invite-needed"><strong>Start with Arya’s invite link.</strong><p>Open Arya’s shared invitation to add your details and join. If you’ve already joined on this device, your profile opens automatically. On another device, use your personal return link.</p></div>
       <form id="beta-join-form" novalidate hidden>
         <div id="beta-invite-summary" class="invite-summary"></div>
         <div id="beta-join-welcome">
@@ -41,16 +41,9 @@
         </div>
         <div id="beta-join-review" hidden>
           <dl id="beta-review-details" class="join-review-details"></dl>
-          <p class="join-review-note">Joining saves your details to Arya’s beta dashboard. You’ll get your own return code next.</p>
+          <p class="join-review-note">Joining saves your details to Arya’s beta dashboard. This device will remember your profile, and you can save a private return link for another device.</p>
           <div class="join-actions"><button class="button" id="beta-review-back" type="button">Edit details</button><button class="button primary" id="beta-join" type="submit">Join this group <span aria-hidden="true">↗</span></button></div>
         </div>
-      </form>
-      <button class="gate-switch" id="beta-use-code" type="button">Already joined? Open with your personal code</button>
-      <form id="beta-login-form" hidden>
-        <label for="beta-code">Personal access code</label>
-        <input id="beta-code" name="code" type="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" placeholder="Enter your code" required maxlength="200" aria-describedby="beta-login-error">
-        <button class="button primary" id="beta-login" type="submit">Open workspace <span aria-hidden="true">↗</span></button>
-        <button class="gate-switch" id="beta-return-join" type="button">Back</button>
       </form>
       <p id="beta-login-error" class="form-message" role="alert" aria-live="polite"></p>
       <div class="gate-footer"><span class="status-dot" aria-hidden="true"></span> FOMO beta internship <span>Two weeks. Real progress.</span></div>
@@ -67,7 +60,8 @@
       <header class="topbar"><span class="breadcrumb">Internal <span aria-hidden="true">/</span> <strong>Beta workspace</strong></span><div class="topbar-actions"><button class="button subtle" id="beta-refresh" type="button">Refresh</button><button class="button subtle" id="beta-signout" type="button">Sign out</button></div></header>
       <main class="content" id="beta-main">
         <div class="intro"><div><div class="intro-meta"><span class="pill">Two-week beta</span><span id="beta-batch"></span></div><h1 id="beta-greeting" tabindex="-1">Your workspace</h1><p>Show up. Build something. Share what you learned.</p></div><span class="profile-avatar" id="beta-avatar" aria-hidden="true"></span></div>
-        <section id="beta-recovery" class="recovery-card" aria-labelledby="beta-recovery-heading" hidden><div><span class="eyebrow">One last thing</span><h2 id="beta-recovery-heading">Save your personal code.</h2><p>Use this code to return to your workspace. Keep it somewhere private.</p><label class="sr-only" for="beta-recovery-code">Your personal access code</label><input id="beta-recovery-code" readonly autocomplete="off" spellcheck="false"></div><div class="recovery-actions"><button id="beta-copy-code" class="button" type="button">Copy code</button><button id="beta-saved-code" class="button primary" type="button">I’ve saved it</button></div></section>
+        <section id="beta-recovery" class="recovery-card" aria-labelledby="beta-recovery-heading" hidden><div><span class="eyebrow">Your profile is ready</span><h2 id="beta-recovery-heading">Save your personal return link.</h2><p>This device will remember you. Save this private link if you want to open your profile on another device.</p><label class="sr-only" for="beta-return-link">Your personal return link</label><input id="beta-return-link" type="url" readonly autocomplete="off" spellcheck="false"></div><div class="recovery-actions"><button id="beta-copy-link" class="button" type="button">Copy link</button><button id="beta-hide-link" class="button subtle" type="button">Dismiss</button></div></section>
+        <section id="beta-profile" class="profile-card" aria-label="Your profile" hidden></section>
         <p id="beta-error" class="page-message" role="alert" hidden></p>
         <p id="beta-notice" class="save-notice" role="status" aria-live="polite"></p>
         <div id="beta-summary" class="summary-grid" aria-label="Your progress"></div>

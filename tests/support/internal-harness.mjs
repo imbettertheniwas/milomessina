@@ -54,7 +54,7 @@ export function harness(initialProperties={}){
     DriveApp:{},MailApp:{}
   });
   vm.runInContext(fs.readFileSync(new URL('../../fomo/setup/apps-script.gs',import.meta.url),'utf8'),ctx);
-  const login=who=>ctx.internalSessionApi({action:'login',who,passcode:properties.INTERNAL_LOGIN_SECRET||'monkey'}).token;
+  const login=who=>ctx.internalSessionApi({action:'login',who,passcode:ctx.CONFIG.INVOICE_KEY}).token;
   const call=(who,action,p={},namespace='invoice')=>ctx[namespace+'Api']({_key:'monkey',_session:who,action,...p});
   return {ctx,login,call,sheets,sessions,properties};
 }

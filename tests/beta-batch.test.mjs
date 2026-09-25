@@ -2,9 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {harness} from './support/internal-harness.mjs';
 
-const SECRET='private beta operator secret 2026';
 const beforeToday=days=>new Date(Date.now()-days*86400000).toISOString().slice(0,10);
-const setup=()=>{const h=harness({INTERNAL_LOGIN_SECRET:SECRET});return {...h,operator:h.login('Arya')};};
+const setup=()=>{const h=harness();return {...h,operator:h.login('Arya')};};
 const api=(h,token,action,p={})=>h.ctx.betaApi({_session:token,action,...p});
 const auth=(h,action,p={})=>h.ctx.internalSessionApi({action,...p});
 const batch=(h,name='September beta')=>api(h,h.operator,'batchadd',{name,startDate:beforeToday(5)});
@@ -170,4 +169,111 @@ test('phone migration refuses mismatched headers or occupied unnamed columns wit
    assert.throws(()=>h.ctx.betaRead('internal_beta_members',h.ctx.BETA_MEMBERS),/columns do not match/);
    assert.deepEqual(sheet.rows,before);
  }
+});
+
+test('the same secret join attempt safely recovers after a lost successful response',()=>{
+ const h=setup(),b=batch(h),joinRequest='0123456789abcdef0123456789abcdef';
+ const first=join(h,b.invite,'Maya',{joinRequest});
+ const retry=join(h,b.invite,'Maya',{joinRequest:joinRequest.toUpperCase()});
+ assert.equal(first.ok,true);assert.equal(retry.ok,true);assert.equal(retry.recovered,true);
+ assert.equal(retry.member.id,first.member.id);assert.equal(retry.code,first.code);assert.notEqual(retry.token,first.token);
+ assert.equal(api(h,h.operator,'list').members.length,1);
+ assert.equal(api(h,retry.token,'list').member.id,first.member.id);
+ assert.equal(auth(h,'betalogin',{code:retry.code}).member.id,first.member.id);
+ const rows=JSON.stringify(h.sheets.internal_beta_members.rows);
+ assert.equal(rows.includes(joinRequest),false);assert.equal(rows.includes(first.code),false);
+ const stored=h.ctx.betaRead('internal_beta_members',h.ctx.BETA_MEMBERS)[0];
+ assert.match(stored.joinRequestHash,/^[a-f0-9]{64}$/);assert.match(stored.codeHash,/^[a-f0-9]{64}$/);
+ assert.equal(retry.member.joinRequestHash,undefined);assert.equal(api(h,h.operator,'list').members[0].joinRequestHash,undefined);
+});
+
+test('a join saved before session-cache failure can retry without creating another member',()=>{
+ const h=setup(),b=batch(h),joinRequest='23456789abcdef0123456789abcdef01';
+ const original=h.ctx.CacheService.getScriptCache;
+ h.ctx.CacheService.getScriptCache=()=>({...original(),put:(key,value,seconds)=>{
+   if(key.startsWith('beta:'))throw new Error('Temporary session-cache failure');
+   return original().put(key,value,seconds);
+ }});
+ const first=join(h,b.invite,'Maya',{joinRequest});
+ assert.equal(first.ok,false);assert.match(first.error,/session-cache/);assert.equal(first.joinSaved,undefined);
+ const failedRecovery=join(h,b.invite,'Maya',{joinRequest});
+ assert.equal(failedRecovery.ok,false);assert.equal(failedRecovery.joinSaved,undefined);
+ h.ctx.CacheService.getScriptCache=original;
+ const saved=h.ctx.betaRead('internal_beta_members',h.ctx.BETA_MEMBERS)[0];
+ const retry=join(h,b.invite,'Maya',{joinRequest});
+ assert.equal(retry.ok,true);assert.equal(retry.recovered,true);assert.equal(retry.member.id,saved.id);
+ assert.equal(h.ctx.betaCodeHash(retry.code),saved.codeHash);
+ assert.equal(api(h,h.operator,'list').members.length,1);
+});
+
+test('join retries require the original request and exact normalized identity',()=>{
+ const h=setup(),b=batch(h),joinRequest='3456789abcdef0123456789abcdef012';
+ const first=join(h,b.invite,'Maya',{joinRequest});
+ for(const change of [
+   {joinRequest:'456789abcdef0123456789abcdef0123'},
+   {name:'Someone else'}, {email:'another@example.com'},
+   {phone:'+1 212 555 9999'}, {github:'someone-else'}, {joinRequest:undefined}
+ ]) {
+   const retry=auth(h,'betajoin',{invite:b.invite,name:'Maya',email:'maya@example.com',phone:'+1 (212) 555-0100',github:'maya-builds',joinRequest,...change});
+   assert.equal(retry.ok,false,JSON.stringify(change));assert.equal(retry.token,undefined);assert.equal(retry.joinSaved,false);
+ }
+ const normalized=auth(h,'betajoin',{invite:b.invite,name:' Maya ',email:' MAYA@EXAMPLE.COM ',phone:' +1 (212) 555-0100 ',github:'@MAYA-BUILDS',joinRequest});
+ assert.equal(normalized.ok,true);assert.equal(normalized.code,first.code);
+ assert.equal(api(h,h.operator,'list').members.length,1);
+ api(h,h.operator,'memberupdate',{id:first.member.id,name:'Updated name'});
+ assert.equal(join(h,b.invite,'Maya',{joinRequest}).ok,false);
+ assert.equal(auth(h,'betajoin',{invite:b.invite,name:'Updated name',email:'maya@example.com',phone:'+1 (212) 555-0100',github:'maya-builds',joinRequest}).ok,false);
+});
+
+test('pauses and link resets cannot be bypassed by replaying the original join attempt',()=>{
+ const h=setup(),b=batch(h),joinRequest='5'.repeat(32);
+ const first=join(h,b.invite,'Maya',{joinRequest});
+ api(h,h.operator,'memberupdate',{id:first.member.id,status:'paused'});
+ assert.equal(join(h,b.invite,'Maya',{joinRequest}).ok,false);assert.equal(api(h,first.token,'list').ok,false);
+ api(h,h.operator,'memberupdate',{id:first.member.id,status:'active'});
+ const resumed=join(h,b.invite,'Maya',{joinRequest});assert.equal(resumed.ok,true);
+ assert.equal(api(h,first.token,'list').ok,false);
+ const reset=api(h,h.operator,'rotatecode',{id:first.member.id});
+ assert.equal(join(h,b.invite,'Maya',{joinRequest}).ok,false);
+ assert.equal(auth(h,'betalogin',{code:reset.code}).ok,true);assert.equal(api(h,resumed.token,'list').ok,false);
+ const freshInvite=api(h,h.operator,'rotateinvite',{id:b.createdBatchId});
+ assert.equal(join(h,b.invite,'Maya',{joinRequest}).ok,false);
+ assert.equal(join(h,freshInvite.invite,'Maya',{joinRequest}).ok,false);
+});
+
+test('invalid join request shapes fail without saving, and separate batches have separate capabilities',()=>{
+ const h=setup(),b=batch(h);
+ for(const joinRequest of ['',null,123,'a'.repeat(31),'a'.repeat(33),'g'.repeat(32),' '+'a'.repeat(32)]) {
+   const out=join(h,b.invite,'Maya',{joinRequest});assert.equal(out.ok,false);assert.match(out.error,/join attempt/);assert.equal(out.joinSaved,false);
+ }
+ assert.equal(api(h,h.operator,'list').members.length,0);
+ const joinRequest='6'.repeat(32);
+ const first=join(h,b.invite,'Maya',{joinRequest}),otherBatch=batch(h,'Other group');
+ const other=join(h,otherBatch.invite,'Maya',{joinRequest});
+ assert.equal(first.ok,true);assert.equal(other.ok,true);assert.notEqual(first.code,other.code);
+ assert.notEqual(first.member.id,other.member.id);
+});
+
+test('adding join-request hashes extends the phone schema without changing existing member values',()=>{
+ const h=setup(),b=batch(h),first=join(h,b.invite);
+ const sheet=h.sheets.internal_beta_members,index=h.ctx.BETA_MEMBERS.indexOf('joinRequestHash');
+ sheet.rows.forEach((row,n)=>{sheet.rows[n]=row.slice(0,index);});
+ const before=sheet.rows.map(row=>[...row]);
+ assert.equal(auth(h,'betalogin',{code:first.code}).ok,true);
+ assert.equal(sheet.rows[0][index],'joinRequestHash');assert.deepEqual(sheet.rows[0].slice(0,index),before[0]);
+ assert.deepEqual(sheet.rows.slice(1),before.slice(1));
+ assert.equal(api(h,h.operator,'list').members[0].phone,first.member.phone);
+});
+
+
+test('definite pre-save validation permits corrected signup while expired sessions identify authentication failure',()=>{
+ const h=setup(),b=batch(h),joinRequest='7'.repeat(32);
+ const invalid=join(h,b.invite,'Maya',{joinRequest,email:'maya@example'});
+ assert.equal(invalid.ok,false);assert.equal(invalid.joinSaved,false);assert.match(invalid.error,/email/);
+ assert.equal(api(h,h.operator,'list').members.length,0);
+ const corrected=join(h,b.invite,'Maya',{joinRequest:'8'.repeat(32),email:'maya@example.com'});
+ assert.equal(corrected.ok,true);assert.equal(api(h,h.operator,'list').members.length,1);
+ h.sessions.clear();
+ assert.equal(auth(h,'session',{_session:corrected.token}).code,'AUTH_REQUIRED');
+ assert.equal(auth(h,'session',{_session:h.operator}).code,'AUTH_REQUIRED');
 });

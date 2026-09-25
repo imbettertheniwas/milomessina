@@ -137,7 +137,7 @@ function doGet() {
     hint: 'fomo campus form receiver is live',
     identity: true,
     beta: typeof betaApi === 'function',
-    privateLogin: !!internalLoginSecret(),
+    betaPasswordless: true,
     approvals: true,
     moneyUndo: true,
     purchaseApproval: true,
@@ -311,12 +311,10 @@ function internalSessionApi(body) {
     if(beta)return reply(true,null,{who:beta.name,beta:true,member:betaPublicMember(beta,false),permissions:betaMemberPermissions(beta)});
     var current = internalActor(body);
     return current ? reply(true, null, {who:current, admin:current === 'Arya', operator:internalIsAdmin(current), roster:rosterRead().map(rosterPublic)})
-      : reply(false, 'Session expired. Enter the passcode and select your name again.');
+      : reply(false, 'Session expired. Enter the passcode and select your name again.', {code:'AUTH_REQUIRED'});
   }
   if (body.action !== 'login') return reply(false, 'unknown action');
-  var privateSecret=internalLoginSecret();
-  if(internalPrivateRequired() && !betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
-  if (!internalSame(String(body.passcode||''), privateSecret || CONFIG.INVOICE_KEY)) return reply(false, 'That passcode does not match.');
+  if (body.passcode !== CONFIG.INVOICE_KEY) return reply(false, 'That passcode does not match.');
   var who = String(body.who || '');
   if (rosterPayers().indexOf(who) === -1) return reply(false, 'Select your name.');
   var token = Utilities.getUuid() + Utilities.getUuid();
@@ -331,7 +329,6 @@ function internalSessionApi(body) {
 function internalActor(body) {
   var token = String(body._session || '');
   if (!token || token.length > 100) return null;
-  if(internalPrivateRequired() && !betaConfigured())return null;
   var who = CacheService.getScriptCache().get(internalSessionPrefix() + token);
   return rosterPayers().indexOf(who) >= 0 ? who : null;
 }
@@ -342,13 +339,20 @@ function internalActor(body) {
    existing sessions immediately. */
 var BETA_PERMISSIONS = ['attendance', 'github', 'recap'];
 var BETA_STATUSES = ['active', 'paused', 'graduated'];
-var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone'];
-var BETA_SETUP_MESSAGE = 'Set a private INTERNAL_LOGIN_SECRET of at least 16 characters in Apps Script properties, then sign in again with that secret before enabling beta access.';
-function internalLoginSecret() {
-  return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_LOGIN_SECRET') || '');
+var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epoch','createdAt','updatedAt','createdBy','batchId','github','phone','joinRequestHash'];
+var BETA_SETUP_MESSAGE = 'This beta invitation is not available. Ask Arya for the current link.';
+function betaSecret() {
+  return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_SECRET') || '');
 }
-function internalPrivateRequired() {
-  return PropertiesService.getScriptProperties().getProperty('INTERNAL_PRIVATE_AUTH_REQUIRED') === 'true';
+function betaEnsureSecret() {
+  // Called only after a valid operator batch-create request, under doPost's lock.
+  // The regular team's password and every existing property stay unchanged.
+  var secret=betaSecret();
+  if(!secret) {
+    secret=Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');
+    PropertiesService.getScriptProperties().setProperty('INTERNAL_BETA_SECRET',secret);
+  }
+  if(secret.length<32)throw new Error('Beta access could not be initialized. Contact the workspace operator.');
 }
 function internalDigest(value) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8)
@@ -360,14 +364,8 @@ function internalSame(a, b) {
   for(var i=0;i<a.length;i++) different |= a.charCodeAt(i) ^ (b.charCodeAt(i)||0);
   return different === 0;
 }
-function internalSessionPrefix() {
-  var secret=internalLoginSecret();
-  return secret ? 'internal:v2:' + internalDigest(secret).slice(0,24) + ':' : 'internal:';
-}
-function betaConfigured() {
-  var secret=internalLoginSecret();
-  return secret.length >= 16 && secret !== CONFIG.INVOICE_KEY;
-}
+function internalSessionPrefix() {return 'internal:';}
+function betaConfigured() {return betaSecret().length>=32;}
 function betaBook() {
   return CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
 }
@@ -380,13 +378,14 @@ function betaTable(name, columns, create) {
   }
   if(sheet) {
     var head=sheet.getRange(1,1,1,columns.length).getValues()[0];
-    // The first beta release had no phone column. Extend that exact schema
-    // in place; never rewrite existing headers, rows, or an occupied column.
-    var phoneIndex=columns.length-1;
-    if(name==='internal_beta_members' && columns[phoneIndex]==='phone' && head[phoneIndex]==='' &&
-       sheet.getLastColumn()<=phoneIndex && JSON.stringify(head.slice(0,phoneIndex))===JSON.stringify(columns.slice(0,phoneIndex))) {
-      sheet.getRange(1,phoneIndex+1).setValue('phone').setFontWeight('bold');
-      head[phoneIndex]='phone';
+    // Extend either earlier exact member schema (before phone, or before
+    // retry hashes). Never overwrite an existing header, row or occupied column.
+    var prefix=0;
+    while(prefix<columns.length && head[prefix]===columns[prefix])prefix++;
+    if(name==='internal_beta_members' && prefix>=13 && prefix<columns.length &&
+       head.slice(prefix).every(function(v){return v==='';}) && sheet.getLastColumn()<=prefix) {
+      sheet.getRange(1,prefix+1,1,columns.length-prefix).setValues([columns.slice(prefix)]).setFontWeight('bold');
+      head=columns.slice();
     }
     if(JSON.stringify(head)!==JSON.stringify(columns))
       throw new Error('The ' + name + ' columns do not match. Restore the beta table headers before continuing.');
@@ -422,9 +421,9 @@ function betaPublicMember(member,manager) {
 function betaCleanRow(row,columns) {
   var out={};columns.forEach(function(key){out[key]=row[key];});return out;
 }
-function betaCodeHash(code) {return internalDigest(internalLoginSecret()+'\n'+String(code||'').trim().toUpperCase());}
+function betaCodeHash(code) {return internalDigest(betaSecret()+'\n'+String(code||'').trim().toUpperCase());}
 function betaNewCode() {return 'BETA-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
-function betaSessionPrefix() {return 'beta:v1:'+internalDigest(internalLoginSecret()).slice(0,24)+':';}
+function betaSessionPrefix() {return 'beta:v1:'+internalDigest(betaSecret()).slice(0,24)+':';}
 function betaActor(body) {
   if(!betaConfigured())return null;
   var token=String(body._session||'');
@@ -441,11 +440,11 @@ function betaActor(body) {
 function betaLogin(body) {
   if(!betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
   var code=String(body.code||'').trim();
-  if(!/^BETA-[a-f0-9]{32}$/i.test(code))return reply(false,'That beta access code is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+  if(!/^BETA-[a-f0-9]{32}$/i.test(code))return reply(false,'This personal workspace link is invalid or no longer active.',{code:'AUTH_REQUIRED'});
   var hash=betaCodeHash(code), member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){
     return m.status==='active' && internalSame(String(m.codeHash||''),hash);
   })[0];
-  if(!member)return reply(false,'That beta access code is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+  if(!member)return reply(false,'This personal workspace link is invalid or no longer active.',{code:'AUTH_REQUIRED'});
   var batch=betaFindBatch(member);
   if(!batch || !betaActive(batch.active))return reply(false,'This beta batch is paused. Contact Arya for access.',{code:'AUTH_REQUIRED'});
   var token=betaMintSession(member);
@@ -487,7 +486,7 @@ function betaPhone(value) {
   return phone;
 }
 function betaNewInvite() {return 'BATCH-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
-function betaInviteHash(invite) {return internalDigest(internalLoginSecret()+'\nbatch-invite\n'+String(invite||'').trim().toUpperCase());}
+function betaInviteHash(invite) {return internalDigest(betaSecret()+'\nbatch-invite\n'+String(invite||'').trim().toUpperCase());}
 function betaInviteBatch(invite) {
   if(!betaConfigured() || !/^BATCH-[a-f0-9]{32}$/i.test(String(invite||'').trim()))return null;
   var hash=betaInviteHash(invite);
@@ -498,22 +497,53 @@ function betaInviteApi(body) {
   var batch=betaInviteBatch(body.invite);
   return batch?reply(true,null,{batch:betaPublicBatch(batch)}):reply(false,'This beta invite is invalid or no longer active.',{code:'AUTH_REQUIRED'});
 }
+function betaJoinRequest(body) {
+  if(body.joinRequest===undefined)return '';
+  if(typeof body.joinRequest!=='string' || !/^[a-f0-9]{32}$/i.test(body.joinRequest))
+    throw new Error('This join attempt is invalid. Open the invitation again and retry.');
+  return body.joinRequest.toLowerCase();
+}
+function betaJoinRequestHash(batchId,request) {
+  return internalDigest(betaSecret()+'\nbeta-join-request-v1\n'+batchId+'\n'+request);
+}
+function betaJoinIdentity(name,email,phone,github) {
+  return JSON.stringify([name,email.toLowerCase(),phone,github.toLowerCase()]);
+}
 function betaJoin(body) {
   if(!betaConfigured())return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
   var batch=betaInviteBatch(body.invite);
   if(!batch)return reply(false,'This beta invite is invalid or no longer active.',{code:'AUTH_REQUIRED'});
+  var joinMayBeSaved=false;
   try {
-    var name=betaString(body,'name',80,true),email=betaString(body,'email',254,true),github=betaGithub(body.github),phone=betaPhone(body.phone);
+    var request=betaJoinRequest(body),name=betaString(body,'name',80,true),email=betaString(body,'email',254,true),github=betaGithub(body.github),phone=betaPhone(body.phone);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
-    if(betaRead('internal_beta_members',BETA_MEMBERS).some(function(m){return m.batchId===batch.id && String(m.email).toLowerCase()===email.toLowerCase();}))
-      throw new Error('You already joined this beta batch. Use your personal access code to return, or ask Arya to reset it.');
-    var stamp=new Date().toISOString(),code=betaNewCode();
+    var identity=betaJoinIdentity(name,email,phone,github),requestHash=request?betaJoinRequestHash(batch.id,request):'';
+    var code=request?'BETA-'+internalDigest(betaSecret()+'\nbeta-join-access-v1\n'+batch.id+'\n'+request+'\n'+identity).slice(0,32).toUpperCase():betaNewCode();
+    var codeHash=betaCodeHash(code),members=betaRead('internal_beta_members',BETA_MEMBERS);
+    var existing=members.filter(function(m){return m.batchId===batch.id &&
+      (String(m.email).toLowerCase()===email.toLowerCase() || requestHash && internalSame(String(m.joinRequestHash||''),requestHash));});
+    if(existing.length) {
+      var saved=existing[0];
+      // Email alone never recovers an account. The original secret attempt,
+      // identity and still-active personal capability must all agree.
+      if(existing.length!==1 || !requestHash || saved.status!=='active' ||
+         !internalSame(String(saved.joinRequestHash||''),requestHash) || !internalSame(String(saved.codeHash||''),codeHash) ||
+         betaJoinIdentity(String(saved.name),String(saved.email),String(saved.phone),String(saved.github))!==identity)
+        throw new Error('You already joined this beta batch. Open your personal workspace link, or ask Arya to reset it.');
+      joinMayBeSaved=true;
+      return reply(true,null,{token:betaMintSession(saved),code:code,who:saved.name,beta:true,recovered:true,member:betaPublicMember(saved,false),permissions:betaMemberPermissions(saved)});
+    }
+    var stamp=new Date().toISOString();
     var member={id:Utilities.getUuid(),name:name,email:email,phone:phone,github:github,batchId:batch.id,batch:batch.name,status:'active',
-      notes:'',codeHash:betaCodeHash(code),epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:'self-join'};
-    PropertiesService.getScriptProperties().setProperty('INTERNAL_PRIVATE_AUTH_REQUIRED','true');
+      notes:'',codeHash:codeHash,joinRequestHash:requestHash,epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:'self-join'};
+    joinMayBeSaved=true; // A write can succeed even if its confirmation fails.
     betaWrite('internal_beta_members',BETA_MEMBERS,member);
     return reply(true,null,{token:betaMintSession(member),code:code,who:member.name,beta:true,member:betaPublicMember(member,false),permissions:betaMemberPermissions(member)});
-  }catch(e){return reply(false,String(e.message||e),{code:'INVALID'});}
+  }catch(e){
+    var errorInfo={code:'INVALID'};
+    if(!joinMayBeSaved)errorInfo.joinSaved=false;
+    return reply(false,String(e.message||e),errorInfo);
+  }
 }
 function betaMintSession(member) {
   var token=Utilities.getUuid()+Utilities.getUuid(),batch=betaFindBatch(member);
@@ -523,11 +553,11 @@ function betaMintSession(member) {
 function betaManageBatch(body,operator) {
   var action=body.action,stamp=new Date().toISOString(),batch,invite,extra={};
   if(action==='batchadd') {
-    var start=betaDate(body.startDate);
+    var start=betaDate(body.startDate),name=betaString(body,'name',80,true);
+    betaEnsureSecret();
     invite=betaNewInvite();
-    batch={id:Utilities.getUuid(),name:betaString(body,'name',80,true),startDate:start,endDate:betaEndDate(start),active:true,
+    batch={id:Utilities.getUuid(),name:name,startDate:start,endDate:betaEndDate(start),active:true,
       inviteHash:betaInviteHash(invite),inviteVersion:1,epoch:1,createdAt:stamp,updatedAt:stamp,createdBy:operator};
-    PropertiesService.getScriptProperties().setProperty('INTERNAL_PRIVATE_AUTH_REQUIRED','true');
     extra={invite:invite,createdBatchId:batch.id};
   } else {
     batch=betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return b.id===String(body.id);})[0];
@@ -588,7 +618,7 @@ function betaApi(body) {
   var operator=internalActor(body), manager=internalIsAdmin(operator), member=manager?null:betaActor(body);
   if(!manager && !member)return reply(false,'Beta session expired or access changed. Sign in again.',{code:'AUTH_REQUIRED'});
   var action=String(body.action||'list'), configured=betaConfigured();
-  if(!configured && action!=='list')return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
+  if(!configured && action!=='list' && !(manager && action==='batchadd'))return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
   if(!manager && ['list','attendance','attendanceremove','recap'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
   var members=betaRead('internal_beta_members',BETA_MEMBERS), target, stamp=new Date().toISOString(), extra={};
   try {
@@ -621,7 +651,7 @@ function betaApi(body) {
   } catch(e) {return reply(false,String(e.message||e),{code:'INVALID'});}
   var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
   var visibleMembers=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return manager || m.id===member.id;});
-  var result={manager:manager,configured:configured,setupMessage:configured?'':BETA_SETUP_MESSAGE,permissions:permissions,
+  var result={manager:manager,configured:true,setupMessage:'',permissions:permissions,
     members:visibleMembers.map(function(m){return betaPublicMember(m,manager);}),member:member?betaPublicMember(member,false):null};
   var group=betaGroupData(manager,member);
   Object.keys(group).forEach(function(k){result[k]=group[k];});
