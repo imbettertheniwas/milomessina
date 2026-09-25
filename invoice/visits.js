@@ -7,7 +7,7 @@ const publicLink=new URL('/hqvisitform/',location.origin).href;
 $('vr-open').href=publicLink;
 $('vr-link').value=publicLink;
 function message(text,error=false){$('vr-message').textContent=text;$('vr-message').classList.toggle('vr-error',error);}
-/* Only Arya can move a request on or change the opening hours, and the
+/* Only Milo and Arya can move a request on or change the opening hours, and the
    server says so on every attempt. The fields have to say it too: an
    intern left with a live dropdown and a live notes box is being invited
    to make changes that have nowhere to go — the Save button beside them
@@ -17,7 +17,7 @@ function message(text,error=false){$('vr-message').textContent=text;$('vr-messag
 const mayEdit=()=>{const b=window.FOMO_SHEET||{};return !!(b.admin && b.admin());};
 async function api(action,body) {
   const bridge=window.FOMO_SHEET || {};
-  if(['update','saveAvailability'].includes(action) && !mayEdit())throw new Error('Only Arya can change visit requests or opening hours.');
+  if(['update','saveAvailability'].includes(action) && !mayEdit())throw new Error('Only Milo and Arya can change visit requests or opening hours.');
   const response=await fetch('/api/visits?action='+action,{
     method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',
     headers:{...(body?{'Content-Type':'application/json'}:{}),...(bridge.session && bridge.session()?{'X-Fomo-Internal-Session':bridge.session()}:{})},

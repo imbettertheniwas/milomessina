@@ -18,7 +18,7 @@ test('internal identity checks the console deployment and never posts to a legac
   assert.equal(calls[0].options.method,undefined);
   assert.ok(readFileSync(new URL('../invoice/index.html',import.meta.url),'utf8').includes(calls[0].url));
   assert.notEqual(calls[0].url,env.VISITS_STORAGE_URL);
-  for(const [who,admin,expected] of [['Arya',true,{who:'Arya',admin:true}],['Milo',false,{who:'Milo',admin:false}],['Arya',false,{who:'Arya',admin:false}],['Milo',true,{who:'Milo',admin:false}],['Unknown',true,false]]) {
+  for(const [who,admin,expected] of [['Arya',true,{who:'Arya',admin:true}],['Milo',false,{who:'Milo',admin:false}],['Arya',false,{who:'Arya',admin:false}],['Milo',true,{who:'Milo',admin:true}],['Bijan',true,{who:'Bijan',admin:false}],['Unknown',true,false]]) {
     const fetchIdentity=async(url,options)=>({ok:true,json:async()=>options.method==='POST'?{ok:true,who,admin}:{identity:true}});
     assert.deepEqual(await verifyInternalIdentity(env,'session-token',fetchIdentity),expected);
   }
@@ -30,7 +30,7 @@ test('internal identity checks the console deployment and never posts to a legac
 const guest={requestId:'00000000-0000-4000-8000-000000000001',name:'Guest',email:'guest@example.invalid',social:'@guest',notes:'A collaboration',website:'',date:'2026-09-17',time:'2:15 PM'};
 function harness(overrides={}) {
   const {store,records}=memoryStore();
-  const handler=createVisitHandler({env,store,now:()=>now,verifyIdentity:async token=>token==='admin-test'?{who:'Arya',admin:true}:token==='intern-test'?{who:'Milo',admin:false}:false,...overrides});
+  const handler=createVisitHandler({env,store,now:()=>now,verifyIdentity:async token=>token==='admin-test'?{who:'Arya',admin:true}:token==='milo-admin-test'?{who:'Milo',admin:true}:token==='intern-test'?{who:'Bijan',admin:false}:false,...overrides});
   async function call(action='submit',body=guest,{method='POST',origin=env.VISITS_PUBLIC_ORIGIN,cookie,headers={}}={}) {
     const result={status:200,headers:{}};
     const req={url:'/api/visits?action='+action,method,body,headers:{origin,'content-type':'application/json',cookie,...headers},socket:{remoteAddress:'127.0.0.1'}};
@@ -187,10 +187,28 @@ test('a closed day is refused with a message naming the day, not a generic outag
   assert.match(response.body.error,/not open for visits/);
 });
 
-test('only Arya can change visiting hours with the existing internal session',async()=>{
+test('interns cannot change visiting hours with the existing internal session',async()=>{
   const h=harness();
   assert.equal((await h.call('saveAvailability',{availability:defaultAvailability()},{headers:{'x-fomo-internal-session':'intern-test'}})).status,403);
   assert.equal((await h.call('update',{}, {headers:{'x-fomo-internal-session':''}})).status,401);
+});
+
+test('Milo and Arya can both manage visits and hours; names alone do not grant admin',async()=>{
+  for(const token of ['admin-test','milo-admin-test']) {
+    const h=harness(),headers={'x-fomo-internal-session':token};
+    await h.call();
+    const changed=await h.call('update',{id:guest.requestId,status:'confirmed',internalNotes:'Reviewed by an admin',version:1},{headers});
+    assert.equal(changed.status,200);
+    assert.equal(changed.body.request.internal_notes,'Reviewed by an admin');
+    assert.equal((await h.call('saveAvailability',{availability:defaultAvailability()},{headers})).status,200);
+  }
+  for(const identity of [{who:'Milo',admin:false},{who:'Arya',admin:false},{who:'Bijan',admin:true}]) {
+    let writes=0;
+    const h=harness({verifyIdentity:async()=>identity,store:async()=>{writes++;}});
+    assert.equal((await h.call('update',{})).status,403);
+    assert.equal((await h.call('saveAvailability',{availability:defaultAvailability()})).status,403);
+    assert.equal(writes,0);
+  }
 });
 
 test('visit view waits for Internal login, loads automatically, and clears data on expiry',async()=>{

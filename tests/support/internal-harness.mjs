@@ -45,7 +45,7 @@ export function harness(initialProperties={}){
   const book={getSheetByName:name=>sheets[name]||null,insertSheet(name){return sheets[name]=fakeSheet([]);}};
   const ctx=vm.createContext({
     SpreadsheetApp:{getActiveSpreadsheet:()=>book,openById:()=>book},
-    Utilities:{getUuid:randomUUID,formatDate:d=>d.toISOString().slice(0,19),DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(algorithm,value,encoding)=>Array.from(createHash(algorithm).update(value,encoding).digest())},
+    Utilities:{getUuid:randomUUID,formatDate:(d,zone,format)=>format==='yyyy-MM-dd'?new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(d):d.toISOString().slice(0,19),DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(algorithm,value,encoding)=>Array.from(createHash(algorithm).update(value,encoding).digest())},
     Session:{getScriptTimeZone:()=>"America/New_York"},
     ContentService:{MimeType:{JSON:'json'},createTextOutput:body=>({setMimeType:()=>JSON.parse(body)})},
     CacheService:{getScriptCache:()=>({get:k=>sessions.get(k)||null,put:(k,v)=>sessions.set(k,v),remove:k=>sessions.delete(k)})},

@@ -602,7 +602,7 @@ function card(p){
     '<div class="po-head">' +
       '<span class="av" aria-hidden="true" style="background:var(' + toneOf(p.who) + ')">' +
         esc(String(p.who).charAt(0).toUpperCase()) + '</span>' +
-      '<a class="po-author" href="#/person/' + encodeURIComponent(p.who) + '"><b>' + esc(p.who) + '</b></a><span class="po-handle">' + (p.who === 'Arya' ? 'Admin' : 'Intern') + '</span><span class="po-dot">·</span>' +
+      '<a class="po-author" href="#/person/' + encodeURIComponent(p.who) + '"><b>' + esc(p.who) + '</b></a><span class="po-handle">' + (['Milo','Arya'].includes(p.who) ? 'Admin' : 'Intern') + '</span><span class="po-dot">·</span>' +
       '<span class="po-when">' + esc(ago(p.posted)) + '</span>' +
       (p.edited ? '<span class="po-edited" title="Edited ' + esc(ago(p.edited)) + '">· edited</span>' : '') +
       (canManage(p) ? '<button type="button" class="po-pen" data-edit="' + esc(p.id) + '" aria-label="Edit this note">' +

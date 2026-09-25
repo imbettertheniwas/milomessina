@@ -20,6 +20,7 @@ function storage(values={}) {
   return {getItem:key=>map.get(key) || null,setItem:(key,value)=>map.set(key,String(value)),removeItem:key=>map.delete(key),map};
 }
 function harness(fetchImpl, {session=storage(), local=storage(), hash=''}={}) {
+  const githubRequests=[];
   const elements=new Map(), events=new Map(); let document;
   const makeElement=id=>({id,name:id.replace('beta-join-',''),value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,
     classList:{toggle(){}},setAttribute(){},removeAttribute(){},replaceChildren(){this.innerHTML='';this.textContent='';},
@@ -35,9 +36,9 @@ function harness(fetchImpl, {session=storage(), local=storage(), hash=''}={}) {
     window:{addEventListener(name,fn){events.set('window:'+name,fn);}},sessionStorage:session,localStorage:local,
     fetch:async(_url,options)=>reply(await fetchImpl(JSON.parse(options.body))),crypto:webcrypto,URL,URLSearchParams,AbortController,Uint8Array,Date,Intl,TypeError,Error,
     setTimeout,clearTimeout,setInterval(){},navigator:{clipboard:{writeText:async()=>{}}},
-    loadBetaGithub:async()=>[],betaGithubInitial:()=>[]});
+    loadBetaGithub:async(peers,options)=>{githubRequests.push({peers,options});return [];},betaGithubInitial:()=>[]});
   vm.runInContext(source,context,{filename:'beta-portal.js'});
-  return {portal:context.portal,get,session,local,location,events};
+  return {portal:context.portal,get,session,local,location,events,githubRequests};
 }
 function deferred(){let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};}
 
@@ -173,4 +174,75 @@ test('a paused profile clears visible data but keeps its return link for reactiv
   assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-workspace').hidden,true);
   assert.equal(h.local.getItem('fomo.beta.access'),ACCESS);assert.equal(h.session.getItem('fomo.beta.session'),null);
   paused=false;await h.portal.restoreProfile();assert.equal(h.portal.state().workspace.member.id,'member-A');
+});
+
+test('the permanent root link opens signup and creates a profile only on the join action',async()=>{
+  const calls=[];const h=harness(body=>{
+    calls.push(body);
+    if(body.action==='betagroup')return {ok:true,batch:batch('A'),group:{...batch('A'),name:'Beta'},invite:'beta',periodDays:14};
+    if(body.action==='betajoin')return {...identity('A'),code:ACCESS};
+    return workspace('A');
+  });
+  await h.portal.handleLocationChange();
+  assert.equal(h.portal.state().invite,'beta');assert.equal(h.get('beta-join-form').hidden,false);
+  assert.equal(h.get('beta-join-welcome').hidden,false);assert.equal(h.get('beta-invite-needed').hidden,true);
+  assert.deepEqual(calls.map(call=>call.action),['betagroup']);
+  assert.match(h.get('beta-invite-summary').innerHTML,/Beta.*14 days, starting the day you join/);
+  assert.doesNotMatch(h.get('beta-invite-summary').innerHTML,/Sep 1|Sep 14/);
+  await h.portal.submitJoin(fields);
+  const join=calls.find(call=>call.action==='betajoin');
+  assert.equal(join.invite,'beta');assert.equal(join.phone,fields.phone);assert.match(join.joinRequest,/^[a-f0-9]{32}$/);
+  assert.equal(h.portal.state().workspace.member.id,'member-A');assert.equal(h.location.hash,'');
+});
+
+test('the permanent root link restores a remembered older group without fetching a new signup group',async()=>{
+  const calls=[];const h=harness(body=>{
+    calls.push(body.action);
+    if(body.action==='session')return identity('older','saved');
+    if(body.action==='list')return workspace('older');
+    throw Error('A remembered profile does not need a new invite.');
+  },{session:storage({'fomo.beta.session':'saved','fomo.beta.access':ACCESS})});
+  await h.portal.handleLocationChange();
+  assert.equal(h.portal.state().workspace.member.id,'member-older');assert.deepEqual(calls,['session','list']);
+});
+
+test('personal join dates drive the summary, attendance, GitHub query, and recap deadline',async()=>{
+  const own={...member('A'),startDate:'2026-09-20',endDate:'2026-10-03'};
+  const data={...workspace('A'),group:{...batch('A'),name:'Beta'},member:own,permissions:['attendance','github','recap'],
+    peers:[own,{id:'later',name:'Later Joiner',github:'later',startDate:'2026-09-24',endDate:'2026-10-07'}]};
+  const h=harness(body=>body.action==='betalogin'?{...identity('A'),member:own}:data);
+  await h.portal.signInWithAccess(ACCESS);
+  assert.deepEqual({...h.portal.state().workspace.period},{startDate:'2026-09-20',endDate:'2026-10-03'});
+  assert.equal(h.get('beta-batch').textContent,'Beta');
+  assert.match(h.get('beta-summary').innerHTML,/Sep 20.*Oct 3/);
+  assert.match(h.get('beta-sections').innerHTML,/min="2026-09-20"/);
+  assert.match(h.get('beta-sections').innerHTML,/Due Oct 3/);
+  assert.match(h.get('beta-sections').innerHTML,/outside their beta period/);
+  assert.equal(h.githubRequests[0].options.startDate,'2026-09-20');assert.equal(h.githubRequests[0].options.endDate,'2026-10-03');
+});
+
+test('a delayed permanent-group response cannot overwrite a newly pasted opaque invitation',async()=>{
+  const pending=deferred();const h=harness(body=>body.action==='betagroup'?pending.promise:{ok:true,batch:batch('B')});
+  const initial=h.portal.handleLocationChange();await Promise.resolve();await Promise.resolve();
+  h.location.hash='#invite='+INVITE_B;await h.events.get('window:hashchange')();
+  pending.resolve({ok:true,batch:batch('A'),invite:'beta'});await initial;
+  assert.equal(h.portal.state().invite,INVITE_B);assert.equal(h.portal.state().inviteBatch.id,'B');
+});
+
+test('a lost permanent-link join safely retries the same request after a root-page reload',async()=>{
+  const session=storage(),attempts=[];
+  const first=harness(body=>{
+    if(body.action==='betagroup')return {ok:true,batch:batch('A'),invite:'beta'};
+    attempts.push(body);throw new TypeError('Lost saved response');
+  },{session});
+  await first.portal.handleLocationChange();await first.portal.submitJoin(fields);
+  const second=harness(body=>{
+    if(body.action==='betagroup')return {ok:true,batch:batch('A'),invite:'beta'};
+    if(body.action==='betajoin'){attempts.push(body);return {...identity('A'),code:ACCESS,recovered:true};}
+    return workspace('A');
+  },{session});
+  await second.portal.handleLocationChange();
+  assert.equal(second.get('beta-join-review').hidden,false);assert.equal(second.get('beta-join-phone').value,fields.phone);
+  await second.portal.submitJoin(fields);
+  assert.deepEqual(attempts[0],attempts[1]);assert.equal(second.portal.pendingJoin('beta'),null);
 });

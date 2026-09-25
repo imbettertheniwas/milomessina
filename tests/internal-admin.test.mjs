@@ -193,15 +193,13 @@ test('counts say what a name is holding before anybody decides to remove it',()=
  assert.equal(counts.owed,25);
 });
 
-test('the console never becomes a way round the rules the ledger keeps',()=>{
- const h=harness(),m=h.login('Milo'),b=h.login('Bijan');
- const row=h.call(b,'add',spend('Bijan')).rows[0];
- // Milo holds the console and still cannot approve a purchase or settle anybody up.
- assert.equal(h.call(m,'purchaseapprove',{id:row.id,reviewed:'x'}).ok,false);
- assert.equal(h.call(m,'settle',{who:'Bijan'}).ok,false);
- assert.equal(h.call(m,'edit',{id:row.id,...spend('Bijan',{amount:1})}).ok,false);
- assert.equal(h.call(m,'list').rows[0].amount,30);
- // and a passcode with no session behind it opens nothing
+test('ordinary interns cannot use administrator actions or another person records',()=>{
+ const h=harness(),m=h.login('Milo'),b=h.login('Bijan'),j=h.login('Jesse');
+ const row=h.call(j,'add',spend('Jesse')).rows[0];
+ assert.equal(h.call(b,'purchaseapprove',{id:row.id,reviewed:'x'}).ok,false);
+ assert.equal(h.call(b,'settle',{who:'Jesse'}).ok,false);
+ assert.equal(h.call(b,'edit',{id:row.id,...spend('Jesse',{amount:1})}).ok,false);
+ assert.equal(h.call(b,'list').rows[0].amount,30);
  assert.equal(h.ctx.internalAdminApi({_key:'monkey',action:'rosteradd',name:'Nadia'}).ok,false);
  assert.equal(h.ctx.internalAdminApi({_key:'wrong',_session:m,action:'list'}).ok,false);
 });

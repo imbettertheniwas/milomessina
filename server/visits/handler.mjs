@@ -4,6 +4,7 @@ import {validateRequest,normalizeAvailability} from './validation.mjs';
 // Match the console's ENDPOINT. Guest storage can live in a separate script.
 const INTERNAL_SESSION_URL = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 const statuses = new Set(['pending','confirmed','completed','declined']);
+const internalAdmins = new Set(['Arya','Milo']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function configured(env) {
   try {
@@ -58,7 +59,7 @@ export async function verifyInternalIdentity(env, token, fetchImpl=fetch) {
   // A beta member can share a display name with somebody on the core team.
   // Their scoped session never grants access to guest contact information.
   if(identity?.ok!==true || identity.beta===true || !['Milo','Bijan','Jesse','Luchi','Arya'].includes(identity.who))return false;
-  return {who:identity.who,admin:identity.who==='Arya' && identity.admin===true};
+  return {who:identity.who,admin:internalAdmins.has(identity.who) && identity.admin===true};
 }
 export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyIdentity=token=>verifyInternalIdentity(env,token)}={}) {
   return async function handler(req,res) {
@@ -98,8 +99,8 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       if(action!=='submit'){
         const identity=await verifyIdentity(req.headers?.['x-fomo-internal-session']);
         if(!identity || identity.beta===true)return fail(401,'Sign in to Internal to view visit requests.');
-        if(['update','saveAvailability'].includes(action) && !(identity.who==='Arya' && identity.admin===true))
-          return fail(403,'Only Arya can change visit requests or opening hours.');
+        if(['update','saveAvailability'].includes(action) && !(internalAdmins.has(identity.who) && identity.admin===true))
+          return fail(403,'Only Milo and Arya can change visit requests or opening hours.');
       }
       if(action==='session')return res.status(200).json({authenticated:true});
       if(action==='saveAvailability'){

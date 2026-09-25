@@ -36,7 +36,7 @@ anything.
 | **Portals** | Every public front door on the domain — whether each is up, whether it has an inbox behind it, and every submission it has taken. Arya and Milo only |
 | **Referrals** | Who is sending people through those doors, how far each of them got, and what we owe for it — the queue waiting on a decision, and a row per code. Arya and Milo only |
 | **Campus team** | The interns actually running a campus, grouped by state and then by campus |
-| **Beta batch** | Arya and Milo manage separate two-week batches, shared invite links, attendance, public GitHub activity, recaps, private notes, and access status |
+| **Beta** | Milo and Arya manage one permanent beta group, individual two-week periods, attendance, public GitHub activity, recaps, private notes, and access status |
 | A person | One page each: fronted, still owed, spent on them, days in, commits, their lines and their days |
 
 The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
@@ -44,9 +44,10 @@ The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
 so the back button works, a page can be bookmarked, and a link to somebody's
 page is a link to somebody's page.
 
-**Beta interns have their own workspace at `/internal/beta`.** A shared
-batch invite lets them join immediately. They see their own batch's attendance
-and public GitHub activity, and save or submit their own two-week recap.
+**Beta interns have their own workspace at `/internal/beta`.** That permanent
+link lets everyone join the same group immediately. They see the group’s attendance
+and public GitHub activity, and save or submit their own two-week recap. Each
+intern’s joining date is Day 1 and their recap is due at the end of Day 14.
 They stay off the main roster; beta sessions cannot read the main internal APIs.
 Their device remembers their profile, with a personal return link for another
 device. No beta password or change to the regular team's passcode is needed.
@@ -185,21 +186,21 @@ issues a six-hour session bound to that selection; only the session token is
 retained in this tab's session storage. Sign out revokes the session. Old
 remembered passcodes do not skip identity selection.
 
-The session reply carries two separate flags. `admin` is Arya, and is about
-money. `operator` is Arya or Milo, and is about the maintenance console at
-`#/admin` — a different question, deliberately answered separately, so that
-giving somebody the tools to unstick the sheet does not hand them the interns'
-reimbursements. See **The console**.
+The session reply grants both `admin` and `operator` to **Milo and Arya**.
+Both have the same full controls across Internal: purchases, reimbursements,
+other people’s records, applicants, visits, and the maintenance console at
+`#/admin`. Admin access is separate from a person’s internship/lead role and
+from whose card paid a charge. See **The console**.
 
-Interns can create and change their own unpaid spends, attendance, recurring
+Other interns can create and change their own unpaid spends, attendance, recurring
 rules, weekly posts, and profiles, plus any spend they logged on Arya's card.
 They cannot put anybody else's name on a line — Arya's is the one card that is
 lent out — settle reimbursements, manage applicants or the campus roster, or
-modify other people's records. **Only Arya approves purchases**, including purchases with no
-split and purchases he logged himself. Approval is separate from reimbursement.
-Editing a charge clears its purchase approval and requires Arya to review it again. Arya can manage every person's records and
+modify other people's records. **Milo and Arya can approve purchases**, including purchases with no
+split and purchases they logged themselves. Each approval records the actual admin. Approval is separate from reimbursement.
+Editing a charge clears its purchase approval and requires a fresh admin review. Milo and Arya can manage every person's records and
 reimbursements. Guest requests use the existing Internal session with no second password.
-All signed-in teammates can read them; only Arya can change requests or hours.
+All signed-in teammates can read them; only Milo and Arya can change requests or hours.
 
 The selected person's navigation item and page title say **Your page**. Profiles
 support a headline (80 characters), bio (600), and website URL (300); fields start
@@ -222,7 +223,7 @@ checks prevent a signed-in intern from bypassing ownership by altering a request
    It also reports `admin: true` and `team` once the console is deployed; a page
    that does not see those leaves the console off the rail rather than failing
    at a button.
-3. Deploy the website and visit API changes together. The visit API verifies Arya's
+3. Deploy the website and visit API changes together. The visit API verifies the admin's
    session against the console's internal endpoint, separately from
    `VISITS_STORAGE_URL`. Keep `INTERNAL_SESSION_URL` in the visit handler aligned
    with `ENDPOINT` in the console if that address changes.
@@ -247,44 +248,14 @@ same sheet, through the same deployment, so there is no second URL.
 4. Nothing. On `'auto'` the page picks it up by itself on the next load, and
    offers to carry that browser's ledger up with it.
 
-> **Everything is deployed, and the URL moved.** The site now calls the
-> deployment named **live** (`AKfycbyFhq…`), which serves the current script — `ledger`, `clock`,
-> `shiftimport`, `subs` and `days` all true, Arya in `payers`. `ENDPOINT` in
-> `invoice/index.html` names it.
->
-> **`fomo/assets/form.js` still points at the old `AKfycbxDR…`, deliberately.**
-> Both deployments belong to the same script project and write the same sheet,
-> so nothing is split by it but the URL, and the three fomo forms were working
-> where they were. If you ever consolidate, move the forms onto the new one
-> rather than the page back onto the old.
->
-> **Why the URL moved is the part worth keeping.** That script project has
-> **three active deployments, all named "Untitled"**, distinguishable only by
-> the seventh character of their id — `AKfycb**x**DR…`, `AKfycb**y**Fhq…`,
-> `AKfycb**z**y4…`. Four separate attempts to cut a new version of the one the
-> site called landed on the other two instead, each time looking exactly like
-> a deploy that did nothing. The code was correct every time. In the end it
-> was easier to point `ENDPOINT` at the deployment that already had the code
-> than to keep hunting the right row.
->
-> It is called **live** now, which is the fix. Two "Untitled" rows remain
-> beside it and neither is the one to touch. Renaming cost nothing and moved
-> nothing — description and version are separate fields in that dialog, so
-> changing the description while leaving the Version dropdown alone keeps both
-> the URL and the served code exactly as they were, which was checked against
-> the endpoint straight afterwards.
->
-> Before touching anything, still: check the ID in **Manage deployments**
-> against `ENDPOINT`. If a redeploy ever looks like it did nothing, that is
-> the first thing to look at, not the code.
->
-> The reason it was needed is worth remembering, because it will happen again.
-> The project had **two active deployments**. Somebody pasted the ledger code
-> and cut a new version on Sep 9 — but that version went to the *other*
-> deployment, and the URL this site actually calls stayed on Sep 7's forms-only
-> code. From the outside it looked exactly like nothing had been deployed. When
-> a redeploy seems to have no effect, check the deployment ID against `ENDPOINT`
-> before touching anything else.
+The dashboard and public forms currently share the deployment beginning
+`AKfycbyeQIR…`, as recorded in `invoice/index.html` and `fomo/assets/form.js`.
+Match the complete deployment ID in **Manage deployments** to those source
+files before updating it. Deployment names alone are not reliable.
+
+Preserve the live `CONFIG` values and Script Properties when installing the
+service code. If the project has duplicate service files, keep their function
+bodies in sync so an older definition cannot override the current one.
 
 Step 3 is the one that matters. Apps Script serves the last *deployed* version,
 not the last saved one, so pasting the code and hitting save changes nothing.
@@ -302,8 +273,8 @@ Open the `/exec` URL itself in a browser:
 `ledger` is the money half and `clock` is the attendance half, `shiftimport` is
 the carry-over described above, `subs` is monthly subscriptions, `days` is the
 attendance board counting days rather than hours, and `payers` is the roster
-that deployment will actually put on a line. **All five `true` and Arya in
-`payers` means the deployed version is the current one** — and every one of
+that deployment will actually put on a line. These flags confirm the original ledger services. The current Beta service
+also reports `betaPasswordless: true` and `betaPermanentGroup: true` — and every one of
 them is read by the page itself on each load, which is how it knows to grey a
 name out instead of losing a line to it, and to keep days in the browser
 instead of pretending they are shared. If any is missing or `false`, that URL
@@ -782,7 +753,7 @@ on the device afterwards.
   how many have posted *this* week, out of five — the useful question on a
   Friday.
 - **Whose note it is decides who can touch it.** You can edit and delete
-  your own; Arya can edit and delete anybody's. The pencil and the × are
+  your own; Milo and Arya can edit and delete anybody's. The pencil and the × are
   only drawn on notes you can manage, and the sheet checks the same thing
   again on its side rather than trusting the page.
 
@@ -928,8 +899,8 @@ than the grid shows.
 ### Who can change what
 
 The same rule as the week notes: **you own your own week and nobody else's**,
-and Arya owns all of them — the picker at the top of *My week* only appears
-for Arya. It is enforced on the sheet as well as in the page, so a request
+and Milo and Arya can manage all of them — the picker at the top of *My week* appears
+for both admins. It is enforced on the sheet as well as in the page, so a request
 that goes around the page still cannot move somebody else's classes.
 
 ### Everyone
@@ -1235,11 +1206,11 @@ anybody shipping a new page.
 together. Everything it does is something the rest of the tool is right to
 refuse — that is what it is for.
 
-This is not the same permission as `admin`. `admin` is still Arya alone and is
-still about money: approving a purchase, settling somebody up, changing a line
-after it has been paid. Milo holding the console does not widen any of that, and
-the tests assert as much. The console is about the sheet underneath, not the
-ledger on top of it.
+Both names also receive `admin`: either can approve purchases, settle a
+person’s ledger, and change records after reimbursement. The console provides
+the additional roster, audit, and repair tools. Approval and history records
+identify the admin who performed the action; Milo’s actions are not attributed
+to Arya.
 
 The rail hiding the door, and the hash bouncing to Overview, are conveniences.
 The lock is the endpoint: every `_api: "admin"` call checks the session's name
@@ -1294,7 +1265,7 @@ above makes about identity generally.
 ## Reviewing spends and undoing money changes
 
 Purchase reviews open `#/charge/<id>`, showing the actual receipt, payer,
-amount, date, category, note, split, and Arya’s purchase-approval status. No click on
+amount, date, category, note, split, and the recorded admin’s purchase-approval status. No click on
 an overview or ledger review link approves the spend. Confirmation happens on
 that page, with **Undo purchase approval** available afterwards. A stale review is
 rejected if the underlying charge details changed before confirmation.
@@ -1306,10 +1277,10 @@ action, dismissal, or reload, and does not reappear for older actions when the
 page refreshes. There is no Money history page or navigation tab. Each successful
 change still stores its actual before/after records in
 `internal_money_history`; existing rows are not backfilled with invented history.
-Interns can undo their own actions and Arya can undo anyone's. The backend checks
+Other interns can undo their own actions; Milo and Arya can undo anyone's. The backend checks
 every affected record before an undo, rejecting the whole group if subsequent
 changes would be overwritten. A settlement reversal affects only that settlement,
-not previously reimbursed charges. Only Arya can approve or retract a purchase
+not previously reimbursed charges. Only Milo and Arya can approve or retract a purchase
 approval. Old share confirmations are not converted into purchase approvals.
 
 Deploy the updated Apps Script on the existing URLs before using this frontend.
@@ -1322,13 +1293,13 @@ Removing the Money history page and switching to immediate Undo is a frontend-on
 change. It uses the existing undo endpoints without changing Apps Script.
 
 
-### Arya approval and GitHub review
+### Admin approval and GitHub review
 
 Deploy this version of Apps Script to enforce the new approval rules. Only the
 `purchaseapprove` / `purchaseunapprove` actions can change purchase approval,
-and both require an Arya session. Old share-approval actions are rejected,
+and both require a Milo or Arya admin session. Old share-approval actions are rejected,
 including requests from an older browser. Approval requires the exact purchase
-details Arya reviewed; stale reviews cannot approve a changed amount or receipt.
+details the admin reviewed; stale reviews cannot approve a changed amount or receipt.
 The frontend checks `purchaseApproval: true` before signing in.
 
 The review page lists the payer and every distinct person named in the split.

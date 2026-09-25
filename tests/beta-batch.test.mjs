@@ -7,6 +7,12 @@ const setup=()=>{const h=harness();return {...h,operator:h.login('Arya')};};
 const api=(h,token,action,p={})=>h.ctx.betaApi({_session:token,action,...p});
 const auth=(h,action,p={})=>h.ctx.internalSessionApi({action,...p});
 const batch=(h,name='September beta')=>api(h,h.operator,'batchadd',{name,startDate:beforeToday(5)});
+// Preexisting extra cohorts remain readable, though new ones can no longer be created.
+const legacyBatch=(h,name)=>{
+ const original=h.ctx.betaRead('internal_beta_batches',h.ctx.BETA_BATCHES)[0],invite=h.ctx.betaNewInvite();
+ const row={...original,id:h.ctx.Utilities.getUuid(),name,inviteHash:h.ctx.betaInviteHash(invite)};delete row._row;
+ h.ctx.betaWrite('internal_beta_batches',h.ctx.BETA_BATCHES,row);return {invite,createdBatchId:row.id};
+};
 const join=(h,invite,name='Maya',over={})=>auth(h,'betajoin',{invite,name,phone:'+1 (212) 555-0100',email:name.toLowerCase().replaceAll(' ','')+'@example.com',github:name.toLowerCase().replaceAll(' ','-')+'-builds',...over});
 
 test('shared invitation supports immediate self-join with private individual recovery codes',()=>{
@@ -47,17 +53,17 @@ test('duplicate email within a batch cannot recover or replace another person',(
  assert.equal(duplicate.ok,false);assert.equal(duplicate.token,undefined);assert.equal(duplicate.code,'INVALID');
  const list=api(h,h.operator,'list');assert.equal(list.members.length,1);assert.equal(list.members[0].name,'Maya');
  assert.equal(auth(h,'betalogin',{code:a.code}).ok,true);
- const second=batch(h,'Second batch');
+ const second=legacyBatch(h,'Second batch');
  assert.equal(join(h,second.invite,'Maya').ok,true);
  assert.equal(join(h,b.invite,'Bad User',{github:'https://evil.example/'}).ok,false);
  assert.equal(join(h,b.invite,'Good User',{github:'https://github.com/good-builder'}).member.github,'good-builder');
 });
 
 test('peer roster and attendance are shared only within the member batch',()=>{
- const h=setup(),first=batch(h),second=batch(h,'Separate batch');
+ const h=setup(),first=batch(h),second=legacyBatch(h,'Separate batch');
  const a=join(h,first.invite),b=join(h,first.invite,'Riley'),outsider=join(h,second.invite,'Jordan');
  api(h,h.operator,'memberupdate',{id:b.member.id,notes:'Private evaluation of Riley'});
- const day=beforeToday(1);
+ const day=a.member.startDate;
  assert.equal(api(h,a.token,'attendance',{day,memberId:outsider.member.id}).ok,true);
  assert.equal(api(h,b.token,'attendance',{day}).ok,true);
  assert.equal(api(h,outsider.token,'attendance',{day}).ok,true);
@@ -72,7 +78,7 @@ test('peer roster and attendance are shared only within the member batch',()=>{
 });
 
 test('attendance marks are idempotent, owned by the session and restricted to valid dates',()=>{
- const h=setup(),b=batch(h),a=join(h,b.invite),other=join(h,b.invite,'Riley'),day=beforeToday(1);
+ const h=setup(),b=batch(h),a=join(h,b.invite),other=join(h,b.invite,'Riley'),day=a.member.startDate;
  api(h,a.token,'attendance',{day});api(h,a.token,'attendance',{day});api(h,other.token,'attendance',{day});
  assert.equal(api(h,a.token,'list').attendance.length,2);
  api(h,a.token,'attendanceremove',{day,memberId:other.member.id});
@@ -248,7 +254,7 @@ test('invalid join request shapes fail without saving, and separate batches have
  }
  assert.equal(api(h,h.operator,'list').members.length,0);
  const joinRequest='6'.repeat(32);
- const first=join(h,b.invite,'Maya',{joinRequest}),otherBatch=batch(h,'Other group');
+ const first=join(h,b.invite,'Maya',{joinRequest}),otherBatch=legacyBatch(h,'Other group');
  const other=join(h,otherBatch.invite,'Maya',{joinRequest});
  assert.equal(first.ok,true);assert.equal(other.ok,true);assert.notEqual(first.code,other.code);
  assert.notEqual(first.member.id,other.member.id);
@@ -276,4 +282,83 @@ test('definite pre-save validation permits corrected signup while expired sessio
  h.sessions.clear();
  assert.equal(auth(h,'session',{_session:corrected.token}).code,'AUTH_REQUIRED');
  assert.equal(auth(h,'session',{_session:h.operator}).code,'AUTH_REQUIRED');
+});
+
+test('the permanent public group link preserves the existing group, private key and old invitations',()=>{
+ const h=setup(),created=batch(h,'Arya’s beta'),joinRequest='9'.repeat(32);
+ const first=join(h,created.invite,'Maya',{joinRequest});
+ const secret=h.properties.INTERNAL_BETA_SECRET;
+ const originalRows=JSON.stringify(h.sheets.internal_beta_batches.rows);
+ delete h.properties.INTERNAL_BETA_GROUP_ID; // Earlier deployments had no canonical pointer.
+ const publicView=auth(h,'betagroup');
+ assert.equal(publicView.ok,true);assert.equal(publicView.batch.id,created.createdBatchId);
+ assert.equal(publicView.batch.name,'Arya’s beta');assert.equal(publicView.invite,'beta');assert.equal(publicView.periodDays,14);
+ assert.equal(h.properties.INTERNAL_BETA_GROUP_ID,undefined,'public discovery must not mutate properties');
+ assert.equal(JSON.stringify(h.sheets.internal_beta_batches.rows),originalRows);
+ const manager=api(h,h.operator,'list');
+ assert.equal(manager.group.id,created.createdBatchId);assert.equal(h.properties.INTERNAL_BETA_GROUP_ID,created.createdBatchId);
+ assert.equal(h.properties.INTERNAL_BETA_SECRET,secret);assert.equal(JSON.stringify(h.sheets.internal_beta_batches.rows),originalRows);
+ assert.equal(api(h,h.operator,'batchadd',{name:'Accidental duplicate',startDate:beforeToday(0)}).ok,false);
+ const recovered=join(h,'beta','Maya',{joinRequest});
+ assert.equal(recovered.ok,true);assert.equal(recovered.recovered,true);assert.equal(recovered.member.id,first.member.id);assert.equal(recovered.code,first.code);
+ assert.equal(auth(h,'betalogin',{code:first.code}).member.id,first.member.id);
+ assert.equal(join(h,created.invite,'Riley').ok,true);
+ assert.equal(join(h,'beta','Jordan').ok,true);
+ assert.equal(api(h,h.operator,'list').batches.length,1);
+ assert.equal(api(h,first.token,'list').peers.length,3);
+ assert.equal(JSON.stringify(publicView).includes(secret),false);assert.equal(publicView.batch.inviteHash,undefined);
+});
+
+test('the canonical group remains stable and pausing it stops permanent-link joins',()=>{
+ const h=setup(),first=batch(h),legacy=legacyBatch(h,'Archived separate group');
+ // The saved pointer, not row order, selects the group.
+ const sheet=h.sheets.internal_beta_batches;sheet.rows.splice(1,2,...sheet.rows.slice(1).reverse());
+ assert.equal(auth(h,'betagroup').batch.id,first.createdBatchId);
+ assert.equal(api(h,h.operator,'list').group.id,first.createdBatchId);
+ api(h,h.operator,'batchupdate',{id:first.createdBatchId,active:false});
+ assert.equal(auth(h,'betagroup').ok,false);assert.equal(join(h,'beta').ok,false);
+ assert.equal(auth(h,'betainvite',{invite:legacy.invite}).ok,true,'legacy links retain their original scope');
+ api(h,h.operator,'batchupdate',{id:first.createdBatchId,active:true});
+ assert.equal(auth(h,'betagroup').batch.id,first.createdBatchId);
+ assert.equal(join(h,'beta').member.batchId,first.createdBatchId);
+});
+
+test('each member gets fourteen personal calendar days from the New York join date',()=>{
+ const h=setup(),created=batch(h),first=join(h,'beta');
+ assert.equal(first.member.startDate,h.ctx.betaToday());
+ assert.equal(first.member.endDate,h.ctx.betaEndDate(first.member.startDate));
+ const row=h.ctx.betaRead('internal_beta_members',h.ctx.BETA_MEMBERS)[0];
+ for(const [timestamp,start,end] of [
+  ['2026-09-26T02:00:00Z','2026-09-25','2026-10-08'],
+  ['2026-09-26T04:00:00Z','2026-09-26','2026-10-09'],
+  ['2026-10-31T16:00:00Z','2026-10-31','2026-11-13'],
+  ['2026-03-07T17:00:00Z','2026-03-07','2026-03-20']
+ ]) {
+  row.createdAt=timestamp;h.ctx.betaWrite('internal_beta_members',h.ctx.BETA_MEMBERS,row);
+  const own=api(h,first.token,'list');
+  assert.equal(own.member.startDate,start);assert.equal(own.member.endDate,end);
+  assert.equal(own.peers[0].startDate,start);assert.equal(own.peers[0].endDate,end);
+  assert.equal(api(h,h.operator,'list').members[0].startDate,start);
+ }
+ row.createdAt='2026-09-26T02:00:00Z';h.ctx.betaWrite('internal_beta_members',h.ctx.BETA_MEMBERS,row);
+ h.ctx.betaToday=()=> '2026-10-09';
+ assert.equal(api(h,first.token,'attendance',{day:'2026-09-24'}).ok,false);
+ assert.equal(api(h,first.token,'attendance',{day:'2026-09-25'}).ok,true);
+ assert.equal(api(h,first.token,'attendance',{day:'2026-10-08'}).ok,true);
+ assert.equal(api(h,first.token,'attendance',{day:'2026-10-09'}).ok,false);
+ api(h,h.operator,'batchupdate',{id:created.createdBatchId,startDate:'2020-01-01'});
+ const late=join(h,'beta','Riley');
+ assert.equal(late.ok,true);assert.notEqual(late.member.startDate,'2020-01-01');
+ assert.equal(api(h,first.token,'list').member.startDate,'2026-09-25','group date edits never change personal periods');
+});
+
+test('a missing canonical record fails closed without repointing the permanent link',()=>{
+ const h=setup(),first=batch(h);legacyBatch(h,'Legacy');
+ const sheet=h.sheets.internal_beta_batches;
+ const original=h.ctx.betaRead('internal_beta_batches',h.ctx.BETA_BATCHES).find(b=>b.id===first.createdBatchId);
+ sheet.deleteRow(original._row);
+ assert.equal(auth(h,'betagroup').ok,false);assert.equal(join(h,'beta').ok,false);
+ assert.equal(api(h,h.operator,'list').ok,false);
+ assert.equal(h.properties.INTERNAL_BETA_GROUP_ID,first.createdBatchId);
+ assert.equal(h.ctx.betaRead('internal_beta_batches',h.ctx.BETA_BATCHES).length,1);
 });

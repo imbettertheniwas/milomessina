@@ -161,7 +161,7 @@ const state = {applicants:[], team:[], loaded:false, busy:false, open:null, edit
 async function call(action, payload){
   const cfg = bridge();
   if (!cfg.identity || !cfg.identity()) throw new Error('Sign in first.');
-  if (action !== 'list' && !cfg.admin()) throw new Error('Only Arya can manage applicants and the campus team.');
+  if (action !== 'list' && !cfg.admin()) throw new Error('Only Milo and Arya can manage applicants and the campus team.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const body = Object.assign({_api:'campus', action, _key:cfg.key || '', _session:cfg.session ? cfg.session() : ''}, payload || {});
   const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body)});
@@ -371,7 +371,7 @@ function paintDetail(){
   if (on) add('On the campus team', 'Running ' + esc(on.campus) + ', ' + esc(on.state) +
     ' — ' + esc(labelOf(TEAM_STATES, on.status).label.toLowerCase()));
 
-  /* Only Arya can move an application on, and Save is hidden for everybody
+  /* Only Milo and Arya can move an application on, and Save is hidden for everybody
      else — so the two fields beside it are read-only rather than live
      controls with nowhere to save to. */
   const mayEdit = !!(bridge().admin && bridge().admin());
@@ -523,7 +523,7 @@ function renderTeam(){
 
 /* ---------- adding and editing one of them ---------- */
 function openForm(row){
-  if (!bridge().admin || !bridge().admin()) { bridge().toast("Only Arya can manage the campus team."); return; }
+  if (!bridge().admin || !bridge().admin()) { bridge().toast("Only Milo and Arya can manage the campus team."); return; }
   state.editing = row;
   const form = $('cm-form');
   form.hidden = false;

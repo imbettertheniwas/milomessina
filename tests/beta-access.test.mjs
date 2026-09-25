@@ -17,22 +17,23 @@ const add=(h,name='Beta One',over={})=>{
 const id=out=>out.createdMemberId;
 const post=(h,body)=>h.ctx.doPost({postData:{contents:JSON.stringify(body)}});
 
-test('only valid operator batch creation initializes the independent beta secret',()=>{
+test('only authenticated operator initialization creates one permanent beta group and its independent secret',()=>{
  const h=harness(),operator=h.login('Arya');h.operator=operator;
+ assert.equal(h.ctx.doGet().betaPasswordless,true);assert.equal(h.ctx.doGet().privateLogin,undefined);
+ assert.equal(h.ctx.internalSessionApi({action:'betagroup'}).code,'BETA_UNCONFIGURED');
+ assert.equal(login(h,'BETA-'+ 'A'.repeat(32)).ok,false);
+ assert.equal(beta(h,'','list').ok,false);
+ assert.equal(beta(h,h.login('Bijan'),'list').ok,false);
+ assert.equal(beta(h,operator,'batchadd',{name:'',startDate:'2026-09-21'}).ok,false);
+ assert.equal(h.properties.INTERNAL_BETA_SECRET,undefined);assert.equal(h.sheets.internal_beta_batches,undefined);
  const list=beta(h,operator,'list');
  assert.equal(list.ok,true);assert.equal(list.configured,true);assert.equal(list.setupMessage,'');
- assert.equal(h.ctx.doGet().betaPasswordless,true);assert.equal(h.ctx.doGet().privateLogin,undefined);
- assert.equal(login(h,'BETA-'+ 'A'.repeat(32)).ok,false);
- assert.equal(beta(h,'','batchadd',{name:'Trial',startDate:'2026-09-21'}).ok,false);
- assert.equal(beta(h,h.login('Bijan'),'batchadd',{name:'Trial',startDate:'2026-09-21'}).ok,false);
- assert.equal(beta(h,operator,'batchadd',{name:'',startDate:'2026-09-21'}).ok,false);
- assert.equal(h.properties.INTERNAL_BETA_SECRET,undefined);assert.equal(h.sheets.internal_beta_members,undefined);
- h.invite=beta(h,operator,'batchadd',{name:'Trial',startDate:'2026-09-21'}).invite;
  assert.match(h.properties.INTERNAL_BETA_SECRET,/^[a-f0-9]{64}$/);
- const secret=h.properties.INTERNAL_BETA_SECRET;
- assert.equal(add(h).ok,true);assert.equal(h.ctx.rosterPayers().includes('Beta One'),false);
- beta(h,operator,'batchadd',{name:'Second',startDate:'2026-09-21'});
- assert.equal(h.properties.INTERNAL_BETA_SECRET,secret);
+ const secret=h.properties.INTERNAL_BETA_SECRET,groupId=list.group.id;
+ assert.equal(h.properties.INTERNAL_BETA_GROUP_ID,groupId);assert.equal(list.batches.length,1);
+ h.invite='beta';assert.equal(add(h).ok,true);assert.equal(h.ctx.rosterPayers().includes('Beta One'),false);
+ assert.equal(beta(h,operator,'batchadd',{name:'Second',startDate:'2026-09-21'}).ok,false);
+ assert.equal(beta(h,operator,'list').group.id,groupId);assert.equal(h.properties.INTERNAL_BETA_SECRET,secret);
  assert.equal(h.properties.INTERNAL_PRIVATE_AUTH_REQUIRED,undefined);assert.equal(h.properties.INTERNAL_LOGIN_SECRET,undefined);
  assert.equal(JSON.stringify(beta(h,operator,'list')).includes(secret),false);
 });

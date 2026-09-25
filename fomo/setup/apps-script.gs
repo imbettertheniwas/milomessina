@@ -138,6 +138,7 @@ function doGet() {
     identity: true,
     beta: typeof betaApi === 'function',
     betaPasswordless: true,
+    betaPermanentGroup: true,
     approvals: true,
     moneyUndo: true,
     purchaseApproval: true,
@@ -305,12 +306,13 @@ function internalSessionApi(body) {
   }
   if (body.action === 'betalogin') return betaLogin(body);
   if (body.action === 'betainvite') return betaInviteApi(body);
+  if (body.action === 'betagroup') return betaGroupApi();
   if (body.action === 'betajoin') return betaJoin(body);
   if (body.action === 'session') {
     var beta = betaActor(body);
     if(beta)return reply(true,null,{who:beta.name,beta:true,member:betaPublicMember(beta,false),permissions:betaMemberPermissions(beta)});
     var current = internalActor(body);
-    return current ? reply(true, null, {who:current, admin:current === 'Arya', operator:internalIsAdmin(current), roster:rosterRead().map(rosterPublic)})
+    return current ? reply(true, null, {who:current, admin:internalIsAdmin(current), operator:internalIsAdmin(current), roster:rosterRead().map(rosterPublic)})
       : reply(false, 'Session expired. Enter the passcode and select your name again.', {code:'AUTH_REQUIRED'});
   }
   if (body.action !== 'login') return reply(false, 'unknown action');
@@ -319,12 +321,9 @@ function internalSessionApi(body) {
   if (rosterPayers().indexOf(who) === -1) return reply(false, 'Select your name.');
   var token = Utilities.getUuid() + Utilities.getUuid();
   CacheService.getScriptCache().put(internalSessionPrefix() + token, who, 21600);
-  /* Two different questions, deliberately answered separately. `admin` is
-     whose money it is, and it is Arya's alone: approving a purchase, settling
-     a person up. `operator` is who may open the console that fixes the sheet
-     when it has gone wrong. Widening the first to get the second would have
-     put the interns' reimbursements in more hands than agreed to it. */
-  return reply(true, null, {token:token, who:who, admin:who === 'Arya', operator:internalIsAdmin(who), roster:rosterRead().map(rosterPublic)});
+  /* Both administrators can manage the full workspace. Card ownership is
+     independent: CARD_PAYER still determines whose spends settle at once. */
+  return reply(true, null, {token:token, who:who, admin:internalIsAdmin(who), operator:internalIsAdmin(who), roster:rosterRead().map(rosterPublic)});
 }
 function internalActor(body) {
   var token = String(body._session || '');
@@ -345,7 +344,7 @@ function betaSecret() {
   return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_SECRET') || '');
 }
 function betaEnsureSecret() {
-  // Called only after a valid operator batch-create request, under doPost's lock.
+  // Called only while an operator initializes the group, under doPost's lock.
   // The regular team's password and every existing property stay unchanged.
   var secret=betaSecret();
   if(!secret) {
@@ -412,9 +411,9 @@ function betaWrite(name,columns,record) {
 }
 function betaMemberPermissions(member) {return BETA_PERMISSIONS.slice();}
 function betaPublicMember(member,manager) {
-  var actualBatch=betaFindBatch(member);
+  var actualBatch=betaFindBatch(member),period=betaMemberPeriod(member);
   var out={id:member.id,name:member.name,email:member.email,phone:String(member.phone||''),batch:actualBatch?actualBatch.name:member.batch,batchId:member.batchId,github:member.github,status:member.status,
-    permissions:betaMemberPermissions(member),createdAt:member.createdAt,updatedAt:member.updatedAt};
+    permissions:betaMemberPermissions(member),createdAt:member.createdAt,updatedAt:member.updatedAt,startDate:period.startDate,endDate:period.endDate};
   if(manager)out.notes=member.notes;
   return out;
 }
@@ -466,6 +465,29 @@ function betaFindBatch(member) {
   if(!member || !member.batchId)return null;
   return betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return b.id===member.batchId;})[0]||null;
 }
+function betaPrimaryBatch() {
+  var batches=betaRead('internal_beta_batches',BETA_BATCHES);
+  var selected=PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_GROUP_ID');
+  if(selected) return batches.filter(function(b){return b.id===selected;})[0]||null;
+  return batches[0]||null;
+}
+function betaEnsureGroup(operator) {
+  var props=PropertiesService.getScriptProperties(),group=betaPrimaryBatch();
+  if(!group) {
+    if(props.getProperty('INTERNAL_BETA_GROUP_ID'))throw new Error('The beta group record is missing. Restore it before continuing.');
+    betaManageBatch({action:'batchadd',name:'Beta interns',startDate:betaToday()},operator);
+    group=betaPrimaryBatch();
+  }
+  betaEnsureSecret();
+  if(!props.getProperty('INTERNAL_BETA_GROUP_ID'))props.setProperty('INTERNAL_BETA_GROUP_ID',String(group.id));
+  return group;
+}
+function betaGroupApi() {
+  var group=betaConfigured()?betaPrimaryBatch():null;
+  if(!group)return reply(false,'The beta group is not ready yet. Ask Arya or Milo to open Beta in /internal.',{code:'BETA_UNCONFIGURED'});
+  if(!betaActive(group.active))return reply(false,'The beta group is paused. Contact Arya or Milo for access.',{code:'AUTH_REQUIRED'});
+  return reply(true,null,{batch:betaPublicBatch(group),group:betaPublicBatch(group),invite:'beta',periodDays:14});
+}
 function betaDate(value) {
   var text=String(value||'');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(text)||isNaN(Date.parse(text+'T00:00:00Z'))||new Date(text+'T00:00:00Z').toISOString().slice(0,10)!==text)
@@ -473,6 +495,16 @@ function betaDate(value) {
   return text;
 }
 function betaEndDate(start) {return new Date(Date.parse(betaDate(start)+'T00:00:00Z')+13*86400000).toISOString().slice(0,10);}
+function betaNewYorkDay(date) {return Utilities.formatDate(date,'America/New_York','yyyy-MM-dd').slice(0,10);}
+function betaToday() {return betaNewYorkDay(new Date());}
+function betaMemberPeriod(member) {
+  // The original join timestamp fixes each person's day one. Shared group
+  // dates remain legacy metadata and never shorten a new member's trial.
+  var joined=new Date(member.createdAt);
+  if(isNaN(joined.getTime()))return {startDate:'',endDate:''};
+  var start=betaNewYorkDay(joined);
+  return {startDate:start,endDate:betaEndDate(start)};
+}
 function betaGithub(value) {
   var username=String(value||'').trim().replace(/^https:\/\/github\.com\//i,'').replace(/\/$/,'').replace(/^@/,'');
   if(!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(username))throw new Error('Enter a valid GitHub username.');
@@ -488,6 +520,9 @@ function betaPhone(value) {
 function betaNewInvite() {return 'BATCH-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
 function betaInviteHash(invite) {return internalDigest(betaSecret()+'\nbatch-invite\n'+String(invite||'').trim().toUpperCase());}
 function betaInviteBatch(invite) {
+  if(betaConfigured() && String(invite||'').trim()==='beta') {
+    var group=betaPrimaryBatch();return group&&betaActive(group.active)?group:null;
+  }
   if(!betaConfigured() || !/^BATCH-[a-f0-9]{32}$/i.test(String(invite||'').trim()))return null;
   var hash=betaInviteHash(invite);
   return betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return betaActive(b.active)&&internalSame(String(b.inviteHash||''),hash);})[0]||null;
@@ -554,6 +589,7 @@ function betaManageBatch(body,operator) {
   var action=body.action,stamp=new Date().toISOString(),batch,invite,extra={};
   if(action==='batchadd') {
     var start=betaDate(body.startDate),name=betaString(body,'name',80,true);
+    if(betaRead('internal_beta_batches',BETA_BATCHES).length)throw new Error('There is one permanent beta group. Open the existing group instead.');
     betaEnsureSecret();
     invite=betaNewInvite();
     batch={id:Utilities.getUuid(),name:name,startDate:start,endDate:betaEndDate(start),active:true,
@@ -577,11 +613,12 @@ function betaManageBatch(body,operator) {
     batch.updatedAt=stamp;
   }
   betaWrite('internal_beta_batches',BETA_BATCHES,batch);
+  if(action==='batchadd')PropertiesService.getScriptProperties().setProperty('INTERNAL_BETA_GROUP_ID',String(batch.id));
   return extra;
 }
 function betaAttendanceWrite(body,member) {
-  var batch=betaFindBatch(member),day=betaDate(body.day),today=Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd').slice(0,10);
-  if(!batch || day<batch.startDate || day>batch.endDate || day>today)throw new Error('Attendance must be a past or current day within your two-week batch.');
+  var period=betaMemberPeriod(member),day=betaDate(body.day),today=betaToday();
+  if(!period.startDate || day<period.startDate || day>period.endDate || day>today)throw new Error('Attendance must be a past or current day within your own two weeks, starting the day you joined.');
   var existing=betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return a.memberId===member.id && a.day===day;})[0];
   if(body.action==='attendanceremove') {
     if(existing)betaTable('internal_beta_attendance',BETA_ATTENDANCE,false).deleteRow(existing._row);
@@ -606,10 +643,11 @@ function betaRecapPublic(recap) {
 }
 function betaGroupData(manager,member) {
   var members=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES),batch=member?betaFindBatch(member):null;
+  var group=betaPrimaryBatch();
   var peers=members.filter(function(m){return manager || member && member.batchId && m.batchId===member.batchId;});
   var ids=peers.map(function(m){return m.id;});
-  return {batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
-    peers:peers.map(function(m){return {id:m.id,name:m.name,github:m.github,status:m.status,batchId:m.batchId};}),
+  return {group:group?betaPublicBatch(group):null,batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
+    peers:peers.map(function(m){var period=betaMemberPeriod(m);return {id:m.id,name:m.name,github:m.github,status:m.status,batchId:m.batchId,startDate:period.startDate,endDate:period.endDate};}),
     attendance:betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return manager||ids.indexOf(a.memberId)>=0;}).map(function(a){return betaCleanRow(a,BETA_ATTENDANCE);}),
     recaps:betaRead('internal_beta_recaps',BETA_RECAPS).filter(function(r){return manager||member&&r.memberId===member.id;}).map(betaRecapPublic)};
 }
@@ -622,6 +660,7 @@ function betaApi(body) {
   if(!manager && ['list','attendance','attendanceremove','recap'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
   var members=betaRead('internal_beta_members',BETA_MEMBERS), target, stamp=new Date().toISOString(), extra={};
   try {
+    if(manager && action==='list')betaEnsureGroup(operator);
     if(['batchadd','batchupdate','rotateinvite'].indexOf(action)>=0)extra=betaManageBatch(body,operator);
     else if(action==='attendance' || action==='attendanceremove') {
       if(manager)return reply(false,'Attendance is recorded by each beta participant.',{code:'FORBIDDEN'});
@@ -661,10 +700,10 @@ function betaApi(body) {
 
 function invoicePermission(action, body, actor, sh) {
   if (!actor) return 'Session expired. Enter the passcode and select your name again.';
-  if (action === 'approve' || action === 'unapprove') return 'Share approvals have been replaced by Arya purchase approval. Reload the site.';
-  if (action === 'purchaseapprove' || action === 'purchaseunapprove') return actor === 'Arya' ? null : 'Only Arya can approve or undo approval of a purchase.';
+  if (action === 'approve' || action === 'unapprove') return 'Share approvals have been replaced by administrator purchase approval. Reload the site.';
+  if (action === 'purchaseapprove' || action === 'purchaseunapprove') return internalIsAdmin(actor) ? null : 'Only Arya and Milo can approve or undo approval of a purchase.';
   if (action === 'moneyundo') return null; // The stored actor and every affected record are checked below.
-  if (actor === 'Arya') return null;
+  if (internalIsAdmin(actor)) return null;
   /* Arya's card goes round the room, so his name is the one everybody may
      put on a line. Nothing else about it is theirs to hand out. */
   if (action === 'add' || action === 'subadd')
@@ -678,7 +717,7 @@ function invoicePermission(action, body, actor, sh) {
     /* The lock is there so a line cannot be rewritten after somebody was
        paid for it. A card line settles without anybody being paid, so it
        stays open to the person who logged it. */
-    if (record.status === 'reimbursed' && String(record.who) !== CARD_PAYER) return 'Only Arya can change a reimbursed charge.';
+    if (record.status === 'reimbursed' && String(record.who) !== CARD_PAYER) return 'Only Arya and Milo can change a reimbursed charge.';
     return null;
   }
   if (action === 'daydelete') record = dayRead(daySheet()).filter(function(r){return String(r.id) === String(body.id);})[0];
@@ -689,7 +728,7 @@ function invoicePermission(action, body, actor, sh) {
     var list = action === 'dayimport' ? body.days : body.shifts;
     return Array.isArray(list) && list.every(function(r){return r.who === actor;}) ? null : 'You can only import your own attendance.';
   }
-  return 'Only Arya can do that.';
+  return 'Only Arya and Milo can do that.';
 }
 
 /* ── the stipend ledger, behind /invoice ─────────────────────── */
@@ -745,19 +784,10 @@ var INVOICE_PEOPLE_SEED = ['Milo', 'Bijan', 'Jesse', 'Luchi'];
    the timesheet roster. */
 var INVOICE_LEADS_SEED = ['Arya'];
 
-/* The two who can open the console. Not the same question as who approves a
-   purchase — that is Arya's money and stays his alone — and not the same as
-   who is on the roster either, which is why it is its own list and why the
-   roster refuses to remove anybody on it. Arya runs the bootcamp; Milo
-   maintains this console, and needed to be able to fix it without going
-   through Arya for every stuck row.
-
-   Worth being plain about what this is: the gate is the shared passcode and
-   a name picked off a menu, so this grants the console to whoever holds the
-   passcode and picks one of these two names. It is a set of tools kept out
-   of everyone else's way, not an identity check.
-
-   Mirrors OPERATORS in invoice/index.html — change both together. */
+/* Arya and Milo have full administration access to the workspace. The role
+   is resolved from the server's regular session, never a requested name.
+   Card ownership and the attendance roster remain separate accounting rules.
+   Mirrors the administrator list in invoice/index.html. */
 var INTERNAL_ADMINS = ['Arya', 'Milo'];
 function internalIsAdmin(who) { return INTERNAL_ADMINS.indexOf(String(who || '')) > -1; }
 
@@ -938,8 +968,8 @@ function invoiceApi(body) {
     var reviewKey = JSON.stringify([charge.date,charge.who,charge.what,charge.category,Number(charge.amount),charge.note||'',charge.receipt||'',charge.shared||'']);
     if (action === 'purchaseapprove' && body.reviewed !== reviewKey) return reply(false, 'This purchase changed. Review the latest receipt and details before approving.');
     var approvePurchase = action === 'purchaseapprove';
-    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approved_by') + 1).setValue(approvePurchase ? 'Arya' : '');
-    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approved_at') + 1).setValue(approvePurchase ? (charge.approved_at || invoiceStamp()) : '');
+    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approved_by') + 1).setValue(approvePurchase ? actor : '');
+    sh.getRange(approvalRow, INVOICE_COLS.indexOf('approved_at') + 1).setValue(approvePurchase ? (charge.approved_by === actor && charge.approved_at ? charge.approved_at : invoiceStamp()) : '');
 
   } else if (action === 'update') {
     var hit = invoiceFind(sh, body.id);
@@ -998,7 +1028,7 @@ function invoiceApi(body) {
     setCol('note', next.row.note);
     setCol('shared', next.row.shared);
     setCol('receipt', keep);
-    // Changes to a charge require Arya to review it again. Legacy share confirmations stay archived.
+    // Changes to a charge require an administrator to review it again. Legacy share confirmations stay archived.
     setCol('approved_by', '');
     setCol('approved_at', '');
     /* Whether a line has been paid back is not edited here — but which
@@ -1163,7 +1193,7 @@ function moneyHistoryPublic(actor) {
   if (!actor) return [];
   var groups = {}, order = [];
   moneyHistoryRead().forEach(function(r){
-    if (actor !== 'Arya' && r.actor !== actor) return;
+    if (!internalIsAdmin(actor) && r.actor !== actor) return;
     if (!groups[r.id]) {
       groups[r.id] = {id:r.id,actor:r.actor,action:r.action,created:dayText(r.created),undone:!!r.undone,count:0,description:''}; order.push(r.id);
     }
@@ -1176,7 +1206,7 @@ function moneyHistoryPublic(actor) {
 function moneyUndo(id, actor) {
   var entries = moneyHistoryRead().filter(function(r){return String(r.id)===String(id);});
   if (!entries.length) return 'That change is not in the money history.';
-  if (actor !== 'Arya' && entries.some(function(r){return r.actor !== actor;})) return 'You can only undo your own changes.';
+  if (!internalIsAdmin(actor) && entries.some(function(r){return r.actor !== actor;})) return 'You can only undo your own changes.';
   if (entries.every(function(r){return !!r.undone;})) return null;
   var current=moneySnapshot();
   for (var i=0;i<entries.length;i++) {
@@ -1967,7 +1997,7 @@ function campusApi(body) {
 
   var action = String(body.action || 'list'), err = null;
 
-  if (action !== 'list' && internalActor(body) !== 'Arya') return reply(false, 'Only Arya can manage the campus team and applicants.');
+  if (action !== 'list' && !internalIsAdmin(internalActor(body))) return reply(false, 'Only Arya and Milo can manage the campus team and applicants.');
   if (action === 'applicant')       err = applySet(body);
   else if (action === 'hire')       err = campusHire(body);
   else if (action === 'teamadd')    err = teamAdd(body);
@@ -2449,7 +2479,7 @@ function postsApi(body) {
   if (action !== 'list') {
     var actor = internalActor(body);
     if (!actor) return reply(false, 'Session expired. Sign in again.');
-    if (actor !== 'Arya') {
+    if (!internalIsAdmin(actor)) {
       if (action === 'add' && body.who !== actor) return reply(false, 'You can only post as yourself.');
       if (action === 'delete' || action === 'edit') {
         var post = postRead(postSheet()).filter(function(p){return p.id === String(body.id);})[0];
@@ -2707,11 +2737,11 @@ function schedulesApi(body) {
   if (action !== 'list') {
     var actor = internalActor(body);
     if (!actor) return reply(false, 'Session expired. Sign in again.');
-    /* Arya reads and writes anybody's week; everybody else owns their own
+    /* Administrators read and write anybody's week; everybody else owns their own
        and nothing else. A block names its person, so the check is the same
        question in two shapes: the name on the way in, and the name already
        on the row being changed. */
-    if (actor !== 'Arya') {
+    if (!internalIsAdmin(actor)) {
       if (action === 'add' || action === 'import' || action === 'clear') {
         if (String(body.who || '') !== actor) return reply(false, 'You can only change your own week.');
       }
@@ -3222,6 +3252,7 @@ function rosterRename(b, actor) {
   var clean = rosterName(b.to);
   if (clean.error) return clean.error;
   if (clean.name === row.name) return null;
+  if (internalIsAdmin(row.name) || row.name === CARD_PAYER) return 'Administrator and card payer names cannot be renamed.';
   if (rosterFind(clean.name)) return clean.name + ' is already a name on the roster';
   if (String(b.confirm || '') !== clean.name) return 'type the new name again to confirm the rename';
 

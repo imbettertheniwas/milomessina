@@ -739,12 +739,11 @@ td.date.run{color:var(--good)}
     <h2>fomo special ops</h2>
     <form id="gate-form" autocomplete="off">
       <label for="gate-who">who are you?</label>
-      <select id="gate-who" required><option value="">select your name</option><option value="Milo">milo</option><option value="Bijan">bijan</option><option value="Jesse">jesse</option><option value="Luchi">luchi</option><option value="Arya">arya · admin</option></select>
+      <select id="gate-who" required><option value="">select your name</option><option value="Milo">milo · admin</option><option value="Bijan">bijan</option><option value="Jesse">jesse</option><option value="Luchi">luchi</option><option value="Arya">arya · admin</option></select>
       <input id="gate-input" type="password" placeholder="passcode" aria-label="Team passcode" autocomplete="current-password">
       <button class="btn btn-p" type="submit">open</button>
     </form>
     <div class="err" id="gate-err" role="alert"></div>
-    <a class="beta-gate-link" href="/internal/beta">Joining the beta batch? Open your workspace →</a>
   </div>
 </div>
 
@@ -1663,14 +1662,14 @@ td.date.run{color:var(--good)}
       </section>
 
       <section class="view" data-view="beta">
-        <div class="toolbar"><span class="hint">A separate batch, with access you control.</span><span class="push"><a class="mini ghost" href="/internal/beta" target="_blank" rel="noopener">Open intern workspace ↗</a><button class="mini ghost" id="bt-refresh" type="button">Refresh</button></span></div>
+        <div class="toolbar"><span class="hint">Your beta interns, in one place.</span><span class="push"><a class="mini ghost" href="/internal/beta" target="_blank" rel="noopener">Open intern workspace ↗</a><button class="mini ghost" id="bt-refresh" type="button">Refresh</button></span></div>
         <div class="scroller pad" id="bt-root">
-          <div class="bt-intro"><div><span class="bt-eyebrow">ARYA’S BOOTCAMP</span><h2>Beta batch</h2><p>Two weeks of showing up, building, and learning together.</p></div><button class="btn btn-p" id="bt-new" type="button">Create beta batch</button></div>
+          <div class="bt-intro"><div><span class="bt-eyebrow">ARYA’S BOOTCAMP</span><h2>Beta</h2><p>One group. Each intern’s first two weeks of showing up, building, and learning.</p></div></div>
+          <section class="bt-card bt-invite" aria-labelledby="bt-invite-title"><h3 id="bt-invite-title">Your permanent invite link</h3><p>Send this same link to every new beta intern. They add their details and join the group. The day they join is Day 1; their recap is due at the end of Day 14.</p><div class="bt-invite-row"><label class="sr-only" for="bt-invite-link">Permanent beta invite link</label><input id="bt-invite-link" type="url" readonly value="https://milomessina.com/internal/beta"><button class="btn btn-p" id="bt-copy-invite" type="button">Copy invite link</button></div></section>
           <p id="bt-message" role="status" aria-live="polite"></p>
           <div id="bt-code" hidden></div>
           <div id="bt-summary" class="bt-summary"></div>
-          <div class="bt-filter"><label>Batch <select id="bt-batch"><option value="">All batches</option></select></label><label class="bt-search">Find an intern <input id="bt-search" type="search" placeholder="Search names, email, phone, or GitHub"></label></div>
-          <div id="bt-batch-actions" class="bt-batch-actions"></div>
+          <div class="bt-filter"><label class="bt-search">Find an intern <input id="bt-search" type="search" placeholder="Search names, email, phone, or GitHub"></label></div>
           <div class="bt-layout"><div id="bt-roster" class="bt-roster"></div><div id="bt-detail" class="bt-detail"></div></div>
         </div>
       </section>
@@ -1934,33 +1933,13 @@ function settledStatus(who, status){ return (who === CARD || status === "reimbur
 function loggerOf(r){ return (r && (r.loggedBy || r.who)) || ""; }
 
 var identity = null, profiles = [], profileEditing = false, profileSaving = false;
-function isAdmin(){ return !!identity && identity.who === "Arya"; }
+function isAdmin(){ return !!identity && identity.admin === true && identity.beta !== true && OPERATORS.indexOf(identity.who) > -1; }
 
-/* ---------- the console, and why it is not `admin` ----------
-
-   Two different questions, and the page kept getting into trouble by
-   treating them as one. `isAdmin` is whose money it is: approving a
-   purchase, settling somebody up, changing a line after it has been paid.
-   That is Arya's, and widening it to get anything else would put the
-   interns' reimbursements in more hands than agreed to it.
-
-   `isOperator` is who may open the console — the page that fixes the sheet
-   when it has gone wrong. Adding an intern, taking one off, deleting the
-   row whose owner left before they could. Arya runs the bootcamp; Milo
-   maintains this page, and needed to be able to unstick it without going
-   through Arya for every stuck row.
-
-   Worth being plain about what this is. The gate is a shared passcode and a
-   name picked off a menu, so this hands the console to whoever holds the
-   passcode and picks one of these two names. It keeps a set of sharp tools
-   out of everyone else's way and writes down who used them; it is not, and
-   was never sold as, a check on who somebody is.
-
-   Mirrors INTERNAL_ADMINS in fomo/setup/apps-script.gs — change both
-   together. The server keeps its own copy and enforces it there; this one
-   only decides whether the rail shows the door. */
+/* Milo and Arya share full admin permissions once the server confirms the
+   signed-in identity. The payer/card owner remains CARD = "Arya" above;
+   administrative access does not change whose money a ledger line uses. */
 var OPERATORS = ["Arya", "Milo"];
-function isOperator(){ return !!identity && OPERATORS.indexOf(identity.who) > -1 && sheetAdmin !== false; }
+function isOperator(){ return isAdmin() && identity.operator === true && sheetAdmin !== false; }
 
 /* Whether the deployment behind ENDPOINT carries the console at all. Asked
    the same way sheetDays and sheetCard are, and for the same reason: a rail
@@ -1980,7 +1959,9 @@ function ownRow(r){ return !!r && (isAdmin() || (!!identity && identity.who === 
 /* The reimbursed lock stops a line being rewritten after somebody was
    paid for it. Nobody is ever paid for a card line, so it doesn't apply. */
 function canEdit(r){ return !!r && ownRow(r) && (isAdmin() || onCard(r) || r.status !== "reimbursed"); }
-function purchaseApproved(r){return !!r && r.approvedBy === 'Arya';}
+function purchaseApprover(r){return r && OPERATORS.indexOf(r.approvedBy) > -1 ? r.approvedBy : ''; }
+function purchaseApproved(r){return !!purchaseApprover(r);}
+function purchaseApprovalText(r){return purchaseApproved(r) ? 'Approved by ' + purchaseApprover(r) : 'Awaiting admin approval';}
 function canApprove(r){return isAdmin() && !!r && !purchaseApproved(r);}
 function permission(action, p){
   p = p || {};
@@ -1988,7 +1969,7 @@ function permission(action, p){
   if (!identity) return "Choose your name and sign in first.";
   if (action === "moneyundo") return ""; // Stored history enforces ownership.
   if (action === "approve" || action === "unapprove") return "Share approvals have been replaced. Reload the site.";
-  if (action === "purchaseapprove" || action === "purchaseunapprove") return isAdmin() ? "" : "Only Arya can approve purchases.";
+  if (action === "purchaseapprove" || action === "purchaseunapprove") return isAdmin() ? "" : "Only Milo and Arya can approve purchases.";
   if (isAdmin()) return "";
   if (action === "add" || action === "subadd") return canPay(p.who) ? "" : "You can only log a spend on your own card or on Arya’s.";
   if (["profileupdate","daymark","dayclear"].indexOf(action) >= 0) return own(p.who) ? "" : "You can only change your own records.";
@@ -1996,7 +1977,7 @@ function permission(action, p){
   if (action === "daydelete") return own((byId(days,p.id)||{}).who) ? "" : "You can only change your own attendance.";
   if (action === "subpause" || action === "subdelete") return ownRow(byId(subs,p.id)) ? "" : "You can only change your own recurring spends.";
   if (action === "dayimport") return Array.isArray(p.days) && p.days.every(function(d){return own(d.who);}) ? "" : "You can only import your own attendance.";
-  return "Only Arya can do that.";
+  return "Only Milo and Arya can do that.";
 }
 function requirePermission(action,p){ var denied=permission(action,p); return denied ? Promise.reject(new Error(denied)) : null; }
 
@@ -2366,7 +2347,7 @@ function apiLocal(action, p){
       var approvedRow=byId(rows,p.id);
       if(!approvedRow)return reject(new Error('That purchase is no longer on the ledger.'));
       if(action==='purchaseapprove' && p.reviewed!==reviewedCharge(approvedRow))return reject(new Error('This purchase changed. Review the latest details before approving.'));
-      approvedRow.approvedBy=action==='purchaseapprove'?'Arya':'';
+      approvedRow.approvedBy=action==='purchaseapprove'?(purchaseApprover(approvedRow)||identity.who):'';
       approvedRow.approvedAt=action==='purchaseapprove'?(approvedRow.approvedAt||now):'';
     } else if (action === "update") {
       var hit = byId(rows, p.id);
@@ -4968,8 +4949,8 @@ function paintCharge(){
   else if((url && /\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(url)) || /^data:image\//.test(r.receipt||''))receipt='<img src="'+esc(url||r.receipt)+'" alt="Receipt for '+esc(r.what)+'">';
   else if(url)receipt='<p>The receipt is available at the link below.</p>';
   var confirmed=purchaseApproved(r), participants=sharedOf(r);
-  var facts='<dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Reimbursement</dt><dd>'+esc(onCard(r)?'Not needed — Arya’s card':r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd>'+(loggerOf(r)!==r.who?'<dt>Logged by</dt><dd>'+esc(loggerOf(r))+'</dd>':'')+'<dt>For</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd><dt>Purchase approval</dt><dd><span class="pill '+(confirmed?'good':'')+'">'+(confirmed?'Approved by Arya':'Awaiting Arya')+'</span></dd></dl>';
-  var confirm=isAdmin()?'<div class="charge-confirm"><p>'+(confirmed?'You approved this purchase. You can undo its approval.':'Review the receipt, purchase details, and GitHub activity above, then approve the full '+esc(money(r.amount))+' purchase.')+'</p><button type="button" '+(confirmed?'data-purchase-unapprove':'data-purchase-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo purchase approval':'Approve purchase · '+esc(money(r.amount)))+'</button><small>Approval records your decision. Reimbursement remains a separate action.</small></div>':'<p class="charge-approval-note">'+(confirmed?'Arya has approved this purchase.':'This purchase is waiting for Arya’s approval.')+'</p>';
+  var facts='<dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Reimbursement</dt><dd>'+esc(onCard(r)?'Not needed — Arya’s card':r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd>'+(loggerOf(r)!==r.who?'<dt>Logged by</dt><dd>'+esc(loggerOf(r))+'</dd>':'')+'<dt>For</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd><dt>Purchase approval</dt><dd><span class="pill '+(confirmed?'good':'')+'">'+esc(purchaseApprovalText(r))+'</span></dd></dl>';
+  var confirm=isAdmin()?'<div class="charge-confirm"><p>'+(confirmed?esc(purchaseApprover(r))+' approved this purchase. You can undo its approval.':'Review the receipt, purchase details, and GitHub activity above, then approve the full '+esc(money(r.amount))+' purchase.')+'</p><button type="button" '+(confirmed?'data-purchase-unapprove':'data-purchase-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo purchase approval':'Approve purchase · '+esc(money(r.amount)))+'</button><small>Approval records your decision. Reimbursement remains a separate action.</small></div>':'<p class="charge-approval-note">'+(confirmed?esc(purchaseApprover(r))+' approved this purchase.':'This purchase is waiting for an admin’s approval.')+'</p>';
   box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts">'+facts+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+(confirmed&&r.approvedAt?'<small>Approved '+esc(String(r.approvedAt).replace('T',' '))+'</small>':'')+'</div></section></div><section class="panel purchase-git" id="charge-git"></section>'+confirm+(isAdmin()&&!onCard(r)?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div>';
   var receiptImage=box.querySelector('.receipt-image');
   if(receiptImage)receiptImage.addEventListener('error',function(){this.hidden=true;box.querySelector('.receipt-preview-error').hidden=false;});
@@ -4984,7 +4965,7 @@ function splitCell(r){
   return '<span class="pill blue" title="' + esc(names.join(", ")) + '">' + names.length + " ways</span>";
 }
 function approvalHtml(r){
-  return '<small class="charge-approvals">'+(purchaseApproved(r)?'Approved by Arya':'Awaiting Arya’s approval')+'</small><a class="mini approve-charge" href="#/charge/'+encodeURIComponent(r.id)+'">'+(canApprove(r)?'Review purchase':'View purchase')+'</a>';
+  return '<small class="charge-approvals">'+esc(purchaseApprovalText(r))+'</small><a class="mini approve-charge" href="#/charge/'+encodeURIComponent(r.id)+'">'+(canApprove(r)?'Review purchase':'View purchase')+'</a>';
 }
 function ledgerRow(r, hideWho){
   var meta = cat(r.category), url = safeUrl(r.receipt), card = onCard(r), done = r.status === "reimbursed";
@@ -5123,7 +5104,7 @@ var VIEWS = {
   portals:   {label:"Portals",        sub:"every public front door, and everything that has come through it"},
   referrals: {label:"Referrals",      sub:"who is sending people, how far those people got, and what we owe for it"},
   admin:     {label:"Console",        sub:"the roster, and the rows nobody else can reach"},
-  beta:      {label:"Beta batch",     sub:"new interns, their progress, and their access"},
+  beta:      {label:"Beta",     sub:"new interns, their progress, and their access"},
   person:    {label:"",               sub:""}
 };
 
@@ -5171,7 +5152,7 @@ var NAV = [
      the money on it is going out to students rather than back to the
      four of them, which is what everything under Money is. */
   {id:"doors",  label:"Front doors", items:[["portals","Portals",1],["referrals","Referrals",1]], operator:true},
-  {id:"beta",   label:"Pilot program", items:[["beta","Beta batch",0]], operator:true},
+  {id:"beta",   label:"Pilot program", items:[["beta","Beta",0]], operator:true},
   {id:"admin",  label:"Maintenance", items:[["admin","Console",0]], operator:true}
 ];
 
@@ -6121,7 +6102,7 @@ function paintPerson(){
   var h = "";
   h += '<div class="phead">' + avatar(p, "xl") +
     '<div class="bd"><h2>' + esc(p) + "</h2><p>" +
-      esc(profile.headline || (isIntern ? "Intern · fomo bootcamp" : "Admin · fomo bootcamp")) +
+      esc(profile.headline || (OPERATORS.indexOf(p) > -1 ? "Admin · fomo bootcamp" : "Intern · fomo bootcamp")) +
     "</p></div>" +
     '<span class="push">' +
       (own(p) ? '<button class="mini" id="profile-edit">Edit profile</button>' : "") +
@@ -6902,10 +6883,10 @@ function fillGate(out){
     : list.map(function(n){ return {name:n, role:LEADS.indexOf(n) > -1 ? "lead" : "intern", removed:""}; }));
   var sel = $("gate-who"), was = sel.value;
   sel.innerHTML = '<option value="">select your name</option>';
-  /* Only whose money it is gets said out loud here. Milo opens the console
-     too, but that is maintenance, not admin — see isOperator. */
+  /* Both named administrators are identified here; permissions still come
+     from the authenticated server response after sign-in. */
   list.forEach(function(n){
-    sel.appendChild(new Option(n.toLowerCase() + (n === "Arya" ? " · admin" : ""), n));
+    sel.appendChild(new Option(n.toLowerCase() + (OPERATORS.indexOf(n) > -1 ? " · admin" : ""), n));
   });
   if (list.indexOf(was) > -1) sel.value = was;
 }
@@ -6914,7 +6895,7 @@ gateProbe().then(fillGate)["catch"](function(){});
 async function sessionCall(body){
   if (!identityReady) {
     var features=await gateProbe();
-    if (!features.identity || !features.moneyUndo || !features.purchaseApproval) throw new Error("arya-only purchase approval needs to be deployed in apps script before signing in.");
+    if (!features.identity || !features.moneyUndo || !features.purchaseApproval) throw new Error("purchase approval needs to be deployed in apps script before signing in.");
     if (features.admin === true) sheetAdmin=true;
     identityReady=true;
   }
@@ -6926,7 +6907,7 @@ async function sessionCall(body){
 }
 function signedIn(out, token){
   if (out.beta) { location.replace("/internal/beta"); return; }
-  identity={who:out.who,token:out.token || token};
+  identity={who:out.who,token:out.token || token,admin:out.admin === true,operator:out.operator === true,beta:out.beta === true};
   try { sessionStorage.setItem("fomo.identity",JSON.stringify(identity)); } catch(e){}
   /* The roster comes back with the sign-in rather than being asked for
      separately, so the form, the rail and the split are drawn from the
@@ -6943,12 +6924,9 @@ function signedIn(out, token){
   if (out.operator === true) sheetAdmin = true;
   document.body.dataset.role=isAdmin()?"admin":"intern";
   document.body.dataset.operator=isOperator()?"yes":"no";
-  /* Three words, because there are three positions. Arya is Admin — the
-     money is his. An intern holding the console is an intern with a console,
-     not an admin, and saying "Intern" of somebody looking at a page full of
-     roster controls reads as the page having got it wrong. */
+  /* Badge and module controls use the server-confirmed admin role. */
   $("identity-switch").textContent=identity.who +
-    (isAdmin()?" · Admin":isOperator()?" · Console":" · Intern") + " · Sign out";
+    (isAdmin()?" · Admin":" · Intern") + " · Sign out";
   picked=identity.who;
   /* The rail is rebuilt here rather than at parse time: whether it carries
      a Maintenance group is a question about who just signed in, and there
