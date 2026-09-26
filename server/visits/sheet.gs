@@ -36,6 +36,14 @@ function visitsApi(body) {
       cache.put(cacheKey,JSON.stringify(bucket),Math.max(1,Math.ceil((bucket.until-now)/1000)));
       return visitReply(true,{allowed:true});
     }
+    // Availability lives in Script Properties. Opening it should not read
+    // every guest request or create a visit sheet just to return seven days.
+    if(body.action==='settings')return visitReply(true,{availability:visitAvailability()});
+    if(body.action==='saveSettings'){
+      if(!Array.isArray(body.availability) || body.availability.length!==7)return visitReply(false,null,'INVALID');
+      PropertiesService.getScriptProperties().setProperty('VISITS_AVAILABILITY',JSON.stringify(body.availability));
+      return visitReply(true,{availability:visitAvailability()});
+    }
     var book=visitBook(),sheet=book.getSheetByName('visit_requests');
     if(!sheet){
       sheet=book.insertSheet('visit_requests');
@@ -55,12 +63,6 @@ function visitsApi(body) {
       });
       result.version=Number(result.version);return result;
     }).filter(function(r){return VISIT_ID.test(String(r.id));});
-    if(body.action==='settings')return visitReply(true,{availability:visitAvailability()});
-    if(body.action==='saveSettings'){
-      if(!Array.isArray(body.availability) || body.availability.length!==7)return visitReply(false,null,'INVALID');
-      PropertiesService.getScriptProperties().setProperty('VISITS_AVAILABILITY',JSON.stringify(body.availability));
-      return visitReply(true,{availability:visitAvailability()});
-    }
     if(body.action==='list')return visitReply(true,{requests:requests.reverse()});
     if(body.action==='submit'){
       var r=body.request;

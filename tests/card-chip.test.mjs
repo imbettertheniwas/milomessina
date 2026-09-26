@@ -78,12 +78,12 @@ test('a stored head start is kept whatever it says about the card', () => {
 /* refreshCard is the ask. It reaches for fetch, repaints, and writes the
    answer down, so all three are watched here. */
 function asking(answer, over = {}){
-  const ctx = page({answer, asked:0, saved:0, ...over});
+  const ctx = page({answer, asked:0, saved:0, gateFeatures:null, gateFlight:null, gateAt:0, AbortSignal, ...over});
   vm.runInContext([
     'function saveSeen(){ saved++; }',
     'function fetch(){ asked++; return Promise.resolve(' +
       'answer === null ? {ok:false} : {ok:true, json:function(){ return Promise.resolve(answer); }}); }',
-    lift('refreshCard')
+    lift('gateProbe'), lift('refreshCard')
   ].join('\n'), ctx);
   return ctx;
 }

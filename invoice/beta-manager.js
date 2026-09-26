@@ -34,8 +34,9 @@ async function api(action,payload={}) {
   if(next.manager!==true)throw Object.assign(new Error('Only Arya and Milo can manage the beta group.'),{code:'FORBIDDEN'});
   data=next;return next;
 }
-function render() {
+function render(preserveDetail=false) {
   if(!data)return;
+  const previousSelected=selected;
   const group=data.members || [],q=$('bt-search').value.toLowerCase(),ids=new Set(group.map(m=>m.id));
   const shown=group.filter(m=>`${m.name} ${m.email} ${m.phone || ''} ${m.github}`.toLowerCase().includes(q));
   $('bt-invite-link').value=location.origin+'/internal/beta';
@@ -43,7 +44,7 @@ function render() {
   if(!shown.some(m=>m.id===selected))selected=shown[0]?.id || '';
   if(deleteTarget?.id!==selected)deleteTarget=null;
   $('bt-roster').innerHTML=shown.length?shown.map(m=>`<button type="button" class="bt-person ${selected===m.id?'on':''}" data-member="${esc(m.id)}" aria-pressed="${selected===m.id}"><span class="bt-avatar">${esc(m.name.slice(0,1).toUpperCase())}</span><span><strong>${esc(m.name)}</strong><small>${attendanceOf(m.id).length} days in · Recap due ${esc(dateLabel(periodOf(m).endDate))}</small><small>${recapOf(m.id)?.submittedAt?'Recap submitted':'Recap pending'}</small></span><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></button>`).join(''):`<div class="bt-empty"><b>${group.length?'No matches':'Ready for the first arrival'}</b><p>${group.length?'Try another name, email, phone, or GitHub.':'Share the permanent invite above. Interns appear here when they join.'}</p></div>`;
-  renderMember(group.find(m=>m.id===selected));
+  if(!preserveDetail || previousSelected!==selected)renderMember(group.find(m=>m.id===selected));
   if(data.configured===false)message(data.setupMessage || 'Beta access needs to be configured.',true);
   setBusy(busy);
 }
@@ -58,6 +59,7 @@ function renderDeleteControls() {
 }
 function renderMember(m) {
   githubRun++;clearScheduleFile();
+  paintGithub.controller?.abort();
   if(!m){$('bt-detail').innerHTML='<div class="bt-card bt-empty"><b>One view of the whole two weeks</b><p>Choose an intern to see attendance, GitHub activity, their recap, and your private evaluation notes.</p></div>';return;}
   const batch=periodOf(m),days=attendanceOf(m.id).map(a=>a.day).sort(),recap=recapOf(m.id),website=portfolioUrl(m.website);
   $('bt-detail').innerHTML=`<form id="bt-member-form" class="bt-card"><div class="bt-card-head"><div><h3>${esc(m.name)}</h3><p>Your first two weeks · ${esc(dateLabel(batch?.startDate))} – ${esc(dateLabel(batch?.endDate))}</p>${website?`<a class="bt-portfolio" href="${esc(website)}" target="_blank" rel="noopener noreferrer">${esc(new URL(website).hostname)} ↗</a>`:""}</div><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></div><div class="bt-fields"><label>Name<input name="name" value="${esc(m.name)}" required maxlength="80"></label><label>Email<input name="email" value="${esc(m.email)}" type="email" maxlength="254"></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(m.phone)}" placeholder="Not provided"></label><label>GitHub username<input name="github" value="${esc(m.github)}" maxlength="39" placeholder="username"></label><label>Portfolio website <span>(optional)</span><input name="website" type="text" inputmode="url" autocomplete="url" maxlength="300" value="${esc(m.website)}" placeholder="yourname.com"></label><label>Access status<select name="status">${['active','paused','graduated'].map(s=>`<option ${s===m.status?'selected':''}>${s}</option>`).join('')}</select></label></div><p class="bt-foot bt-contact-note">Contact details are visible to Arya and Milo only.${m.createdAt?` Joined ${esc(new Date(m.createdAt).toLocaleString())}.`:""}</p><label>Private evaluation notes<textarea name="notes" rows="4" maxlength="5000" placeholder="Progress, feedback, and follow-ups…">${esc(m.notes)}</textarea><span>Visible to Arya and Milo only.</span></label><div class="bt-actions"><button class="btn btn-p" type="submit">Save intern</button><button class="btn btn-g" data-code type="button">Replace personal return link</button></div><p class="bt-foot">Pausing or graduating closes their beta access and keeps their record. It does not add them to the main team.</p><div id="bt-delete-controls">${deleteControls(m)}</div></form>${scheduleSection(m)}<section class="bt-card"><div class="bt-card-head"><h3>Attendance</h3><span>${days.length} days in</span></div><div class="bt-days">${days.length?days.map(day=>`<span>${esc(dateLabel(day))}</span>`).join(''):'<p class="bt-muted">No attendance marked yet.</p>'}</div></section><section class="bt-card"><div class="bt-card-head"><h3>GitHub activity</h3>${m.github?`<a href="https://github.com/${encodeURIComponent(m.github)}" target="_blank" rel="noopener noreferrer">@${esc(m.github)} ↗</a>`:''}</div><div id="bt-github"><p class="bt-muted">Loading public activity…</p></div></section><section class="bt-card"><div class="bt-card-head"><h3>Two-week recap</h3><span>${recap?.submittedAt?'Submitted':recap?'Draft':'Not started'}</span></div><p class="bt-muted">Due ${esc(dateLabel(batch?.endDate))}</p>${recap?`<h4>What they learned</h4><p class="bt-long">${esc(recap.learned || 'Not added yet.')}</p><h4>What they accomplished</h4><p class="bt-long">${esc(recap.accomplished || 'Not added yet.')}</p>${recap.links?.length?`<h4>Work & links</h4><p class="bt-long">${recap.links.map(link=>`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`).join('<br>')}</p>`:''}`:'<p class="bt-muted">Their recap will appear here as they write it.</p>'}</section>`;
@@ -187,7 +189,7 @@ async function load(force=false) {
   finally{if(revision===generation)setBusy(false);}
 }
 $('bt-refresh').addEventListener('click',()=>load(true));
-$('bt-search').addEventListener('input',()=>render());
+$('bt-search').addEventListener('input',()=>render(true));
 $('bt-copy-invite').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText($('bt-invite-link').value);message('Permanent invite link copied.');}
   catch{$('bt-invite-link').focus();$('bt-invite-link').select();message('Select and copy the link above.');}

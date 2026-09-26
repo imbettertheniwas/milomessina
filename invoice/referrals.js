@@ -133,7 +133,8 @@ async function callRefer(action, payload){
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const body = Object.assign({_api:'refer', action, _key:cfg.key || '',
     _session:cfg.session ? cfg.session() : ''}, payload || {});
-  const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body)});
+  const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body),
+    signal:action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined});
   if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
   try { out = JSON.parse(await res.text()); } catch (e) {}

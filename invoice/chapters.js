@@ -281,6 +281,7 @@ function mount(opts){
   var onSource = opts.onSource || noop;
   var onCount  = opts.onCount  || noop;
   var onBanner = opts.onBanner || null;
+  var isActive = opts.isActive || function(){ return true; };
 
   function el(n){ return document.getElementById(PRE + n); }
   function svgEl(){ return root.querySelector("svg.usmap"); }
@@ -289,7 +290,8 @@ function mount(opts){
   var selected = null;          /* {kind:'house'|'school'|'state', key:string} */
   var view = {k:1, x:0, y:0};   /* scale and translation of the whole scene */
   var VIEW_MIN = 1, VIEW_MAX = 7;
-  var timer = null, dead = false;
+  var timer = null, dead = false, pending = null, controller = null;
+  var checkedAt = 0, renderedSnapshot = "";
 
   /* The tooltip is fixed to the viewport, so it belongs to the document
      rather than to whichever box the board was mounted in — a mounted
@@ -800,18 +802,29 @@ function mount(opts){
      reason: there is no point re-reading for a screen nobody is
      looking at, and every point in being current for one somebody
      just returned to. */
-  function load(){
-    return fetch(FEED, {cache:"no-store"}).then(function(res){
+  function load(force){
+    if (dead || document.hidden || !isActive()) return Promise.resolve();
+    if (pending) return pending;
+    if (!force && checkedAt && Date.now() - checkedAt < POLL_MS) return Promise.resolve();
+    controller = new AbortController();
+    var requestController = controller;
+    var timeout = setTimeout(function(){ requestController.abort(); }, 20000);
+    pending = fetch(FEED, {cache:"no-store", signal:requestController.signal}).then(function(res){
       if (!res.ok) throw new Error("the feed answered HTTP " + res.status);
       return res.json();
     }).then(function(out){
       if (dead) return;
       if (!out || !out.chapters) throw new Error("the feed answered, but without any chapters in it");
-      raw = out.chapters;
-      units = unitsFrom(raw);
+      checkedAt = Date.now();
       feedAt = out.updatedAt || "";
       feedStale = out.stale === true;
-      render();
+      var snapshot = JSON.stringify(out.chapters);
+      if (snapshot !== renderedSnapshot) {
+        raw = out.chapters;
+        units = unitsFrom(raw);
+        render();
+        renderedSnapshot = snapshot;
+      }
       onLive(!feedStale, feedStale ? "stale · " + hhmm12(new Date()) : "live · " + hhmm12(new Date()));
       onSource(out.source ? String(out.source).toLowerCase() : "live from the campus admin");
       /* Stale is not an error. The server could not reach the admin this
@@ -830,12 +843,17 @@ function mount(opts){
         esc(e && e.message ? e.message : "something went wrong") +
         '. Nothing here is lost — it is all read fresh, so a reload is the whole fix.</span></div>');
       if (!units.length) { el("tbl-empty").hidden = false; el("map-note").textContent = ""; }
+    }).finally(function(){
+      clearTimeout(timeout);
+      pending = null;
+      controller = null;
     });
+    return pending;
   }
 
   onLive(true, "loading");
   load();
-  timer = setInterval(function(){ if (!document.hidden) load(); }, POLL_MS);
+  timer = setInterval(function(){ load(true); }, POLL_MS);
   function onVis(){ if (!document.hidden) load(); }
   document.addEventListener("visibilitychange", onVis);
 
@@ -846,6 +864,7 @@ function mount(opts){
        leave three document listeners and a timer behind. */
     destroy: function(){
       dead = true;
+      if (controller) controller.abort();
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
       document.removeEventListener("keydown", onKey);

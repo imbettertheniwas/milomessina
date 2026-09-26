@@ -11,6 +11,8 @@ puts itself on the ledger from then on.
 
 It works the moment it loads. Nothing to deploy, nothing to configure.
 
+Performance changes, measurements, validation and deployment notes are in [PERFORMANCE.md](PERFORMANCE.md).
+
 ## How it is laid out
 
 It is a console rather than a page: a rail of views down the left, one of

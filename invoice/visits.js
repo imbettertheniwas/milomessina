@@ -17,21 +17,24 @@ function message(text,error=false){$('vr-message').textContent=text;$('vr-messag
 const mayEdit=()=>{const b=window.FOMO_SHEET||{};return !!(b.admin && b.admin());};
 async function api(action,body) {
   const bridge=window.FOMO_SHEET || {};
+  const epoch=requestEpoch;
   if(['update','saveAvailability'].includes(action) && !mayEdit())throw new Error('Only Milo and Arya can change visit requests or opening hours.');
   const response=await fetch('/api/visits?action='+action,{
     method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',
+    signal:!body ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
     headers:{...(body?{'Content-Type':'application/json'}:{}),...(bridge.session && bridge.session()?{'X-Fomo-Internal-Session':bridge.session()}:{})},
     ...(body?{body:JSON.stringify(body)}:{})
   });
   const data=await response.json().catch(()=>({error:'Visit requests could not be loaded.'}));
+  if(epoch!==requestEpoch)throw new Error('Your Internal session changed.');
   if(!response.ok){
-    if(response.status===401)lock();
+    if(response.status===401){lock();message(data.error || 'Sign in to Internal to view visit requests.');}
     const error=new Error(data.error||'Please try again.');error.status=response.status;throw error;
   }
   return data;
 }
 const weekdayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-let availability=null;
+let availability=null,hoursLoading=false;
 /* Accepts "2:15 PM", "2:15pm" or "14:15" so nobody has to think about format.
    The server canonicalises too; this only keeps the field readable on save. */
 function canonicalTime(value){
@@ -81,7 +84,8 @@ function hoursCollect(){
 }
 function lock(){
   requestEpoch++;
-  state.authenticated=false;state.requests=[];state.selected=null;state.loaded=false;
+  state.authenticated=false;state.requests=[];state.selected=null;state.loaded=false;state.busy=false;
+  hoursLoading=false;$('vr-refresh').disabled=false;
   $('vr-workspace').hidden=true;
   window.FOMO_VISIT_STATS=null;window.dispatchEvent(new CustomEvent('fomo:visit-stats'));
   $('vr-details').hidden=true;$('vr-list').replaceChildren();$('vr-count').textContent='';
@@ -155,17 +159,11 @@ async function refresh(){
   state.busy=true;$('vr-refresh').disabled=true;message('Loading visit requests…');
   try{
     const data=await api('list');if(epoch!==requestEpoch)return;state.requests=data.requests;state.loaded=true;unlock();render();
-    try{
-      const hours=await api('availability');
-      if(epoch===requestEpoch && hours?.availability){availability=hours.availability;hoursRender();}
-    }catch{
-      // Hours are secondary: never let this hide the requests. The usual cause
-      // is a storage script that predates the settings actions.
-      hoursStatus('Visit hours could not be loaded. The storage script may need updating.',true);
-    }
+    // Opening hours have their own panel and should not delay the inbox.
+    if($('vr-hours').open)loadHours(true);
     message('Requests are up to date.');
-  }catch(error){message(error.message,error.status!==401);}
-  finally{state.busy=false;$('vr-refresh').disabled=false;}
+  }catch(error){if(epoch===requestEpoch)message(error.message,error.status!==401);}
+  finally{if(epoch===requestEpoch){state.busy=false;$('vr-refresh').disabled=false;}}
 }
 
 $('vr-filter').addEventListener('change',render);
@@ -208,6 +206,19 @@ function hoursStatus(message,error=false){
   $('vr-hours-status').textContent=message;
   $('vr-hours-status').classList.toggle('vr-error',error);
 }
+async function loadHours(force=false){
+  if(!state.authenticated || hoursLoading || (availability && !force))return;
+  const epoch=requestEpoch;
+  hoursLoading=true;hoursStatus('Loading visit hours…');
+  try{
+    const hours=await api('availability');
+    if(epoch!==requestEpoch)return;
+    if(hours?.availability){availability=hours.availability;hoursRender();hoursStatus('');}
+  }catch{
+    if(epoch===requestEpoch)hoursStatus('Visit hours could not be loaded. The storage script may need updating.',true);
+  }finally{if(epoch===requestEpoch)hoursLoading=false;}
+}
+$('vr-hours').addEventListener('toggle',()=>{if($('vr-hours').open)loadHours();});
 $('vr-hours-copy').addEventListener('click',()=>{
   if(!availability)return;
   const monday=$('vr-times-1').value;

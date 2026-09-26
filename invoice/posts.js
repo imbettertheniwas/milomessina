@@ -16,6 +16,7 @@ const PEOPLE = () => bridge().people || [];
 const toneOf = n => (bridge().tone ? bridge().tone(n) : '--s7');
 
 const MAX_BODY = 2000, MAX_PHOTOS = 4;
+let renderPending = true;
 
 const state = {posts: [], loaded: false, busy: false, sending: false, who: '', shots: [], at: 0,
   edit: {id: '', saving: false, draft: null, caret: null}};
@@ -106,6 +107,7 @@ async function call(action, payload){
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const res = await fetch(cfg.endpoint, {
     method: 'POST',
+    signal: action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
     body: JSON.stringify(Object.assign({_api: 'posts', action, _key: cfg.key || '', _session: cfg.session ? cfg.session() : ''}, payload || {}))
   });
   if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
@@ -517,6 +519,10 @@ function navCount(){
 }
 
 function render(){
+  renderPending = true;
+  navCount();
+  if (!location.hash.startsWith('#/posts')) return;
+  renderPending = false;
   /* A note somebody else deleted takes its editor with it. */
   if (state.edit.id && !state.posts.some(p => p.id === state.edit.id))
     state.edit = {id: '', saving: false, draft: null, caret: null};
@@ -524,7 +530,6 @@ function render(){
   drawTabs();
   drawWho();
   drawWrite();
-  navCount();
 
   const box = $('po-feed'), empty = $('po-empty');
   if (!box) return;
@@ -707,17 +712,14 @@ $('po-feed').addEventListener('error', ev => {
 }, true);
 
 function activated(){
-  if (location.hash.startsWith('#/posts')) { load(false); focusPost(); }
+  if (location.hash.startsWith('#/posts')) { if (renderPending) render(); load(false); focusPost(); }
 }
 window.addEventListener('hashchange', activated);
 window.addEventListener('fomo:view-change', activated);
 
-/* The read used to wait for somebody to open the view, which meant every
-   first visit paid for the whole round trip. It now starts as soon as the
-   ledger has had its turn — Apps Script serves one request at a time, so
-   going earlier than that would only put the ledger in a queue. By the
-   time anybody clicks through, this is usually already in hand. */
-window.addEventListener('fomo:ledger-ready', () => load(false));
+/* Hidden feeds must not queue another sheet read behind the active view.
+   Opening the view paints the saved notes before its first fresh read. */
+window.addEventListener('fomo:ledger-ready', activated);
 
 /* The last answer goes up first, so the view opens on the notes rather
    than on a blank page waiting for the sheet. */

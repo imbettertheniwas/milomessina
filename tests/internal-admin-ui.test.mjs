@@ -114,7 +114,7 @@ test('posts, schedules, campus, and visits use the confirmed admin bridge for bo
       const PEOPLE=()=>bridge().people; const admin=()=>bridge().admin();
       const canManage=p=>!!current() && (admin() || p.who===current().who);
       const state={who:'Jesse',posts:[{id:'other-post',who:'Bijan'}]};
-      const toneOf=()=>'', av=()=>'', filledIn=()=>true;
+      const toneOf=()=>'', av=()=>'', filledIn=()=>true; let requestEpoch=0;
       ${lift(read('posts.js'),'drawWho')}
       ${lift(read('schedules.js'),'drawWhobar')}
       const postCall=async ${lift(read('posts.js'),'call')};

@@ -29,6 +29,7 @@ const FRESH_MS = 10 * 60 * 1000;    // a warm instance re-reads this often
 const STALE_MS = 6 * 60 * 60 * 1000; // past this, an old answer is no answer
 const RETRY_MS = 30 * 1000, MAX_RETRY_MS = 10 * 60 * 1000;
 const MAX_REPOS = 6, MAX_PAGES = 20, MAX_READS = 60;
+const MAX_CONCURRENT_READS = 4;
 
 /* The roster the console ships with. A caller may ask for different
    handles, but only these are cached and only these are read without one:
@@ -58,7 +59,8 @@ function since(now){
   return d.toISOString();
 }
 
-export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.env}={}){
+export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.env,
+  requestTimeoutMs=6000, refreshTimeoutMs=14000}={}){
   let latest = null, pending = null, retryAt = 0, failures = 0, lastError = 'unknown';
 
   function headers(){
@@ -67,20 +69,46 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
     return h;
   }
 
-  async function gh(url, budget){
-    if (budget.reads >= MAX_READS) { budget.truncated = true; return null; }
-    budget.reads++;
-    const res = await fetchImpl(url, {headers: headers()});
-    if (res.status === 403 || res.status === 429) {
-      const reset = Number(res.headers.get('x-ratelimit-reset')) * 1000;
-      const err = new Error('rate-limited');
-      err.resetAt = reset || 0;
-      throw err;
+  async function readUpstream(url, requestHeaders, budget, consume){
+    // Share one small concurrency limit across people, repositories and profile
+    // calendars. Keep a slot until the response body has also finished reading.
+    if (budget.active >= MAX_CONCURRENT_READS)
+      await new Promise(resolve => budget.queue.push(resolve));
+    else budget.active++;
+    try {
+      if (budget.signal.aborted) throw new Error('GitHub read timed out');
+      if (budget.rateLimited) throw budget.rateLimited;
+      if (budget.reads >= MAX_READS) { budget.truncated = true; return null; }
+      budget.reads++;
+      const signal = AbortSignal.any([budget.signal, AbortSignal.timeout(requestTimeoutMs)]);
+      try {
+        const res = await fetchImpl(url, {headers: requestHeaders, signal});
+        return await consume(res);
+      } catch (error) {
+        if (signal.aborted) throw new Error('GitHub read timed out');
+        throw error;
+      }
+    } finally {
+      const next = budget.queue.shift();
+      if (next) next();
+      else budget.active--;
     }
-    if (res.status === 404) return null;         // no such user, or an empty repo
-    if (res.status === 409) return null;         // an empty repository
-    if (!res.ok) throw new Error('GitHub answered ' + res.status);
-    return res.json();
+  }
+
+  function gh(url, budget){
+    return readUpstream(url, headers(), budget, async res => {
+      if (res.status === 403 || res.status === 429) {
+        const reset = Number(res.headers.get('x-ratelimit-reset')) * 1000;
+        const err = new Error('rate-limited');
+        err.resetAt = reset || 0;
+        budget.rateLimited = err;
+        await res.body?.cancel();
+        throw err;
+      }
+      if (res.status === 404 || res.status === 409) { await res.body?.cancel(); return null; }
+      if (!res.ok) { await res.body?.cancel(); throw new Error('GitHub answered ' + res.status); }
+      return res.json();
+    });
   }
 
   /* The commit scan below only sees public repositories, so somebody whose
@@ -104,13 +132,14 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
     let answered = false;
     for (const login of logins) {
       if (budget.reads >= MAX_READS) break;
-      budget.reads++;
       let html;
       try {
-        const res = await fetchImpl('https://github.com/users/' + encodeURIComponent(login) + '/contributions',
-                                    {headers:{'User-Agent':'fomo-bootcamp-console', 'Accept':'text/html'}});
-        if (!res.ok) continue;
-        html = await res.text();
+        html = await readUpstream('https://github.com/users/' + encodeURIComponent(login) + '/contributions',
+          {'User-Agent':'fomo-bootcamp-console', 'Accept':'text/html'}, budget, async res => {
+            if (!res.ok) { await res.body?.cancel(); return null; }
+            return res.text();
+          });
+        if (!html) continue;
       } catch { continue; }
 
       const dateOf = {};
@@ -155,7 +184,7 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
     }
     const live = repos.slice(0, MAX_REPOS);
     let truncated = repos.length > live.length;
-    for (const repo of live) {
+    const scans = await Promise.allSettled(live.map(async repo => {
       for (let page = 1; page <= MAX_PAGES; page++) {
         const list = await gh('https://api.github.com/repos/' + repo.full_name + '/commits?since=' +
                               encodeURIComponent(from) + '&per_page=100&page=' + page, budget);
@@ -177,8 +206,10 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
         if (list.length < 100) break;
         if (page === MAX_PAGES || budget.reads >= MAX_READS) truncated = true;
       }
-      if (budget.reads >= MAX_READS) { truncated = true; break; }
-    }
+      if (budget.reads >= MAX_READS) truncated = true;
+    }));
+    const failed = scans.find(result => result.status === 'rejected');
+    if (failed) throw failed.reason;
     /* the logins these counts were actually read from, so a browser whose
        "Manage accounts" names differ can tell and read those itself */
     /* counted separately and never merged into days: see readCalendar */
@@ -190,8 +221,9 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
   async function refresh(){
     pending ??= (async () => {
       const from = since(now());
-      const people = {}, budget = {reads: 0, truncated: false};
-      for (const [who, logins] of Object.entries(ROSTER)) {
+      const people = {}, budget = {reads: 0, truncated: false, active: 0, queue: [],
+        signal: AbortSignal.timeout(refreshTimeoutMs)};
+      await Promise.all(Object.entries(ROSTER).map(async ([who, logins]) => {
         try { people[who] = await readPerson(logins, from, budget); }
         catch (e) {
           people[who] = {logins, error: e.message === 'rate-limited'
@@ -199,7 +231,7 @@ export function createCommitHandler({fetchImpl=fetch, now=Date.now, env=process.
                 ? ' — it clears at ' + new Date(e.resetAt).toISOString().slice(11,16) + ' UTC' : '')
             : e.message};
         }
-      }
+      }));
       const answered = Object.values(people).some(p => !p.error);
       if (!answered) throw new Error(Object.values(people)[0]?.error || 'GitHub did not answer');
       const snapshot = {since: from, weeks: WEEKS, people,

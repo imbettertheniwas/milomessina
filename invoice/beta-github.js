@@ -3,6 +3,7 @@
 const FRESH_MS = 10 * 60 * 1000;
 const MAX_REPOS = 6, MAX_PAGES = 20, MAX_DETAILS = 40;
 const cache = new Map();
+let sharedSnapshot = null, sharedSnapshotAt = 0;
 const day = value => new Date(value).toISOString().slice(0, 10);
 const validDay = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   Number.isFinite(Date.parse(value)) && day(value) === value;
@@ -139,24 +140,38 @@ async function directRead(state, context) {
 // Calls are sequential and share a request allowance across the whole batch.
 // The cache holds public counts only and never persists member data to disk.
 export async function loadBetaGithub(members, {startDate, endDate, fetchImpl = globalThis.fetch,
-  onProgress, signal, now = Date.now, maxReads = 40} = {}) {
+  onProgress, signal, now = Date.now, maxReads = 40, force = false} = {}) {
   const states = betaGithubInitial(members, {startDate, endDate, now});
+  const cacheKey = state => [state.username.toLowerCase(), state.startDate, state.throughDate].join('|');
+  const liveFetch = fetchImpl === globalThis.fetch;
+  // A ready in-memory result should not wait for a network request before
+  // it can be used. In particular, selecting/searching the manager roster
+  // often asks for the same public activity again.
+  if (liveFetch && !force) states.forEach((state, index) => {
+    const cached = state.status === 'loading' && cache.get(cacheKey(state));
+    if (cached && now() - Date.parse(cached.updatedAt) < FRESH_MS) states[index] = {...state, ...cached};
+  });
   const publish = () => { if (typeof onProgress === 'function') onProgress(states.slice()); };
   publish();
   if (!states.some(state => state.status === 'loading')) return states;
-  let snapshot = null;
-  try {
-    const response = await fetchImpl('/api/commits', {cache: 'no-store', signal});
-    if (response.ok) snapshot = await response.json();
-  } catch (error) { if (error.name === 'AbortError') throw error; }
+  let snapshot = liveFetch && !force && now() - sharedSnapshotAt < 60000 ? sharedSnapshot : null;
+  if (!snapshot) {
+    try {
+      const response = await fetchImpl('/api/commits', {cache: 'no-store', signal});
+      if (response.ok) {
+        snapshot = await response.json();
+        if (liveFetch && snapshot) { sharedSnapshot = snapshot; sharedSnapshotAt = now(); }
+      }
+    } catch (error) { if (error.name === 'AbortError') throw error; }
+  }
   const budget = {left: Math.max(1, Math.min(48, Math.floor(maxReads) || 40))};
   for (let i = 0; i < states.length; i++) {
     const state = states[i];
     if (state.status !== 'loading') continue;
-    const key = [state.username.toLowerCase(), state.startDate, state.throughDate].join('|');
+    const key = cacheKey(state);
     // Injected fetchers are isolated so tests and local previews never reuse
     // a real response, or make a mock response appear to be live.
-    const cached = fetchImpl === globalThis.fetch && cache.get(key);
+    const cached = liveFetch && !force && cache.get(key);
     try {
       if (cached && now() - Date.parse(cached.updatedAt) < FRESH_MS) {
         states[i] = {...state, ...cached};

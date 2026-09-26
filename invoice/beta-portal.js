@@ -12,6 +12,7 @@ const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
 let token = '', workspace = null, busy = false, generation = 0, invite = '', inviteBatch = null;
 let recapDraft = null, githubStates = [], githubKey = '', githubGeneration = 0, accessCapability = '', showReturnLink = false, attendanceDay = '';
+let githubController = null, githubAt = 0;
 let joinStep = 0, gateBusy = false, websiteDraft = null;
 let scheduleDrafts = {join: null, own: null}, scheduleRead = 0, scheduleDirty = false;
 const WEBSITE_ERROR = 'Enter a public website such as yourname.com or https://yourname.com, up to 300 characters.';
@@ -245,6 +246,7 @@ function validateJoinDetails() {
 }
 function showGate(message = '', join = false, forget = false) {
   generation++; githubGeneration++;
+  githubController?.abort();githubController=null;githubAt=0;
   token = ''; workspace = null; recapDraft = null; websiteDraft = null; scheduleDrafts = {join: null, own: null}; scheduleDirty = false; scheduleRead++; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
   if (forget) forgetIdentity();
   $('beta-workspace').hidden = true; $('beta-gate').hidden = false;
@@ -379,13 +381,19 @@ function render() {
 function refreshGithub(force = false) {
   if (!allowed('github')) return;
   const key = JSON.stringify([workspace.peers.map(peer => [peer.id, peer.github]), workspace.period.startDate, workspace.period.endDate]);
-  if (!force && githubKey === key) return;
+  if (!force && githubKey === key && (githubController || Date.now() - githubAt < 600000)) return;
+  githubController?.abort();
+  const controller = new AbortController();githubController=controller;
+  const timeout = setTimeout(() => controller.abort(), 20000);
   githubKey = key;
   const requestGeneration = ++githubGeneration;
   const options = {startDate: workspace.period.startDate, endDate: workspace.period.endDate};
   const showStates = states => { if (requestGeneration !== githubGeneration || !allowed('github')) return; githubStates = states; if ($('beta-github-cards')) $('beta-github-cards').innerHTML = githubCards(); };
   showStates(betaGithubInitial(workspace.peers, options));
-  loadBetaGithub(workspace.peers, {...options, onProgress: showStates}).then(showStates).catch(() => showStates(githubStates.map(state => state.status === 'loading' ? {...state, status: 'error', total: null} : state)));
+  loadBetaGithub(workspace.peers, {...options, force, signal: controller.signal, onProgress: showStates})
+    .then(states => { if (requestGeneration === githubGeneration) githubAt=Date.now(); showStates(states); })
+    .catch(() => showStates(githubStates.map(state => state.status === 'loading' ? {...state, status: 'error', total: null} : state)))
+    .finally(() => { clearTimeout(timeout); if (githubController === controller) githubController=null; });
 }
 async function fetchWorkspace(requestGeneration, preserveEditor = false) {
   const out = await betaCall('list', {}, requestGeneration);
@@ -393,7 +401,7 @@ async function fetchWorkspace(requestGeneration, preserveEditor = false) {
   const previousMember = workspace?.member.id, previousBatch = workspace?.batch.id;
   workspace = normalize(out);
   if (!allowed('recap')) recapDraft = null;
-  if (!allowed('github')) { githubGeneration++; githubStates = []; githubKey = ''; }
+  if (!allowed('github')) { githubGeneration++; githubController?.abort(); githubController=null; githubStates = []; githubKey = ''; githubAt=0; }
   // An automatic access check must leave a focused editor and its cursor intact.
   // Changed identity, access, or a failed session still clears the old view.
   if (previousMember !== workspace.member.id) scheduleDirty = false;

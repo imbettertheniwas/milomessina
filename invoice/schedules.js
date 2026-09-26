@@ -288,6 +288,7 @@ async function call(action, payload){
   if (!cfg.endpoint) { const e = new Error('no endpoint'); e.old = true; throw e; }
   const res = await fetch(cfg.endpoint, {
     method: 'POST',
+    signal: action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
     body: JSON.stringify(Object.assign({_api:'schedules', action, _key:cfg.key || '',
       _session: cfg.session ? cfg.session() : ''}, payload || {}))
   });
@@ -795,11 +796,15 @@ const av = p => '<span class="av" aria-hidden="true" style="background:var(' + t
 
 function hoursNow(){ return state.wide ? HOURS.wide : HOURS.day; }
 
+let renderPending = true;
 function render(){
+  renderPending = true;
+  if (!location.hash.startsWith('#/schedules')) return;
+  renderPending = false;
   drawTabs();
-  drawBoard();
-  drawMine();
-  drawAll();
+  if (state.tab === 'board') drawBoard();
+  else if (state.tab === 'mine') drawMine();
+  else drawAll();
   drawAgg();
 }
 
@@ -1298,7 +1303,7 @@ const LOCAL_SAY = 'The schedules are not shared yet — this browser is keeping 
   'this page moves itself over next time it loads.';
 
 async function load(force){
-  if (state.busy || (state.loaded && !force)) return;
+  if (!current() || state.busy || (state.loaded && !force)) return;
   state.busy = true;
   message(state.loaded ? 'Re-reading the schedules…' : 'Reading the schedules…');
   try {
@@ -1352,7 +1357,7 @@ $('sc-tabs').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-sc]');
   if (!b) return;
   state.tab = b.getAttribute('data-sc');
-  drawTabs();
+  render();
 });
 
 $('sc-refresh').addEventListener('click', () => load(true));
@@ -1515,15 +1520,15 @@ $('sc-paste-go').addEventListener('click', async () => {
 
 function activated(){
   if (!location.hash.startsWith('#/schedules')) return;
+  if (renderPending) render();
   load(false);
 }
 window.addEventListener('hashchange', activated);
 window.addEventListener('fomo:view-change', activated);
 
-/* Same reasoning as the week notes: Apps Script serves one request at a
-   time, so this goes after the ledger has had its turn rather than racing
-   it, and by the time anybody clicks through it is usually in hand. */
-window.addEventListener('fomo:ledger-ready', () => load(false));
+/* Let the active screen use the sheet first; hidden schedules can wait
+   until they are opened, when the saved answer is already available. */
+window.addEventListener('fomo:ledger-ready', activated);
 
 window.addEventListener('fomo:identity', () => {
   const me = current();

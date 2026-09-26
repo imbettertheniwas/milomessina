@@ -417,8 +417,8 @@ function betaWrite(name,columns,record) {
   else sheet.appendRow(values);
 }
 function betaMemberPermissions(member) {return BETA_PERMISSIONS.slice();}
-function betaPublicMember(member,manager) {
-  var actualBatch=betaFindBatch(member),period=betaMemberPeriod(member);
+function betaPublicMember(member,manager,batches) {
+  var actualBatch=betaFindBatch(member,batches),period=betaMemberPeriod(member);
   var out={id:member.id,name:member.name,email:member.email,phone:String(member.phone||''),batch:actualBatch?actualBatch.name:member.batch,batchId:member.batchId,github:member.github,status:member.status,
     permissions:betaMemberPermissions(member),createdAt:member.createdAt,updatedAt:member.updatedAt,startDate:period.startDate,endDate:period.endDate,website:betaPublicWebsite(member.website)};
   if(manager)out.notes=member.notes;
@@ -468,12 +468,12 @@ function betaActive(value) {return value===true || value==='true';}
 function betaPublicBatch(batch) {
   return {id:batch.id,name:batch.name,startDate:batch.startDate,endDate:batch.endDate,active:betaActive(batch.active),createdAt:batch.createdAt,updatedAt:batch.updatedAt};
 }
-function betaFindBatch(member) {
+function betaFindBatch(member,batches) {
   if(!member || !member.batchId)return null;
-  return betaRead('internal_beta_batches',BETA_BATCHES).filter(function(b){return b.id===member.batchId;})[0]||null;
+  return (batches || betaRead('internal_beta_batches',BETA_BATCHES)).filter(function(b){return b.id===member.batchId;})[0]||null;
 }
-function betaPrimaryBatch() {
-  var batches=betaRead('internal_beta_batches',BETA_BATCHES);
+function betaPrimaryBatch(batches) {
+  batches=batches || betaRead('internal_beta_batches',BETA_BATCHES);
   var selected=PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_GROUP_ID');
   if(selected) return batches.filter(function(b){return b.id===selected;})[0]||null;
   return batches[0]||null;
@@ -838,9 +838,10 @@ function betaDeleteMember(body) {
   betaTable('internal_beta_members',BETA_MEMBERS,false).deleteRow(member._row);
   return {deletedMemberId:id,alreadyDeleted:false};
 }
-function betaGroupData(manager,member) {
-  var members=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES),batch=member?betaFindBatch(member):null;
-  var group=betaPrimaryBatch();
+function betaGroupData(manager,member,members,batches) {
+  members=members || betaRead('internal_beta_members',BETA_MEMBERS);
+  batches=batches || betaRead('internal_beta_batches',BETA_BATCHES);
+  var batch=member?betaFindBatch(member,batches):null,group=betaPrimaryBatch(batches);
   var peers=members.filter(function(m){return manager || member && member.batchId && m.batchId===member.batchId;});
   var ids=peers.map(function(m){return m.id;});
   return {group:group?betaPublicBatch(group):null,batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
@@ -856,7 +857,7 @@ function betaApi(body) {
   var action=String(body.action||'list'), configured=betaConfigured();
   if(!configured && action!=='list' && !(manager && action==='batchadd'))return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
   if(!manager && ['list','attendance','attendanceremove','recap','memberprofile','schedulesave','schedulefile'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
-  var members=betaRead('internal_beta_members',BETA_MEMBERS), target, stamp=new Date().toISOString(), extra={};
+  var target, stamp=new Date().toISOString(), extra={};
   try {
     if(manager && action==='list')betaEnsureGroup(operator);
     if(action==='schedulefile')return betaScheduleFile(body,manager,member);
@@ -878,6 +879,7 @@ function betaApi(body) {
     } else if(action==='memberdelete') {
       extra=betaDeleteMember(body);
     } else if(action==='memberupdate' || action==='rotatecode') {
+      var members=betaRead('internal_beta_members',BETA_MEMBERS);
       target=members.filter(function(m){return m.id===String(body.id);})[0];
       if(!target)throw new Error('Beta participant not found.');
       var revoke=action==='rotatecode';
@@ -899,10 +901,13 @@ function betaApi(body) {
     } else if(action!=='list')throw new Error('Unknown beta action.');
   } catch(e) {return reply(false,String(e.message||e),{code:'INVALID'});}
   var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
-  var visibleMembers=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(m){return manager || m.id===member.id;});
+  // Read the final rows once for this response. Resolving every person's
+  // batch from the sheet made a manager page perform one remote read per intern.
+  var finalMembers=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES);
+  var visibleMembers=finalMembers.filter(function(m){return manager || m.id===member.id;});
   var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,betaSchedules:true,permissions:permissions,
-    members:visibleMembers.map(function(m){return betaPublicMember(m,manager);}),member:member?betaPublicMember(member,false):null};
-  var group=betaGroupData(manager,member);
+    members:visibleMembers.map(function(m){return betaPublicMember(m,manager,batches);}),member:member?betaPublicMember(member,false,batches):null};
+  var group=betaGroupData(manager,member,finalMembers,batches);
   Object.keys(group).forEach(function(k){result[k]=group[k];});
   Object.keys(extra).forEach(function(k){result[k]=extra[k];});
   return reply(true,null,result);
@@ -1332,7 +1337,11 @@ function invoiceApi(body) {
      open /invoice in the morning and one of them has to be the one that
      writes September's Cursor bill. A rule that cannot be turned into a
      line is skipped rather than allowed to take the ledger down with it. */
-  if (action !== 'moneyundo' && action !== 'subsave') { try { subsRoll(sh); } catch (rollErr) {} }
+  var responseSubs = subRead(subSheet());
+  if (action !== 'moneyundo' && action !== 'subsave') {
+    try { subsRoll(sh, responseSubs); }
+    catch (rollErr) { responseSubs = subRead(subSheet()); }
+  }
   if (trackMoney) {
     try { moneyRemember(beforeMoney, moneySnapshot(), internalActor(body), action); }
     catch (historyError) {
@@ -1353,7 +1362,7 @@ function invoiceApi(body) {
     profiles: profileRead(),
     rows: invoiceRead(sh).map(invoicePublic),
     days: dayRead(daySheet()).map(dayPublic),
-    subs: subRead(subSheet()).map(subPublic)
+    subs: responseSubs.map(subPublic)
   });
 }
 
@@ -1843,9 +1852,18 @@ function subStep(iso, day) {
 }
 function subPad(n) { return (n < 10 ? '0' : '') + n; }
 
-function subsRoll(insh) {
+/* Unlike appendRow, a bulk range needs enough grid rows before writing. */
+function sheetAppendRows(sh, rows) {
+  if (!rows.length) return;
+  var start = sh.getLastRow() + 1, capacity = sh.getMaxRows();
+  var needed = start + rows.length - 1 - capacity;
+  if (needed > 0) sh.insertRowsAfter(capacity, needed);
+  sh.getRange(start, 1, rows.length, rows[0].length).setValues(rows);
+}
+
+function subsRoll(insh, records) {
   var sh = subSheet();
-  var all = subRead(sh);
+  var all = records || subRead(sh);
   if (!all.length) return 0;
 
   var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
@@ -1856,7 +1874,7 @@ function subsRoll(insh) {
     var s = all[i];
     if (s.active !== 'yes') continue;
 
-    var next = s.next, wrote = '', guard = 0;
+    var next = s.next, wrote = '', guard = 0, pending = [];
     while (/^\d{4}-\d{2}-\d{2}$/.test(next) && next <= today && guard++ < SUB_MAX_CATCHUP) {
       var line = invoiceClean({
         who: s.who, what: s.what, category: s.category, amount: s.amount,
@@ -1866,7 +1884,7 @@ function subsRoll(insh) {
          will not take stops writing rather than throwing — it stays on the
          subs tab, with its `next` where it was, saying which day it stuck on */
       if (line.error) break;
-      insh.appendRow(INVOICE_COLS.map(function (c) {
+      pending.push(INVOICE_COLS.map(function (c) {
         return line.row[c] === undefined ? '' : line.row[c];
       }));
       wrote = next;
@@ -1875,8 +1893,13 @@ function subsRoll(insh) {
     }
 
     if (wrote) {
+      // Catch-up can create twelve months at once. Write those rows in one
+      // call while retaining the existing lock and per-rule billing cursor.
+      sheetAppendRows(insh, pending);
       sh.getRange(s._row, nextCol).setValue(next);
       sh.getRange(s._row, lastCol).setValue(wrote);
+      s.next = next;
+      s.last = wrote;
     }
   }
   return made;
@@ -3321,13 +3344,12 @@ function schedImport(b) {
     if (String(all[j].source) === source || schedKind(all[j].kind) === 'none') sh.deleteRow(all[j]._row);
   }
   var stamp = campusStamp();
-  for (var k = 0; k < clean.length; k++) {
-    sh.appendRow([
-      Utilities.getUuid().slice(0, 8), stamp, clean[k].who, clean[k].label,
-      clean[k].kind, clean[k].days, clean[k].start, clean[k].end, clean[k].source,
-      clean[k].from, clean[k].to, clean[k].week
-    ]);
-  }
+  var rows = clean.map(function(block) {
+    return [Utilities.getUuid().slice(0, 8), stamp, block.who, block.label,
+      block.kind, block.days, block.start, block.end, block.source,
+      block.from, block.to, block.week];
+  });
+  sheetAppendRows(sh, rows);
   return null;
 }
 
@@ -3434,10 +3456,11 @@ function internalAdminApi(body) {
   /* Like the ledger, the console answers with everything rather than a
      confirmation: the screen it is drawn on is the one thing that must not
      be allowed to disagree with the sheet. */
+  var tables = adminSnapshot();
   var out = {
     roster: rosterRead().map(rosterPublic),
-    counts: adminCounts(),
-    audit: adminAudit(),
+    counts: adminCounts(tables),
+    audit: adminAudit(tables),
     log: adminLogRead()
   };
   /* One person's rows in one table, asked for on the way to deleting one of
@@ -3447,7 +3470,7 @@ function internalAdminApi(body) {
   if (action === 'rows') {
     out.table = String(body.table || '');
     out.who = String(body.who || '');
-    out.rows = adminRows(out.table, out.who);
+    out.rows = adminRows(out.table, out.who, tables);
   }
   return reply(true, null, out);
 }
@@ -3618,11 +3641,11 @@ function adminRowKey(cols, r) {
    its own deletion will have to quote back and a line of plain English
    saying what it is. The line matters: a console that offers to delete
    `a3f19c2b` is a console nobody should press a button on. */
-function adminRows(name, who) {
+function adminRows(name, who, tables) {
   var t = adminTable(name);
   if (!t) return [];
   who = String(who || '');
-  return t.read(t.sh).filter(function (r) {
+  return (tables ? tables[name] : t.read(t.sh)).filter(function (r) {
     return !who || String(r.who) === who || (name === 'invoice' && invoiceLogger(r) === who);
   }).map(function (r) {
     return { id: String(r.id), who: String(r.who || ''), key: adminRowKey(t.cols, r), line: adminLine(name, r) };
@@ -3687,7 +3710,18 @@ function adminOwed(who) {
 /* How much of the sheet each name is actually holding, so "remove Jesse"
    is a decision made in front of the four hundred rows it touches rather
    than blind. */
-function adminCounts() {
+// Counts, audit findings and selected rows describe the same post-write
+// snapshot; do not fetch all six sheets again for each view of those rows.
+function adminSnapshot() {
+  var tables = {};
+  ADMIN_TABLES.forEach(function(name) {
+    var table = adminTable(name);
+    tables[name] = table.read(table.sh);
+  });
+  return tables;
+}
+function adminCounts(tables) {
+  tables = tables || adminSnapshot();
   var out = {};
   function bump(who, key) {
     var name = String(who || '');
@@ -3695,18 +3729,18 @@ function adminCounts() {
     if (!out[name]) out[name] = { rows: 0, days: 0, hours: 0, subs: 0, posts: 0, schedules: 0, owed: 0 };
     out[name][key]++;
   }
-  invoiceRead(invoiceSheet()).forEach(function (r) {
+  tables.invoice.forEach(function (r) {
     bump(r.who, 'rows');
     var name = String(r.who || '');
     if (name && out[name] && invoiceSettled(r.who, r.status) !== 'reimbursed') {
       out[name].owed = Math.round((out[name].owed + (Number(r.amount) || 0)) * 100) / 100;
     }
   });
-  dayRead(daySheet()).forEach(function (r) { bump(r.who, 'days'); });
-  shiftRead(shiftSheet()).forEach(function (r) { bump(r.who, 'hours'); });
-  subRead(subSheet()).forEach(function (r) { bump(r.who, 'subs'); });
-  postRead(postSheet()).forEach(function (r) { bump(r.who, 'posts'); });
-  schedRead(schedSheet()).forEach(function (r) { bump(r.who, 'schedules'); });
+  tables.days.forEach(function (r) { bump(r.who, 'days'); });
+  tables.hours.forEach(function (r) { bump(r.who, 'hours'); });
+  tables.subs.forEach(function (r) { bump(r.who, 'subs'); });
+  tables.posts.forEach(function (r) { bump(r.who, 'posts'); });
+  tables.schedules.forEach(function (r) { bump(r.who, 'schedules'); });
   return out;
 }
 
@@ -3714,7 +3748,8 @@ function adminCounts() {
    purpose: an audit that fixed what it found would be a script rewriting
    the ledger on its own, and the point of the console is that a person
    decided. Each finding names the row so it can be gone to. */
-function adminAudit() {
+function adminAudit(tables) {
+  tables = tables || adminSnapshot();
   var known = rosterKnown(), out = [];
   function flag(kind, what, row, table) {
     if (out.length >= 200) return;
@@ -3723,7 +3758,7 @@ function adminAudit() {
     out.push({ kind: kind, what: what, id: String(row.id || ''), table: table || '', key: adminRowKey(cols, row) });
   }
 
-  invoiceRead(invoiceSheet()).forEach(function (r) {
+  tables.invoice.forEach(function (r) {
     var who = String(r.who || '');
     if (who && known.indexOf(who) === -1) flag('stranger', 'a spend logged against ' + who + ', who is not on the roster', r, 'invoice');
     if (invoiceSettled(r.who, r.status) === 'reimbursed' && String(r.status) !== 'reimbursed' && who !== CARD_PAYER) {
@@ -3734,16 +3769,16 @@ function adminAudit() {
       if (n && known.indexOf(n) === -1 && !isGuestEntry(n)) flag('stranger', 'a spend split with ' + n + ', who is not on the roster', r, 'invoice');
     });
   });
-  dayRead(daySheet()).forEach(function (r) {
+  tables.days.forEach(function (r) {
     if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a day marked for ' + r.who + ', who is not on the roster', r, 'days');
   });
-  postRead(postSheet()).forEach(function (r) {
+  tables.posts.forEach(function (r) {
     if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a post by ' + r.who + ', who is not on the roster', r, 'posts');
   });
-  schedRead(schedSheet()).forEach(function (r) {
+  tables.schedules.forEach(function (r) {
     if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a schedule for ' + r.who + ', who is not on the roster', r, 'schedules');
   });
-  subRead(subSheet()).forEach(function (r) {
+  tables.subs.forEach(function (r) {
     if (known.indexOf(String(r.who || '')) === -1) flag('stranger', 'a monthly rule for ' + r.who + ', who is not on the roster', r, 'subs');
   });
   return out;
@@ -3873,10 +3908,11 @@ function referApi(body) {
      just changed. The console draws totals across both tabs — owed per
      person, paid to date — and a partial answer would leave it adding a
      new row to figures it had computed before the row existed. */
-  referSweep();
+  var referrers = referrerRead(), referrals = referralRead();
+  if (referSweep(referrals, referrers)) referrals = referralRead();
   return reply(true, null, {
-    referrers: referrerRead(),
-    referrals: referralRead(),
+    referrers: referrers,
+    referrals: referrals,
     tiers: REFER_TIERS,
     doors: REFER_DOORS
   });
@@ -3996,14 +4032,16 @@ function referClaim(body) {
    from. A row deleted by hand in the spreadsheet would let the row
    beneath it be swept twice, which is the one cost of not writing an id
    onto tabs this namespace does not own. */
-function referSweep() {
-  var seen = {}, existing = referralRead(), i;
+function referSweep(existing, held) {
+  var seen = {}, i;
+  existing = existing || referralRead();
   for (i = 0; i < existing.length; i++) {
     var src = String(existing[i]['source'] || '');
     if (src) seen[src] = true;
   }
 
-  var codes = {}, held = referrerRead();
+  var codes = {};
+  held = held || referrerRead();
   for (i = 0; i < held.length; i++) codes[String(held[i]['code'])] = held[i];
 
   var fresh = [], ss = campusBook();
@@ -4153,6 +4191,14 @@ function visitsApi(body) {
       cache.put(cacheKey,JSON.stringify(bucket),Math.max(1,Math.ceil((bucket.until-now)/1000)));
       return visitReply(true,{allowed:true});
     }
+    // Availability lives in Script Properties. Opening it should not read
+    // every guest request or create a visit sheet just to return seven days.
+    if(body.action==='settings')return visitReply(true,{availability:visitAvailability()});
+    if(body.action==='saveSettings'){
+      if(!Array.isArray(body.availability) || body.availability.length!==7)return visitReply(false,null,'INVALID');
+      PropertiesService.getScriptProperties().setProperty('VISITS_AVAILABILITY',JSON.stringify(body.availability));
+      return visitReply(true,{availability:visitAvailability()});
+    }
     var book=visitBook(),sheet=book.getSheetByName('visit_requests');
     if(!sheet){
       sheet=book.insertSheet('visit_requests');
@@ -4172,12 +4218,6 @@ function visitsApi(body) {
       });
       result.version=Number(result.version);return result;
     }).filter(function(r){return VISIT_ID.test(String(r.id));});
-    if(body.action==='settings')return visitReply(true,{availability:visitAvailability()});
-    if(body.action==='saveSettings'){
-      if(!Array.isArray(body.availability) || body.availability.length!==7)return visitReply(false,null,'INVALID');
-      PropertiesService.getScriptProperties().setProperty('VISITS_AVAILABILITY',JSON.stringify(body.availability));
-      return visitReply(true,{availability:visitAvailability()});
-    }
     if(body.action==='list')return visitReply(true,{requests:requests.reverse()});
     if(body.action==='submit'){
       var r=body.request;

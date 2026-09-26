@@ -2019,7 +2019,10 @@ var filters = {who:"", cat:"", status:"", q:"", date:""};
 /* ---------- helpers ---------- */
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-function money(n){ return "$" + (Math.round((Number(n)||0)*100)/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function money(n){
+  if (!money.formatter) money.formatter = new Intl.NumberFormat("en-US", {minimumFractionDigits:2,maximumFractionDigits:2});
+  return "$" + money.formatter.format(Math.round((Number(n)||0)*100)/100);
+}
 function shortMoney(n){ n = Math.round(Number(n)||0); return n >= 1000 ? "$" + (n/1000).toFixed(1) + "k" : "$" + n; }
 function today(){ var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
 function niceDate(iso){
@@ -2440,15 +2443,31 @@ function api(action, payload){
    every caller stays unchanged, and only once: a Response body can be read
    one time, and a second `list` must go and ask again. */
 var listAhead = null;
+var sheetListFlight = null, sheetWriteVersion = 0, lastSheetData = "";
 
+/* Share concurrent reads; a read started before a write must never replace
+   the response to that write, even if its network reply arrives later. */
 function apiSheet(action, payload){
   var denied = requirePermission(action, payload); if (denied) return denied;
+  var reading = action === "list";
+  if (reading && sheetListFlight) return sheetListFlight;
+  if (!reading) { sheetWriteVersion++; sheetListFlight = null; lastSheetData = ""; }
+  var request = apiSheetRequest(action, payload, sheetWriteVersion);
+  if (reading) {
+    sheetListFlight = request;
+    var clear = function(){ if (sheetListFlight === request) sheetListFlight = null; };
+    request.then(clear, clear);
+  }
+  return request;
+}
+
+function apiSheetRequest(action, payload, revision){
   var knownMoneyIds = moneyHistory.map(function(h){return h.id;});
   var body = {_api:"invoice", action:action, _key:PASSCODE, _session:identity ? identity.token : ""};
   if (payload) Object.keys(payload).forEach(function(k){ body[k] = payload[k]; });
   var sent;
   if (action === "list" && listAhead) { sent = listAhead; listAhead = null; }
-  else sent = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body)});
+  else sent = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body), signal:action === "list" ? AbortSignal.timeout(25000) : undefined});
   return sent.then(function(res){
     if (!res.ok) throw new Error("the sheet answered HTTP " + res.status);
     return res.text();
@@ -2499,6 +2518,14 @@ function apiSheet(action, payload){
       behind.stale = true;
       throw behind;
     }
+    if (action === "list" && revision !== sheetWriteVersion) return out;
+    // Reads launched while this write was pending may still carry its old data.
+    if (action !== "list") { sheetWriteVersion++; sheetListFlight = null; }
+    var dataKey = JSON.stringify([out.rows, out.days, out.subs, out.profiles, out.moneyHistory]);
+    if (action === "list" && lastSheetData === dataKey) {
+      setLive(true, "shared · synced " + clockNow()); hideBanner();
+      return out;
+    }
     {
       moneyHistory = out.moneyHistory || [];
       profiles = out.profiles || [];
@@ -2544,6 +2571,7 @@ function apiSheet(action, payload){
       /* Written on the way out of every read, so the next load has a full
          board to wait behind rather than an empty one. */
       saveSeen();
+      lastSheetData = dataKey;
     }
     return out;
   });
@@ -3704,9 +3732,9 @@ function visible(){
 }
 
 function render(){
-  renderClock();
-  renderShifts();
-  renderSubs();
+  if (view === "attendance") { renderClock(); renderShifts(); }
+  if (view === "subs") renderSubs();
+  if (["ledger", "settle", "reporting"].indexOf(view) === -1) return;
   var list = visible();
   var total = 0, owed = 0, paid = 0, byCat = {}, byPerson = {};
   PAYERS.forEach(function(p){ byPerson[p] = {owed:0, paid:0, total:0}; });
@@ -3730,6 +3758,7 @@ function render(){
   var catRank = Object.keys(byCat).map(function(k){ return {id:k, v:byCat[k]}; })
     .sort(function(a,b){ return b.v - a.v; });
 
+  if (view === "settle") {
   var pMax = Math.max.apply(null, PAYERS.map(function(p){ return byPerson[p].total; }).concat([1]));
   var pBox = document.getElementById("by-person");
   pBox.innerHTML = "";
@@ -3764,6 +3793,8 @@ function render(){
   document.getElementById("person-scale").lastElementChild.textContent =
     shortMoney(total > 0 ? pMax : 0);
 
+  }
+  if (view === "reporting") {
   /* ---------- who it was spent on ----------
 
      Who fronted a line and who it was for are different questions, and this
@@ -3837,6 +3868,8 @@ function render(){
     document.getElementById("cat-scale").lastElementChild.textContent = shortMoney(catRank[0].v);
   }
 
+  }
+  if (view !== "ledger") return;
   var tb = document.getElementById("tbody");
   tb.innerHTML = list.map(function(r){ return ledgerRow(r); }).join("");
   document.getElementById("empty").hidden = list.length > 0;
@@ -4132,7 +4165,7 @@ var GH_DEFAULTS = {
   "Luchi": "ouchip",
   "Arya": "aryatoufanian"
 };
-var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false, ghReads = 0;
+var logins = {}, ghData = {}, ghErrors = {}, ghAt = 0, ghBusy = false, ghReads = 0, ghFlight = null, ghDeadline = 0;
 
 function dayKey(d){
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -4246,7 +4279,9 @@ function saveGh(){
 }
 
 function ghJson(url){
-  return fetch(url, {headers:{"Accept":"application/vnd.github+json"}}).then(function(res){
+  var remaining = ghDeadline - Date.now();
+  if (remaining <= 0) return Promise.reject(new Error("GitHub took too long. Refresh to try again."));
+  return fetch(url, {headers:{"Accept":"application/vnd.github+json"}, signal:AbortSignal.timeout(Math.min(10000, remaining))}).then(function(res){
     if (res.status === 404) throw new Error(GH_NO_USER);
     if (res.status === 403 || res.status === 429) {
       var reset = Number(res.headers.get("x-ratelimit-reset")) * 1000;
@@ -4380,16 +4415,16 @@ function readOne(p){
 }
 
 function refreshGh(force){
+  if (ghFlight) return ghFlight;
   var names = GH_PEOPLE.filter(function(p){ return logins[p]; });
   if (!names.length) { renderGh(); return Promise.resolve(); }
   if (!force && ghAt && Date.now() - ghAt < GH_FRESH) { renderGh(); return Promise.resolve(); }
-  if (ghBusy) return Promise.resolve();
-
   ghBusy = true;
   ghReads = 0;
+  ghDeadline = Date.now() + 45000;
   document.getElementById("gh-status").textContent = "Counting commits…";
 
-  return fetch(GH_API, {cache:"no-store"}).then(function(res){
+  ghFlight = fetch(GH_API, {cache:"no-store", signal:AbortSignal.timeout(20000)}).then(function(res){
     if (!res.ok) throw new Error("the counter answered HTTP " + res.status);
     return res.json();
   }).then(function(out){
@@ -4414,7 +4449,8 @@ function refreshGh(force){
   }).then(function(){
     ghAt = Date.now(); ghBusy = false;
     saveGh(); renderGh();
-  });
+  }).finally(function(){ ghBusy = false; ghFlight = null; });
+  return ghFlight;
 }
 
 /* ---------- drawing one calendar ---------- */
@@ -4483,6 +4519,7 @@ function legend(){
 }
 
 function renderGh(){
+  if (view !== "commits") return;
   var linked = GH_PEOPLE.filter(function(p){ return logins[p]; });
   var team = {}, byPerson = {}, total = 0, capped = false;
   var today = dayKey(new Date()), start = dayKey(calStart());
@@ -4706,9 +4743,7 @@ var OLD_DEPLOY = "<b>The days aren't shared yet.</b> This browser is keeping its
    knowing. */
 function refreshCard(){
   if (cardLendable() && guestsOk()) return;
-  fetch(ENDPOINT, {method:"GET"}).then(function(res){
-    return res.ok ? res.json() : null;
-  }).then(function(out){
+  gateProbe().then(function(out){
     if (!out) return;
     /* the Other chip is the same question about a later deployment */
     var raised = false;
@@ -4723,10 +4758,7 @@ function refreshCard(){
 }
 
 function probeSheet(){
-  return fetch(ENDPOINT, {method:"GET"}).then(function(res){
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return res.json();
-  }).then(function(out){
+  return gateProbe().then(function(out){
     if (out && out.ok === true && out.ledger === true && out.clock === true) {
       /* A deployment that does not name its roster is, by definition, older
          than the change that added the field — and that change went out
@@ -4788,17 +4820,9 @@ function goSheet(seen){
   }, 30000);
 }
 
-/* Said once, when the ledger has actually been read.
-
-   The other tabs — the week, the campus tables — live behind their own
-   round trips to the same Apps Script, and Apps Script answers one request
-   at a time: doPost takes a script lock. So a page that fired all three at
-   once would not get them in parallel, it would get the ledger queued
-   behind the other two, and the ledger is what the console is opened for.
-
-   They warm up behind this instead. By the time anybody clicks through to
-   one it is usually already in hand, and clicking through to it before
-   then costs no more than it used to. */
+/* Signal that the primary read finished. The overview can now request
+   campus counts; other modules wait until their own view is opened, so
+   hidden sections do not compete for the shared Apps Script lock. */
 function ledgerReady(){
   if (!identity || ledgerReady.said) return;
   ledgerReady.said = true;
@@ -5424,6 +5448,7 @@ function mountChapters(){
     chBoard = Chapters.mount({
       prefix: "ch-",
       root: box,
+      isActive: function(){ return view === "chapters"; },
       onLive: function(ok, txt){ chStatus((ok ? "Live" : "Offline") + " · " + txt); },
       onSource: function(t){ $("ch-hint").textContent = "Read live from " + t + ", not from the sheet."; },
       onCount: function(t){ $("ch-count").textContent = t; }
@@ -5445,7 +5470,7 @@ function mountChapters(){
 }
 
 $("ch-refresh").addEventListener("click", function(){
-  if (chBoard) { chStatus("Re-reading the feed…"); chBoard.reload(); }
+  if (chBoard) { chStatus("Re-reading the feed…"); chBoard.reload(true); }
   else mountChapters();
 });
 
@@ -5458,6 +5483,7 @@ function setView(id, who){
      all come back as no. */
   if ((id === "admin" || id === "portals" || id === "referrals" || id === "beta") && !isOperator()) id = "overview";
   if (id === "person" && !who) id = "overview";
+  var previousView = view;
   if (view !== id || personOf !== who) profileEditing=false;
   view = id; personOf = id === "person" ? who : null; chargeOf = id === "charge" ? who : null;
   [].forEach.call(document.querySelectorAll(".view"), function(s){
@@ -5477,9 +5503,13 @@ function setView(id, who){
   if (location.hash !== hash) { try { history.replaceState(null, "", hash); } catch(e){ location.hash = hash; } }
   var sc = document.querySelector('.view[data-view="' + view + '"] .scroller');
   if (sc) sc.scrollTop = 0;
-  if (view === "chapters") mountChapters();
+  if (view === "chapters") {
+    if (chBoard && previousView !== view) chBoard.reload();
+    else mountChapters();
+  }
   if (view === "admin") adminLoad();
-  paint();
+  render();
+  if (view === "commits") renderGh();
   window.dispatchEvent(new Event("fomo:view-change"));
 }
 
@@ -6416,9 +6446,9 @@ function paintNav(){
 /* ---------- everything, after every change ---------- */
 function paint(){
   paintNav();
-  paintFilterNote();
-  paintLedgerAgg();
-  paintSubsAgg();
+  if (view === "ledger" || view === "reporting") paintFilterNote();
+  if (view === "ledger") paintLedgerAgg();
+  if (view === "subs") paintSubsAgg();
   if (view === "overview")   paintOverview();
   if (view === "settle")     paintSettle();
   if (view === "reporting")  paintReporting();
@@ -6575,14 +6605,18 @@ document.addEventListener("click",function(ev){
 });
 function applyPermissionUi(){
   if (!identity) return;
+  var rowIndex = Object.create(null), dayIndex = Object.create(null), subIndex = Object.create(null);
+  rows.forEach(function(r){ rowIndex[r.id] = r; });
+  days.forEach(function(d){ dayIndex[d.id] = d; });
+  subs.forEach(function(s){ subIndex[s.id] = s; });
   document.querySelectorAll('[data-act]').forEach(function(b){
     var action=b.dataset.act;
-    var allowed=(action==='edit'||action==='del')?canEdit(byId(rows,b.dataset.id)):isAdmin();
+    var allowed=(action==='edit'||action==='del')?canEdit(rowIndex[b.dataset.id]):isAdmin();
     b.hidden=!allowed;
   });
   document.querySelectorAll('[data-settle]').forEach(function(b){b.hidden=!isAdmin();});
-  document.querySelectorAll('[data-shift]').forEach(function(b){b.hidden=!own((byId(days,b.dataset.shift)||{}).who);});
-  document.querySelectorAll('[data-sub]').forEach(function(b){b.hidden=!ownRow(byId(subs,b.dataset.id));});
+  document.querySelectorAll('[data-shift]').forEach(function(b){b.hidden=!own((dayIndex[b.dataset.shift]||{}).who);});
+  document.querySelectorAll('[data-sub]').forEach(function(b){b.hidden=!ownRow(subIndex[b.dataset.id]);});
   /* Arya's chip stays live for everybody: his card is the one anybody may
      put on a line. The rest of this row is still your own name only. */
   document.querySelectorAll('#who .chip').forEach(function(b){b.disabled=!canPay(b.textContent)||!payerOk(b.textContent);});
@@ -6668,7 +6702,7 @@ function open_(){
          instead of two — which on Apps Script, cold, is the difference
          between a few seconds and rather more than a few. Dropped
          unread if the verdict is that there is nothing to move onto. */
-      listAhead = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(
+      listAhead = fetch(ENDPOINT, {method:"POST", signal:AbortSignal.timeout(25000), body:JSON.stringify(
         {_api:"invoice", action:"list", _key:PASSCODE, _session:identity ? identity.token : ""})});
       /* A branch off it rather than a handler on the way through, so the
          answer itself is still there to be read. It does two things: an
@@ -7045,11 +7079,17 @@ $("ad-refresh").addEventListener("click", adminLoad);
    is remembered here rather than fetched twice; and if it never arrives the
    menu keeps the five names already in the markup, which is what it had
    before and is still right on every deployment nobody has touched. */
-var gateFeatures = null;
+var gateFeatures = null, gateFlight = null, gateAt = 0;
 function gateProbe(){
-  if (gateFeatures) return Promise.resolve(gateFeatures);
-  return fetch(ENDPOINT, {signal:AbortSignal.timeout(20000)}).then(function(res){ return res.json(); })
-    .then(function(out){ gateFeatures = out; return out; });
+  if (gateFeatures && Date.now() - gateAt < 60000) return Promise.resolve(gateFeatures);
+  if (gateFlight) return gateFlight;
+  gateFlight = fetch(ENDPOINT, {signal:AbortSignal.timeout(20000)}).then(function(res){
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function(out){ gateFeatures = out; gateAt = Date.now(); gateFlight = null; return out; }, function(error){
+    gateFlight = null; throw error;
+  });
+  return gateFlight;
 }
 function fillGate(out){
   var list = (out && out.payers && out.payers.length) ? out.payers.map(String) : null;

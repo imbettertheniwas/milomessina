@@ -188,7 +188,8 @@ async function callForms(action, payload){
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const body = Object.assign({_api:'forms', action, _key:cfg.key || '',
     _session:cfg.session ? cfg.session() : ''}, payload || {});
-  const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body)});
+  const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body),
+    signal:globalThis.AbortSignal?.timeout?.(25000)});
   if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
   try { out = JSON.parse(await res.text()); } catch (e) {}
@@ -213,6 +214,7 @@ async function callVisits(){
   const cfg = bridge();
   const res = await fetch('/api/visits?action=list', {
     credentials:'same-origin', cache:'no-store',
+    signal:globalThis.AbortSignal?.timeout?.(25000),
     headers: cfg.session && cfg.session() ? {'X-Fomo-Internal-Session':cfg.session()} : {}
   });
   const out = await res.json().catch(() => ({}));
@@ -221,7 +223,7 @@ async function callVisits(){
 }
 
 async function callChapters(){
-  const res = await fetch('/api/campuswars', {cache:'no-store'});
+  const res = await fetch('/api/campuswars', {cache:'no-store', signal:globalThis.AbortSignal?.timeout?.(25000)});
   const out = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(out.error || 'the chapter feed answered HTTP ' + res.status);
   if (!out.chapters) throw new Error('the feed answered, but without any chapters in it');
@@ -234,11 +236,13 @@ async function callChapters(){
    which no count would ever show. One HEAD each, same origin, on the
    first open and again on Refresh. */
 async function probe(p){
+  if (state.probe[p.id]?.state === 'checking') return;
   state.probe[p.id] = {state:'checking'};
+  const signal = globalThis.AbortSignal?.timeout?.(15000);
   try {
-    let res = await fetch(p.path, {method:'HEAD', cache:'no-store'});
+    let res = await fetch(p.path, {method:'HEAD', cache:'no-store', signal});
     /* Not every host answers HEAD on a static page; a GET settles it. */
-    if (res.status === 405 || res.status === 501) res = await fetch(p.path, {cache:'no-store'});
+    if (res.status === 405 || res.status === 501) res = await fetch(p.path, {cache:'no-store', signal});
     state.probe[p.id] = {state: res.ok ? 'up' : 'down', status: res.status};
   } catch (e) {
     state.probe[p.id] = {state:'down', status:0};
@@ -318,6 +322,11 @@ async function loadIndex(force){
   if (state.busy || (state.index && !force)) return;
   state.busy = true;
   note(state.index ? 'Re-reading the sheet…' : 'Reading the form tabs…');
+  /* These independent reads need no sheet answer. Start them together so
+     the public-page checks and API counts do not pay its latency first. */
+  PORTALS.filter(p => p.reads.kind === 'visits' || p.reads.kind === 'chapters')
+    .forEach(p => pull(p, force));
+  PORTALS.forEach(probe);
   try {
     const out = await callForms('index');
     state.index = {};
@@ -329,12 +338,6 @@ async function loadIndex(force){
   } finally {
     state.busy = false;
   }
-  /* The two API-backed portals are counted by reading them, which is the
-     only way to count them — there is no cheaper question to ask either
-     endpoint. They are small and it happens once. */
-  PORTALS.filter(p => p.reads.kind === 'visits' || p.reads.kind === 'chapters')
-    .forEach(p => pull(p, force));
-  PORTALS.forEach(probe);
   /* The index can be read while a portal is open — a link straight to one
      asks for it too — so it draws the screen it is about and leaves the
      other one alone. */

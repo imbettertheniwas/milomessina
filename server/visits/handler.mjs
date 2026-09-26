@@ -5,6 +5,7 @@ import {validateRequest,normalizeAvailability} from './validation.mjs';
 const INTERNAL_SESSION_URL = 'https://script.google.com/macros/s/AKfycbyeQIRm2DezB1fYi0B03pnbuorco5eQAAJtxioVClgB4xyMVWGlvVmAFQqFdwbI3UnZfA/exec';
 const statuses = new Set(['pending','confirmed','completed','declined']);
 const internalAdmins = new Set(['Arya','Milo']);
+const CAPABILITY_TTL_MS = 60000;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function configured(env) {
   try {
@@ -43,25 +44,57 @@ function cleanRecord(row) {
   const keys=['id','name','email','social','notes','preferred_date','preferred_time','time_zone','status','created_at','updated_at','internal_notes','version'];
   return Object.fromEntries(keys.map(key=>[key,row[key]]));
 }
-// Reuse the console session; no separate visit password or browser cookie.
-export async function verifyInternalIdentity(env, token, fetchImpl=fetch) {
-  if(typeof token!=='string' || !token || token.length>100)return false;
-  // Older form receivers interpret unknown POST namespaces as submissions.
-  // Probe first, so a rollout mismatch cannot create a stray spreadsheet row.
-  const capability=await fetchImpl(INTERNAL_SESSION_URL,{signal:AbortSignal.timeout(15000)});
-  if(!capability.ok || (await capability.json()).identity!==true)return false;
-  const response=await fetchImpl(INTERNAL_SESSION_URL,{
-    method:'POST',body:JSON.stringify({_api:'internal',action:'session',_session:token}),
-    signal:AbortSignal.timeout(15000)
-  });
-  if(!response.ok)return false;
-  const identity=await response.json();
-  // A beta member can share a display name with somebody on the core team.
-  // Their scoped session never grants access to guest contact information.
-  if(identity?.ok!==true || identity.beta===true || !['Milo','Bijan','Jesse','Luchi','Arya'].includes(identity.who))return false;
-  return {who:identity.who,admin:internalAdmins.has(identity.who) && identity.admin===true};
+// Reuse only the deployment capability, never a completed authorization result.
+// Concurrent reads for the same token can share the current verification, while
+// the next request still detects an expired or revoked Internal session.
+export function createInternalIdentityVerifier({fetchImpl=fetch,now=Date.now}={}) {
+  let capabilityUntil=0,capabilityPending=null;
+  const identities=new Map();
+  async function hasIdentity(){
+    if(now()<capabilityUntil)return true;
+    capabilityPending ??= Promise.resolve().then(async()=>{
+      // Legacy form receivers treat unknown POST namespaces as submissions.
+      const response=await fetchImpl(INTERNAL_SESSION_URL,{signal:AbortSignal.timeout(15000)});
+      if(!response.ok || (await response.json()).identity!==true)return false;
+      capabilityUntil=now()+CAPABILITY_TTL_MS;
+      return true;
+    }).finally(()=>{capabilityPending=null;});
+    return capabilityPending;
+  }
+  return function verify(token){
+    if(typeof token!=='string' || !token || token.length>100)return Promise.resolve(false);
+    if(identities.has(token))return identities.get(token);
+    const pending=Promise.resolve().then(async()=>{
+      if(!await hasIdentity())return false;
+      const response=await fetchImpl(INTERNAL_SESSION_URL,{
+        method:'POST',body:JSON.stringify({_api:'internal',action:'session',_session:token}),
+        signal:AbortSignal.timeout(15000)
+      });
+      if(!response.ok)return false;
+      const identity=await response.json();
+      // A beta member can share a display name with somebody on the core team.
+      // Their scoped session never grants access to guest contact information.
+      if(identity?.ok!==true || identity.beta===true || !['Milo','Bijan','Jesse','Luchi','Arya'].includes(identity.who))return false;
+      return {who:identity.who,admin:internalAdmins.has(identity.who) && identity.admin===true};
+    }).finally(()=>{identities.delete(token);});
+    identities.set(token,pending);
+    return pending;
+  };
 }
-export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyIdentity=token=>verifyInternalIdentity(env,token)}={}) {
+export function verifyInternalIdentity(env,token,fetchImpl=fetch) {
+  return createInternalIdentityVerifier({fetchImpl})(token);
+}
+export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyIdentity}={}) {
+  verifyIdentity ??= createInternalIdentityVerifier({now});
+  const reads=new Map();
+  function readStore(action){
+    if(reads.has(action))return reads.get(action);
+    const pending=Promise.resolve().then(()=>store(action)).finally(()=>{
+      if(reads.get(action)===pending)reads.delete(action);
+    });
+    reads.set(action,pending);
+    return pending;
+  }
   return async function handler(req,res) {
     res.setHeader('Cache-Control','no-store');
     res.setHeader('Vercel-CDN-Cache-Control','no-store');
@@ -89,7 +122,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
     }
     try {
       if(action==='availability'){
-        const data=await store('settings');
+        const data=await readStore('settings');
         // Opening hours are public and change rarely, so let the CDN absorb the
         // form's traffic instead of waking Apps Script on every page load.
         res.setHeader('Cache-Control','public, max-age=0, s-maxage=60');
@@ -108,10 +141,11 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         // which would quietly reopen every day the team had closed.
         if(!Array.isArray(body.availability) || body.availability.length!==7)return fail(400,'Check the availability settings.');
         const data=await store('saveSettings',{availability:normalizeAvailability(body.availability)});
+        reads.delete('settings');
         return res.status(200).json({availability:normalizeAvailability(data?.availability)});
       }
       if(action==='list'){
-        const data=await store('list');
+        const data=await readStore('list');
         if(!Array.isArray(data?.requests))throw new Error('Invalid storage response');
         return res.status(200).json({requests:data.requests.map(cleanRecord)});
       }
@@ -119,6 +153,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         if(!uuid.test(body.id) || !statuses.has(body.status) || typeof body.internalNotes!=='string' ||
           body.internalNotes.length>3000 || !Number.isInteger(body.version) || body.version<1)return fail(400,'Check the status and notes.');
         const data=await store('update',{id:body.id,status:body.status,internalNotes:body.internalNotes.trim(),version:body.version,now:new Date(now()).toISOString()});
+        reads.delete('list');
         return res.status(200).json({request:cleanRecord(data?.request)});
       }
       const invalid=validateRequest(body,new Date(now()));
@@ -130,6 +165,7 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         created_at:new Date(now()).toISOString(),updated_at:new Date(now()).toISOString(),
         internal_notes:'',version:1
       }});
+      reads.delete('list');
       if(data?.reference!==body.requestId || data.status!=='pending')throw new Error('Invalid receipt');
       return res.status(data.duplicate?200:201).json({reference:data.reference,status:'pending'});
     } catch(error) {
