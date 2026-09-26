@@ -561,9 +561,19 @@ instead of a line: same fields, same split, and from then on it writes itself.
 The day of the month comes from the date field, so a subscription set up on
 the 3rd lands on the 3rd. The date's usual ceiling of *today* lifts while the
 toggle is on, because a subscription can perfectly well start next week even
-though a spend cannot have happened next week. A receipt photo is refused for
-the same reason in reverse: the rule is not one purchase, and each month's
-receipt belongs on the line that month.
+though a spend cannot have happened next week. Receipts and receipt links can
+be attached to a recurring rule; already logged purchases keep their own proof.
+
+For an existing spend, open its detail page and choose **Edit spend** to change
+its saved details, or **Make monthly** to create future monthly charges from it.
+Both actions are also visible on its ledger row. Monthly setup copies the saved
+amount, payer, split, notes, category and receipt. Choose the first future charge
+and the billing day (1–31), then select **Start monthly expense**. The first date
+must be after today, so setup does not backfill or duplicate the original spend.
+Short months use their last day while preserving the chosen day for later months.
+Edits keep the original spend's identity, receipt and reimbursement state;
+monthly setup leaves that original spend unchanged. Existing spend permissions
+apply to both actions. This flow uses the existing `edit` and `subadd` APIs.
 
 **On repeat** in the rail is the list of them, with the next date, a pause
 and a delete for each, and along the foot what they cost a month and a year.

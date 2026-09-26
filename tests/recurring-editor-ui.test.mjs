@@ -31,7 +31,7 @@ function page(over={}){
     mode:'sheet',sheetCard:true,sheetSubs:true,rows:[originalSpend],subs:[rule()],days:[],
     picked:'Arya',PAYERS:['Arya','Milo','Jesse','Bijan'],SHARERS:['Arya','Milo','Jesse','Bijan'],
     whoBox:node('who'),guestBox:node('f-guests'),otherOn:false,sharedWith:{Milo:true,Jesse:true},
-    repeat:false,editing:null,editingSub:null,keptShot:'',dropShot:false,pendingShot:null,busy:false,
+    repeat:false,editing:null,editingSub:null,monthlySource:null,keptShot:'',dropShot:false,pendingShot:null,busy:false,
     subReceiptSaved:[],subReceiptFiles:[],subReceiptLinks:[],subReceiptRemove:[],subReceiptReading:false,subReceiptEpoch:0,
     byId:(list,id)=>list.find(row=>row.id===id),today:()=> '2026-09-25',tomorrow:()=> '2026-09-26',
     cat:id=>({id,label:id,v:'--s1'}),sharedOf:r=>r.shared.split(',').map(v=>v.trim()),money:value=>'$'+value,niceDate:value=>value,

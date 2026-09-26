@@ -1725,10 +1725,14 @@ td.date.run{color:var(--good)}
           <input id="f-amt" name="amount" type="number" min="0.01" max="100000" step="0.01" inputmode="decimal" placeholder="0.00" required></label>
       </div>
       <div class="grid">
-        <label class="field" id="f-date-field"><span class="lbl">date</span>
+        <label class="field" id="f-date-field"><span class="lbl" id="f-date-label">date</span>
           <input id="f-date" name="date" type="date" required></label>
         <label class="field"><span class="lbl">note (optional)</span>
           <input id="f-note" placeholder="e.g. covered Bijan + Jesse too" maxlength="120"></label>
+      </div>
+      <div class="field" id="f-monthly-source" hidden>
+        <label class="field"><span class="lbl">repeat on this day each month</span><input id="f-monthly-day" type="number" min="1" max="31" step="1" inputmode="numeric" aria-label="Monthly billing day"></label>
+        <span class="drop">The original spend stays on the ledger. This creates future monthly charges; months with fewer days use the last day of the month.</span>
       </div>
       <div class="field" id="f-single-receipt"><span class="lbl">receipt photo (optional)</span>
         <div class="shot-row">
@@ -2848,6 +2852,7 @@ function hint(msg, bad){
 }
 function defaultHint(){
   if (editingSub) return "Editing this recurring rule. Past ledger charges stay unchanged.";
+  if (monthlySource) return "Creates a monthly expense starting " + niceDate($("f-date").value) + ". The original spend is kept once.";
   if (editing) return "Editing a line already on the ledger. Whether it has been paid back is not changed here.";
   if (!repeat) return picked === CARD ? "On Arya’s card — nothing to pay back."
     : picked ? "Logging as " + picked + "." : "Pick who paid, then add the line.";
@@ -2938,7 +2943,7 @@ document.getElementById("form").addEventListener("submit", function(ev){
    that has been waiting three months writes all three the moment one of
    them does. */
 var SUB_CATCHUP = 12;
-var repeat = false, subsBusy = false, editingSub = null;
+var repeat = false, subsBusy = false, editingSub = null, monthlySource = null;
 var subReceiptSaved = [], subReceiptFiles = [], subReceiptLinks = [], subReceiptRemove = [], subReceiptReading = false, subReceiptEpoch = 0;
 
 /* device or sheet, asked the same way `mode` is: the rules are the
@@ -2963,6 +2968,16 @@ function subStep(iso, day){
   var inMonth = new Date(y, m, 0).getDate();
   var d = Math.min(Math.max(1, Number(day) || Number(p[2]) || 1), inMonth);
   return y + "-" + String(m).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+}
+
+/* Start an existing spend's recurrence in the future, keeping its nominal
+   billing day even when February or a shorter month clamps the first date. */
+function nextMonthlyCharge(date){
+  var day = subDay(date), now = today(), parts = now.split("-");
+  var last = new Date(Number(parts[0]), Number(parts[1]), 0).getDate();
+  var next = parts[0] + "-" + parts[1] + "-" + String(Math.min(day, last)).padStart(2, "0");
+  if (next <= now) next = subStep(next, day);
+  return {day:day, next:next};
 }
 
 function subApi(action, p){
@@ -3255,10 +3270,14 @@ function syncRepeat(){
   $('f-sub-receipts').hidden=!(repeat || editingSub);
   $('f-sub-schedule').hidden=!editingSub;
   $('f-date-field').hidden=!!editingSub;
-  $('f-repeat').hidden=!!(editing || editingSub);
+  $('f-repeat').hidden=!!(editing || editingSub || monthlySource);
+  $('f-monthly-source').hidden=!monthlySource;
+  $('f-monthly-day').disabled=!monthlySource;
+  $('f-date-label').textContent=monthlySource ? "first future charge" : repeat ? "first charge" : "date";
+  if (monthlySource) d.min=tomorrow(); else d.removeAttribute("min");
   document.getElementById("f-repeat").setAttribute("aria-pressed", String(repeat));
   document.getElementById("f-submit").textContent = editingSub ? "Save recurring spend" : editing
-    ? "Save changes" : (repeat ? "Start the subscription" : "Add to ledger");
+    ? "Save changes" : monthlySource ? "Start monthly expense" : (repeat ? "Start the subscription" : "Add to ledger");
   document.getElementById("f-pick").disabled = repeat;
   if (repeat) {
     d.removeAttribute("max");
@@ -3274,9 +3293,14 @@ document.getElementById("f-repeat").addEventListener("click", function(){ setRep
 
 function startSub(what, amt, date){
   var btn = document.getElementById("f-submit"),saveError='';
+  var names = splitNames(), day = monthlySource ? Number($('f-monthly-day').value) : subDay(date);
+  if (monthlySource) {
+    if (!canEdit(byId(rows, monthlySource))) { hint("You no longer have access to change that spend.", true); return; }
+    if (!validSubNext(date)) { hint("Choose a first charge after today so the original spend is not counted twice.", true); return; }
+    if (!Number.isInteger(day) || day < 1 || day > 31) { hint("Choose a billing day from 1 to 31.", true); return; }
+  }
   btn.disabled = true; busy = true; btn.textContent = "Setting it up…";
-  var names = splitNames(), day = subDay(date);
-  subApi("subadd", Object.assign({
+  return subApi("subadd", Object.assign({
     who: picked, what: what, category: document.getElementById("f-cat").value,
     amount: amt, date: date, day: day,
     note: document.getElementById("f-note").value.trim(), shared: names.join(", ")
@@ -3350,12 +3374,32 @@ function saveSubEdit(what,amount){
    description, and it has its own button two columns to the left. */
 var editing = null, keptShot = "", dropShot = false;
 
+function openMonthly(id){
+  if (busy) return;
+  var source=byId(rows,id);
+  if (!canEdit(source)) { toast("You can only make an editable spend monthly.", true); return; }
+  openEdit(id);
+  var schedule=nextMonthlyCharge(source.date), receipts=storedSubReceiptPayload({
+    receipts:source.receipt ? [{id:"source",name:"Original receipt",url:source.receipt}] : []
+  });
+  clearSubReceiptDraft();
+  editing=null; monthlySource=id; repeat=true;
+  keptShot=""; dropShot=false; pendingShot=null;
+  subReceiptFiles=receipts.receiptFiles; subReceiptLinks=receipts.receiptLinks;
+  $('f-date').value=schedule.next; $('f-monthly-day').value=String(schedule.day);
+  $('drawer-t').textContent="Make this spend monthly";
+  syncRepeat(); showPicked();
+}
+$('f-monthly-day').addEventListener('input',function(){if(monthlySource)hint("");});
+
 function openEdit(id){
+  if (busy) return;
   var r = byId(rows, id);
   if (!r) { toast("That line is no longer on the ledger.", true); return; }
 
   if (!canEdit(r)) { toast("Only your own unpaid spends can be changed.", true); return; }
-  if(editingSub)exitEdit();
+  if(editingSub || monthlySource)exitEdit();
+  clearSubReceiptDraft();
   editing = id;
   keptShot = ""; dropShot = false;
 
@@ -3433,7 +3477,8 @@ function saveEdit(what, amt, date){
 /* Back to being the log-a-spend drawer. Called on every close, so an edit
    abandoned with the X cannot leave the next new line prefilled. */
 function exitEdit(){
-  if (!editing && !editingSub) return;
+  if (!editing && !editingSub && !monthlySource) return;
+  monthlySource=null; repeat=false;
   editingSub=null;clearSubReceiptDraft();$('f-sub-schedule-change').checked=false;$('f-sub-schedule-fields').hidden=true;
   editing = null; keptShot = ""; dropShot = false;
   pendingShot = null;
@@ -3469,6 +3514,8 @@ document.addEventListener("click", function(ev){
       .then(function(){ busy = false; paint(); });
   } else if (act === "edit") {
     openEdit(id);
+  } else if (act === "monthly") {
+    openMonthly(id);
   } else if (act === "del") {
     arm("d" + id, btn, "Delete?", function(){
       busy = true;
@@ -5153,7 +5200,8 @@ function paintCharge(){
   var confirmed=purchaseApproved(r), participants=sharedOf(r);
   var facts='<dl><dt>Total</dt><dd>'+esc(money(r.amount))+'</dd><dt>Paid by</dt><dd><a href="#/person/'+encodeURIComponent(r.who)+'">'+esc(r.who)+'</a></dd><dt>Date</dt><dd>'+esc(niceDate(r.date))+'</dd><dt>Category</dt><dd>'+esc(cat(r.category).label)+'</dd><dt>Reimbursement</dt><dd>'+esc(onCard(r)?'Not needed — Arya’s card':r.status==='reimbursed'?'Reimbursed':'Still owed')+'</dd>'+(loggerOf(r)!==r.who?'<dt>Logged by</dt><dd>'+esc(loggerOf(r))+'</dd>':'')+'<dt>For</dt><dd>'+esc(participants.join(', ')||r.who)+'</dd><dt>Purchase approval</dt><dd><span class="pill '+(confirmed?'good':'')+'">'+esc(purchaseApprovalText(r))+'</span></dd></dl>';
   var confirm=isAdmin()?'<div class="charge-confirm"><p>'+(confirmed?esc(purchaseApprover(r))+' approved this purchase. You can undo its approval.':'Review the receipt, purchase details, and GitHub activity above, then approve the full '+esc(money(r.amount))+' purchase.')+'</p><button type="button" '+(confirmed?'data-purchase-unapprove':'data-purchase-approve')+'="'+esc(r.id)+'" data-reviewed="'+esc(reviewedCharge(r))+'" '+(busy?'disabled':'')+'>'+(confirmed?'Undo purchase approval':'Approve purchase · '+esc(money(r.amount)))+'</button><small>Approval records your decision. Reimbursement remains a separate action.</small></div>':'<p class="charge-approval-note">'+(confirmed?esc(purchaseApprover(r))+' approved this purchase.':'This purchase is waiting for an admin’s approval.')+'</p>';
-  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a><h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts">'+facts+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+(confirmed&&r.approvedAt?'<small>Approved '+esc(String(r.approvedAt).replace('T',' '))+'</small>':'')+'</div></section></div><section class="panel purchase-git" id="charge-git"></section>'+confirm+(isAdmin()&&!onCard(r)?'<div class="acts"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div>';
+  var editActions=canEdit(r)?'<div class="charge-actions"><button type="button" class="mini" data-act="edit" data-id="'+esc(r.id)+'" '+(busy?'disabled':'')+'>Edit spend</button><button type="button" class="mini" data-act="monthly" data-id="'+esc(r.id)+'" '+(busy?'disabled':'')+'>Make monthly</button></div>':'';
+  box.innerHTML='<div class="charge-review"><a class="mini" href="#/ledger">← Ledger</a>'+editActions+'<h2>'+esc(r.what)+'</h2><div class="charge-review-grid"><section class="panel"><div class="panel-h"><h3>Receipt</h3></div><div class="charge-receipt">'+receipt+(url?'<a class="mini" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open original receipt ↗</a><small>If the preview cannot load, open the original receipt.</small>':'')+'</div></section><section class="panel"><div class="panel-h"><h3>Spend details</h3></div><div class="charge-facts">'+facts+(r.note?'<p class="charge-note">'+esc(r.note)+'</p>':'')+(confirmed&&r.approvedAt?'<small>Approved '+esc(String(r.approvedAt).replace('T',' '))+'</small>':'')+'</div></section></div><section class="panel purchase-git" id="charge-git"></section>'+confirm+(isAdmin()&&!onCard(r)?'<div class="charge-actions"><button class="mini" data-act="'+(r.status==='reimbursed'?'unpay':'pay')+'" data-id="'+esc(r.id)+'">'+(r.status==='reimbursed'?'Undo reimbursement':'Mark paid')+'</button></div>':'')+'</div>';
   var receiptImage=box.querySelector('.receipt-image');
   if(receiptImage)receiptImage.addEventListener('error',function(){this.hidden=true;box.querySelector('.receipt-preview-error').hidden=false;});
   paintChargeGit(r);
@@ -5197,6 +5245,7 @@ function ledgerRow(r, hideWho){
         ? '<button class="mini" data-act="unpay" data-id="' + esc(r.id) + '">Undo reimbursement</button>'
         : '<button class="mini" data-act="pay" data-id="' + esc(r.id) + '">Mark paid</button>') +
       '<button class="mini" data-act="edit" data-id="' + esc(r.id) + '">Edit</button>' +
+      '<button class="mini" data-act="monthly" data-id="' + esc(r.id) + '">Make monthly</button>' +
       '<button class="mini danger" data-act="del" data-id="' + esc(r.id) + '">Delete</button>' +
     "</div></td></tr>";
 }
@@ -6611,7 +6660,7 @@ function applyPermissionUi(){
   subs.forEach(function(s){ subIndex[s.id] = s; });
   document.querySelectorAll('[data-act]').forEach(function(b){
     var action=b.dataset.act;
-    var allowed=(action==='edit'||action==='del')?canEdit(rowIndex[b.dataset.id]):isAdmin();
+    var allowed=(action==='edit'||action==='del'||action==='monthly')?canEdit(rowIndex[b.dataset.id]):isAdmin();
     b.hidden=!allowed;
   });
   document.querySelectorAll('[data-settle]').forEach(function(b){b.hidden=!isAdmin();});

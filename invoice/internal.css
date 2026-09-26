@@ -281,3 +281,9 @@ body:has(#money-undo-bar:not([hidden])) #toast{bottom:calc(86px + var(--foot-cle
   .ad-tbl td.amt,.ad-tbl th.amt,.ad-tbl .ad-act{white-space:normal}
   .ad-tbl td,.ad-tbl th{padding-left:9px;padding-right:9px}
 }
+
+/* Spend controls stay discoverable on desktop and touch screens. */
+.ledger-line .acts{opacity:1;flex-wrap:wrap}
+.charge-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.charge-actions .mini{min-height:38px}
+#f-monthly-day{max-width:150px}
