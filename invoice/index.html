@@ -730,6 +730,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/portals.css">
 <link rel="stylesheet" href="/invoice/referrals.css">
 <link rel="stylesheet" href="/invoice/internal.css">
+<link rel="stylesheet" href="/invoice/overview-details.css">
 <link rel="stylesheet" href="/invoice/beta-manager.css">
 </head>
 <body>
@@ -875,32 +876,32 @@ td.date.run{color:var(--good)}
 
           <div class="grid2">
             <div class="panel">
-              <div class="panel-h"><h2>Needs attention</h2><span class="note" id="ov-attn-note"></span></div>
+              <div class="panel-h"><h2><button class="ov-heading" data-ov-detail="attention">Needs attention <span>↗</span></button></h2><button class="note ov-link" id="ov-attn-note" data-ov-detail="attention"></button></div>
               <div class="att" id="ov-attn"></div>
             </div>
             <div class="panel">
-              <div class="panel-h"><h2>Spend by day</h2><span class="note" id="ov-daily-note"></span></div>
+              <div class="panel-h"><h2><button class="ov-heading" data-ledger-query="">Spend by day <span>↗</span></button></h2><span class="note" id="ov-daily-note"></span></div>
               <div class="panel-b" id="ov-daily"></div>
             </div>
           </div>
 
           <div class="grid2">
             <div class="panel">
-              <div class="panel-h"><h2>Where the money goes</h2><span class="note" id="ov-cat-note"></span></div>
+              <div class="panel-h"><h2><button class="ov-heading" data-overview-breakdown>Where the money goes <span>↗</span></button></h2><button class="note ov-link" id="ov-cat-note" data-overview-breakdown></button></div>
               <div class="panel-b" id="ov-cats"></div>
             </div>
             <div class="panel">
-              <div class="panel-h"><h2>On repeat, next up</h2><span class="note" id="ov-due-note"></span></div>
+              <div class="panel-h"><h2><a class="ov-heading" href="#/subs">On repeat, next up <span>↗</span></a></h2><a class="note ov-link" id="ov-due-note" href="#/subs"></a></div>
               <div class="att" id="ov-due"></div>
             </div>
           </div>
 
           <div class="ov-band"><span class="lbl">the four of them</span><i></i><span class="hint" id="ov-team-note"></span></div>
           <div class="rail">
-            <a class="overview-stat" href="#/attendance"><span class="lbl">in this week</span><span class="v" id="k-wk">0</span><span class="sub" id="k-wk-sub">person-days since Monday</span></a>
-            <a class="overview-stat" href="#/attendance"><span class="lbl">days marked, all time</span><span class="v" id="k-days">0</span><span class="sub" id="k-days-sub">across the four of them</span></a>
-            <a class="overview-stat" href="#/commits"><span class="lbl">commits, 13 weeks</span><span class="v" id="k-gh">—</span><span class="sub" id="k-gh-sub">no accounts linked yet</span></a>
-            <a class="overview-stat" href="#/commits"><span class="lbl">busiest push day</span><span class="v" id="k-ghbest">—</span><span class="sub" id="k-ghbest-sub">of the quarter</span></a>
+            <button class="overview-stat" data-ov-detail="attendance" data-detail-period="week"><span class="lbl">in this week</span><span class="v" id="k-wk">0</span><span class="sub" id="k-wk-sub">person-days since Monday</span></button>
+            <button class="overview-stat" data-ov-detail="attendance" data-detail-period="all"><span class="lbl">days marked, all time</span><span class="v" id="k-days">0</span><span class="sub" id="k-days-sub">across the four of them</span></button>
+            <button class="overview-stat" data-ov-detail="commits"><span class="lbl">commits, 13 weeks</span><span class="v" id="k-gh">—</span><span class="sub" id="k-gh-sub">no accounts linked yet</span></button>
+            <button class="overview-stat" id="ov-best-day" data-ov-detail="commits"><span class="lbl">busiest push day</span><span class="v" id="k-ghbest">—</span><span class="sub" id="k-ghbest-sub">of the quarter</span></button>
           </div>
 
           <div class="panel">
@@ -917,21 +918,21 @@ td.date.run{color:var(--good)}
           </div>
 
           <div class="panel">
-            <div class="panel-h"><h2>Quiet days with a spend</h2><span class="note" id="ov-quiet-note"></span></div>
+            <div class="panel-h"><h2><button class="ov-heading" data-ov-detail="quiet">Quiet days with a spend <span>↗</span></button></h2><button class="note ov-link" id="ov-quiet-note" data-ov-detail="quiet"></button></div>
             <div class="att" id="ov-quiet"></div>
           </div>
 
           <div class="ov-band"><span class="lbl">the campus, and guests</span><i></i><span class="hint" id="ov-campus-note"></span></div>
           <div class="rail">
-            <a class="overview-stat" href="#/applicants"><span class="lbl">applications in</span><span class="v" id="k-ap">—</span><span class="sub" id="k-ap-sub">from /fomo/apply</span></a>
-            <a class="overview-stat" href="#/applicants"><span class="lbl">still open</span><span class="v owed" id="k-apopen">—</span><span class="sub" id="k-apopen-sub">awaiting a decision</span></a>
-            <a class="overview-stat" href="#/campus"><span class="lbl">on a campus</span><span class="v" id="k-cm">—</span><span class="sub" id="k-cm-sub">interns working a seat</span></a>
-            <a class="overview-stat" href="#/visits"><span class="lbl">visit requests</span><span class="v" id="k-vr">—</span><span class="sub" id="k-vr-sub">invitations to HQ</span></a>
+            <a class="overview-stat" href="#/applicants" data-campus-view="applicants"><span class="lbl">applications in</span><span class="v" id="k-ap">—</span><span class="sub" id="k-ap-sub">from /fomo/apply</span></a>
+            <a class="overview-stat" href="#/applicants" data-campus-view="applicants" data-campus-status="open"><span class="lbl">still open</span><span class="v owed" id="k-apopen">—</span><span class="sub" id="k-apopen-sub">awaiting a decision</span></a>
+            <a class="overview-stat" href="#/campus" data-campus-view="campus" data-campus-status="working"><span class="lbl">on a campus</span><span class="v" id="k-cm">—</span><span class="sub" id="k-cm-sub">interns working a seat</span></a>
+            <a class="overview-stat" href="#/visits" data-overview-visits><span class="lbl">visit requests</span><span class="v" id="k-vr">—</span><span class="sub" id="k-vr-sub">invitations to HQ</span></a>
           </div>
 
           <div class="grid2">
             <div class="panel">
-              <div class="panel-h"><h2>Applications, by seat</h2><span class="note" id="ov-seat-note"></span></div>
+              <div class="panel-h"><h2><a class="ov-heading" href="#/applicants" data-campus-view="applicants">Applications, by seat <span>↗</span></a></h2><a class="note ov-link" id="ov-seat-note" href="#/applicants" data-campus-view="applicants"></a></div>
               <div class="panel-b" id="ov-seats"></div>
             </div>
             <div class="panel">
@@ -1176,22 +1177,22 @@ td.date.run{color:var(--good)}
             <span id="sc-guess-say">A guess, not a calendar — it only knows the weeks people have filled in.</span>
           </p>
 
-          <div class="sc-weeks" id="sc-weeks" hidden role="group" aria-label="Which week to work out"></div>
-
           <p class="sc-rule sc-away" id="sc-away" hidden></p>
 
           <div class="panel">
             <div class="panel-h">
-              <h2>The best windows</h2>
+              <h2>Suggested windows</h2>
               <span class="note" id="sc-week-say" hidden></span>
               <span class="note" id="sc-best-note"></span>
             </div>
             <div class="panel-b" id="sc-best"></div>
           </div>
 
+          <div class="sc-weeks" id="sc-weeks" hidden role="group" aria-label="Explore schedules"></div>
+
           <div class="panel">
             <div class="panel-h">
-              <h2>Everybody's week, over each other</h2>
+              <h2>Explore availability</h2>
               <span class="note" id="sc-free-note"></span>
               <div class="sc-ctl">
                 <label class="sc-need" for="sc-need">At least
@@ -2018,7 +2019,7 @@ var CATS = [
 var CAT = {}; CATS.forEach(function(c){ CAT[c.id] = c; });
 
 var rows = [], days = [], subs = [], armed = {}, picked = null, busy = false, poll = null, tick = null;
-var filters = {who:"", cat:"", status:"", q:"", date:""};
+var filters = {who:"", cat:"", status:"", q:"", date:"", cats:[], excludeWho:""};
 
 /* ---------- helpers ---------- */
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
@@ -2864,6 +2865,8 @@ hint("");
 
 ["t-who","t-cat","t-status","t-q"].forEach(function(id){
   document.getElementById(id).addEventListener("input", function(){
+    if (id === "t-cat") filters.cats = [];
+    if (id === "t-who") filters.excludeWho = "";
     filters.who = document.getElementById("t-who").value;
     filters.cat = document.getElementById("t-cat").value;
     filters.status = document.getElementById("t-status").value;
@@ -3736,6 +3739,7 @@ document.getElementById("shot").addEventListener("click", function(ev){
   if (ev.target === this) closeShot();
 });
 document.addEventListener("keydown", function(ev){
+  if (document.getElementById("ov-details") && document.getElementById("ov-details").open) return;
   if (ev.key === "Escape" && !document.getElementById("shot").hidden) closeShot();
 });
 document.addEventListener("click", function(ev){
@@ -3764,7 +3768,9 @@ function visible(){
   return rows.filter(function(r){
     if (filters.date && r.date !== filters.date) return false;
     if (filters.who && r.who !== filters.who) return false;
+    if (filters.excludeWho && r.who === filters.excludeWho) return false;
     if (filters.cat && r.category !== filters.cat) return false;
+    if (filters.cats && filters.cats.length && filters.cats.indexOf(r.category) === -1) return false;
     if (filters.status === "pending" && r.status === "reimbursed") return false;
     if (filters.status === "reimbursed" && r.status !== "reimbursed") return false;
     if (filters.q) {
@@ -5694,7 +5700,9 @@ function activeFilters(){
   var f = [];
   if (filters.date) f.push(niceDate(filters.date));
   if (filters.who) f.push(filters.who + "'s card");
+  if (filters.excludeWho) f.push("expenses to reimburse to the team");
   if (filters.cat) f.push(cat(filters.cat).label);
+  if (filters.cats && filters.cats.length) f.push(filters.cats.map(function(id){return cat(id).label;}).join(", "));
   if (filters.status) f.push(filters.status === "pending" ? "still owed" : "reimbursed");
   if (period) f.push(PERIODS[period] || period);
   if (filters.q) f.push('"' + filters.q + '"');
@@ -5711,6 +5719,7 @@ function paintFilterNote(){
 }
 function clearFilters(){
   filters.date = "";
+  filters.cats = []; filters.excludeWho = "";
   ["t-who","t-cat","t-q"].forEach(function(id){ $(id).value = ""; });
   $("t-status").value = "";
   $("t-period").value = ""; period = "";
@@ -5769,8 +5778,18 @@ function owedBy(){
 
 function paintSettle(){
   var m = owedBy(), now = today();
+  var out = reimbursementOut();
   var names = PAYERS.slice().sort(function(a, b){ return m[b].owed - m[a].owed; });
   $("st-cards").innerHTML = names.map(function(p){
+    if (p === CARD) {
+      var clear = out.owed <= 0.005;
+      return '<div class="stcard stcard-out"><div class="hd">' + avatar(p, "lg") + '<b>' + esc(p) + '</b>' +
+        '<span class="pill ' + (clear ? 'good' : 'owed') + '" style="margin-left:auto"><i></i>' + (clear ? 'all paid out' : 'owes out') + '</span></div>' +
+        '<div class="big ' + (clear ? 'good' : 'owed') + '">' + esc(money(out.owed)) + '</div>' +
+        '<div class="mt">' + (clear ? 'Nothing left to reimburse.' : 'Still to reimburse across ' + out.people + (out.people === 1 ? ' person' : ' people') + ' · ' + out.lines + (out.lines === 1 ? ' expense' : ' expenses')) + '</div>' +
+        '<div class="ac"><button class="mini" data-ledger-status="pending" data-ledger-exclude-who="' + esc(CARD) + '">View outstanding expenses →</button>' +
+        '<a class="mini ghost" href="#/person/' + encodeURIComponent(p) + '">Open their page</a></div></div>';
+    }
     var e = m[p], square = e.owed <= 0.005;
     var max = Math.max(e.total, 1);
     return '<div class="stcard">' +
@@ -5811,6 +5830,24 @@ function paintSettle(){
 }
 
 /* ---------- overview ---------- */
+/* Arya reimburses what other people fronted, rather than being owed his own card spend. */
+function reimbursementOut(){
+  var result = {owed:0, lines:0, people:0}, names = {};
+  rows.forEach(function(r){
+    if (r.who === CARD || r.status === "reimbursed") return;
+    result.owed += Number(r.amount) || 0; result.lines++; names[r.who] = true;
+  });
+  result.people = Object.keys(names).length;
+  return result;
+}
+var overviewAttentionHtml = "";
+window.FOMO_OVERVIEW = {snapshot:function(){
+  return {rows:rows, days:days, subs:subs, people:PAYERS, ghPeople:GH_PEOPLE,
+    logins:logins, ghData:ghData, ghErrors:ghErrors, ghBusy:ghBusy,
+    since:dayKey(calStart()), today:today(), weekStart:weekStartDay(),
+    quiet:quietSpendDays(), skipped:quietSkipped(), attention:overviewAttentionHtml,
+    attendanceSource:daysMode(), categoryLabel:function(id){return cat(id).label;}};
+}};
 /* The commits view rolls its own 13-week window up; the overview wants the
    same three numbers off the same window, so it asks for them here rather
    than counting a second time and drifting. */
@@ -5927,9 +5964,9 @@ function paintOverview(){
     : "no rules set";
 
   var avg = rows.length ? total / rows.length : 0;
-  $("ov-money-note").textContent = rows.length
-    ? money(avg) + " a line on average · biggest " + money(Math.max.apply(null,
-        rows.map(function(r){ return Number(r.amount) || 0; })))
+  var biggest = rows.reduce(function(best,r){return !best || Number(r.amount) > Number(best.amount) ? r : best;}, null);
+  $("ov-money-note").innerHTML = rows.length
+    ? '<button class="ov-link" data-ledger-query="">' + esc(money(avg)) + ' a line on average</button> · <a class="ov-link" href="#/charge/' + encodeURIComponent(biggest.id) + '">biggest ' + esc(money(biggest.amount)) + '</a>'
     : "";
 
   /* ── needs attention ────────────────────────
@@ -5939,15 +5976,15 @@ function paintOverview(){
      thirty that includes "all good". */
   var items = [];
   rows.filter(canApprove).forEach(function(r){
-    items.push({k:"approval",w:1000000,html:avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · awaiting your approval'+'</span></div><button class="mini" data-review="'+esc(r.id)+'">Review purchase</button>'});
+    items.push({k:"approval",w:1000000,html:'<a class="att-i" href="#/charge/'+encodeURIComponent(r.id)+'">'+avatar(r.who,"")+'<div class="bd"><b>'+esc(r.what)+'</b><span>'+esc(r.who)+' logged '+esc(money(r.amount))+' · awaiting your approval'+'</span></div><span class="pill purple">Review →</span></a>'});
   });
   PAYERS.forEach(function(p){
     if (m[p].owed > 0.005) items.push({
       k:"owed", w:m[p].owed,
-      html: avatar(p, "") + '<div class="bd"><b><a class="person-link" href="#/person/'+encodeURIComponent(p)+'">' + esc(p) + "</a> is owed " + esc(money(m[p].owed)) + "</b>" +
+      html: '<button class="att-i overview-action" data-ledger-who="' + esc(p) + '" data-ledger-status="pending">' + avatar(p, "") + '<div class="bd"><b>' + esc(p) + " is owed " + esc(money(m[p].owed)) + "</b>" +
         "<span>" + m[p].lines + (m[p].lines === 1 ? " line" : " lines") + ", oldest waiting " +
         esc(agoText(daysBetween(m[p].oldest, now))) + "</span></div>" +
-        '<button class="mini" data-settle="' + esc(p) + '">Settle</button>'
+        '<span class="pill">View expenses →</span></button>'
     });
   });
   subs.forEach(function(s){
@@ -5955,24 +5992,25 @@ function paintOverview(){
     var d = daysBetween(now, s.next || "");
     if (d < 0 || d > 7) return;
     items.push({k:"sub", w:0,
-      html: '<div class="bd"><b>' + esc(s.what || "a subscription") + " · " + esc(money(s.amount)) + "</b>" +
+      html: '<button class="att-i overview-action" data-ov-detail="subscription" data-detail-id="' + esc(s.id) + '"><div class="bd"><b>' + esc(s.what || "a subscription") + " · " + esc(money(s.amount)) + "</b>" +
         "<span>due " + (d === 0 ? "today" : "in " + agoText(d)) + " on " + esc(s.who) + "'s card</span></div>" +
-        '<a class="pill purple" href="#/subs">on repeat →</a>'});
+        '<span class="pill purple">View rule →</span></button>'});
   });
   PEOPLE.forEach(function(p){
     var n = 0; days.forEach(function(d){ if (d.who === p && d.day >= wk) n++; });
     if (!n) items.push({k:"day", w:0,
-      html: avatar(p, "") + '<div class="bd"><b>' + esc(p) + " has no day marked this week</b>" +
+      html: '<button class="att-i overview-action" data-ov-detail="attendance" data-detail-period="week" data-detail-who="' + esc(p) + '">' + avatar(p, "") + '<div class="bd"><b>' + esc(p) + " has no day marked this week</b>" +
         "<span>press their name on the board, or fill it in after the fact</span></div>" +
-        '<button class="mini ghost" data-go2="attendance">Board</button>'});
+        '<span class="pill">View days →</span></button>'});
   });
   items.sort(function(a, b){ return b.w - a.w; });
+  overviewAttentionHtml = items.map(function(i){return i.html;}).join("");
   var top = items.slice(0, 7);
   $("ov-attn-note").textContent = items.length
     ? (items.length > top.length ? top.length + " of " + items.length : items.length + (items.length === 1 ? " thing" : " things"))
     : "all clear";
   $("ov-attn").innerHTML = top.length
-    ? top.map(function(i){ return '<div class="att-i">' + i.html + "</div>"; }).join("")
+    ? top.map(function(i){ return i.html; }).join("")
     : '<div class="empty"><b>Nothing needs you.</b>Everyone is square, no rule is due this week, and everybody has a day marked.</div>';
 
   /* ── spend by day ──
@@ -6038,10 +6076,10 @@ function paintOverview(){
         '<span class="amt">' + esc(money(c.v)) + "</span>" +
         '<span class="pc">' + Math.round(pc) + "%</span></button>";
     }).join("") + (restV > 0.005
-      ? '<div class="ov-cat"><span class="nm mut2">everything else</span>' +
+      ? '<button class="ov-cat" data-ledger-cats="' + esc(JSON.stringify(catRank.slice(6).map(function(c){return c.id;}))) + '"><span class="nm mut2">everything else</span>' +
         '<span class="bar"><i style="width:' + (restV / total * 100).toFixed(1) + '%;background:var(--line-2)"></i></span>' +
         '<span class="amt mut">' + esc(money(restV)) + "</span>" +
-        '<span class="pc">' + Math.round(restV / total * 100) + "%</span></div>"
+        '<span class="pc">' + Math.round(restV / total * 100) + "%</span></button>"
       : "");
   }
 
@@ -6053,12 +6091,12 @@ function paintOverview(){
   $("ov-due").innerHTML = due.length
     ? due.map(function(s){
         var d = daysBetween(now, s.next || "");
-        return '<a class="att-i" href="#/subs">' + avatar(s.who, "") +
+        return '<button class="att-i overview-action" data-ov-detail="subscription" data-detail-id="' + esc(s.id) + '">' + avatar(s.who, "") +
           '<div class="bd"><b>' + esc(s.what || "a subscription") + " · " + esc(money(s.amount)) + "</b>" +
           "<span>the " + esc(ord(s.day)) + " of the month, on " + esc(s.who) + "'s card</span></div>" +
           '<span class="pill' + (d >= 0 && d <= 7 ? " purple" : "") + '">' +
           (s.next ? (d === 0 ? "today" : d > 0 ? "in " + agoText(d) : esc(niceDate(s.next))) : "no date") +
-          "</span></a>";
+          "</span></button>";
       }).join("")
     : '<div class="empty"><b>Nothing on repeat.</b>Add a monthly expense once.<br><button class="mini" data-go2="subs">Manage recurring spend →</button></div>';
 
@@ -6077,6 +6115,7 @@ function paintOverview(){
     : "no accounts linked yet";
   $("k-ghbest").textContent = gh.bestN ? String(gh.bestN) : "—";
   $("k-ghbest-sub").textContent = gh.bestN ? esc(niceDate(gh.bestDay)) : "of the quarter";
+  $("ov-best-day").dataset.detailDate = gh.bestDay || "";
   $("ov-team-note").textContent = daysMode() === "sheet" ? "attendance is everybody's" : "attendance is this browser only";
 
   /* One row a person, carrying what their own page carries: what they have
@@ -6090,21 +6129,20 @@ function paintOverview(){
     for (var i = 0; i < 7; i++) {
       var dd = new Date(); dd.setDate(dd.getDate() - (6 - i));
       var k = isoOf(dd), on = markedOn(p, k);
-      strip += '<i style="background:' + (on ? "var(--l3)" : "var(--l0)") +
-        '" title="' + esc(niceDate(k)) + '"></i>';
+      strip += '<button type="button" data-ov-detail="attendance" data-detail-who="' + esc(p) + '" data-detail-date="' + k + '" style="background:' + (on ? "var(--l3)" : "var(--l0)") +
+        '" aria-label="' + esc(p + ' · ' + niceDate(k) + (on ? ' · marked in' : ' · no day marked')) + '" title="' + esc(niceDate(k)) + '"></button>';
     }
     var c = ghCount(p);
     return '<tr data-who="' + esc(p) + '">' +
-      '<td><span style="display:flex;align-items:center;gap:8px">' + avatar(p, "") +
-        '<a class="person-link" href="#/person/' + encodeURIComponent(p) + '">' + esc(p) + " →</a></span></td>" +
-      '<td class="amt">' + esc(money(e.total)) + "</td>" +
+      '<td><a class="person-link ov-person" href="#/person/' + encodeURIComponent(p) + '">' + avatar(p, "") + esc(p) + " →</a></td>" +
+      '<td class="amt"><button class="ov-cell" data-ledger-who="' + esc(p) + '" aria-label="' + esc(p + ': ' + money(e.total) + ' fronted — view expenses') + '">' + esc(money(e.total)) + "</button></td>" +
       '<td class="amt"' + (e.owed > 0.005 ? ' style="color:var(--owed)"' : "") + ">" +
-        (e.owed > 0.005 ? esc(money(e.owed)) : '<span class="mut2">—</span>') + "</td>" +
-      '<td><span class="share"><span class="bar"><i style="width:' + pc.toFixed(1) +
-        '%;background:var(' + tone(p) + ')"></i></span><span>' + Math.round(pc) + "%</span></span></td>" +
-      '<td><span class="strip7" aria-hidden="true">' + strip + "</span></td>" +
-      '<td class="amt">' + (week ? week : '<span class="mut2">0</span>') + "</td>" +
-      '<td class="amt">' + (c ? String(c.n) + (c.capped ? "+" : "") : '<span class="mut2">—</span>') + "</td>" +
+        '<button class="ov-cell" data-ledger-who="' + esc(p) + '" data-ledger-status="pending" aria-label="' + esc(p + ': ' + money(e.owed) + ' still owed — view expenses') + '">' + (e.owed > 0.005 ? esc(money(e.owed)) : '<span class="mut2">—</span>') + "</button></td>" +
+      '<td><button class="ov-cell share" data-ledger-who="' + esc(p) + '" aria-label="' + esc(p + ': ' + Math.round(pc) + '% of spend — view expenses') + '"><span class="bar"><i style="width:' + pc.toFixed(1) +
+        '%;background:var(' + tone(p) + ')"></i></span><span>' + Math.round(pc) + "%</span></button></td>" +
+      '<td><span class="strip7">' + strip + "</span></td>" +
+      '<td class="amt"><button class="ov-cell" data-ov-detail="attendance" data-detail-who="' + esc(p) + '" data-detail-period="week" aria-label="' + esc(p + ': ' + week + ' days this week') + '">' + (week ? week : '<span class="mut2">0</span>') + "</button></td>" +
+      '<td class="amt"><button class="ov-cell" data-ov-detail="commits" data-detail-who="' + esc(p) + '" aria-label="' + esc('View ' + p + '’s commits') + '">' + (c && ghData[p] ? String(c.n) + (c.capped ? "+" : "") : '<span class="mut2">—</span>') + "</button></td>" +
       "</tr>";
   }).join("");
 
@@ -6128,13 +6166,13 @@ function paintOverview(){
       ' pushes or more behind it.</div>') +
     /* Said out loud rather than left as a silent gap. */
     (skipped.length
-      ? '<div class="att-i"><div class="bd"><span class="mut2">Not counted for ' +
+      ? '<button class="att-i overview-action" data-ov-detail="commits"><div class="bd"><span class="mut2">Not counted for ' +
         esc(skipped.join(", ")) + " — no linked account, no read yet, or a count GitHub " +
-        "could only give as a floor. A day is not flagged on a guess.</span></div></div>"
+        "could only give as a floor. A day is not flagged on a guess. View account details →</span></div></button>"
       : "") +
     (quiet.length > 8
-      ? '<div class="att-i"><div class="bd"><span class="mut2">' + (quiet.length - 8) +
-        " more like this, older.</span></div></div>"
+      ? '<button class="att-i overview-action" data-ov-detail="quiet"><div class="bd"><span class="mut2">' + (quiet.length - 8) +
+        " more like this, older. View all →</span></div></button>"
       : "");
 
   /* ── the campus, and guests ──
@@ -6149,19 +6187,19 @@ function paintOverview(){
      timestamps, so they sort together without anything being made up. */
   var feed = [];
   rows.forEach(function(r){
-    feed.push({t:Date.parse(r.logged || r.date || "") || 0, k:"spend", q:r.what || "",
+    feed.push({t:Date.parse(r.logged || r.date || "") || 0, k:"spend", id:r.id,
       html:'<span class="ic">' + ico("ledger") + "</span>" +
         '<div class="bd"><b>' + esc(money(r.amount)) + " · " + esc(r.what || "a spend") + "</b>" +
         "<span>" + esc(r.who) + " · " + esc(cat(r.category).label) + "</span></div>"});
   });
   days.forEach(function(d){
-    feed.push({t:Date.parse(d.marked || "") || 0, k:"day", who:d.who,
+    feed.push({t:Date.parse(d.marked || "") || 0, k:"day", who:d.who, day:d.day,
       html:'<span class="ic">' + ico("attendance") + "</span>" +
         '<div class="bd"><b>' + esc(d.who) + " was in on " + esc(niceDate(d.day)) + "</b>" +
         "<span>attendance</span></div>"});
   });
   subs.forEach(function(s){
-    feed.push({t:Date.parse(s.created || "") || 0, k:"sub",
+    feed.push({t:Date.parse(s.created || "") || 0, k:"sub", id:s.id,
       html:'<span class="ic">' + ico("subs") + "</span>" +
         '<div class="bd"><b>' + esc(s.what || "a subscription") + " set to repeat</b>" +
         "<span>" + esc(money(s.amount)) + " on the " + esc(ord(s.day)) + " · " + esc(s.who) + "</span></div>"});
@@ -6169,7 +6207,10 @@ function paintOverview(){
   feed = feed.filter(function(f){ return f.t; }).sort(function(a, b){ return b.t - a.t; }).slice(0, 9);
   $("ov-feed").innerHTML = feed.length
     ? feed.map(function(f){
-        return '<a class="fi" href="#/' + (f.k==='spend'?'ledger':f.k==='day'?'person/'+encodeURIComponent(f.who):'subs') + '"' + (f.k==='spend'?' data-ledger-query="'+esc(f.q)+'"':'') + '>' + f.html + '<span class="rt">' + esc(seenStamp(new Date(f.t).toISOString())) + "</span></a>";
+        var action = f.k === 'spend' ? '<a class="fi" href="#/charge/' + encodeURIComponent(f.id) + '">' :
+          '<button class="fi overview-action" data-ov-detail="' + (f.k === 'day' ? 'attendance' : 'subscription') + '"' +
+          (f.k === 'day' ? ' data-detail-who="' + esc(f.who) + '" data-detail-date="' + esc(f.day) + '"' : ' data-detail-id="' + esc(f.id) + '"') + '>';
+        return action + f.html + '<span class="rt">' + esc(seenStamp(new Date(f.t).toISOString())) + '</span>' + (f.k === 'spend' ? '</a>' : '</button>');
       }).join("")
     : '<div class="empty"><b>Nothing yet.</b>Spends, days and rules all land here as they happen.</div>';
 
@@ -6177,6 +6218,7 @@ function paintOverview(){
     ? rows.length + (rows.length === 1 ? " line" : " lines") + " · " + days.length +
       " person-days · " + subs.length + (subs.length === 1 ? " rule" : " rules")
     : "Nothing logged yet — the first spend starts it off.";
+  window.dispatchEvent(new Event("fomo:overview-updated"));
 }
 
 /* The campus half of the overview, drawn on its own so the numbers can
@@ -6218,11 +6260,11 @@ function paintOvCampus(){
   c.seats.forEach(function(x){ mx = Math.max(mx, x.n); });
   $("ov-seat-note").textContent = c.total + (c.total === 1 ? " application" : " applications");
   box.innerHTML = c.seats.map(function(x){
-    return '<div class="ov-cat"><span class="nm">' + tint(x.label, x.v) + "</span>" +
+    return '<div class="ov-seat-row"><button class="ov-cat" data-campus-view="applicants" data-campus-seat="' + esc(x.id) + '" aria-label="' + esc('View ' + x.label + ' applications') + '"><span class="nm">' + tint(x.label, x.v) + "</span>" +
       '<span class="bar"><i style="width:' + (x.n / mx * 100).toFixed(1) +
         '%;background:var(' + x.v + ')"></i></span>' +
-      '<span class="amt">' + x.n + "</span>" +
-      '<span class="pc">' + (x.open ? x.open + " open" : "") + "</span></div>";
+      '<span class="amt">' + x.n + "</span></button>" +
+      '<button class="ov-link ov-seat-open" data-campus-view="applicants" data-campus-seat="' + esc(x.id) + '" data-campus-status="open" aria-label="' + esc('View ' + x.open + ' open ' + x.label + ' applications') + '">' + x.open + " open →</button></div>";
   }).join("");
 }
 
@@ -6579,6 +6621,7 @@ $("pal-list").addEventListener("click", function(ev){
 $("pal").addEventListener("click", function(ev){ if (ev.target === this) palClose(); });
 
 document.addEventListener("keydown", function(ev){
+  if (document.getElementById("ov-details") && document.getElementById("ov-details").open) return;
   if ((ev.metaKey || ev.ctrlKey) && (ev.key === "k" || ev.key === "K")) {
     ev.preventDefault(); $("pal").hidden ? palOpen() : palClose(); return;
   }
@@ -6617,16 +6660,37 @@ function openLedgerDetail(values){
   setView("ledger"); render();
 }
 document.addEventListener("click",function(ev){
-  var b=ev.target.closest('[data-ledger-date],[data-ledger-cat],[data-ledger-status],[data-ledger-query]');
+  var b=ev.target.closest('[data-ledger-date],[data-ledger-who],[data-ledger-cat],[data-ledger-cats],[data-ledger-status],[data-ledger-query]');
   if(b){
     ev.preventDefault();
     var f={};
     if(b.hasAttribute('data-ledger-date')) f.date=b.dataset.ledgerDate;
     if(b.hasAttribute('data-ledger-who')) f.who=b.dataset.ledgerWho;
+    if(b.hasAttribute('data-ledger-exclude-who')) f.excludeWho=b.dataset.ledgerExcludeWho;
     if(b.hasAttribute('data-ledger-cat')) f.cat=b.dataset.ledgerCat;
+    if(b.hasAttribute('data-ledger-cats')) {try {f.cats=JSON.parse(b.dataset.ledgerCats);}catch(e){f.cats=[];}}
     if(b.hasAttribute('data-ledger-status')) f.status=b.dataset.ledgerStatus;
     if(b.hasAttribute('data-ledger-query')) f.q=b.dataset.ledgerQuery.toLowerCase();
     openLedgerDetail(f);
+  }
+  var campus=ev.target.closest('[data-campus-view]');
+  if(campus){
+    ev.preventDefault();
+    window.dispatchEvent(new CustomEvent('fomo:campus-drilldown',{detail:{
+      view:campus.dataset.campusView,seat:campus.dataset.campusSeat || '',status:campus.dataset.campusStatus || ''
+    }}));
+    setView(campus.dataset.campusView);
+  }
+  if(ev.target.closest('[data-overview-breakdown]')){
+    ev.preventDefault();clearFilters();setView('reporting');
+    var categoryTab=$('rp-tabs').querySelector('[data-rp="cat"]');
+    if(categoryTab) categoryTab.click();
+  }
+  if(ev.target.closest('[data-overview-visits]')){
+    ev.preventDefault();
+    $('vr-filter').value='';$('vr-search').value='';
+    $('vr-search').dispatchEvent(new Event('input',{bubbles:true}));
+    setView('visits');
   }
   var review=ev.target.closest('[data-review]');
   if(review) setView('charge',review.dataset.review);
@@ -7240,6 +7304,7 @@ $("identity-switch").addEventListener("click",async function(){
 
 })();
 </script>
+<script type="module" src="/invoice/overview-details.js"></script>
 <script type="module" src="/invoice/visits.js"></script>
 <script type="module" src="/invoice/campus.js"></script>
 <script type="module" src="/invoice/posts.js"></script>

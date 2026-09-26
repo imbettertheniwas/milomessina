@@ -79,7 +79,9 @@ const state = {
      ever moves off this one if somebody has a block that does not run
      every week — with nothing rotating, one week is every week and a
      picker would be a control that changes nothing. */
-  week: '', every: 2
+  week: '', every: 2,
+  boardMode: 'day', boardDay: ((new Date().getDay() + 6) % 7) + 1,
+  boardPerson: '', boardSelection: null
 };
 
 /* The week everything is drawn for. state.week is filled in at the bottom,
@@ -782,6 +784,49 @@ function pickWindows(list, howMany){
   return out;
 }
 
+function dateForDay(day){
+  const date = new Date(weekShown() + 'T12:00:00');
+  date.setDate(date.getDate() + day - 1);
+  return day10(date);
+}
+
+/* A range is free only when the person has submitted a schedule and no
+   recorded block overlaps any part of it. Missing schedules stay separate. */
+function rangePeople(day, start, end){
+  const free = [], busy = [], missing = [];
+  PEOPLE().forEach(who => {
+    if (!filledIn(who)) { missing.push(who); return; }
+    const blocks = blocksOf(who).filter(block => runsOn(block, weekShown()) &&
+      (block.days || []).includes(day) && mins(block.start) < end && mins(block.end) > start);
+    if (blocks.length) busy.push({who, blocks}); else free.push(who);
+  });
+  return {free, busy, missing};
+}
+
+function dayRanges(day, person){
+  const [from, to] = hoursNow(), ranges = [];
+  for (let start = from * 60; start < to * 60; start += STEP) {
+    const people = rangePeople(day, start, start + STEP);
+    const key = person ? !filledIn(person) ? 'missing'
+      : people.busy.some(row => row.who === person) ? 'busy' : 'free'
+      : people.free.join('|');
+    const last = ranges[ranges.length - 1];
+    if (last && last.key === key) last.end = start + STEP;
+    else ranges.push({day, start, end:start + STEP, key});
+  }
+  return ranges;
+}
+
+function duration(minutes){
+  const hours = Math.floor(minutes / 60), rest = minutes % 60;
+  return (hours ? hours + 'h' : '') + (rest ? (hours ? ' ' : '') + rest + 'm' : '');
+}
+
+function rangeAttrs(range){
+  return ' data-sc-day="' + range.day + '" data-sc-start="' + range.start +
+    '" data-sc-end="' + range.end + '"';
+}
+
 /* ---------- drawing it ---------- */
 
 function message(text, bad){
@@ -820,40 +865,34 @@ function drawTabs(){
   });
 }
 
-/* The weeks you can ask about: this one and the next few real ones, named
-   by their dates rather than as "week A", which is only a name if you
-   already know which one you are in. It is hidden outright while nobody's
-   week rotates, because then every week is the same week. */
+/* Read-only exploration lives on the board; the person being explored is
+   deliberately separate from state.who, which owns the editing form. */
 function drawWeeks(){
   const box = $('sc-weeks');
   if (!box) return;
-  const rotating = anyRotating();
-  box.hidden = !rotating;
-  if (!rotating) { state.week = mondayOf(new Date()); box.innerHTML = ''; return; }
-
-  const here = mondayOf(new Date());
-  /* How far ahead is worth offering: one full turn of the longest rotation
-     anybody has, so every distinct week is reachable and no more. */
-  const longest = state.blocks.reduce((n, b) => {
-    const c = cycleOf(b.week);
-    return c && c.n > n ? c.n : n;
-  }, 2);
-  let html = '';
-  for (let i = 0; i < longest; i++) {
-    const d = new Date(here + 'T12:00:00');
-    d.setDate(d.getDate() + i * 7);
-    const iso = day10(d);
-    const label = i === 0 ? 'This week' : i === 1 ? 'Next week'
-      : 'Week of ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
-    html += '<button type="button" class="sc-wk' + (iso === weekShown() ? ' on' : '') +
-      '" data-week="' + iso + '"><b>' + label + '</b><i>' +
-      (i === 0 || i === 1 ? d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') +
-      '</i></button>';
-  }
-  box.innerHTML = html;
+  box.hidden = false;
+  box.className = 'sc-explorer-controls';
+  box.setAttribute('aria-label', 'Explore schedules');
+  const modes = [['day','By day'], ['week','Week overview'], ['person','By person']];
+  box.innerHTML = '<div class="sc-explorer-top"><div class="sc-modes" role="group" aria-label="Schedule view">' +
+    modes.map(([id, label]) => '<button type="button" class="sc-mode' + (state.boardMode === id ? ' on' : '') +
+      '" data-sc-mode="' + id + '" aria-pressed="' + (state.boardMode === id) + '">' + label + '</button>').join('') +
+    '</div><div class="sc-date-nav"><button type="button" class="mini" data-sc-week-shift="-1" aria-label="Previous week">←</button>' +
+      '<label for="sc-week-date">Week of <input type="date" id="sc-week-date" value="' + weekShown() + '"></label>' +
+      '<button type="button" class="mini" data-sc-week-shift="1" aria-label="Next week">→</button>' +
+      '<button type="button" class="mini ghost" data-sc-week-today>This week</button></div></div>' +
+    '<div class="sc-explorer-bottom">' +
+      (state.boardMode === 'person' ? '<label class="sc-person-pick" for="sc-explore-person">Person <select id="sc-explore-person">' +
+        PEOPLE().map(person => '<option value="' + esc(person) + '"' + (person === state.boardPerson ? ' selected' : '') + '>' +
+          esc(person) + (!filledIn(person) ? ' · not submitted' : '') + '</option>').join('') + '</select></label>' : '') +
+      '<div class="sc-day-nav" role="group" aria-label="Day to explore">' + DAYS.map(day =>
+        '<button type="button" class="sc-explore-day' + (state.boardDay === day.n ? ' on' : '') +
+        '" data-sc-pick-day="' + day.n + '" aria-pressed="' + (state.boardDay === day.n) + '"><b>' + day.short +
+        '</b><span>' + Number(dateForDay(day.n).slice(-2)) + '</span></button>').join('') + '</div></div>';
 }
 
 function drawBoard(){
+  if (!PEOPLE().includes(state.boardPerson)) state.boardPerson = PEOPLE()[0] || '';
   drawWeeks();
   const known = knownPeople(), all = PEOPLE(), missing = all.filter(p => !filledIn(p));
   const grid = freeGrid(), [from, to] = hoursNow();
@@ -885,33 +924,24 @@ function drawBoard(){
       (missing.length ? ' — nothing here is waiting on ' + missing.map(esc).join(', ') + ' being free, it simply does not know them yet' : '') +
       '. Put the window to the group before anybody drives in.';
 
-  /* A week on the grid is a term week. Somebody whose school is on break
-     is not in any of the classes drawn on it, and that changes the answer
-     in their favour rather than against it — so it is said out loud here
-     instead of being silently baked into cells nobody would know to
-     distrust. */
-  const away = PEOPLE().filter(p => onBreak(p).length);
+  /* Breaks are dated while the stored blocks describe a term week. Keep
+     that distinction visible for the week being explored, including past
+     or future weeks selected through the date control. */
+  const away = state.blocks.filter(block => block.kind === 'break' &&
+    block.from <= dateForDay(7) && (block.to || block.from) >= weekShown());
   const note = $('sc-away');
   if (note) {
     note.hidden = !away.length;
-    note.innerHTML = away.map(p => '<b>' + esc(p) + '</b> is on ' +
-      esc(onBreak(p)[0].label.toLowerCase()) + ' until ' +
-      esc(breakSay({from:onBreak(p)[0].to || onBreak(p)[0].from}))).join(', and ') +
-      (away.length ? ' — the classes below are term-time, so there is more room than the grid shows.' : '');
+    note.innerHTML = away.map(block => '<b>' + esc(block.who) + '</b> · ' + esc(block.label) +
+      ' (' + esc(breakSay(block)) + ')').join('; ') +
+      (away.length ? '. Availability below uses term-time blocks; confirm any school-break changes.' : '');
   }
 
-  /* With rotations in play the answer is about one week rather than about
-     weeks in general, and a board that did not say which would be quietly
-     wrong every other Tuesday. */
   const rotate = $('sc-week-say');
   if (rotate) {
-    const on = anyRotating() && weekShown() !== mondayOf(new Date());
-    rotate.hidden = !anyRotating();
-    rotate.textContent = anyRotating()
-      ? 'for the week of ' + new Date(weekShown() + 'T12:00:00')
-          .toLocaleDateString('en-US', {month:'short', day:'numeric'}) +
-        (on ? '' : ' — this week')
-      : '';
+    rotate.hidden = false;
+    rotate.textContent = 'Week of ' + new Date(weekShown() + 'T12:00:00')
+      .toLocaleDateString('en-US', {month:'short', day:'numeric'});
   }
 
   drawBest(grid, known, from, to);
@@ -919,8 +949,7 @@ function drawBoard(){
 
   $('sc-hours').textContent = state.wide ? 'Just the working day' : 'Show the whole day';
   $('sc-free-note').textContent = known.length
-    ? clock(from * 60) + ' to ' + clock(to * 60) + ' · solid where ' + state.need +
-      ' or more are free, faint where fewer are'
+    ? known.length + ' submitted · ' + missing.length + ' missing · select a time for details'
     : '';
 }
 
@@ -954,47 +983,108 @@ function drawBest(grid, known, from, to){
   }
 
   box.innerHTML = best.map(w => {
-    const out = known.filter(p => w.who.indexOf(p) < 0);
-    const hours = Math.round(w.span / 60 * 10) / 10;
-    return '<div class="sc-win' + (w.who.length === known.length && known.length > 1 ? ' all' : '') + '">' +
-      '<div class="sc-win-when"><b>' + DAYS[w.day - 1].long + '</b>' +
-        '<span>' + span(w.start, w.end) + '</span></div>' +
-      '<div class="sc-win-who">' + w.who.map(p => av(p) + '<i>' + esc(p) + '</i>').join('') + '</div>' +
-      '<div class="sc-win-tail">' +
-        '<span class="sc-win-len">' + (hours >= 1 ? hours + (hours === 1 ? ' hour' : ' hours') : w.span + ' min') + '</span>' +
-        (out.length ? '<span class="sc-win-out">' + esc(out.join(', ')) + ' busy</span>' : '<span class="sc-win-ok">everybody free</span>') +
-      '</div></div>';
+    const missing = PEOPLE().length - known.length;
+    const selected = state.boardSelection && state.boardSelection.day === w.day &&
+      state.boardSelection.start === w.start && state.boardSelection.end === w.end;
+    return '<button type="button" data-sc-window="true" class="sc-win' + (selected ? ' selected' : '') + '"' + rangeAttrs(w) +
+      ' aria-pressed="' + !!selected + '">' +
+      '<span class="sc-win-top"><b>' + DAYS[w.day - 1].long + '</b><span class="sc-win-len">' + duration(w.span) + '</span></span>' +
+      '<span class="sc-win-time">' + span(w.start, w.end) + '</span>' +
+      '<span class="sc-win-count"><b>' + w.who.length + '/' + known.length + ' free</b>' +
+        (missing ? '<span>' + missing + ' not submitted</span>' : '<span>All schedules in</span>') + '</span>' +
+      '<span class="sc-win-names">' + esc(w.who.join(', ')) + '</span>' +
+      '<span class="sc-win-more">See who can make it <span aria-hidden="true">↗</span></span></button>';
   }).join('');
+}
+
+function rangeDetail(range){
+  const people = rangePeople(range.day, range.start, range.end);
+  const day = DAYS[range.day - 1];
+  const breakRows = state.blocks.filter(block => block.kind === 'break' &&
+    block.from <= dateForDay(range.day) && (block.to || block.from) >= dateForDay(range.day));
+  const personButton = (who, extra) => '<button type="button" class="sc-detail-person" data-sc-person="' + esc(who) + '">' +
+    av(who) + '<span><b>' + esc(who) + '</b>' + (extra ? '<small>' + esc(extra) + '</small>' : '') + '</span>' +
+    '<span class="sc-person-arrow" aria-hidden="true">↗</span></button>';
+  return '<section class="sc-slot-detail" id="sc-slot-detail" tabindex="-1" aria-label="Selected availability">' +
+    '<div class="sc-detail-heading"><div><span class="sc-eyebrow">Selected time · ' + duration(range.end - range.start) + '</span>' +
+    '<h3>' + day.long + ' · ' + span(range.start, range.end) + '</h3></div><span class="sc-detail-date">' +
+    new Date(dateForDay(range.day) + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span></div>' +
+    '<div class="sc-detail-columns"><div><h4><span class="sc-status-dot free"></span>Free throughout <b>' + people.free.length + '</b></h4>' +
+      (people.free.map(who => personButton(who, 'No recorded conflicts')).join('') || '<p class="sc-detail-empty">No one free for the whole window.</p>') +
+    '</div><div><h4><span class="sc-status-dot busy"></span>Busy during this time <b>' + people.busy.length + '</b></h4>' +
+      (people.busy.map(row => personButton(row.who, row.blocks.map(block =>
+        (block.label || kindOf(block.kind).label) + ' · ' + span(mins(block.start), mins(block.end))).join('; '))).join('') ||
+        '<p class="sc-detail-empty">No recorded conflicts.</p>') +
+    '</div><div><h4><span class="sc-status-dot missing"></span>Not submitted <b>' + people.missing.length + '</b></h4>' +
+      (people.missing.map(who => personButton(who, 'Availability unknown')).join('') || '<p class="sc-detail-empty">Everyone has submitted a schedule.</p>') +
+    '</div></div>' + (breakRows.length ? '<p class="sc-break-caveat">' + breakRows.map(block => esc(block.who + ': ' + block.label)).join(' · ') +
+      '. These are term-time blocks; confirm availability during school breaks.</p>' : '') + '</section>';
+}
+
+function dayExplorer(){
+  const person = state.boardMode === 'person' ? state.boardPerson : '';
+  const day = DAYS[state.boardDay - 1];
+  const ranges = dayRanges(state.boardDay, person);
+  const heading = (person ? esc(person) + ' · ' : '') + day.long;
+  const blocks = person ? blocksOf(person).filter(block => (block.days || []).includes(day.n) && runsOn(block, weekShown()))
+    .sort((a,b) => mins(a.start) - mins(b.start)) : [];
+  let html = '<div class="sc-day-heading"><h3>' + heading + '</h3><span>' +
+    (person && !filledIn(person) ? 'Schedule not submitted' : 'Select a time to see everyone’s availability') + '</span></div>';
+  if (person && blocks.length) {
+    html += '<div class="sc-person-blocks">' + blocks.map(block => '<div><span class="sc-status-dot busy"></span><b>' +
+      esc(block.label || kindOf(block.kind).label) + '</b><span>' + span(mins(block.start), mins(block.end)) +
+      '</span></div>').join('') + '</div>';
+  }
+  html += '<div class="sc-day-ranges">' + ranges.map(range => {
+    const people = rangePeople(range.day, range.start, range.end);
+    const status = person ? range.key : people.free.length >= state.need ? 'free' : 'busy';
+    const label = person ? range.key === 'missing' ? 'Not submitted' : range.key === 'busy' ? 'Busy' : 'Free'
+      : people.free.length + ' of ' + knownPeople().length + ' free';
+    const names = person ? range.key === 'missing' ? 'Availability unknown' : range.key === 'busy'
+      ? people.busy.find(row => row.who === person).blocks.map(block => block.label || kindOf(block.kind).label).join(', ')
+      : 'No recorded conflicts' : people.free.length ? people.free.join(', ') : 'No submitted schedules are free';
+    const selected = state.boardSelection && state.boardSelection.day === range.day &&
+      state.boardSelection.start === range.start && state.boardSelection.end === range.end;
+    return '<button type="button" class="sc-range-row' + (selected ? ' selected' : '') + '"' + rangeAttrs(range) +
+      ' aria-pressed="' + !!selected + '"><span class="sc-range-time">' + span(range.start, range.end) +
+      '<small>' + duration(range.end - range.start) + '</small></span><span class="sc-range-status ' + status + '">' + label +
+      '</span><span class="sc-range-names">' + esc(names) + '</span><span aria-hidden="true">↗</span></button>';
+  }).join('') + '</div>';
+  return html;
 }
 
 function drawHeat(grid, known, from, to){
   const box = $('sc-heat');
   if (!box) return;
-  if (!known.length) { box.innerHTML = ''; box.hidden = true; return; }
   box.hidden = false;
-
-  const first = Math.floor(from * 60 / STEP), last = Math.ceil(to * 60 / STEP);
-  let h = '<div class="sc-hcol sc-htimes"><span class="sc-hhead"></span>';
-  for (let s = first; s < last; s++) {
-    const at = s * STEP;
-    h += '<span class="sc-htime">' + (at % 60 === 0 ? clock(at).replace(':00', '') : '') + '</span>';
-  }
-  h += '</div>';
-
-  DAYS.forEach((day, di) => {
-    h += '<div class="sc-hcol"><span class="sc-hhead">' + day.short + '</span>';
-    for (let s = first; s < last; s++) {
-      const free = grid[di][s], n = free.length;
-      const share = known.length ? n / known.length : 0;
-      const on = n >= state.need;
-      h += '<span class="sc-cell' + (on ? ' on' : '') + (n === known.length && n > 1 ? ' all' : '') +
-        '" style="--fill:' + share.toFixed(2) + '" title="' +
-        esc(day.long + ' ' + span(s * STEP, s * STEP + STEP) + ' · ' +
-          (n ? free.join(', ') + ' free' : 'nobody free')) + '"></span>';
-    }
+  box.className = 'sc-explore-body';
+  let h = '';
+  if (state.boardMode !== 'week') h = dayExplorer();
+  else {
+    const first = Math.floor(from * 60 / STEP), last = Math.ceil(to * 60 / STEP);
+    h = '<p class="sc-heat-guide">Each cell is 30 minutes. The number is how many submitted schedules are free.</p><div class="sc-grid">' +
+      '<div class="sc-hcol sc-htimes"><span class="sc-hhead"></span>';
+    for (let s = first; s < last; s++) h += '<span class="sc-htime">' + (s % 2 === 0 ? clock(s * STEP) : '') + '</span>';
     h += '</div>';
-  });
-
+    DAYS.forEach((day, di) => {
+      h += '<div class="sc-hcol"><button type="button" class="sc-hhead" data-sc-pick-day="' + day.n + '">' + day.short + '</button>';
+      for (let s = first; s < last; s++) {
+        const free = grid[di][s], n = free.length;
+        const label = day.long + ' ' + span(s * STEP, s * STEP + STEP) + ' · ' + n + ' free · ' +
+          (PEOPLE().length - known.length) + ' not submitted';
+        const selected = state.boardSelection && state.boardSelection.day === day.n &&
+          state.boardSelection.start <= s * STEP && state.boardSelection.end > s * STEP;
+        h += '<button type="button" class="sc-cell' + (n >= state.need ? ' on' : '') + (selected ? ' selected' : '') +
+          '"' + rangeAttrs({day:day.n, start:s * STEP, end:(s + 1) * STEP}) +
+          ' style="--fill:' + (known.length ? n / known.length : 0).toFixed(2) + '" aria-label="' + esc(label) +
+          '" title="' + esc(label) + '" aria-pressed="' + !!selected + '">' + n + '</button>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  if (state.boardSelection) h += rangeDetail(state.boardSelection);
+  else h += '<p class="sc-select-hint">Choose a suggested window or a time above to see who is free, busy, or still missing a schedule.</p>';
   box.innerHTML = h;
 }
 
@@ -1368,19 +1458,76 @@ $('sc-need').addEventListener('change', ev => {
   drawBoard();
 });
 
-$('sc-weeks').addEventListener('click', ev => {
-  const b = ev.target.closest('button[data-week]');
-  if (!b) return;
-  state.week = b.getAttribute('data-week');
-  render();
+function focusBoard(selector){
+  $('sc-board').querySelector?.(selector)?.focus?.();
+}
+
+$('sc-board').addEventListener('click', ev => {
+  const button = ev.target.closest('button');
+  if (!button) return;
+  const mode = button.getAttribute('data-sc-mode');
+  const day = Number(button.getAttribute('data-sc-pick-day'));
+  const shift = Number(button.getAttribute('data-sc-week-shift'));
+  const person = button.getAttribute('data-sc-person');
+  const slotDay = Number(button.getAttribute('data-sc-day'));
+  if (['day','week','person'].includes(mode)) {
+    state.boardMode = mode;
+    drawBoard();
+    focusBoard('[data-sc-mode="' + mode + '"]');
+  } else if (day >= 1 && day <= 7) {
+    state.boardDay = day;
+    if (state.boardMode === 'week') state.boardMode = 'day';
+    state.boardSelection = null;
+    drawBoard();
+    focusBoard('[data-sc-pick-day="' + day + '"]');
+  } else if (shift || button.getAttribute('data-sc-week-today') !== null) {
+    const date = new Date((shift ? weekShown() : mondayOf(new Date())) + 'T12:00:00');
+    if (shift) date.setDate(date.getDate() + shift * 7);
+    state.week = day10(date);
+    state.boardSelection = null;
+    drawBoard();
+    focusBoard(shift ? '[data-sc-week-shift="' + shift + '"]' : '[data-sc-week-today]');
+  } else if (person && PEOPLE().includes(person)) {
+    state.boardPerson = person;
+    state.boardMode = 'person';
+    state.boardSelection = null;
+    drawBoard();
+    focusBoard('#sc-explore-person');
+    $('sc-weeks').scrollIntoView?.({block:'nearest'});
+  } else if (slotDay >= 1 && slotDay <= 7) {
+    const start = Number(button.getAttribute('data-sc-start'));
+    const end = Number(button.getAttribute('data-sc-end'));
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end > 1440 || end <= start) return;
+    state.boardDay = slotDay;
+    state.boardSelection = {day:slotDay, start, end};
+    if (button.getAttribute('data-sc-window')) state.boardMode = 'day';
+    drawBoard();
+    const detail = $('sc-slot-detail');
+    detail?.focus?.({preventScroll:true});
+    detail?.scrollIntoView?.({block:'nearest', behavior:'smooth'});
+  }
+});
+
+$('sc-weeks').addEventListener('change', ev => {
+  if (ev.target.id === 'sc-explore-person' && PEOPLE().includes(ev.target.value)) {
+    state.boardPerson = ev.target.value;
+    state.boardSelection = null;
+    drawBoard();
+    focusBoard('#sc-explore-person');
+  } else if (ev.target.id === 'sc-week-date' && day10(ev.target.value)) {
+    state.week = mondayOf(ev.target.value);
+    state.boardSelection = null;
+    drawBoard();
+    focusBoard('#sc-week-date');
+  }
 });
 
 $('sc-every').addEventListener('change', () => { drawEvery(); });
 
 $('sc-hours').addEventListener('click', () => {
   state.wide = !state.wide;
+  state.boardSelection = null;
   drawBoard();
-  drawAll();
 });
 
 $('sc-whobar').addEventListener('click', ev => {

@@ -107,6 +107,16 @@ function seatTag(id){
   const s = seatOf(id);
   return '<span class="tag tint" style="--c:var(' + s.v + ')">' + esc(s.label) + '</span>';
 }
+function seatChoices(rows, selected){
+  const extra = [...new Set(rows.map(row => row.seat).concat(selected || '').filter(Boolean))];
+  return SEATS.concat(extra.filter(id => !SEATS.some(seat => seat.id === id)).map(seatOf));
+}
+function setSeatFilter(id, rows, selected){
+  const pick = $(id);
+  pick.innerHTML = '<option value="">Every seat</option>' + seatChoices(rows, selected).map(s =>
+    '<option value="' + esc(s.id) + '">' + esc(s.label) + '</option>').join('');
+  pick.value = selected;
+}
 function pill(id, list){
   const s = labelOf(list, id);
   return '<span class="pill' + (s.pill ? ' ' + s.pill : '') + '"><i></i>' + esc(s.label) + '</span>';
@@ -229,8 +239,8 @@ function publish(){
     working: working.length,
     campuses: new Set(working.map(t => t.campus).filter(Boolean)).size,
     states: new Set(working.map(t => t.state).filter(Boolean)).size,
-    seats: SEATS.map(s => ({
-      label: s.label, v: s.v,
+    seats: seatChoices(all).map(s => ({
+      id: s.id, label: s.label, v: s.v,
       n: all.filter(a => a.seat === s.id).length,
       open: all.filter(a => a.seat === s.id && isOpen(a)).length
     })).filter(x => x.n).sort((a, b) => b.n - a.n)
@@ -295,6 +305,7 @@ function renderApplicants(){
   $('ap-n-open').textContent = counts.open || '';
   $('ap-n-hired').textContent = counts.hired || '';
   $('ap-n-passed').textContent = counts.passed || '';
+  setSeatFilter('ap-seat', all, apSeat);
 
   /* the campus filter is whatever has actually applied */
   const campuses = [...new Set(all.map(a => a.school).filter(Boolean))].sort();
@@ -454,6 +465,7 @@ function renderTeam(){
   if (location.hash !== '#/campus') return;
   teamPending = false;
   const all = state.team, list = cmVisible();
+  setSeatFilter('cm-seat', all, cmSeat);
 
   /* the state filter is whatever the roster actually covers */
   const seen = [...new Set(all.map(t => t.state).filter(Boolean))].sort();
@@ -602,6 +614,40 @@ async function removeTeam(){
 }
 
 /* ══════════ wiring ══════════ */
+/* Overview links describe a fresh slice of the tables. Set the filters
+   before the page changes views so the first paint, including a delayed
+   first sheet response, shows exactly the people counted by that link. */
+window.addEventListener('fomo:campus-drilldown', ev => {
+  const detail = ev.detail || {};
+  if (detail.view !== 'applicants' && detail.view !== 'campus') return;
+  state.open = null;
+  $('ap-detail').hidden = true;
+  const seat = String(detail.seat || '');
+  if (detail.view === 'applicants') {
+    apTab = ['open', 'hired', 'passed'].includes(detail.status) ? detail.status : '';
+    apSeat = seat;
+    apCampus = '';
+    apQuery = '';
+    $('ap-campus').value = '';
+    $('ap-q').value = '';
+    setSeatFilter('ap-seat', state.applicants, apSeat);
+    [...$('ap-tabs').children].forEach(tab =>
+      tab.classList.toggle('on', tab.getAttribute('data-ap') === apTab));
+    renderApplicants();
+  } else {
+    cmState = '';
+    cmSeat = seat;
+    cmStatus = ['working', 'active', 'paused', 'alumni'].includes(detail.status) ? detail.status : '';
+    cmQuery = '';
+    $('cm-state').value = '';
+    $('cm-status').value = cmStatus;
+    $('cm-q').value = '';
+    setSeatFilter('cm-seat', state.team, cmSeat);
+    closeForm();
+    renderTeam();
+  }
+});
+
 $('ap-tabs').addEventListener('click', ev => {
   const b = ev.target.closest('[data-ap]');
   if (!b) return;
@@ -663,10 +709,8 @@ $('cm-csv').addEventListener('click', () => {
 });
 
 /* the two selects that are the same on every load */
-$('ap-seat').innerHTML = '<option value="">Every seat</option>' +
-  SEATS.map(s => '<option value="' + s.id + '">' + esc(s.label) + '</option>').join('');
-$('cm-seat').innerHTML = '<option value="">Every seat</option>' +
-  SEATS.map(s => '<option value="' + s.id + '">' + esc(s.label) + '</option>').join('');
+setSeatFilter('ap-seat', [], '');
+setSeatFilter('cm-seat', [], '');
 $('cm-f-seat').innerHTML = SEATS.map(s =>
   '<option value="' + s.id + '">' + esc(s.label) + '</option>').join('');
 $('cm-f-status').innerHTML = TEAM_STATES.map(s =>

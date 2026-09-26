@@ -119,7 +119,9 @@ button:disabled{cursor:default}
  .fi{flex-wrap:wrap}
  .fi .bd{flex-basis:200px}
  .fi .rt{margin-left:34px}
- #ov-team td:nth-child(n+4),[data-view="overview"] table th:nth-child(n+4){display:none}
+ [data-view="overview"] .tbl-scroll table{min-width:780px}
+ [data-view="overview"] .tbl-scroll::before{content:"Swipe to see attendance and commits →";display:block;padding:10px 12px;color:var(--muted-2);font-size:11px}
+ #ov-team td:first-child,[data-view="overview"] table th:first-child{position:sticky;left:0;background:var(--surface-2);z-index:1}
  #ov-team td,[data-view="overview"] table th{padding:11px 9px}
  .person-link{display:inline-flex;min-height:30px;align-items:center}
  .ppgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -152,6 +154,26 @@ button:disabled{cursor:default}
 body[data-role="intern"] #vr-save,body[data-role="intern"] #vr-hours-save,body[data-role="intern"] #vr-hours-copy{display:none}
 .overview-action{width:100%;color:inherit;text-align:left;cursor:pointer}
 .overview-action:hover{background:var(--raise)}
+/* Every overview figure offers a read-only route to the records behind it. */
+button.overview-stat{text-align:left;font:inherit;cursor:pointer}
+.ov-heading{display:inline-flex;align-items:center;gap:7px;color:inherit;text-decoration:none;font:inherit;text-align:left;cursor:pointer}
+.ov-heading>span{font-size:12px;color:var(--muted-2)}
+.ov-heading:hover,.ov-link:hover{color:var(--violet-hi)}
+.ov-link{color:inherit;font:inherit;text-align:inherit;text-decoration:none;cursor:pointer}
+.ov-link:hover{text-decoration:underline;text-underline-offset:3px}
+.ov-cell{display:block;width:100%;min-height:34px;color:inherit;font:inherit;text-align:inherit;cursor:pointer;border-radius:5px;padding:3px 5px}
+.ov-cell:hover{background:var(--raise);color:var(--violet-hi)}
+.ov-cell.share{display:flex;text-align:left}
+.ov-person{display:inline-flex;align-items:center;gap:8px}
+.strip7 button{width:12px;height:24px;border-radius:3px;cursor:pointer;position:relative}
+.strip7 button:hover{outline:1px solid var(--violet-hi);outline-offset:2px}
+.ov-seat-row{display:flex;align-items:center;gap:10px;min-width:0}
+.ov-seat-row>.ov-cat{flex:1;min-width:0}
+.ov-seat-open{flex:none;min-width:65px;min-height:38px;text-align:right;color:var(--muted);font-size:11px}
+.ov-heading:focus-visible,.ov-link:focus-visible,.ov-cell:focus-visible,.overview-action:focus-visible,.strip7 button:focus-visible{outline:2px solid var(--violet-hi);outline-offset:3px}
+.stcard-out .mt{margin-top:10px;line-height:1.6}
+.stcard-out .ac{flex-wrap:wrap}
+@media(max-width:600px){.ov-cell{min-height:40px;padding:3px 0}.ov-seat-row{gap:6px}.ov-seat-row .ov-cat .nm{min-width:80px}.ov-seat-row .ov-cat .amt{width:28px}}
 
 /* Receipts and reversible money actions. */
 .charge-review{max-width:1100px;margin:0 auto;display:grid;gap:18px;align-content:start}

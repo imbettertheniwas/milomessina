@@ -24,7 +24,7 @@ anything.
 
 | View | What is on it |
 | --- | --- |
-| **Overview** | Banded by subject: the money, the four of them, the campus and guests, and what just happened — headline figures, what needs attention, spend by month and by category, rules due, a row per person, quiet days with a spend, campus counts, and the newest activity |
+| **Overview** | Banded by subject: the money, the team, the campus and guests, and what just happened — clickable figures, attention items, spend by day and category, recurring rules, person-level spending and attendance, campus counts, and exact activity records |
 | **Ledger** | Every line, with sub-tabs for *all / still owed / reimbursed*, filters for who, category and period, search, CSV, and **Edit** on any row |
 | **Reimbursements** | A settle-up card per person, the who-fronted-it chart, and the lines that have been waiting longest |
 | **On repeat** | The monthly rules, what they cost a month and a year, and when the next one lands |
@@ -45,6 +45,22 @@ The view lives in the URL — `/internal#/ledger`, `/internal#/chapters`,
 `/internal#/person/Bijan` —
 so the back button works, a page can be bookmarked, and a link to somebody's
 page is a link to somebody's page.
+
+Overview details open without changing records. Team spending opens the relevant
+ledger lines; attendance, commit counts, and recurring rules open a read-only
+detail panel. Application counts and seats reset old filters before showing their
+matching applicants. Activity links identify the exact purchase, day, or rule.
+Close a detail panel with **Close** or **Escape** to return to the overview.
+
+Arya's reimbursement card shows what he **owes out** across the team's unpaid
+expenses. His own card purchases and already reimbursed expenses are excluded.
+**View outstanding expenses** opens the lines behind that amount.
+
+Schedules can be explored **by day**, as a **week overview**, or **by person**.
+Suggested windows and time slots open a read-only breakdown of who is free,
+who has a conflicting block, and whose schedule has not been submitted.
+The week picker respects rotating schedules; school breaks remain a labeled
+term-time caveat. Exploring another person never selects them for editing.
 
 **Beta interns have their own workspace at `/internal/beta`.** That permanent
 link lets everyone join the same group immediately. They see the group’s attendance
