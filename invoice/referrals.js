@@ -127,17 +127,23 @@ const state = {
 };
 
 /* ---------- the sheet ---------- */
-async function callRefer(action, payload){
+async function callRefer(action, payload, options){
   const cfg = bridge();
   if (!cfg.identity || !cfg.identity()) throw new Error('Sign in first.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const body = Object.assign({_api:'refer', action, _key:cfg.key || '',
     _session:cfg.session ? cfg.session() : ''}, payload || {});
-  const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body),
-    signal:action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined});
-  if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
-  try { out = JSON.parse(await res.text()); } catch (e) {}
+  if (action === 'list' && cfg.read) out = await cfg.read('refer', action, payload || {}, options);
+  else {
+    if (action !== 'list') cfg.invalidate?.('refer');
+    try {
+      const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body),
+        signal:action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined});
+      if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
+      try { out = JSON.parse(await res.text()); } catch (e) {}
+    } finally { if (action !== 'list') cfg.invalidate?.('refer'); }
+  }
   if (!out) throw new Error('the endpoint answered, but not with the referrals. ' +
     'Its deployment access is probably not set to "Anyone"');
   /* A deployment made before this namespace existed reads `refer` as a
@@ -160,7 +166,7 @@ async function load(force){
   note(state.referrals ? 'Re-reading the sheet…' : 'Reading the referrals…');
   render();
   try {
-    const out = await callRefer('list');
+    const out = await callRefer('list', {}, {fresh:!!force});
     state.referrers = out.referrers || [];
     state.referrals = out.referrals || [];
     state.tiers = out.tiers || null;

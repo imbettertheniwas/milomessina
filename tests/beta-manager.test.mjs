@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import {buildBetaScheduleOverview, betaScheduleOverviewHTML} from '../invoice/beta-schedule-overview.js';
 
 const managerSource = readFileSync(new URL('../invoice/beta-manager.js', import.meta.url), 'utf8');
-const source = managerSource.replace(/^import[^\n]*\n/, '').replace(/load\(\);\s*$/, 'globalThis.manager = {load, change, state: () => ({data, selected, busy, loadedFor, generation})};');
+const source = managerSource.replace(/^import[^\n]*\n/gm, '').replace(/load\(\);\s*$/, 'globalThis.manager = {load, change, state: () => ({data, selected, busy, loadedFor, generation})};');
 const group = {id:'permanent',name:'Beta interns',active:true,startDate:'2020-01-01',endDate:'2020-01-14'};
 const member = (id='a', over={}) => ({id,name:'Intern ' + id,email:id+'@example.invalid',phone:'+1 202 555 0100',github:'intern-'+id,status:'active',notes:'Private evaluation '+id,batchId:group.id,createdAt:'2026-09-25T16:00:00Z',startDate:'2026-09-25',endDate:'2026-10-08',...over});
 const view = (members=[member()], over={}) => ({ok:true,manager:true,configured:true,group,batches:[group],members,attendance:[],recaps:[],...over});
@@ -27,16 +28,16 @@ function harness(fetchImpl, {github=async()=>[]}={}) {
     static revokeObjectURL(url){revokedUrls.push(url);}
   }
   const context=vm.createContext({document,window,location:{origin:'https://example.invalid'},URL:FileURL,Blob,atob,Uint8Array,Date,Set,AbortController,AbortSignal,
-    setTimeout,clearTimeout,navigator:{clipboard:{writeText:async text=>copied.push(text)}},
+    setTimeout,clearTimeout,buildBetaScheduleOverview,betaScheduleOverviewHTML,navigator:{clipboard:{writeText:async text=>copied.push(text)}},
     FormData:class{constructor(form){return Object.entries(form.fields || {});}},
     fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);const out=await fetchImpl(body);return {ok:true,json:async()=>out};},
     loadBetaGithub:async(members,options)=>{githubCalls.push({members,options});return github(members,options);}});
   vm.runInContext(source,context,{filename:'beta-manager.js'});
-  return {manager:context.manager,get,events,requests,copied,githubCalls,objectUrls,revokedUrls,document,setIdentity(next,enabled=true){token=next;operator=enabled;events.get('window:fomo:identity')();}};
+  return {manager:context.manager,get,events,requests,copied,githubCalls,objectUrls,revokedUrls,document,bridge:window.FOMO_SHEET,setIdentity(next,enabled=true){token=next;operator=enabled;events.get('window:fomo:identity')();}};
 }
 function assertPrivateCleared(h) {
   assert.equal(h.manager.state().data,null);
-  for(const id of ['bt-summary','bt-roster','bt-detail','bt-code'])assert.equal(h.get(id).innerHTML,'',id+' should be cleared');
+  for(const id of ['bt-summary','bt-schedule-overview','bt-roster','bt-detail','bt-code'])assert.equal(h.get(id).innerHTML,'',id+' should be cleared');
   assert.equal(h.get('bt-code').hidden,true);
   assert.equal(h.get('bt-code').dataset.invite,undefined);
 }
@@ -316,4 +317,59 @@ test('unauthorized file access clears private manager data and malformed files n
     assert.equal(h.objectUrls.length,0);assert.doesNotMatch(h.get('bt-schedule-preview').innerHTML,/<a /);
     assert.equal(h.manager.state().data.members[0].id,'a');
   }
+});
+
+test('group overview includes all schedules and opens a member even when roster search hides them',async()=>{
+  const h=harness(()=>view([member('a'),member('b')],{schedules:[schedule('a'),fileSchedule('b')]}));
+  await h.manager.load();
+  assert.match(h.get('bt-schedule-overview').innerHTML,/Group schedules/);
+  assert.match(h.get('bt-schedule-overview').innerHTML,/Class &lt;A&gt;/);
+  assert.match(h.get('bt-schedule-overview').innerHTML,/File to review/);
+  h.get('bt-search').value='Intern a';h.events.get('bt-search:input')();
+  await click(h,button({'data-overview-member':'b'}));
+  assert.equal(h.manager.state().selected,'b');assert.equal(h.get('bt-search').value,'');
+  assert.match(h.get('bt-detail').innerHTML,/classes.pdf/);
+  assert.deepEqual(h.requests.map(request=>request.action),['list'],'overview does not download uploaded files');
+});
+
+test('overview filters preserve an unsaved member form and do not start another GitHub read',async()=>{
+  const h=harness(()=>view([member('a'),member('b')],{schedules:[schedule('a'),schedule('b',{timezone:'America/Chicago'})]}));
+  await h.manager.load();const detail=h.get('bt-detail').innerHTML,githubCount=h.githubCalls.length;
+  h.get('bt-member-form').fields={notes:'Unsaved private note'};
+  h.events.get('bt-schedule-overview:change')({target:{dataset:{overviewFilter:'timezone'},value:'America/Chicago'}});
+  assert.match(h.get('bt-schedule-overview').innerHTML,/1 of 2 interns/);
+  assert.doesNotMatch(h.get('bt-schedule-overview').innerHTML,/data-overview-member="a"/);
+  assert.equal(h.get('bt-detail').innerHTML,detail);assert.equal(h.get('bt-member-form').fields.notes,'Unsaved private note');
+  assert.equal(h.githubCalls.length,githubCount);assert.equal(h.requests.length,1);
+});
+
+test('a beta list finishing on another tab is reused and renders only when Beta is reopened',async()=>{
+  const pending=deferred(),h=harness(()=>pending.promise);
+  const loading=h.manager.load();
+  h.document.body.dataset.consoleView='ledger';h.events.get('window:fomo:view-change')();
+  pending.resolve(view(undefined,{schedules:[schedule()]}));await loading;
+  assert.equal(h.manager.state().data.members[0].id,'a');assert.equal(h.manager.state().loadedFor,'operator-a');
+  assert.equal(h.get('bt-detail').innerHTML,'');assert.equal(h.get('bt-schedule-overview').innerHTML,'');assert.equal(h.githubCalls.length,0);
+  h.document.body.dataset.consoleView='beta';h.events.get('window:fomo:view-change')();await settle();
+  assert.equal(h.requests.length,1);assert.match(h.get('bt-schedule-overview').innerHTML,/Class &lt;A&gt;/);
+  assert.match(h.get('bt-detail').innerHTML,/Private evaluation a/);assert.equal(h.githubCalls.length,1);
+});
+
+test('switching away and back before the beta list finishes coalesces into its original request',async()=>{
+  const pending=deferred(),h=harness(()=>pending.promise);
+  const loading=h.manager.load();h.document.body.dataset.consoleView='ledger';h.events.get('window:fomo:view-change')();
+  h.document.body.dataset.consoleView='beta';h.events.get('window:fomo:view-change')();
+  pending.resolve(view());await loading;
+  assert.equal(h.requests.length,1);assert.match(h.get('bt-detail').innerHTML,/Private evaluation a/);
+});
+
+test('beta lists use shared reads, explicit refresh bypasses cache, and mutations invalidate around writes',async()=>{
+  const reads=[],events=[],h=harness(()=>{events.push('write');return view();});
+  h.bridge.read=async(...args)=>{reads.push(args);return view();};
+  h.bridge.invalidate=api=>events.push('invalidate:'+api);
+  await h.manager.load();await h.manager.load();await h.manager.load(true);
+  assert.equal(h.requests.length,0);assert.equal(reads.length,2);assert.equal(reads[0][0],'beta');assert.equal(reads[0][1],'list');
+  assert.equal(reads[0][3].fresh,false);assert.equal(reads[1][3].fresh,true);
+  await h.manager.change('memberupdate',{id:'a',notes:'Updated'},'Saved');
+  assert.deepEqual(events,['invalidate:beta','write','invalidate:beta']);
 });

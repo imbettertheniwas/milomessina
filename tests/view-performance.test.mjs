@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import {buildBetaScheduleOverview, betaScheduleOverviewHTML} from '../invoice/beta-schedule-overview.js';
 
 const source = file => readFileSync(new URL('../invoice/' + file, import.meta.url), 'utf8');
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return {promise, resolve}; };
@@ -28,7 +29,7 @@ function viewHarness(file, fetchImpl = async () => response({ok:true, posts:[], 
     identity:()=>({who:'Milo'}), session:()=> 'test-session', admin:()=>true, operator:()=>true},
     addEventListener(type, fn){on('window:' + type, fn);}, dispatchEvent(){}};
   const context = vm.createContext({document, window, location, URL, Blob, AbortController, AbortSignal,
-    setTimeout, clearTimeout, setInterval(){}, CustomEvent:class{constructor(type){this.type=type;}},
+    setTimeout, clearTimeout, buildBetaScheduleOverview, betaScheduleOverviewHTML, setInterval(){}, CustomEvent:class{constructor(type){this.type=type;}},
     localStorage:{getItem(){return null;},setItem(){},removeItem(){}}, navigator:{clipboard:{writeText:async()=>{}}},
     loadBetaGithub:async members => {githubCalls.push(members);return [];},
     fetch:async (url, options) => {calls.push({url, options});return fetchImpl(url, options);}});
@@ -181,5 +182,26 @@ test('searching the beta roster preserves the current detail and in-flight GitHu
   await h.emit('bt-search:input');await settle();
   assert.equal(h.githubCalls.length, 1);
   assert.equal(h.writes.includes('bt-detail'), false);
+  assert.equal(h.writes.includes('bt-schedule-overview'), false);
   assert.equal(h.writes.includes('bt-roster'), true);
+});
+
+test('view reads use the shared transport and writes invalidate before and after the request', async () => {
+  for (const [file, api] of [['posts.js','posts'], ['schedules.js','schedules'], ['campus.js','campus'], ['referrals.js','refer']]) {
+    const readCalls=[], events=[];
+    const payload={ok:true,posts:[],schedules:[],applicants:[],team:[],referrers:[],referrals:[]};
+    const h=viewHarness(file,async()=>{events.push('fetch');return response(payload);});
+    h.context.window.FOMO_SHEET.read=async(...args)=>{readCalls.push(args);return payload;};
+    h.context.window.FOMO_SHEET.invalidate=scope=>events.push('invalidate:'+scope);
+    const call=file==='referrals.js'?'callRefer':'call';
+    await vm.runInContext(`${call}('list', {view:'all'}, {fresh:true})`,h.context);
+    assert.equal(readCalls.length,1,file);
+    assert.equal(readCalls[0][0],api,file);
+    assert.equal(readCalls[0][1],'list',file);
+    assert.equal(readCalls[0][2].view,'all',file);
+    assert.equal(readCalls[0][3].fresh,true,file);
+    assert.equal(h.calls.length,0,file);
+    await vm.runInContext(`${call}('add', {who:'Milo'})`,h.context);
+    assert.deepEqual(events,['invalidate:'+api,'fetch','invalidate:'+api],file);
+  }
 });

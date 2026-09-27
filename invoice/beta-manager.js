@@ -1,10 +1,12 @@
 import {loadBetaGithub} from './beta-github.js';
+import {buildBetaScheduleOverview, betaScheduleOverviewHTML} from './beta-schedule-overview.js';
 
 const $ = id => document.getElementById(id);
 const bridge = () => window.FOMO_SHEET || {};
 const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let data=null, selected='', busy=false, loadedFor='', githubRun=0, generation=0, deleteTarget=null;
+let data=null, selected='', busy=false, loadedFor='', githubRun=0, generation=0, deleteTarget=null, needsRender=false;
 let scheduleRun=0, scheduleUrl='', scheduleLoading=false;
+let overviewFilters={batch:'all',timezone:'all'};
 const active=()=>document.body.dataset.consoleView==='beta' && bridge().operator?.();
 const batchOf=m=>(data?.batches || []).find(b=>b.id===m?.batchId) || data?.group;
 const periodOf=m=>({startDate:m?.startDate,endDate:m?.endDate});
@@ -19,11 +21,18 @@ function portfolioUrl(value) {
   try {const url=new URL(value);return ['https:','http:'].includes(url.protocol) && url.hostname && !url.username && !url.password?url.href:'';}
   catch{return '';}
 }
-async function api(action,payload={}) {
+async function api(action,payload={},options={}) {
   const b=bridge(),requestToken=b.session?.(),revision=generation;
-  const res=await fetch(b.endpoint,{method:'POST',body:JSON.stringify({_api:'beta',_key:b.key,_session:requestToken,action,...payload}),signal:AbortSignal.timeout(20000)});
-  const out=await res.json();
-  if(revision!==generation || requestToken!==bridge().session?.() || !active())throw Object.assign(new Error('Your session changed. Open Beta again.'),{code:'STALE'});
+  if(action!=='list' && action!=='schedulefile')b.invalidate?.('beta');
+  let out;
+  if(action==='list' && b.read)out=await b.read('beta',action,payload,options);
+  else {
+    try {
+      const res=await fetch(b.endpoint,{method:'POST',body:JSON.stringify({_api:'beta',_key:b.key,_session:requestToken,action,...payload}),signal:AbortSignal.timeout(20000)});
+      out=await res.json();
+    }finally{if(action!=='list' && action!=='schedulefile')b.invalidate?.('beta');}
+  }
+  if(revision!==generation || requestToken!==bridge().session?.() || !bridge().operator?.() || (action!=='list' && !active()))throw Object.assign(new Error('Your session changed. Open Beta again.'),{code:'STALE'});
   if(!out.ok) {
     const unavailable=/unknown (form|action)/i.test(out.error || '');
     throw Object.assign(new Error(unavailable?'Beta signup is not enabled on the shared internal service yet. Deploy the updated Apps Script before sharing an invite.':out.error || 'Could not save this change.'),{code:out.code});
@@ -32,21 +41,29 @@ async function api(action,payload={}) {
   // An authenticated file response is not a replacement for the manager list.
   if(action==='schedulefile')return next;
   if(next.manager!==true)throw Object.assign(new Error('Only Arya and Milo can manage the beta group.'),{code:'FORBIDDEN'});
-  data=next;return next;
+  data=next;needsRender=true;return next;
 }
 function render(preserveDetail=false) {
   if(!data)return;
+  const refreshOverview=needsRender;
+  needsRender=false;
   const previousSelected=selected;
   const group=data.members || [],q=$('bt-search').value.toLowerCase(),ids=new Set(group.map(m=>m.id));
   const shown=group.filter(m=>`${m.name} ${m.email} ${m.phone || ''} ${m.github}`.toLowerCase().includes(q));
   $('bt-invite-link').value=location.origin+'/internal/beta';
   $('bt-summary').innerHTML=[['Beta interns',group.length],['Active',group.filter(m=>m.status==='active' && batchOf(m)?.active!==false).length],['Days attended',(data.attendance || []).filter(a=>ids.has(a.memberId)).length],['Recaps submitted',(data.recaps || []).filter(r=>ids.has(r.memberId) && r.submittedAt).length]].map(([label,n])=>`<div><span>${label}</span><strong>${n}</strong></div>`).join('');
+  if(refreshOverview)renderScheduleOverview();
   if(!shown.some(m=>m.id===selected))selected=shown[0]?.id || '';
   if(deleteTarget?.id!==selected)deleteTarget=null;
   $('bt-roster').innerHTML=shown.length?shown.map(m=>`<button type="button" class="bt-person ${selected===m.id?'on':''}" data-member="${esc(m.id)}" aria-pressed="${selected===m.id}"><span class="bt-avatar">${esc(m.name.slice(0,1).toUpperCase())}</span><span><strong>${esc(m.name)}</strong><small>${attendanceOf(m.id).length} days in · Recap due ${esc(dateLabel(periodOf(m).endDate))}</small><small>${recapOf(m.id)?.submittedAt?'Recap submitted':'Recap pending'}</small></span><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></button>`).join(''):`<div class="bt-empty"><b>${group.length?'No matches':'Ready for the first arrival'}</b><p>${group.length?'Try another name, email, phone, or GitHub.':'Share the permanent invite above. Interns appear here when they join.'}</p></div>`;
   if(!preserveDetail || previousSelected!==selected)renderMember(group.find(m=>m.id===selected));
   if(data.configured===false)message(data.setupMessage || 'Beta access needs to be configured.',true);
   setBusy(busy);
+}
+function renderScheduleOverview() {
+  const view=buildBetaScheduleOverview(data,overviewFilters);
+  if(view)overviewFilters={batch:view.batch,timezone:view.timezone};
+  $('bt-schedule-overview').innerHTML=betaScheduleOverviewHTML(view);
 }
 function deleteControls(m) {
   if(data.betaDelete===false)return '';
@@ -83,7 +100,7 @@ function scheduleSection(member) {
       content+=timezone;
     }
   }
-  return `<section class="bt-card bt-schedule">${heading}${content}</section>`;
+  return `<section id="bt-member-schedule" class="bt-card bt-schedule" tabindex="-1">${heading}${content}</section>`;
 }
 function clearScheduleFile() {
   scheduleRun++;scheduleLoading=false;
@@ -156,10 +173,11 @@ function clearPersonalLink() {
   $('bt-code').hidden=true;$('bt-code').innerHTML='';delete $('bt-code').dataset.invite;
 }
 function clearPrivate() {
-  generation++;data=null;loadedFor='';selected='';githubRun++;deleteTarget=null;
+  generation++;data=null;loadedFor='';selected='';githubRun++;deleteTarget=null;needsRender=false;
+  overviewFilters={batch:'all',timezone:'all'};
   clearScheduleFile();
   paintGithub.controller?.abort();
-  ['bt-summary','bt-roster','bt-detail','bt-code'].forEach(id=>$(id).innerHTML='');
+  ['bt-summary','bt-schedule-overview','bt-roster','bt-detail','bt-code'].forEach(id=>$(id).innerHTML='');
   clearPersonalLink();
   setBusy(false);
 }
@@ -181,15 +199,23 @@ async function change(action,payload,success) {
 }
 async function load(force=false) {
   if(!active() || busy)return;
-  const token=bridge().session?.();if(!force && loadedFor===token && data)return;
+  const token=bridge().session?.();
+  if(!force && loadedFor===token && data){if(needsRender){render();if(data.configured!==false)message('');}return;}
   const revision=generation;
   setBusy(true);message('Loading Beta…');
-  try{await api('list');if(revision!==generation)return;loadedFor=token;render();if(data.configured!==false)message('');}
+  try{await api('list',{}, {fresh:force});if(revision!==generation)return;loadedFor=token;if(active()){render();if(data.configured!==false)message('');}}
   catch(error){if(revision===generation)requestError(error);}
   finally{if(revision===generation)setBusy(false);}
 }
 $('bt-refresh').addEventListener('click',()=>load(true));
 $('bt-search').addEventListener('input',()=>render(true));
+$('bt-schedule-overview').addEventListener('change',event=>{
+  const filter=event.target.dataset.overviewFilter;
+  if(busy || !active() || !['batch','timezone'].includes(filter))return;
+  overviewFilters={...overviewFilters,[filter]:event.target.value};
+  if(filter==='batch')overviewFilters.timezone='all';
+  renderScheduleOverview();
+});
 $('bt-copy-invite').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText($('bt-invite-link').value);message('Permanent invite link copied.');}
   catch{$('bt-invite-link').focus();$('bt-invite-link').select();message('Select and copy the link above.');}
@@ -200,6 +226,12 @@ $('bt-root').addEventListener('submit',event=>{
 });
 $('bt-root').addEventListener('click',async event=>{
   const b=event.target.closest('button');if(!b || busy)return;
+  if(b.hasAttribute('data-overview-member')){
+    if(!(data?.members || []).some(member=>member.id===b.dataset.overviewMember))return;
+    selected=b.dataset.overviewMember;deleteTarget=null;$('bt-search').value='';render();
+    $('bt-member-schedule')?.scrollIntoView({behavior:'smooth',block:'start'});
+    $('bt-member-schedule')?.focus({preventScroll:true});
+  }
   if(b.dataset.member){selected=b.dataset.member;deleteTarget=null;render();}
   if(b.hasAttribute('data-schedule-file'))await openScheduleFile(b.dataset.scheduleFile);
   if(b.hasAttribute('data-delete-member')){

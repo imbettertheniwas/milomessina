@@ -1,5 +1,34 @@
 # Internal performance audit — 25 September 2026
 
+## Tab navigation update — 27 September 2026
+
+The current frontend warms Beta, schedules, week notes and campus data after the
+primary load, one background request at a time. Navigation hover/focus can start
+a relevant read sooner. Tab requests share pending work, and successful warm
+responses stay in this signed-in page for at most 60 seconds and are consumed
+once. They are not written to browser storage. Explicit Refresh bypasses the
+warm snapshot; identity changes and writes invalidate stale responses.
+
+Ledger polling now pauses on unrelated views and checks for updates when a
+ledger-dependent view is reopened. The admin view reuses a recent session-scoped
+snapshot and protects completed changes from delayed reads. Beta keeps a valid
+list that finishes after navigating away and paints it on return.
+
+The Beta tab also shows group schedules together, with group/time-zone filters,
+weekly commitments, each intern's submission status, and links to their private
+schedule. Uploaded files remain explicitly listed for review rather than being
+treated as parsed weekly commitments. No additional backend API is required.
+
+Validation for this update: **507 tests passed**. A local Chrome check with
+simulated 650 ms service responses opened the warmed Beta view in **112 ms**
+without another Beta read. Reopening reused the result, while Refresh fetched
+again. Desktop and 390-pixel mobile views were visually checked; group filtering
+and intern selection worked, with no JavaScript errors or horizontal overflow.
+These are local checks, not live latency measurements or physical-device tests.
+This update requires only the frontend release; no Apps Script redeploy is needed.
+
+## Previous audit
+
 The measurements below were captured before deployment. Existing unrelated changes were preserved. Website/API publication and a separate update of the existing Apps Script deployment are required to activate all fixes.
 
 ## Measurements

@@ -93,3 +93,29 @@ test('reused currency formatter preserves the existing amounts and rounding',()=
   assert.equal(c.money(amount),expected);
  }
 });
+
+test('ledger reads wait for a visible ledger-dependent view and refresh on a stale return',async()=>{
+ let reads=0;
+ const c=context(['ledgerView','refreshVisibleLedger'],{identity:{token:'session'},mode:'sheet',busy:false,
+  document:{hidden:false},sheetReadAt:Date.now()-31000,view:'overview',api(){reads++;return Promise.resolve();}});
+ for(const view of ['beta','schedules','posts','campus','applicants','visits','referrals','portals','admin','chapters','commits']){
+  c.view=view;c.refreshVisibleLedger();
+ }
+ assert.equal(reads,0);
+ c.view='ledger';c.refreshVisibleLedger();assert.equal(reads,1);
+ c.sheetReadAt=Date.now();c.refreshVisibleLedger();assert.equal(reads,1);
+ c.sheetReadAt=0;c.document.hidden=true;c.refreshVisibleLedger();assert.equal(reads,1);
+ c.document.hidden=false;c.busy=true;c.refreshVisibleLedger();assert.equal(reads,1);
+ c.busy=false;c.identity=null;c.refreshVisibleLedger();assert.equal(reads,1);
+});
+
+test('the automatic ledger poll skips unrelated tabs',()=>{
+ let reads=0,polling;
+ const c=context(['ledgerView','goSheet'],{view:'beta',mode:'device',poll:null,document:{hidden:false},busy:false,
+  setInterval(callback){polling=callback;return 1;},applyModeUi(){},setLive(){},ledgerReady(){},offerCarry(){},runSubs(){},
+  api(){reads++;return Promise.resolve();}});
+ c.goSheet();assert.equal(reads,1,'initial load still occurs');
+ for(const view of ['beta','schedules','posts','visits','campus','admin']){c.view=view;polling();}
+ assert.equal(reads,1);
+ c.view='overview';polling();assert.equal(reads,2);
+});

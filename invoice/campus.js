@@ -169,17 +169,23 @@ let applicantsPending = true, teamPending = true, ledgerReady = false;
 /* Apps Script answers a plain string body without a preflight, so the
    request carries no headers of its own — the same shape /fomo/apply
    posts with. */
-async function call(action, payload){
+async function call(action, payload, options){
   const cfg = bridge();
   if (!cfg.identity || !cfg.identity()) throw new Error('Sign in first.');
   if (action !== 'list' && !cfg.admin()) throw new Error('Only Milo and Arya can manage applicants and the campus team.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
   const body = Object.assign({_api:'campus', action, _key:cfg.key || '', _session:cfg.session ? cfg.session() : ''}, payload || {});
-  const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body),
-    signal:action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined});
-  if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
-  try { out = JSON.parse(await res.text()); } catch (e) {}
+  if (action === 'list' && cfg.read) out = await cfg.read('campus', action, payload || {}, options);
+  else {
+    if (action !== 'list') cfg.invalidate?.('campus');
+    try {
+      const res = await fetch(cfg.endpoint, {method:'POST', body:JSON.stringify(body),
+        signal:action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined});
+      if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
+      try { out = JSON.parse(await res.text()); } catch (e) {}
+    } finally { if (action !== 'list') cfg.invalidate?.('campus'); }
+  }
   if (!out) throw new Error('the endpoint answered, but not with the campus tables. ' +
     'Its deployment access is probably not set to "Anyone"');
   if (out.ok !== true) throw new Error(out.error || 'the sheet turned it away');
@@ -254,7 +260,7 @@ async function load(force){
   state.busy = true;
   note(state.loaded ? 'Re-reading the sheet…' : 'Reading the campus tables…');
   try {
-    take(await call('list'));
+    take(await call('list', {}, {fresh:!!force}));
     note(state.applicants.length || state.team.length
       ? 'Up to date with the sheet.'
       : 'Nothing on either tab yet.');

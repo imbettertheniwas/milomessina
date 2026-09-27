@@ -98,21 +98,27 @@ function ago(stamp){
 
 /* ---------- the sheet ---------- */
 
-async function call(action, payload){
+async function call(action, payload, options){
   const cfg = bridge();
   if (!current()) throw new Error('Sign in first.');
   if (action === 'add' && !admin() && payload.who !== current().who) throw new Error('You can only post as yourself.');
   if (action === 'edit' && !canManage(state.posts.find(p => p.id === payload.id) || {})) throw new Error('You can only edit your own posts.');
   if (action === 'delete' && !canManage(state.posts.find(p => p.id === payload.id) || {})) throw new Error('You can only delete your own posts.');
   if (!cfg.endpoint) throw new Error('this console has no sheet endpoint set — see invoice/README.md');
-  const res = await fetch(cfg.endpoint, {
-    method: 'POST',
-    signal: action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
-    body: JSON.stringify(Object.assign({_api: 'posts', action, _key: cfg.key || '', _session: cfg.session ? cfg.session() : ''}, payload || {}))
-  });
-  if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
-  try { out = JSON.parse(await res.text()); } catch (e) {}
+  if (action === 'list' && cfg.read) out = await cfg.read('posts', action, payload || {}, options);
+  else {
+    if (action !== 'list') cfg.invalidate?.('posts');
+    try {
+      const res = await fetch(cfg.endpoint, {
+        method: 'POST',
+        signal: action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
+        body: JSON.stringify(Object.assign({_api: 'posts', action, _key: cfg.key || '', _session: cfg.session ? cfg.session() : ''}, payload || {}))
+      });
+      if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
+      try { out = JSON.parse(await res.text()); } catch (e) {}
+    } finally { if (action !== 'list') cfg.invalidate?.('posts'); }
+  }
   if (!out) throw new Error('the endpoint answered, but not with the feed. ' +
     'Its deployment access is probably not set to "Anyone"');
   if (out.ok !== true) {
@@ -166,7 +172,7 @@ async function load(force){
         : state.posts.length ? 'Last read a moment ago — checking for newer…'
         : 'Reading the week notes…');
   try {
-    take(await call('list'));
+    take(await call('list', {}, {fresh:!!force}));
     message(state.posts.length
       ? state.posts.length + (state.posts.length === 1 ? ' note' : ' notes') + ' on the sheet.'
       : 'Nothing posted yet — yours would be the first.');

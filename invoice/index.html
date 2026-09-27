@@ -1672,6 +1672,7 @@ td.date.run{color:var(--good)}
           <p id="bt-message" role="status" aria-live="polite"></p>
           <div id="bt-code" hidden></div>
           <div id="bt-summary" class="bt-summary"></div>
+          <section id="bt-schedule-overview" class="bt-card bt-overview" aria-label="Beta group schedules"></section>
           <div class="bt-filter"><label class="bt-search">Find an intern <input id="bt-search" type="search" placeholder="Search names, email, phone, or GitHub"></label></div>
           <div class="bt-layout"><div id="bt-roster" class="bt-roster"></div><div id="bt-detail" class="bt-detail"></div></div>
         </div>
@@ -1791,6 +1792,7 @@ td.date.run{color:var(--good)}
 <div id="money-undo-bar" hidden role="status"></div>
 <div id="toast" role="status"></div>
 
+<script src="/invoice/tab-data.js"></script>
 <script>
 (function(){
 "use strict";
@@ -2105,6 +2107,12 @@ window.FOMO_SHEET = {endpoint:ENDPOINT, key:PASSCODE, toast:toast, operator:isOp
   people:PAYERS, tone:tone, shrink:shrinkShot,
   identity:function(){return identity;}, admin:isAdmin, own:own,
   session:function(){return identity ? identity.token : "";}};
+if (window.createInternalTabData) {
+  var tabData = window.createInternalTabData(window.FOMO_SHEET);
+  window.FOMO_SHEET.read = tabData.read;
+  window.FOMO_SHEET.invalidate = tabData.invalidate;
+  window.FOMO_SHEET.tabData = tabData;
+}
 
 /* ---------- where it saves ----------
 
@@ -2448,7 +2456,7 @@ function api(action, payload){
    every caller stays unchanged, and only once: a Response body can be read
    one time, and a second `list` must go and ask again. */
 var listAhead = null;
-var sheetListFlight = null, sheetWriteVersion = 0, lastSheetData = "";
+var sheetListFlight = null, sheetWriteVersion = 0, lastSheetData = "", sheetReadAt = 0;
 
 /* Share concurrent reads; a read started before a write must never replace
    the response to that write, even if its network reply arrives later. */
@@ -2524,6 +2532,7 @@ function apiSheetRequest(action, payload, revision){
       throw behind;
     }
     if (action === "list" && revision !== sheetWriteVersion) return out;
+    sheetReadAt = Date.now();
     // Reads launched while this write was pending may still carry its old data.
     if (action !== "list") { sheetWriteVersion++; sheetListFlight = null; }
     var dataKey = JSON.stringify([out.rows, out.days, out.subs, out.profiles, out.moneyHistory]);
@@ -4868,7 +4877,7 @@ function goSheet(seen){
     fail(e);
   });
   if (!poll) poll = setInterval(function(){
-    if (busy || document.hidden) return;
+    if (busy || document.hidden || !ledgerView()) return;
     api("list")["catch"](function(){ /* the banner already says it */ });
   }, 30000);
 }
@@ -4879,7 +4888,15 @@ function goSheet(seen){
 function ledgerReady(){
   if (!identity || ledgerReady.said) return;
   ledgerReady.said = true;
+  window.FOMO_SHEET.ledgerReady = true;
   window.dispatchEvent(new Event("fomo:ledger-ready"));
+}
+function ledgerView(){
+  return ["overview","ledger","settle","subs","reporting","attendance","person","charge"].indexOf(view) >= 0;
+}
+function refreshVisibleLedger(){
+  if (!identity || mode !== "sheet" || busy || document.hidden || !ledgerView() || Date.now() - sheetReadAt < 30000) return;
+  api("list")["catch"](function(){ /* the banner already says it */ });
 }
 /* On this browser's own ledger there is no round trip to queue behind, and
    a sheet read that never comes back must not hold the other tabs cold
@@ -5566,6 +5583,7 @@ function setView(id, who){
   render();
   if (view === "commits") renderGh();
   window.dispatchEvent(new Event("fomo:view-change"));
+  refreshVisibleLedger();
 }
 
 function routeFromHash(){
@@ -6886,7 +6904,7 @@ function open_(){
     tickClock();
     /* a tab left open over the first of the month comes back owing a line */
     runSubs();
-    if (mode === "sheet" && !busy) api("list")["catch"](function(){ /* the banner already says it */ });
+    refreshVisibleLedger();
   });
 }
 var identityReady = false;
@@ -6905,11 +6923,22 @@ var identityReady = false;
 
 var adminState = {roster:[], counts:{}, audit:[], log:[], rows:null, table:"", who:""};
 var adminBusy = false, adminOpen = "", adminConfirm = "";
+var adminSession = "", adminAt = 0, adminVersion = 0, adminListFlight = null;
 
 function adminCall(action, payload){
-  var body = {_api:"admin", action:action, _key:PASSCODE, _session:identity ? identity.token : ""};
+  var token = identity ? identity.token : "";
+  if (adminSession !== token) {
+    adminSession = token; adminAt = 0; adminVersion++; adminListFlight = null;
+    adminState = {roster:[], counts:{}, audit:[], log:[], rows:null, table:"", who:""};
+  }
+  var reading = action === "list" || action === "rows";
+  if (action === "list" && adminListFlight) return adminListFlight;
+  if (!reading) { adminVersion++; adminAt = 0; adminListFlight = null; }
+  var revision = adminVersion;
+  var body = {_api:"admin", action:action, _key:PASSCODE, _session:token};
   if (payload) Object.keys(payload).forEach(function(k){ body[k] = payload[k]; });
-  return fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body)}).then(function(res){
+  var request = fetch(ENDPOINT, {method:"POST", body:JSON.stringify(body),
+    signal:reading ? AbortSignal.timeout(25000) : undefined}).then(function(res){
     if (!res.ok) throw new Error("the sheet answered HTTP " + res.status);
     return res.text();
   }).then(function(txt){
@@ -6929,6 +6958,12 @@ function adminCall(action, payload){
       }
       throw new Error(why);
     }
+    if (token !== (identity ? identity.token : "") || adminSession !== token ||
+        revision !== adminVersion || !isOperator()) {
+      throw Object.assign(new Error("This console read was replaced by a newer session or change."), {stale:true});
+    }
+    // Invalidate reads launched both before and during this write.
+    if (!reading) { adminVersion++; adminListFlight = null; }
     adminState.roster = out.roster || [];
     adminState.counts = out.counts || {};
     adminState.audit  = out.audit  || [];
@@ -6939,19 +6974,41 @@ function adminCall(action, payload){
        reload — an intern added in one tab is pickable in the form behind
        it before anybody has to be told to refresh. */
     applyRoster(adminState.roster);
+    adminAt = Date.now();
     return out;
   });
+  if (action === "list") {
+    adminListFlight = request;
+    var clear = function(){ if (adminListFlight === request) adminListFlight = null; };
+    request.then(clear, clear);
+  }
+  return request;
 }
 
-function adminLoad(){
-  if (!isOperator()) return;
-  $("ad-note").textContent = "Reading the sheet…";
-  adminCall("list").then(function(){
+function adminLoad(force){
+  var token = identity ? identity.token : "";
+  if (adminSession !== token) {
+    adminSession = token; adminAt = 0; adminVersion++; adminListFlight = null;
+    adminState = {roster:[], counts:{}, audit:[], log:[], rows:null, table:"", who:""};
+    adminBusy = false; adminOpen = ""; adminConfirm = "";
+  }
+  if (!isOperator()) return Promise.resolve();
+  renderAdmin();
+  if (adminBusy) return Promise.resolve();
+  if (!force && adminAt && Date.now() - adminAt < 60000) {
+    $("ad-note").textContent = "The roster, and the rows nobody else can reach.";
+    return Promise.resolve();
+  }
+  $("ad-note").textContent = adminAt ? "Checking for updates…" : "Reading the sheet…";
+  var revision = adminVersion;
+  return adminCall("list").then(function(){
+    if (token !== (identity ? identity.token : "")) return;
     $("ad-note").textContent = "The roster, and the rows nobody else can reach.";
     renderAdmin();
   })["catch"](function(e){
+    if (e.stale || revision !== adminVersion || token !== (identity ? identity.token : "")) return;
     $("ad-note").textContent = e.message || "the console could not be read";
-    $("ad-roster").innerHTML = '<tr><td colspan="5" class="ad-none">' + esc(e.message || "") + "</td></tr>";
+    if (!adminAt) $("ad-roster").innerHTML = '<tr><td colspan="5" class="ad-none">' + esc(e.message || "") + "</td></tr>";
   });
 }
 
@@ -6960,8 +7017,10 @@ function adminLoad(){
    from what the page hoped would happen. */
 function adminDo(action, payload, said){
   if (adminBusy) return;
+  var token = identity ? identity.token : "";
   adminBusy = true; renderAdmin();
-  adminCall(action, payload).then(function(){
+  return adminCall(action, payload).then(function(){
+    if (token !== (identity ? identity.token : "")) return;
     adminBusy = false; adminOpen = ""; adminConfirm = "";
     /* A row that has just gone takes the list it was in with it, rather
        than leaving a line that deletes something else when pressed. */
@@ -6969,9 +7028,10 @@ function adminDo(action, payload, said){
     renderAdmin();
     if (said) toast(said);
   })["catch"](function(e){
+    if (token !== (identity ? identity.token : "")) return;
     adminBusy = false;
     renderAdmin();
-    toast(e.message || "the sheet turned that down", true);
+    if (!e.stale) toast(e.message || "the sheet turned that down", true);
   });
 }
 
@@ -7180,7 +7240,7 @@ $("ad-rows-go").addEventListener("click", function(){
   adminDo("rows", {table:$("ad-rows-table").value, who:$("ad-rows-who").value});
 });
 
-$("ad-refresh").addEventListener("click", adminLoad);
+$("ad-refresh").addEventListener("click", function(){ adminLoad(true); });
 
 /* The names on the sign-in menu are the names the sheet will accept, which
    since the roster moved into the sheet is not something this file knows.
@@ -7272,8 +7332,8 @@ function signedIn(out, token){
   if(view==='person' && personOf===identity.who) $("pg-title").textContent='Your page';
   resetSplit();
   open_();
-  if (initialBetaRoute && isOperator()) { initialBetaRoute=false; setView("beta"); }
   window.dispatchEvent(new Event("fomo:identity"));
+  if (initialBetaRoute && isOperator()) { initialBetaRoute=false; setView("beta"); }
 }
 $("gate-form").addEventListener("submit",async function(ev){
   ev.preventDefault();
@@ -7304,6 +7364,7 @@ $("identity-switch").addEventListener("click",async function(){
 
 })();
 </script>
+<script type="module" src="/invoice/tab-preload.js"></script>
 <script type="module" src="/invoice/overview-details.js"></script>
 <script type="module" src="/invoice/visits.js"></script>
 <script type="module" src="/invoice/campus.js"></script>

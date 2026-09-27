@@ -285,18 +285,24 @@ function clean(b){
   };
 }
 
-async function call(action, payload){
+async function call(action, payload, options){
   const cfg = bridge();
   if (!cfg.endpoint) { const e = new Error('no endpoint'); e.old = true; throw e; }
-  const res = await fetch(cfg.endpoint, {
-    method: 'POST',
-    signal: action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
-    body: JSON.stringify(Object.assign({_api:'schedules', action, _key:cfg.key || '',
-      _session: cfg.session ? cfg.session() : ''}, payload || {}))
-  });
-  if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
   let out = null;
-  try { out = JSON.parse(await res.text()); } catch (e) {}
+  if (action === 'list' && cfg.read) out = await cfg.read('schedules', action, payload || {}, options);
+  else {
+    if (action !== 'list') cfg.invalidate?.('schedules');
+    try {
+      const res = await fetch(cfg.endpoint, {
+        method: 'POST',
+        signal: action === 'list' ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
+        body: JSON.stringify(Object.assign({_api:'schedules', action, _key:cfg.key || '',
+          _session: cfg.session ? cfg.session() : ''}, payload || {}))
+      });
+      if (!res.ok) throw new Error('the sheet answered HTTP ' + res.status);
+      try { out = JSON.parse(await res.text()); } catch (e) {}
+    } finally { if (action !== 'list') cfg.invalidate?.('schedules'); }
+  }
   if (!out) throw new Error('the endpoint answered, but not with the schedules. ' +
     'Its deployment access is probably not set to "Anyone"');
   if (out.ok !== true) {
@@ -1397,7 +1403,7 @@ async function load(force){
   state.busy = true;
   message(state.loaded ? 'Re-reading the schedules…' : 'Reading the schedules…');
   try {
-    take(await call('list'));
+    take(await call('list', {}, {fresh:!!force}));
     state.local = false;
     message(said());
   } catch (err) {
