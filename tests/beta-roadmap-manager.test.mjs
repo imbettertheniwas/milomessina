@@ -5,10 +5,10 @@ import {readFileSync} from 'node:fs';
 import {buildBetaScheduleOverview,betaScheduleOverviewHTML} from '../invoice/beta-schedule-overview.js';
 
 const source=readFileSync(new URL('../invoice/beta-manager.js',import.meta.url),'utf8').replace(/^import[^\n]*\n/gm,'').replace(/load\(\);\s*$/,'globalThis.manager={load,change};');
-const catalog=['portfolio','spend-portal','iterate','feature'].map((id,index)=>({id,title:['Domain & portfolio','Practice spend portal','Push an improvement','Build a feature'][index],brief:'Build and publish your work.',checklist:[{id:'publish',label:'Publish your site'},{id:'iterate',label:'Push a useful change'}]}));
+const catalog=['portfolio','spend-portal','iterate','feature'].map((id,index)=>({id,title:['Domain & portfolio','Practice spend portal','Push an improvement','Build a feature'][index],teaser:'Practice a useful skill.',brief:'Build and publish your work.',reward:'Unlock the next step',minIterations:index===1?3:0,revision:'',checklist:[{id:'publish',label:'Publish your site'},{id:'iterate',label:'Push a useful change'}]}));
 const member=id=>({id,name:'Intern '+id,status:'active',github:'',startDate:'2026-09-27',endDate:'2026-10-10'});
 const progress=(over={})=>({memberId:'a',challengeId:'portfolio',status:'submitted',liveUrl:'https://portfolio.example/',repoUrl:'https://github.com/intern/portfolio',checks:['publish'],iterationLinks:['https://github.com/intern/portfolio/commit/abc'],notes:'I made the home page responsive.',submittedAt:'2026-09-27T15:00:00Z',...over});
-const view=(over={})=>({ok:true,manager:true,configured:true,betaRoadmap:true,members:[member('a'),member('b')],batches:[],attendance:[],recaps:[],schedules:[],challengeCatalog:catalog,challengeProgress:[progress()],roadmaps:{a:{completed:0,total:4,currentChallengeId:'portfolio',unlocks:{peerWork:false,teamReferences:false}},b:{completed:0,total:4,currentChallengeId:'portfolio',unlocks:{peerWork:false,teamReferences:false}}},challengeReferences:[],...over});
+const view=(over={})=>({ok:true,manager:true,configured:true,betaRoadmap:true,betaChallengeEditing:true,members:[member('a'),member('b')],batches:[],attendance:[],recaps:[],schedules:[],challengeCatalog:catalog,challengeProgress:[progress()],roadmaps:{a:{completed:0,total:4,currentChallengeId:'portfolio',unlocks:{peerWork:false,teamReferences:false}},b:{completed:0,total:4,currentChallengeId:'portfolio',unlocks:{peerWork:false,teamReferences:false}}},challengeReferences:[],...over});
 function harness(response=()=>view()) {
   const elements=new Map(),events=new Map(),requests=[];let token='manager',operator=true;
   const get=id=>{
@@ -94,4 +94,89 @@ test('a late challenge approval cannot restore private manager detail after sign
   let resolve;const pending=new Promise(done=>resolve=done),h=harness(body=>body.action==='list'?view():pending);await h.manager.load();
   const saving=submit(h,reviewForm({feedback:'Approved'}));h.signout();resolve(view({challengeProgress:[progress({status:'approved'})]}));await saving;
   assert.equal(h.get('bt-detail').innerHTML,'');assert.equal(h.get('bt-schedule-overview').innerHTML,'');
+});
+
+const editorForm=(over={},challengeId='portfolio')=>({dataset:{challengeEditor:challengeId},fields:{title:'My portfolio challenge',teaser:'Publish your first site.',brief:'Set up a domain and publish a portfolio.',minIterations:'2','checklist:publish':'Publish on your own domain','checklist:iterate':'Push a useful update',...over}});
+const editorSelect=(h,id)=>h.events.get('bt-root:change')({target:{hasAttribute:name=>name==='data-challenge-editor-select',value:id}});
+const editorButton=(h,form,removeId)=>h.events.get('bt-root:click')({target:{closest:()=>({dataset:removeId===undefined?{}:{challengeCheckRemove:removeId},hasAttribute:name=>name===(removeId===undefined?'data-challenge-check-add':'data-challenge-check-remove'),closest:()=>form})}});
+
+test('challenge editor exists with an empty roster and saves only editable fields',async()=>{
+  const h=harness(()=>view({members:[]}));await h.manager.load();
+  const html=h.get('bt-schedule-overview').innerHTML;
+  assert.match(html,/Edit challenges/);assert.match(html,/data-challenge-editor="portfolio"/);
+  assert.match(html,/Changes apply to work that has not been submitted/);assert.match(html,/Submitted and approved work keeps its original requirements/);
+  assert.match(html,/name="minIterations" type="number" min="0" max="20"/);assert.match(html,/Unlock reward:/);
+  assert.doesNotMatch(html,/name="reward"|name="order"/);
+  await submit(h,editorForm({title:'  My portfolio challenge  '}));
+  const request=h.requests.at(-1);
+  assert.equal(request.action,'challengeupdate');assert.equal(request.challengeId,'portfolio');assert.equal(request.title,'My portfolio challenge');assert.equal(request.minIterations,2);
+  assert.deepEqual(request.checklist,[{id:'publish',label:'Publish on your own domain'},{id:'iterate',label:'Push a useful update'}]);
+  assert.equal(request.reward,undefined);assert.equal(request.revision,undefined);
+});
+
+test('editor validation rejects missing text, bad checklist requirements, and out of range iterations',async()=>{
+  const h=harness();await h.manager.load();
+  for(const change of [{title:' '},{teaser:''},{brief:''},{title:'x'.repeat(121)},{teaser:'x'.repeat(241)},{brief:'x'.repeat(6001)},{'checklist:publish':''},{'checklist:publish':'x'.repeat(301)},{'checklist:BAD id':'Invalid ID'},{minIterations:'21'},{minIterations:'-1'},{minIterations:'1.5'},{minIterations:''}])await submit(h,editorForm(change));
+  const empty=editorForm();delete empty.fields['checklist:publish'];delete empty.fields['checklist:iterate'];await submit(h,empty);
+  const tooMany=editorForm();for(let i=0;i<19;i++)tooMany.fields['checklist:item-'+i]='Requirement '+i;await submit(h,tooMany);
+  assert.equal(h.requests.length,1);
+  await submit(h,editorForm({minIterations:'0'}));assert.equal(h.requests.at(-1).minIterations,0);
+  await submit(h,editorForm({minIterations:'20'}));assert.equal(h.requests.at(-1).minIterations,20);
+});
+
+test('editor drafts and stable checklist IDs survive refresh, selection, and failed saves',async()=>{
+  const h=harness(body=>body.action==='challengeupdate'?{ok:false,error:'Try again later'}:view());await h.manager.load();
+  const form=editorForm({title:'Unsaved <title>'});input(h,form);
+  await editorButton(h,form);
+  let html=h.get('bt-challenge-editor').innerHTML;
+  const id=html.match(/name="checklist:(item-[a-z0-9-]+)"/)[1];
+  assert.ok(id.length<=40);assert.match(html,/name="checklist:publish"/);assert.match(html,/Unsaved &lt;title&gt;/);
+  form.fields['checklist:'+id]='New requirement';input(h,form);
+  await h.manager.load(true);assert.match(h.get('bt-schedule-overview').innerHTML,new RegExp('name="checklist:'+id+'"'));
+  editorSelect(h,'spend-portal');assert.match(h.get('bt-challenge-editor').innerHTML,/data-challenge-editor="spend-portal"/);
+  editorSelect(h,'portfolio');assert.match(h.get('bt-challenge-editor').innerHTML,/Unsaved &lt;title&gt;/);
+  await submit(h,form);assert.match(h.get('bt-message').textContent,/Try again later/);
+  await h.manager.load(true);assert.match(h.get('bt-schedule-overview').innerHTML,/Unsaved &lt;title&gt;/);
+  await editorButton(h,form,'iterate');html=h.get('bt-challenge-editor').innerHTML;
+  assert.doesNotMatch(html,/name="checklist:iterate"/);assert.match(html,new RegExp('name="checklist:'+id+'"'));
+});
+
+test('old service capability and signout guard editing and feedback-only requests',async()=>{
+  const h=harness(()=>view({betaChallengeEditing:undefined}));await h.manager.load();
+  assert.match(h.get('bt-schedule-overview').innerHTML,/Challenge editing will be available/);
+  assert.doesNotMatch(h.get('bt-schedule-overview').innerHTML,/data-challenge-editor="/);
+  assert.doesNotMatch(h.get('bt-detail').innerHTML,/data-review-status="submitted"/);
+  await submit(h,editorForm());await submit(h,reviewForm({feedback:'Wait for review'}),'submitted');
+  assert.equal(h.requests.length,1);
+  const enabled=harness();await enabled.manager.load();input(enabled,editorForm({title:'Private editor draft'}));enabled.signout();
+  await submit(enabled,editorForm());await submit(enabled,reviewForm({feedback:'A stale note'}),'submitted');
+  assert.equal(enabled.requests.length,1);assert.equal(enabled.get('bt-schedule-overview').innerHTML,'');
+});
+
+test('authorization errors and late saves clear editor drafts instead of restoring them',async()=>{
+  const denied=harness(body=>body.action==='list'?view():{ok:false,code:'FORBIDDEN',error:'Access changed'});await denied.manager.load();
+  input(denied,editorForm({title:'Private draft'}));await submit(denied,editorForm());
+  assert.equal(denied.get('bt-schedule-overview').innerHTML,'');assert.equal(denied.get('bt-detail').innerHTML,'');
+  let resolve;const pending=new Promise(done=>resolve=done),h=harness(body=>body.action==='list'?view():pending);await h.manager.load();
+  const saving=submit(h,editorForm());h.signout();resolve(view());await saving;
+  assert.equal(h.get('bt-schedule-overview').innerHTML,'');assert.equal(h.get('bt-detail').innerHTML,'');
+});
+
+test('submitted work uses its saved requirements when the current catalog has changed',async()=>{
+  const definition={...catalog[0],title:'Original portfolio title',brief:'Original submitted instructions',minIterations:2,checklist:[{id:'original',label:'Original requirement'}]};
+  const h=harness(()=>view({challengeCatalog:catalog.map(item=>item.id==='portfolio'?{...item,title:'Revised portfolio title',brief:'New instructions',checklist:[{id:'new',label:'New requirement'}]}:item),challengeProgress:[progress({definition,checks:['original']})]}));await h.manager.load();
+  const html=h.get('bt-detail').innerHTML;
+  assert.match(html,/Original portfolio title/);assert.match(html,/Original submitted instructions/);assert.match(html,/Original requirement/);assert.match(html,/Required pushed iterations: 2/);
+  assert.doesNotMatch(html,/Revised portfolio title|New instructions|New requirement/);
+  assert.match(h.get('bt-schedule-overview').innerHTML,/Revised portfolio title/);
+  assert.match(html,/Review submitted work/);assert.match(h.get('bt-roster').innerHTML,/Awaiting review/);
+});
+
+test('feedback-only save keeps a submission pending and retains feedback for the later decision',async()=>{
+  let feedback='';const h=harness(body=>{if(body.action==='challengereview')feedback=body.feedback;return view({challengeProgress:[progress({feedback})]});});await h.manager.load();
+  await submit(h,reviewForm({feedback:'   '}),'submitted');assert.equal(h.requests.length,1);
+  await submit(h,reviewForm({feedback:' Please review spacing. '}),'submitted');
+  const request=h.requests.at(-1);assert.equal(request.action,'challengereview');assert.equal(request.status,'submitted');assert.equal(request.feedback,'Please review spacing.');
+  const html=h.get('bt-detail').innerHTML;assert.match(html,/Waiting for review/);assert.match(html,/data-review-status="approved"/);assert.match(html,/>Please review spacing\.<\/textarea>/);
+  assert.match(h.get('bt-message').textContent,/still waiting for review/);
 });

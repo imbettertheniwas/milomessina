@@ -195,6 +195,7 @@ function doGet() {
     betaDelete: true,
     betaSchedules: true,
     betaRoadmap: true,
+    betaChallengeEditing: true,
     recurringEdit: true,
     recurringReceipts: true,
     approvals: true,
@@ -401,8 +402,9 @@ var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epo
 var BETA_DELETIONS = ['id','joinRequestHash','deletedAt'];
 var BETA_SCHEDULES = ['id','memberId','timezone','mode','blocks','noCommitments','fileName','fileType','fileSize','fileHash','uploads','ready','signature','updatedAt'];
 var BETA_SCHEDULE_MAX_BYTES = 2 * 1024 * 1024;
-var BETA_CHALLENGE_PROGRESS = ['id','memberId','challengeId','status','liveUrl','repoUrl','notes','checks','iterationLinks','submittedAt','reviewedAt','reviewedBy','feedback','updatedAt'];
+var BETA_CHALLENGE_PROGRESS = ['id','memberId','challengeId','status','liveUrl','repoUrl','notes','checks','iterationLinks','submittedAt','reviewedAt','reviewedBy','feedback','updatedAt','definition','challengeRevision'];
 var BETA_CHALLENGE_REFERENCES = ['id','challengeId','title','url','notes','updatedAt','updatedBy'];
+var BETA_CHALLENGE_DEFINITIONS = ['id','challengeId','title','teaser','brief','checklist','minIterations','revision','updatedAt','updatedBy'];
 var BETA_CHALLENGES = [
   {id:'portfolio',title:'Your domain. Your portfolio.',teaser:'Set up your own home on the web.',brief:'Connect your domain and publish a responsive portfolio with an about section, projects, and a way to contact you. Keep the source in a public GitHub repository and deploy your changes from it.',reward:'Unlock the group’s work and the spend portal challenge.',checklist:[
     {id:'domain',label:'Connect your own domain to the live portfolio.'},
@@ -477,11 +479,11 @@ function betaTableSnapshot(name, columns, create, withRows) {
     // making one header read, two row-count calls and a separate data read.
     if(withRows)grid=sheet.getRange(1,1,Math.max(1,sheet.getLastRow()),columns.length).getValues();
     var head=grid?grid[0]:sheet.getRange(1,1,1,columns.length).getValues()[0];
-    // Extend earlier exact member schemas with appended fields. Never
+    // Extend earlier exact member and challenge schemas with appended fields. Never
     // overwrite an existing header, row or occupied column.
     var prefix=0;
     while(prefix<columns.length && head[prefix]===columns[prefix])prefix++;
-    if(name==='internal_beta_members' && prefix>=13 && prefix<columns.length &&
+    if((name==='internal_beta_members' && prefix>=13 || name==='internal_beta_challenge_progress' && prefix>=14) && prefix<columns.length &&
        head.slice(prefix).every(function(v){return v==='';}) && sheet.getLastColumn()<=prefix) {
       internalRequireWrite();
       sheet.getRange(1,prefix+1,1,columns.length-prefix).setValues([columns.slice(prefix)]).setFontWeight('bold');
@@ -662,6 +664,56 @@ function betaPublicWebsite(value) {
 function betaChallenge(id) {
   return BETA_CHALLENGES.filter(function(challenge){return challenge.id===String(id||'');})[0]||null;
 }
+function betaChallengeDefault(challenge) {
+  var out=JSON.parse(JSON.stringify(challenge));out.revision='';out.minIterations=challenge.id==='spend-portal'?3:0;return out;
+}
+function betaChallengeDefinitionClean(base,input,revision) {
+  var out={id:base.id,reward:base.reward,revision:String(revision||'')};
+  [['title',120],['teaser',240],['brief',6000]].forEach(function(field){
+    if(typeof input[field[0]]!=='string')throw new Error('Enter the challenge '+field[0]+'.');
+    out[field[0]]=betaString(input,field[0],field[1],true);
+  });
+  if(!Array.isArray(input.checklist) || input.checklist.length<1 || input.checklist.length>20)throw new Error('Add 1–20 checklist items.');
+  var seen=Object.create(null);out.checklist=input.checklist.map(function(item){
+    if(!item || typeof item.id!=='string' || !/^[a-z][a-z0-9-]{0,39}$/.test(item.id) || seen[item.id])throw new Error('Checklist IDs must be unique, start with a letter, and use up to 40 lowercase letters, numbers or hyphens.');
+    if(typeof item.label!=='string')throw new Error('Enter a label for each checklist item.');
+    seen[item.id]=true;return {id:item.id,label:betaString(item,'label',300,true)};
+  });
+  if(typeof input.minIterations!=='number' || !isFinite(input.minIterations) || Math.floor(input.minIterations)!==input.minIterations || input.minIterations<0 || input.minIterations>20)throw new Error('Choose a whole number of required iteration links from 0 to 20.');
+  out.minIterations=input.minIterations;return out;
+}
+function betaChallengeCatalog() {
+  var rows=betaRead('internal_beta_challenge_definitions',BETA_CHALLENGE_DEFINITIONS);
+  return BETA_CHALLENGES.map(function(base){
+    var row=rows.filter(function(item){return item.challengeId===base.id;})[0];
+    if(!row)return betaChallengeDefault(base);
+    return betaChallengeDefinitionClean(base,{title:row.title,teaser:row.teaser,brief:row.brief,checklist:betaChallengeArray(row.checklist),minIterations:Number(row.minIterations)},row.revision);
+  });
+}
+function betaChallengeSnapshot(row) {
+  var base=betaChallenge(row.challengeId);
+  if(!base)return null;
+  if(!row.definition)return betaChallengeDefault(base);
+  var definition;
+  try{definition=JSON.parse(String(row.definition));}catch(e){throw new Error('The saved challenge definition could not be read. Contact Arya or Milo.');}
+  if(!definition || definition.id!==base.id || typeof definition.revision!=='string')throw new Error('The saved challenge definition does not match this submission.');
+  return betaChallengeDefinitionClean(base,definition,definition.revision);
+}
+function betaChallengeUpdate(body,operator) {
+  var base=betaChallenge(body.challengeId);
+  if(!base)throw new Error('Choose an existing roadmap challenge.');
+  var next=betaChallengeDefinitionClean(base,body,''),current=betaChallengeCatalog().filter(function(item){return item.id===base.id;})[0];
+  var same=true;['title','teaser','brief','checklist','minIterations'].forEach(function(key){if(JSON.stringify(next[key])!==JSON.stringify(current[key]))same=false;});
+  if(same)return;
+  // Freeze legacy submitted work before publishing a changed definition. If
+  // this write fails, the current definition remains in effect and retry is safe.
+  betaChallengeRows().filter(function(row){return row.challengeId===base.id && (row.status==='submitted' || row.status==='approved') && !row.definition;}).forEach(function(row){
+    row.definition=JSON.stringify(current);row.challengeRevision=current.revision;betaWrite('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS,row);
+  });
+  var rows=betaRead('internal_beta_challenge_definitions',BETA_CHALLENGE_DEFINITIONS),row=rows.filter(function(item){return item.challengeId===base.id;})[0]||{id:Utilities.getUuid(),challengeId:base.id};
+  row.title=next.title;row.teaser=next.teaser;row.brief=next.brief;row.checklist=JSON.stringify(next.checklist);row.minIterations=next.minIterations;row.revision=Utilities.getUuid();row.updatedAt=new Date().toISOString();row.updatedBy=operator;
+  betaWrite('internal_beta_challenge_definitions',BETA_CHALLENGE_DEFINITIONS,row);
+}
 function betaChallengeRows() {return betaRead('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS);}
 function betaChallengeCompleted(memberId,rows) {
   var completed=0;
@@ -680,6 +732,8 @@ function betaChallengePublic(row) {
   out.checks=betaChallengeArray(row.checks).filter(function(id){return typeof id==='string';});
   out.iterationLinks=betaChallengeArray(row.iterationLinks).map(betaPublicWebsite).filter(function(url){return !!url;});
   out.liveUrl=betaPublicWebsite(row.liveUrl);out.repoUrl=betaPublicWebsite(row.repoUrl);
+  out.challengeRevision=String(row.challengeRevision||'');
+  out.definition=row.status==='submitted' || row.status==='approved'?betaChallengeSnapshot(row):null;
   return out;
 }
 function betaChallengeRepo(value) {
@@ -704,11 +758,16 @@ function betaChallengeIterations(value,repoUrl) {
   return links;
 }
 function betaChallengeSave(body,member) {
-  var challenge=betaChallenge(body.challengeId);
-  if(!challenge)throw new Error('Choose a roadmap challenge.');
-  var rows=betaChallengeRows(),completed=betaChallengeCompleted(member.id,rows),index=BETA_CHALLENGES.indexOf(challenge);
+  var base=betaChallenge(body.challengeId);
+  if(!base)throw new Error('Choose a roadmap challenge.');
+  var rows=betaChallengeRows(),completed=betaChallengeCompleted(member.id,rows),index=BETA_CHALLENGES.indexOf(base);
   if(index>completed)throw new Error('Finish the previous challenge and have it approved to unlock this one.');
-  var existing=rows.filter(function(row){return row.memberId===member.id && row.challengeId===challenge.id;})[0];
+  var existing=rows.filter(function(row){return row.memberId===member.id && row.challengeId===base.id;})[0];
+  var immutable=existing && (existing.status==='submitted' || existing.status==='approved');
+  var challenge=immutable?betaChallengeSnapshot(existing):betaChallengeCatalog().filter(function(item){return item.id===base.id;})[0];
+  if(!immutable && (body.challengeRevision===undefined?'':body.challengeRevision)!==challenge.revision) {
+    var changed=new Error('This challenge has changed. Refresh it and review the latest requirements before saving or submitting.');changed.betaCode='CHALLENGE_CHANGED';throw changed;
+  }
   var submit=body.submit===true,liveUrl=betaWebsite(body.liveUrl),repoUrl=betaChallengeRepo(body.repoUrl),notes=betaString(body,'notes',5000,submit);
   var checks=body.checks===undefined?[]:body.checks,allowed=challenge.checklist.map(function(item){return item.id;}),unique=[];
   if(!Array.isArray(checks) || checks.some(function(id){return typeof id!=='string' || allowed.indexOf(id)<0;}))throw new Error('Use the checklist for this challenge.');
@@ -716,8 +775,8 @@ function betaChallengeSave(body,member) {
   var iterationLinks=betaChallengeIterations(body.iterationLinks,repoUrl);
   if(submit && (!liveUrl || !repoUrl))throw new Error('Include your live site and public GitHub repository before submitting.');
   if(submit && unique.length!==allowed.length)throw new Error('Complete every item on the challenge checklist before submitting.');
-  if(submit && challenge.id==='spend-portal' && iterationLinks.length<3)throw new Error('Link at least three distinct follow-up commits or comparisons for your spend portal.');
-  if(existing && (existing.status==='submitted' || existing.status==='approved')) {
+  if(submit && iterationLinks.length<challenge.minIterations)throw new Error('Link at least '+challenge.minIterations+' distinct follow-up commits or comparisons for this challenge.');
+  if(immutable) {
     // A lost response can be retried after submission or even after review.
     // Only the same evidence is a retry; never turn a stale draft into a write.
     if(submit && existing.liveUrl===liveUrl && existing.repoUrl===repoUrl && existing.notes===notes &&
@@ -727,6 +786,7 @@ function betaChallengeSave(body,member) {
   }
   var stamp=new Date().toISOString(),row=existing||{id:Utilities.getUuid(),memberId:member.id,challengeId:challenge.id};
   row.status=submit?'submitted':'draft';row.liveUrl=liveUrl;row.repoUrl=repoUrl;row.notes=notes;row.checks=JSON.stringify(unique);row.iterationLinks=JSON.stringify(iterationLinks);
+  row.definition=submit?JSON.stringify(challenge):'';row.challengeRevision=challenge.revision;
   row.submittedAt=submit?stamp:'';row.reviewedAt='';row.reviewedBy='';row.feedback=existing?String(existing.feedback||''):'';row.updatedAt=stamp;
   betaWrite('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS,row);
 }
@@ -735,11 +795,11 @@ function betaChallengeReview(body,operator) {
   if(!challenge || !id)throw new Error('Choose an intern and challenge to review.');
   var member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(item){return item.id===id;})[0];
   if(!member)throw new Error('Beta participant not found.');
-  if(body.status!=='approved' && body.status!=='changes_requested')throw new Error('Approve the work or request changes.');
+  if(['approved','changes_requested','submitted'].indexOf(body.status)<0)throw new Error('Approve the work, request changes, or leave feedback.');
   var rows=betaChallengeRows(),row=rows.filter(function(item){return item.memberId===id && item.challengeId===challenge.id;})[0];
   if(!row || row.status!=='submitted')throw new Error('Only submitted work can be reviewed.');
   if(BETA_CHALLENGES.indexOf(challenge)!==betaChallengeCompleted(id,rows))throw new Error('The previous challenge must be approved first.');
-  var feedback=betaString(body,'feedback',5000,body.status==='changes_requested'),stamp=new Date().toISOString();
+  var feedback=betaString(body,'feedback',5000,body.status!=='approved'),stamp=new Date().toISOString();
   row.status=body.status;row.feedback=feedback;row.reviewedBy=operator;row.reviewedAt=stamp;row.updatedAt=stamp;
   betaWrite('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS,row);
 }
@@ -758,14 +818,16 @@ function betaChallengeReference(body,operator) {
 function betaChallengeReferencePublic(row) {
   return {challengeId:row.challengeId,title:row.title,url:betaPublicWebsite(row.url),notes:row.notes};
 }
-function betaRoadmap(member,members,rows,references) {
+function betaRoadmap(member,members,rows,references,catalog) {
+  catalog=catalog||betaChallengeCatalog();
   var completed=betaChallengeCompleted(member.id,rows),unlocks={peerWork:completed>=1,teamReferences:completed>=2};
   var roadmap={completed:completed,total:BETA_CHALLENGES.length,currentChallengeId:completed<BETA_CHALLENGES.length?BETA_CHALLENGES[completed].id:null,unlocks:unlocks};
-  roadmap.challenges=BETA_CHALLENGES.map(function(challenge,index){
-    var locked=index>completed,out={id:challenge.id,title:challenge.title,teaser:challenge.teaser,locked:locked,submission:null};
+  roadmap.challenges=catalog.map(function(current,index){
+    var locked=index>completed,row=rows.filter(function(item){return item.memberId===member.id && item.challengeId===current.id;})[0];
+    var challenge=!locked && row && (row.status==='submitted' || row.status==='approved')?betaChallengeSnapshot(row):current;
+    var out={id:challenge.id,title:challenge.title,teaser:challenge.teaser,locked:locked,submission:null};
     if(!locked){
-      out.brief=challenge.brief;out.reward=challenge.reward;out.checklist=challenge.checklist;
-      var row=rows.filter(function(item){return item.memberId===member.id && item.challengeId===challenge.id;})[0];
+      out.brief=challenge.brief;out.reward=challenge.reward;out.checklist=challenge.checklist;out.minIterations=challenge.minIterations;out.revision=challenge.revision;
       out.submission=row?betaChallengePublic(row):null;
     }
     return out;
@@ -774,7 +836,7 @@ function betaRoadmap(member,members,rows,references) {
   if(unlocks.peerWork)members.filter(function(peer){return peer.id!==member.id && peer.batchId===member.batchId && peer.status==='active';}).forEach(function(peer){
     var peerCompleted=betaChallengeCompleted(peer.id,rows);
     rows.filter(function(row){return row.memberId===peer.id && row.status==='approved' && BETA_CHALLENGES.indexOf(betaChallenge(row.challengeId))<peerCompleted && !!betaChallenge(row.challengeId);}).forEach(function(row){
-      var project=betaChallengePublic(row);roadmap.peerWork.push({memberId:peer.id,name:peer.name,challengeId:row.challengeId,title:betaChallenge(row.challengeId).title,liveUrl:project.liveUrl,repoUrl:project.repoUrl});
+      var project=betaChallengePublic(row);roadmap.peerWork.push({memberId:peer.id,name:peer.name,challengeId:row.challengeId,title:project.definition?project.definition.title:betaChallenge(row.challengeId).title,liveUrl:project.liveUrl,repoUrl:project.repoUrl});
     });
   });
   roadmap.references=unlocks.teamReferences?references.map(betaChallengeReferencePublic):[];
@@ -1101,6 +1163,7 @@ function betaApi(body) {
       if(manager)return reply(false,'Challenges must be submitted by the beta participant.',{code:'FORBIDDEN'});
       betaChallengeSave(body,member);
     } else if(action==='challengereview')betaChallengeReview(body,operator);
+    else if(action==='challengeupdate')betaChallengeUpdate(body,operator);
     else if(action==='challengereference')betaChallengeReference(body,operator);
     else if(action==='attendance' || action==='attendanceremove') {
       if(manager)return reply(false,'Attendance is recorded by each beta participant.',{code:'FORBIDDEN'});
@@ -1141,20 +1204,20 @@ function betaApi(body) {
     } else if(action!=='list')throw new Error('Unknown beta action.');
   } catch(e) {
     if(e && e.internalWriteRequired)throw e;
-    return reply(false,String(e.message||e),{code:'INVALID'});
+    return reply(false,String(e.message||e),{code:e.betaCode==='CHALLENGE_CHANGED'?'CHALLENGE_CHANGED':'INVALID'});
   }
   var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
   // Read the final rows once for this response. Resolving every person's
   // batch from the sheet made a manager page perform one remote read per intern.
   var finalMembers=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES);
   var visibleMembers=finalMembers.filter(function(m){return manager || m.id===member.id;});
-  var progress=betaChallengeRows(),references=betaRead('internal_beta_challenge_references',BETA_CHALLENGE_REFERENCES);
-  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,betaSchedules:true,betaRoadmap:true,permissions:permissions,
+  var progress=betaChallengeRows(),references=betaRead('internal_beta_challenge_references',BETA_CHALLENGE_REFERENCES),catalog=betaChallengeCatalog();
+  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,betaSchedules:true,betaRoadmap:true,betaChallengeEditing:true,permissions:permissions,
     members:visibleMembers.map(function(m){return betaPublicMember(m,manager,batches);}),member:member?betaPublicMember(member,false,batches):null};
   if(manager) {
-    result.roadmaps={};finalMembers.forEach(function(m){result.roadmaps[m.id]=betaRoadmap(m,finalMembers,progress,references);});
-    result.challengeCatalog=BETA_CHALLENGES;result.challengeProgress=progress.map(betaChallengePublic);result.challengeReferences=references.map(betaChallengeReferencePublic);
-  } else result.roadmap=betaRoadmap(member,finalMembers,progress,references);
+    result.roadmaps={};finalMembers.forEach(function(m){result.roadmaps[m.id]=betaRoadmap(m,finalMembers,progress,references,catalog);});
+    result.challengeCatalog=catalog;result.challengeProgress=progress.map(betaChallengePublic);result.challengeReferences=references.map(betaChallengeReferencePublic);
+  } else result.roadmap=betaRoadmap(member,finalMembers,progress,references,catalog);
   var group=betaGroupData(manager,member,finalMembers,batches,result.roadmap);
   Object.keys(group).forEach(function(k){result[k]=group[k];});
   Object.keys(extra).forEach(function(k){result[k]=extra[k];});

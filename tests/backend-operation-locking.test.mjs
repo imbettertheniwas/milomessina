@@ -50,17 +50,18 @@ function watchServices(h) {
   return {counts,tables};
 }
 
-test('a populated Beta list uses 23 service operations with absent roadmap tables and never joins the write queue',()=>{
+test('a populated Beta list uses 24 service operations with absent roadmap tables and never joins the write queue',()=>{
   const {h,token}=populated(), locks=lockWatch(h), {counts,tables}=watchServices(h);
   const listed=post(h,token);
   assert.equal(listed.ok,true);
   assert.equal(listed.members.length,1);
-  // The two roadmap tables add presence lookups only until there is a saved
-  // submission or reference. Existing table reads and property calls stay flat.
-  assert.deepEqual(counts,{opens:1,lookups:8,values:6,sizes:6,properties:2});
-  assert.equal(Object.values(counts).reduce((sum,count)=>sum+count,0),23);
+  // The three roadmap tables add presence lookups only until there is a saved
+  // submission, reference or edited definition. Other service calls stay flat.
+  assert.deepEqual(counts,{opens:1,lookups:9,values:6,sizes:6,properties:2});
+  assert.equal(Object.values(counts).reduce((sum,count)=>sum+count,0),24);
   assert.equal(h.sheets.internal_beta_challenge_progress,undefined);
   assert.equal(h.sheets.internal_beta_challenge_references,undefined);
+  assert.equal(h.sheets.internal_beta_challenge_definitions,undefined);
   for(const count of Object.values(tables))assert.equal(count,1,'read each populated table including its header exactly once');
   assert.equal(locks.acquired,0);
   assert.equal(h.ctx.internalRequestState,null,'discard every private snapshot after the response');

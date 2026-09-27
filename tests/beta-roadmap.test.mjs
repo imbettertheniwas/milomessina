@@ -10,6 +10,8 @@ const submit=(h,person,id='portfolio',extra={})=>api(h,person.token,'challengesa
 const approve=(h,person,id='portfolio')=>api(h,h.operator,'challengereview',{memberId:person.member.id,challengeId:id,status:'approved',feedback:'Looks good.'});
 const complete=(h,person,id='portfolio')=>{assert.equal(submit(h,person,id).ok,true);assert.equal(approve(h,person,id).ok,true);};
 const row=(h,person,id='portfolio')=>h.ctx.betaChallengeRows().find(r=>r.memberId===person.member.id&&r.challengeId===id);
+const edit=(h,id='portfolio',extra={})=>api(h,h.operator,'challengeupdate',{...h.ctx.betaChallengeCatalog().find(c=>c.id===id),challengeId:id,...extra});
+const currentEvidence=(h,id='portfolio',extra={})=>{const definition=h.ctx.betaChallengeCatalog().find(c=>c.id===id);return evidence(h,id,{challengeRevision:definition.revision,checks:Array.from(definition.checklist,item=>item.id),...extra});};
 
 test('new and existing beta interns start at portfolio with later details and peer work withheld',()=>{
  const h=setup(),a=join(h),b=join(h,'Riley',{website:'riley.example.com'});
@@ -190,17 +192,108 @@ test('roadmap reads share request snapshots without locking and deletion respons
  const h=setup(),a=join(h),b=join(h,'Riley');
  complete(h,a);complete(h,a,'spend-portal');complete(h,b);
  assert.equal(api(h,h.operator,'challengereference',{challengeId:'spend-portal',title:'Demo',url:'https://reference.example.com',notes:'Sample data.'}).ok,true);
+ assert.equal(edit(h,'feature',{title:'An updated feature challenge'}).ok,true);
  const reads={};let locks=0;
- for(const name of ['internal_beta_challenge_progress','internal_beta_challenge_references']) {
+ for(const name of ['internal_beta_challenge_progress','internal_beta_challenge_references','internal_beta_challenge_definitions']) {
   reads[name]=0;const sheet=h.sheets[name],getRange=sheet.getRange;
   sheet.getRange=(...args)=>{const range=getRange(...args),getValues=range.getValues;range.getValues=()=>{reads[name]++;return getValues.call(range);};return range;};
  }
  h.ctx.LockService.getScriptLock=()=>({waitLock(){locks++;},releaseLock(){}});
  const view=api(h,a.token,'list');assert.equal(view.ok,true);assert.equal(view.roadmap.completed,2);assert.equal(view.roadmap.peerWork.length,1);assert.equal(view.roadmap.references.length,1);
- assert.equal(locks,0);assert.deepEqual(reads,{internal_beta_challenge_progress:1,internal_beta_challenge_references:1});
+ assert.equal(locks,0);assert.deepEqual(reads,{internal_beta_challenge_progress:1,internal_beta_challenge_references:1,internal_beta_challenge_definitions:1});
  const removed=api(h,h.operator,'challengereference',{challengeId:'spend-portal',url:''});
  assert.equal(removed.ok,true);assert.deepEqual(removed.challengeReferences,[]);assert.deepEqual(removed.roadmaps[a.member.id].references,[]);
  const deleted=api(h,h.operator,'memberdelete',{id:b.member.id});
  assert.equal(deleted.ok,true);assert.equal(deleted.challengeProgress.some(item=>item.memberId===b.member.id),false);assert.deepEqual(deleted.roadmaps[a.member.id].peerWork,[]);
  assert.equal(locks,2);
+});
+
+test('only managers edit the existing ordered catalog and edits persist with bounded validated fields',()=>{
+ const h=setup(),a=join(h),fake=join(h,'Arya'),initial=api(h,h.operator,'list').challengeCatalog;
+ assert.equal(h.ctx.doGet().betaChallengeEditing,true);assert.equal(api(h,a.token,'list').betaChallengeEditing,true);
+ assert.equal(initial[0].revision,'');assert.equal(initial[1].minIterations,3);assert.equal(initial[0].minIterations,0);
+ assert.equal(h.sheets.internal_beta_challenge_definitions,undefined);
+ for(const who of ['',h.login('Bijan'),a.token,fake.token])assert.equal(api(h,who,'challengeupdate',{...initial[0],challengeId:'portfolio',title:'Injected'}).ok,false);
+ for(const change of [{challengeId:'new-challenge'},{title:''},{title:'x'.repeat(121)},{teaser:'x'.repeat(241)},{brief:'x'.repeat(6001)},{checklist:[]},{checklist:Array.from({length:21},(_,n)=>({id:'item-'+n,label:'Check'}))},{checklist:[{id:'same',label:'One'},{id:'same',label:'Two'}]},{checklist:[{id:'<script>',label:'Bad'}]},{checklist:[{id:'a',label:''}]},{checklist:[{id:'a',label:'x'.repeat(301)}]},{minIterations:-1},{minIterations:21},{minIterations:1.5},{minIterations:'3'},{title:123}])assert.equal(edit(h,'portfolio',change).ok,false,JSON.stringify(change).slice(0,100));
+ assert.equal(h.sheets.internal_beta_challenge_definitions,undefined,'invalid edits do not create storage');
+ const changed=edit(h,'portfolio',{title:'Build your web home',teaser:'Start publishing',brief:'Create an about page and ship it.',checklist:[{id:'new-domain',label:'Connect a domain'}],minIterations:1,id:'replace-id',reward:'Injected unlock',order:99});
+ assert.equal(changed.ok,true);const saved=changed.challengeCatalog[0];assert.ok(saved.revision);assert.equal(saved.title,'Build your web home');assert.equal(saved.minIterations,1);
+ assert.deepEqual(changed.challengeCatalog.map(item=>item.id),initial.map(item=>item.id));assert.equal(saved.reward,initial[0].reward);assert.equal(changed.roadmaps[a.member.id].completed,0);
+ const reread=api(h,a.token,'list').roadmap.challenges[0];assert.equal(reread.title,saved.title);assert.equal(reread.revision,saved.revision);
+ assert.equal(edit(h,'portfolio',saved).challengeCatalog[0].revision,saved.revision,'same edit retry preserves revision');
+ assert.equal(h.sheets.internal_beta_challenge_definitions.rows.length,2);
+ const again=edit(h,'portfolio',{title:'Another title'});assert.notEqual(again.challengeCatalog[0].revision,saved.revision);assert.equal(h.sheets.internal_beta_challenge_definitions.rows.length,2);
+});
+
+test('editing a challenge preserves submitted and approved definitions, evidence, retries and unlocks',()=>{
+ const h=setup(),pending=join(h),approved=join(h,'Riley'),fresh=join(h,'Jordan');
+ assert.equal(submit(h,pending).ok,true);complete(h,approved);
+ const pendingBefore=JSON.stringify(row(h,pending)),approvedBefore=JSON.stringify(row(h,approved));
+ const changed=edit(h,'portfolio',{title:'New portfolio requirements',brief:'A revised challenge.',checklist:[{id:'new-check',label:'A new requirement'}],minIterations:2});assert.equal(changed.ok,true);
+ assert.equal(JSON.stringify(row(h,pending)),pendingBefore);assert.equal(JSON.stringify(row(h,approved)),approvedBefore);
+ for(const person of [pending,approved]) {
+  const view=api(h,person.token,'list').roadmap.challenges[0];assert.equal(view.title,h.ctx.BETA_CHALLENGES[0].title);assert.equal(view.revision,'');assert.equal(view.minIterations,0);assert.equal(view.submission.definition.title,view.title);
+  assert.equal(submit(h,person).ok,true,'old submitted evidence retries against its original snapshot');
+ }
+ const newView=api(h,fresh.token,'list').roadmap.challenges[0];assert.equal(newView.title,'New portfolio requirements');assert.ok(newView.revision);assert.equal(newView.minIterations,2);
+ assert.equal(api(h,approved.token,'list').roadmap.completed,1);assert.equal(api(h,approved.token,'list').roadmap.challenges[1].locked,false);
+ assert.equal(approve(h,pending).ok,true,'original requirements remain reviewable');assert.equal(api(h,pending.token,'list').roadmap.completed,1);
+ const manager=api(h,h.operator,'list');assert.equal(manager.challengeProgress.find(item=>item.memberId===pending.member.id).definition.title,h.ctx.BETA_CHALLENGES[0].title);
+});
+
+test('mutable drafts reject stale revisions and resubmit against current checklists and iteration requirements',()=>{
+ const h=setup(),a=join(h);
+ assert.equal(submit(h,a,'portfolio',{submit:false,checks:['domain']}).ok,true);const draft=JSON.stringify(row(h,a));
+ const changed=edit(h,'portfolio',{checklist:[{id:'new-check',label:'Ship the revised task'}],minIterations:1}).challengeCatalog[0];
+ const view=api(h,a.token,'list').roadmap.challenges[0];assert.equal(view.revision,changed.revision);assert.equal(view.submission.challengeRevision,'');assert.equal(view.submission.definition,null);
+ assert.equal(submit(h,a,'portfolio',{submit:false}).code,'CHALLENGE_CHANGED');assert.equal(submit(h,a).code,'CHALLENGE_CHANGED');assert.equal(JSON.stringify(row(h,a)),draft);
+ assert.equal(api(h,a.token,'challengesave',currentEvidence(h)).ok,false,'new minimum applies');
+ const links=['https://github.com/maya-builds/demo/commit/'+'d'.repeat(40)];
+ assert.equal(api(h,a.token,'challengesave',currentEvidence(h,'portfolio',{iterationLinks:links,submit:false})).ok,true);
+ assert.equal(row(h,a).challengeRevision,changed.revision);assert.equal(row(h,a).definition,'');
+ assert.equal(api(h,a.token,'challengesave',currentEvidence(h,'portfolio',{iterationLinks:links})).ok,true);const submitted=JSON.parse(row(h,a).definition);assert.equal(submitted.revision,changed.revision);
+ assert.equal(api(h,h.operator,'challengereview',{memberId:a.member.id,challengeId:'portfolio',status:'changes_requested',feedback:'Please improve the result.'}).ok,true);
+ const newer=edit(h,'portfolio',{checklist:[{id:'third-check',label:'Try the latest task'}],minIterations:0}).challengeCatalog[0];
+ const correction=api(h,a.token,'list').roadmap.challenges[0];assert.equal(correction.revision,newer.revision);assert.equal(correction.submission.challengeRevision,changed.revision);assert.equal(correction.submission.definition,null);
+ assert.equal(api(h,a.token,'challengesave',currentEvidence(h)).ok,true);assert.equal(JSON.parse(row(h,a).definition).revision,newer.revision);
+});
+
+test('feedback-only review keeps pending work and original evidence private without unlocking anything',()=>{
+ const h=setup(),a=join(h),peer=join(h,'Riley');complete(h,peer);
+ const review=payload=>api(h,h.operator,'challengereview',{memberId:a.member.id,challengeId:'portfolio',status:'submitted',...payload});
+ assert.equal(review({feedback:'No work yet'}).ok,false);assert.equal(submit(h,a,'portfolio',{submit:false}).ok,true);assert.equal(review({feedback:'Draft'}).ok,false);
+ assert.equal(submit(h,a).ok,true);const before={...row(h,a)};
+ assert.equal(review({feedback:''}).ok,false);assert.equal(review({feedback:'x'.repeat(5001)}).ok,false);
+ assert.equal(api(h,peer.token,'challengereview',{memberId:a.member.id,challengeId:'portfolio',status:'submitted',feedback:'Spoof'}).code,'FORBIDDEN');
+ assert.equal(review({feedback:'Private feedback while I finish reviewing.'}).ok,true);
+ const after=row(h,a);for(const key of h.ctx.BETA_CHALLENGE_PROGRESS.filter(key=>!['feedback','reviewedAt','reviewedBy','updatedAt'].includes(key)))assert.equal(after[key],before[key],key);
+ assert.equal(after.status,'submitted');assert.equal(after.reviewedBy,'Arya');assert.ok(after.reviewedAt);
+ const own=api(h,a.token,'list');assert.equal(own.roadmap.completed,0);assert.equal(own.roadmap.challenges[0].submission.feedback,'Private feedback while I finish reviewing.');
+ assert.equal(JSON.stringify(api(h,peer.token,'list')).includes('Private feedback'),false);
+ assert.equal(approve(h,a).ok,true);assert.equal(review({feedback:'Already approved'}).ok,false);
+});
+
+test('legacy progress header upgrade is locked and original definitions survive the first catalog edit',()=>{
+ const h=setup(),pending=join(h),approved=join(h,'Riley');assert.equal(submit(h,pending).ok,true);complete(h,approved);
+ const sheet=h.sheets.internal_beta_challenge_progress;sheet.rows.forEach(row=>row.splice(14));const before=sheet.rows.map(row=>row.slice());
+ let held=false,locks=0;h.ctx.LockService.getScriptLock=()=>({waitLock(){held=true;locks++;},releaseLock(){held=false;}});
+ const getRange=sheet.getRange;sheet.getRange=(...args)=>{const range=getRange(...args),setValues=range.setValues;range.setValues=(...values)=>{assert.equal(held,true,'legacy headers are upgraded only under lock');return setValues.apply(range,values);};return range;};
+ const read=api(h,h.operator,'list');assert.equal(read.ok,true);assert.equal(locks,1);assert.equal(read.challengeProgress[0].definition.revision,'');
+ assert.deepEqual(sheet.rows.slice(1),before.slice(1));assert.deepEqual(sheet.rows[0],Array.from(h.ctx.BETA_CHALLENGE_PROGRESS));
+ const updated=edit(h,'portfolio',{title:'Changed after launch',checklist:[{id:'new-work',label:'New task'}]});assert.equal(updated.ok,true);
+ for(const person of [pending,approved]) {
+  const saved=row(h,person);assert.equal(JSON.parse(saved.definition).title,h.ctx.BETA_CHALLENGES[0].title);assert.equal(saved.challengeRevision,'');
+  const original=before.find(cells=>String(cells[0]).replace(/^\u200b/,'')===saved.id);assert.deepEqual(sheet.rows[saved._row-1].slice(0,14),original);
+  assert.equal(submit(h,person).ok,true);
+ }
+ assert.equal(api(h,approved.token,'list').roadmap.completed,1);
+});
+
+test('challenge schema migration refuses occupied or mismatched columns without overwriting progress',()=>{
+ for(const corruption of ['occupied appended column','wrong header']) {
+  const h=setup(),a=join(h);assert.equal(submit(h,a).ok,true);const sheet=h.sheets.internal_beta_challenge_progress;
+  sheet.rows[0]=sheet.rows[0].slice(0,14);
+  if(corruption==='wrong header'){sheet.rows.forEach(row=>row.splice(14));sheet.rows[0][3]='other-status';}
+  const before=JSON.stringify(sheet.rows);const out=api(h,h.operator,'list');assert.equal(out.ok,false);assert.match(out.error,/columns do not match/);assert.equal(JSON.stringify(sheet.rows),before);
+ }
 });

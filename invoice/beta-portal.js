@@ -14,7 +14,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&am
 let token = '', workspace = null, busy = false, generation = 0, invite = '', inviteBatch = null;
 let recapDraft = null, githubStates = [], githubKey = '', githubGeneration = 0, accessCapability = '', showReturnLink = false, attendanceDay = '';
 let githubController = null, githubAt = 0;
-let joinStep = 0, gateBusy = false, websiteDraft = null;
+let joinStep = 0, gateBusy = false;
 let scheduleDrafts = {join: null, own: null}, scheduleRead = 0, scheduleDirty = false;
 let challengeDrafts = {}, selectedChallenge = '';
 const WEBSITE_ERROR = 'Enter a public website such as yourname.com or https://yourname.com, up to 300 characters.';
@@ -43,7 +43,7 @@ function scheduleDraft(scope) {
   return scheduleDrafts[scope];
 }
 function scheduleSummary(schedule) {
-  if (!schedule) return 'Not provided on this earlier join. You can add it in your profile.';
+  if (!schedule) return 'Not provided on this earlier join. You can add it in Your schedule.';
   if (schedule.mode === 'file') return (schedule.file?.name || 'Schedule file') + ' · ' + schedule.timezone + ' · Private';
   return (schedule.noCommitments ? 'No regular weekly commitments' : (schedule.blocks || []).map(block => SCHEDULE_DAYS[block.day] + ' ' + block.start + '–' + block.end + (block.label ? ' · ' + block.label : '')).join('; ')) + ' · ' + schedule.timezone + ' · Private';
 }
@@ -186,7 +186,6 @@ function setBusy(value, preserveEditor = false) {
   busy = value; $('beta-refresh').disabled = value;
   $('beta-refresh').textContent = value ? 'Updating…' : 'Refresh';
   $('beta-sections').querySelectorAll('select, textarea, input, button').forEach(element => { element.disabled = element.dataset.roadmapLocked === 'true' || value && !(preserveEditor && (element.matches('#beta-recap-form textarea') || element.closest('[data-challenge-form]') && element.tagName !== 'BUTTON' || element.dataset.scheduleScope === 'own' && element.tagName !== 'BUTTON')); });
-  $('beta-profile').querySelectorAll('input,button').forEach(element => { element.disabled = value && !(preserveEditor && element.id === 'beta-website'); });
   $('beta-main').setAttribute('aria-busy', String(value));
 }
 function setGateBusy(value, message = '') {
@@ -250,13 +249,13 @@ function showGate(message = '', join = false, forget = false) {
   generation++; githubGeneration++;
   challengeDrafts = {}; selectedChallenge = '';
   githubController?.abort();githubController=null;githubAt=0;
-  token = ''; workspace = null; recapDraft = null; websiteDraft = null; scheduleDrafts = {join: null, own: null}; scheduleDirty = false; scheduleRead++; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
+  token = ''; workspace = null; recapDraft = null; scheduleDrafts = {join: null, own: null}; scheduleDirty = false; scheduleRead++; githubStates = []; githubKey = ''; accessCapability = ''; showReturnLink = false; attendanceDay = '';
   if (forget) forgetIdentity();
   $('beta-workspace').hidden = true; $('beta-gate').hidden = false;
-  ['beta-summary', 'beta-sections', 'beta-nav', 'beta-profile'].forEach(id => $(id).replaceChildren());
+  ['beta-summary', 'beta-sections', 'beta-nav'].forEach(id => $(id).replaceChildren());
   $('beta-join-schedule-editor').replaceChildren();
   ['beta-batch-side', 'beta-batch', 'beta-avatar', 'beta-updated', 'beta-notice'].forEach(id => { $(id).textContent = ''; });
-  $('beta-profile').hidden = true; $('beta-greeting').textContent = 'Your workspace';
+  $('beta-greeting').textContent = 'Your workspace';
   $('beta-recovery').hidden = true; $('beta-return-link').value = '';
   setGateMode(join ? 'join' : 'intro'); $('beta-login-error').textContent = message;
   setError(); setBusy(false); setGateBusy(false);
@@ -319,7 +318,7 @@ function websitesSection() {
   const unlocked = workspace.roadmap?.unlocks?.peerWork === true;
   const links = workspace.peers.map(peer => ({peer, url: websiteUrl(peer.website)})).filter(item => item.url);
   const names = links.map(({peer, url}) => '<li><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(peer.name) + '<span aria-hidden="true">↗</span></a></li>').join('');
-  return '<section class="section websites-section" id="beta-section-websites" aria-labelledby="beta-heading-websites">' + heading('websites', unlocked ? 'Personal sites' : 'Your personal site', unlocked ? 'Your group’s websites and portfolios.' : 'Your portfolio link. Complete challenge 1 to see your group’s sites.') + (links.length ? '<ul class="portfolio-names">' + names + '</ul>' : '<p class="portfolio-empty">Add your website in your profile when it is ready.</p>') + '</section>';
+  return '<section class="section websites-section" id="beta-section-websites" aria-labelledby="beta-heading-websites">' + heading('websites', unlocked ? 'Personal sites' : 'Your personal site', unlocked ? 'Your group’s websites and portfolios.' : 'Your portfolio link. Complete challenge 1 to see your group’s sites.') + (links.length ? '<ul class="portfolio-names">' + names + '</ul>' : '<p class="portfolio-empty">No personal sites have been added yet.</p>') + '</section>';
 }
 function scheduleSection() {
   const saved = workspace.schedules[0], download = saved?.mode === 'file' && saved.ready !== false ? '<button type="button" class="button" id="beta-schedule-download">Download saved file ↗</button>' : '';
@@ -380,9 +379,6 @@ function render() {
   $('beta-updated').textContent = 'Updated ' + new Date().toLocaleTimeString(undefined, {hour: 'numeric', minute: '2-digit'});
   $('beta-gate').hidden = true; $('beta-workspace').hidden = false;
   $('beta-recovery').hidden = !(showReturnLink && accessCapability); $('beta-return-link').value = returnLink();
-  $('beta-profile').hidden = false;
-  $('beta-profile').innerHTML = '<div><span class="eyebrow">Your profile</span><h2>' + esc(member.name) + '</h2><p>' + esc(workspace.group.name || member.batch) + '</p></div><div class="profile-contact"><span>' + esc(member.email) + '</span><span>' + esc(member.phone) + '</span></div><div class="profile-links">' + (member.github ? '<a href="https://github.com/' + encodeURIComponent(member.github) + '" target="_blank" rel="noopener noreferrer">@' + esc(member.github) + ' ↗</a>' : '') + (accessCapability ? '<button class="button subtle" id="beta-show-link" type="button">Personal return link</button>' : '') + '</div><form id="beta-website-form" class="profile-website" novalidate><label for="beta-website">Website / portfolio <span>(optional)</span></label><div class="website-input-row"><input id="beta-website" name="website" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" maxlength="300" placeholder="yourname.com" aria-describedby="beta-website-help beta-website-error"><button class="button" type="submit">Save website</button></div><p id="beta-website-help">Interns who complete their first challenge can explore your site. Leave it blank and save to remove it.</p><p id="beta-website-error" class="website-error" role="alert" hidden></p></form>';
-  $('beta-website').value = websiteDraft === null ? member.website || '' : websiteDraft;
 }
 function refreshGithub(force = false) {
   if (!allowed('github')) return;
@@ -406,11 +402,15 @@ async function fetchWorkspace(requestGeneration, preserveEditor = false) {
   const out = await betaCall('list', {}, requestGeneration);
   if (requestGeneration !== generation) return false;
   const previousMember = workspace?.member.id, previousBatch = workspace?.batch.id, previousCompleted = workspace?.roadmap?.completed;
+  const previousRevisions = JSON.stringify((workspace?.roadmap?.challenges || []).map(item => [item.id, item.revision || '']));
+  const previousReviews = JSON.stringify((workspace?.roadmap?.challenges || []).map(item => [item.id, item.submission?.status, item.submission?.feedback, item.submission?.reviewedAt]));
   workspace = normalize(out);
+  const requirementsChanged = previousRevisions !== JSON.stringify((workspace.roadmap?.challenges || []).map(item => [item.id, item.revision || '']));
+  const reviewChanged = previousReviews !== JSON.stringify((workspace.roadmap?.challenges || []).map(item => [item.id, item.submission?.status, item.submission?.feedback, item.submission?.reviewedAt]));
   const advanced = previousMember === workspace.member.id && Number.isInteger(previousCompleted) && workspace.roadmap?.completed > previousCompleted;
   if (advanced) {
     selectedChallenge = workspace.roadmap.currentChallengeId || '';
-    $('beta-notice').textContent = workspace.roadmap.completed === workspace.roadmap.total ? 'You completed the roadmap. All challenges and your inspiration library are unlocked.' : workspace.roadmap.completed === 1 ? 'Portfolio approved! Your peer gallery and spend portal challenge are unlocked.' : workspace.roadmap.completed === 2 ? 'Spend portal approved! Team examples and your next challenge are unlocked.' : 'Challenge approved! Your next step is ready.';
+    $('beta-notice').textContent = workspace.roadmap.completed === workspace.roadmap.total ? 'You completed the roadmap. All challenges and your inspiration library are unlocked.' : workspace.roadmap.completed === 1 ? 'Challenge approved! Your peer gallery and next challenge are unlocked.' : workspace.roadmap.completed === 2 ? 'Challenge approved! Team examples and your next challenge are unlocked.' : 'Challenge approved! Your next step is ready.';
   }
   if (!allowed('recap')) recapDraft = null;
   if (!allowed('github')) { githubGeneration++; githubController?.abort(); githubController=null; githubStates = []; githubKey = ''; githubAt=0; }
@@ -419,13 +419,13 @@ async function fetchWorkspace(requestGeneration, preserveEditor = false) {
   if (previousMember !== workspace.member.id) { scheduleDirty = false; challengeDrafts = {}; selectedChallenge = ''; }
   for (const challenge of workspace.roadmap?.challenges || []) if (challenge.locked || ['submitted','approved'].includes(challenge.submission?.status)) delete challengeDrafts[challenge.id];
   if (!scheduleDirty) scheduleDrafts.own = null;
-  if (advanced || !(preserveEditor && previousMember === workspace.member.id && previousBatch === workspace.batch.id && (allowed('recap') && $('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement) || $('beta-schedule-form')?.contains(document.activeElement) || $('beta-challenge-detail')?.contains(document.activeElement)))) render();
+  if (advanced || requirementsChanged || reviewChanged || !(preserveEditor && previousMember === workspace.member.id && previousBatch === workspace.batch.id && (allowed('recap') && $('beta-recap-form')?.contains(document.activeElement) || $('beta-schedule-form')?.contains(document.activeElement) || $('beta-challenge-detail')?.contains(document.activeElement)))) render();
   refreshGithub(); return true;
 }
 async function refresh(preserveEditor = false) {
   if (!token || busy) return;
   const requestGeneration = generation;
-  const keepEditor = preserveEditor && Boolean($('beta-recap-form')?.contains(document.activeElement) || $('beta-website-form')?.contains(document.activeElement) || $('beta-schedule-form')?.contains(document.activeElement) || $('beta-challenge-detail')?.contains(document.activeElement));
+  const keepEditor = preserveEditor && Boolean($('beta-recap-form')?.contains(document.activeElement) || $('beta-schedule-form')?.contains(document.activeElement) || $('beta-challenge-detail')?.contains(document.activeElement));
   setError(); $('beta-notice').textContent = ''; setBusy(true, keepEditor);
   try { await fetchWorkspace(requestGeneration, keepEditor); }
   catch (error) { if (requestGeneration === generation) handleError(error); }
@@ -539,30 +539,6 @@ function captureChallengeDraft(event) {
   const status = form.querySelector('.challenge-draft-state');
   if (status) status.textContent = 'Unsaved changes';
   return true;
-}
-async function saveWebsite(value) {
-  if (!token || !workspace || busy) return;
-  const raw = String(value || '').trim(), website = websiteUrl(raw), requestGeneration = generation;
-  websiteDraft = raw;
-  $('beta-website-error').textContent = '';
-  $('beta-website-error').hidden = true;
-  if (raw && !website) {
-    $('beta-website-error').textContent = WEBSITE_ERROR; $('beta-website-error').hidden = false;
-    $('beta-website').focus(); return;
-  }
-  setError(); $('beta-notice').textContent = ''; setBusy(true);
-  try {
-    const out = await betaCall('memberprofile', {website}, requestGeneration);
-    if (requestGeneration !== generation) return;
-    const next = normalize(out);
-    if (next.member.id !== workspace.member.id) throw new Error('Your profile could not be verified. Refresh and try again.');
-    workspace = next; websiteDraft = null; render(); refreshGithub();
-    $('beta-notice').textContent = website ? 'Your website is saved.' : 'Your website was removed.';
-  } catch (error) {
-    if (requestGeneration !== generation) return;
-    if (isAccessError(error)) handleError(error);
-    else { $('beta-website-error').textContent = error.message || 'Your website could not be saved. Please try again.'; $('beta-website-error').hidden = false; }
-  } finally { if (requestGeneration === generation) setBusy(false); }
 }
 async function saveSchedule() {
   if (!token || !workspace || busy) return;
@@ -682,12 +658,6 @@ $('beta-copy-link').addEventListener('click', async () => {
   catch (_) { $('beta-return-link').focus(); $('beta-return-link').select(); $('beta-copy-link').textContent = 'Select and copy the link'; }
 });
 $('beta-hide-link').addEventListener('click', () => { showReturnLink = false; $('beta-return-link').value = ''; $('beta-recovery').hidden = true; });
-$('beta-profile').addEventListener('click', event => { if (event.target.closest('#beta-show-link')) { showReturnLink = true; $('beta-return-link').value = returnLink(); $('beta-recovery').hidden = false; } });
-$('beta-profile').addEventListener('submit', event => { if (event.target.id === 'beta-website-form') { event.preventDefault(); saveWebsite($('beta-website').value); } });
-$('beta-profile').addEventListener('input', event => {
-  if (event.target.id !== 'beta-website') return;
-  websiteDraft = event.target.value; $('beta-website-error').textContent = ''; $('beta-website-error').hidden = true;
-});
 $('beta-sections').addEventListener('click', event => {
   const challengeButton = event.target.closest('[data-roadmap-select]');
   if (challengeButton) {

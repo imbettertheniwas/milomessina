@@ -8,7 +8,7 @@ import {roadmapHTML, roadmapLibraryHTML, challengeFormValues} from '../invoice/b
 
 const source = readFileSync(new URL('../invoice/beta-portal.js', import.meta.url), 'utf8')
   .replace(/^import[^\n]*\n/gm, '')
-  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, saveWebsite, websiteUrl, scheduleDraft, scheduleChange, scheduleAction, readScheduleFile, saveSchedule, downloadSchedule, joinFields, validateJoinSchedule, saveChallenge, captureChallengeDraft, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy, scheduleDrafts, challengeDrafts, selectedChallenge})};');
+  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, websiteUrl, scheduleDraft, scheduleChange, scheduleAction, readScheduleFile, saveSchedule, downloadSchedule, joinFields, validateJoinSchedule, saveChallenge, captureChallengeDraft, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy, scheduleDrafts, challengeDrafts, selectedChallenge})};');
 const ACCESS = 'BETA-' + 'a'.repeat(32);
 const INVITE_A = 'BATCH-' + '1'.repeat(32), INVITE_B = 'BATCH-' + '2'.repeat(32);
 const fields = {name:'Example Intern', email:'intern@example.invalid', phone:'+1 202 555 0100', github:'example-intern'};
@@ -28,10 +28,10 @@ function harness(fetchImpl, {session=storage(), local=storage(), hash='', readFi
   const makeElement=id=>({id,name:id.replace('beta-join-',''),value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,dataset:{},tagName:'INPUT',
     classList:{toggle(){}},setAttribute(){},removeAttribute(){},replaceChildren(){this.innerHTML='';this.textContent='';},
     focus(){document.activeElement=this;},select(){},setCustomValidity(value){this.validityMessage=value;},checkValidity(){return !this.validityMessage;},reportValidity(){},
-    matches(){return false;},contains(element){return element===this || id==='beta-website-form' && element?.id==='beta-website';},closest(){return null;},
+    matches(){return false;},contains(element){return element===this;},closest(){return null;},
     addEventListener(name,fn){events.set(id+':'+name,fn);},
     reset(){['name','email','phone','github','website'].forEach(name=>get('beta-join-'+name).value='');},
-    querySelectorAll(selector){if(id==='beta-join-progress')return [get('step1'),get('step2'),get('step3'),get('step4')];if(id==='beta-join-details'||id==='beta-join-form')return ['name','email','phone','github','website'].map(name=>get('beta-join-'+name));if(id==='beta-profile')return [get('beta-website'),get('beta-website-save')];return [];}});
+    querySelectorAll(selector){if(id==='beta-join-progress')return [get('step1'),get('step2'),get('step3'),get('step4')];if(id==='beta-join-details'||id==='beta-join-form')return ['name','email','phone','github','website'].map(name=>get('beta-join-'+name));return [];}});
   const get=id=>{if(!elements.has(id))elements.set(id,makeElement(id));return elements.get(id);};
   document={getElementById:get,activeElement:null,hidden:false,addEventListener(){},createElement(){return {click(){downloads.push({href:this.href,name:this.download});}};}};
   const location={origin:'https://example.invalid',pathname:'/internal/beta',search:'',hash};
@@ -49,7 +49,7 @@ test('passwordless markup has no manual access-code form and does not force savi
   const html=readFileSync(new URL('../invoice/beta.html',import.meta.url),'utf8');
   assert.doesNotMatch(html,/type=["']password|id=["']beta-code|beta-login-form/);
   assert.match(html,/id="beta-copy-link"/);assert.match(html,/id="beta-hide-link"/);
-  assert.match(html,/id="beta-profile"/);
+  assert.doesNotMatch(html,/id="beta-profile"/);
 });
 
 test('an existing same-batch session opens its profile instead of the join form',async()=>{
@@ -319,71 +319,6 @@ test('an unlocked beta home shows simple escaped peer names with safe website li
   assert.match(sites,/Lee &lt;Builder&gt;/);assert.match(sites,/rel="noopener noreferrer"/);
   assert.doesNotMatch(sites,/private@example|Unsafe site|Credential site|No website|<iframe|<img|javascript:/);
   assert.ok(markup.indexOf('id="beta-section-websites"')<markup.indexOf('id="beta-section-attendance"'));
-  assert.equal(h.get('beta-website').value,own.website);
-});
-
-test('own-profile website save normalizes a bare domain and preserves private profile and recap data',async()=>{
-  const requests=[];let current={...workspace('A'),permissions:['recap'],recaps:[{memberId:'member-A',learned:'Learning',accomplished:'Built work',links:[]}]};
-  const h=harness(body=>{
-    requests.push(body);if(body.action==='betalogin')return identity('A');
-    if(body.action==='memberprofile'){current={...current,member:{...current.member,website:body.website},peers:[{...current.member,website:body.website}]};}
-    return current;
-  });
-  await h.portal.signInWithAccess(ACCESS);h.get('beta-website').value='MY-SITE.example/work';
-  await h.portal.saveWebsite(h.get('beta-website').value);
-  assert.deepEqual(requests.find(body=>body.action==='memberprofile'),{website:'https://my-site.example/work',_api:'beta',action:'memberprofile',_session:'session-A'});
-  assert.equal(h.get('beta-website').value,'https://my-site.example/work');
-  assert.match(h.get('beta-sections').innerHTML,/href="https:\/\/my-site.example\/work"/);
-  assert.match(h.get('beta-profile').innerHTML,/intern@example.invalid/);assert.equal(h.get('beta-learned').value,'Learning');
-  assert.equal(h.portal.state().workspace.member.email,fields.email);assert.match(h.get('beta-notice').textContent,/saved/);
-  await h.portal.saveWebsite('');
-  assert.equal(requests.at(-1).website,'');assert.equal(h.get('beta-website').value,'');
-  assert.doesNotMatch(h.get('beta-sections').innerHTML,/https:\/\/my-site.example/);assert.match(h.get('beta-notice').textContent,/removed/);
-});
-
-test('invalid and failed website saves keep the existing link and allow correction without losing the draft',async()=>{
-  let fail=true;const calls=[],data={...workspace('A'),member:{...member('A'),website:'https://saved.example'},peers:[{...member('A'),website:'https://saved.example'}]};
-  const h=harness(body=>{
-    calls.push(body);if(body.action==='betalogin')return identity('A');
-    if(body.action==='memberprofile'&&fail)throw new TypeError('Network unavailable');
-    if(body.action==='memberprofile')return {...data,member:{...data.member,website:body.website},peers:[{...data.member,website:body.website}]};
-    return data;
-  });
-  await h.portal.signInWithAccess(ACCESS);
-  await h.portal.saveWebsite('javascript:alert(1)');
-  assert.equal(calls.filter(body=>body.action==='memberprofile').length,0);assert.equal(h.get('beta-website-error').hidden,false);
-  h.get('beta-website').value='new.example';h.events.get('beta-profile:input')({target:h.get('beta-website')});
-  assert.equal(h.get('beta-website-error').hidden,true);await h.portal.saveWebsite('new.example');
-  assert.equal(h.get('beta-website').value,'new.example');assert.match(h.get('beta-website-error').textContent,/Could not connect/);
-  assert.equal(h.portal.state().workspace.member.website,'https://saved.example');assert.match(h.get('beta-sections').innerHTML,/https:\/\/saved.example/);
-  fail=false;await h.portal.saveWebsite('new.example');
-  assert.equal(h.portal.state().workspace.member.website,'https://new.example');assert.equal(h.get('beta-website-error').hidden,true);
-});
-
-test('a focused website draft survives automatic refresh and unrelated saved data',async()=>{
-  const h=harness(body=>body.action==='betalogin'?identity('A'):{...workspace('A'),member:{...member('A'),website:'https://saved.example'}});
-  await h.portal.signInWithAccess(ACCESS);h.get('beta-website').value='unsaved.example';h.get('beta-website').focus();
-  h.events.get('beta-profile:input')({target:h.get('beta-website')});
-  await h.portal.refresh(true);assert.equal(h.get('beta-website').value,'unsaved.example');assert.equal(h.get('beta-website').disabled,false);
-  await h.portal.refresh();assert.equal(h.get('beta-website').value,'unsaved.example');
-});
-
-test('a website save cannot restore private data after signout',async()=>{
-  const pending=deferred();const h=harness(body=>body.action==='betalogin'?identity('A'):body.action==='memberprofile'?pending.promise:body.action==='logout'?{ok:true}:workspace('A'));
-  await h.portal.signInWithAccess(ACCESS);const save=h.portal.saveWebsite('new.example');
-  h.events.get('beta-signout:click')();pending.resolve({...workspace('A'),member:{...member('A'),website:'https://new.example'}});await save;
-  assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-workspace').hidden,true);
-  assert.equal(h.get('beta-profile').innerHTML,'');assert.equal(h.get('beta-sections').innerHTML,'');assert.equal(h.get('beta-notice').textContent,'');
-});
-
-test('denied website editing clears the old profile while retaining its personal return capability',async()=>{
-  let revoked=false;const h=harness(body=>{
-    if(revoked)return {ok:false,code:'AUTH_REQUIRED',error:'This profile is paused.'};
-    return body.action==='betalogin'?identity('A'):workspace('A');
-  });
-  await h.portal.signInWithAccess(ACCESS);revoked=true;await h.portal.saveWebsite('new.example');
-  assert.equal(h.portal.state().workspace,null);assert.equal(h.get('beta-profile').innerHTML,'');
-  assert.equal(h.get('beta-workspace').hidden,true);assert.equal(h.local.getItem('fomo.beta.access'),ACCESS);
 });
 
 const manualSchedule=()=>({timezone:'America/New_York',mode:'manual',blocks:[{day:1,start:'09:00',end:'11:30',label:'Class'}],noCommitments:false});
@@ -559,7 +494,7 @@ test('review approval selects the next challenge and announces its unlock on ref
   current=JSON.parse(JSON.stringify(current));current.roadmap.completed=1;current.roadmap.currentChallengeId='spend-portal';current.roadmap.unlocks.peerWork=true;
   current.roadmap.challenges[0].submission={status:'approved',checks:['domain']};Object.assign(current.roadmap.challenges[1],{locked:false,brief:'Practice iterations',checklist:[]});
   await h.portal.refresh();assert.equal(h.portal.state().selectedChallenge,'spend-portal');
-  assert.match(h.get('beta-notice').textContent,/Portfolio approved/);assert.match(h.get('beta-sections').innerHTML,/data-challenge-form="spend-portal"/);
+  assert.match(h.get('beta-notice').textContent,/Challenge approved/);assert.match(h.get('beta-sections').innerHTML,/data-challenge-form="spend-portal"/);
 });
 test('inspiration library fails closed and escapes unlocked links and text',()=>{
   const roadmap={unlocks:{peerWork:false,teamReferences:false},peerWork:[{name:'Hidden',liveUrl:'https://secret.example'}],references:[{url:'https://reference.example'}]};
@@ -575,4 +510,54 @@ test('typing during a background challenge refresh remains in the draft',async()
   assert.equal(h.portal.captureChallengeDraft({target:{closest:()=>form}}),true);
   pending.resolve(data);await refreshing;
   assert.equal(h.portal.state().challengeDrafts.portfolio.notes,'Typed while the service was refreshing');
+});
+
+test('updated requirements preserve typed evidence but clear old confirmations during focused refresh',async()=>{
+  let current={...workspace('A'),roadmap:roadmapFixture()};
+  const h=harness(body=>body.action==='betalogin'?identity('A'):current);
+  await h.portal.signInWithAccess(ACCESS);
+  h.portal.captureChallengeDraft({target:{closest:()=>challengeForm({notes:'My work is still here'})}});
+  h.get('beta-challenge-detail').focus();
+  current=JSON.parse(JSON.stringify(current));
+  Object.assign(current.roadmap.challenges[0],{revision:'revision-2',brief:'New instructions',checklist:[{id:'domain',label:'Verify the new domain requirement'}]});
+  await h.portal.refresh(true);
+  const html=h.get('beta-sections').innerHTML;
+  assert.match(html,/New instructions/);assert.match(html,/My work is still here/);
+  assert.match(html,/data-challenge-revision="revision-2"/);
+  assert.doesNotMatch(html,/value="domain" checked/);
+  assert.match(html,/requirements changed/);
+});
+
+test('challenge form submits its reviewed revision and shows configurable iteration requirements',()=>{
+  const form=challengeForm();form.dataset.challengeRevision='revision-3';
+  assert.equal(challengeFormValues(form).challengeRevision,'revision-3');
+  const roadmap=roadmapFixture();Object.assign(roadmap.challenges[0],{revision:'revision-3',minIterations:2});
+  let html=roadmapHTML(roadmap);
+  assert.match(html,/name="iterationLinks"/);assert.match(html,/at least 2 distinct follow-up pushes/);
+  roadmap.challenges[0].minIterations=0;html=roadmapHTML(roadmap);
+  assert.doesNotMatch(html,/name="iterationLinks"/);
+});
+
+test('saved drafts reset outdated checklist confirmations without hiding feedback or project links',()=>{
+  const roadmap=roadmapFixture();
+  Object.assign(roadmap.challenges[0],{revision:'new',submission:{status:'changes_requested',challengeRevision:'old',liveUrl:'https://built.example',notes:'Existing work',checks:['domain'],feedback:'Improve the navigation'}});
+  const html=roadmapHTML(roadmap);
+  assert.match(html,/https:\/\/built.example/);assert.match(html,/Existing work/);assert.match(html,/Improve the navigation/);
+  assert.doesNotMatch(html,/value="domain" checked/);
+  assert.match(html,/requirements changed/);
+});
+
+test('new feedback and change requests repaint submitted work during background refresh',async()=>{
+  let current={...workspace('A'),roadmap:roadmapFixture()};
+  current.roadmap.challenges[0].submission={status:'submitted',checks:['domain'],notes:'Ready for review',feedback:''};
+  const h=harness(body=>body.action==='betalogin'?identity('A'):current);await h.portal.signInWithAccess(ACCESS);
+  h.get('beta-challenge-detail').focus();
+  current=JSON.parse(JSON.stringify(current));current.roadmap.challenges[0].submission.feedback='Please explain your mobile check.';
+  await h.portal.refresh(true);
+  assert.match(h.get('beta-sections').innerHTML,/Please explain your mobile check/);
+  assert.doesNotMatch(h.get('beta-sections').innerHTML,/name="liveUrl"/);
+  current=JSON.parse(JSON.stringify(current));current.roadmap.challenges[0].submission.status='changes_requested';
+  await h.portal.refresh(true);
+  assert.match(h.get('beta-sections').innerHTML,/name="liveUrl"/);
+  assert.match(h.get('beta-sections').innerHTML,/Your next improvements/);
 });
