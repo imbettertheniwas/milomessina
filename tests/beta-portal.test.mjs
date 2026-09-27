@@ -4,10 +4,11 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
 import {normalizeSchedule, scheduleFile} from '../invoice/beta-schedule.js';
+import {roadmapHTML, roadmapLibraryHTML, challengeFormValues} from '../invoice/beta-roadmap.js';
 
 const source = readFileSync(new URL('../invoice/beta-portal.js', import.meta.url), 'utf8')
   .replace(/^import[^\n]*\n/gm, '')
-  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, saveWebsite, websiteUrl, scheduleDraft, scheduleChange, scheduleAction, readScheduleFile, saveSchedule, downloadSchedule, joinFields, validateJoinSchedule, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy, scheduleDrafts})};');
+  .replace(/handleLocationChange\(\);\s*$/, 'globalThis.portal = {loadInvite, signInWithAccess, restoreProfile, handleLocationChange, submitJoin, makeJoinAttempt, pendingJoin, refresh, saveWebsite, websiteUrl, scheduleDraft, scheduleChange, scheduleAction, readScheduleFile, saveSchedule, downloadSchedule, joinFields, validateJoinSchedule, saveChallenge, captureChallengeDraft, state: () => ({token, workspace, invite, inviteBatch, generation, accessCapability, gateBusy, scheduleDrafts, challengeDrafts, selectedChallenge})};');
 const ACCESS = 'BETA-' + 'a'.repeat(32);
 const INVITE_A = 'BATCH-' + '1'.repeat(32), INVITE_B = 'BATCH-' + '2'.repeat(32);
 const fields = {name:'Example Intern', email:'intern@example.invalid', phone:'+1 202 555 0100', github:'example-intern'};
@@ -38,7 +39,7 @@ function harness(fetchImpl, {session=storage(), local=storage(), hash='', readFi
     window:{addEventListener(name,fn){events.set('window:'+name,fn);}},sessionStorage:session,localStorage:local,
     fetch:async(_url,options)=>reply(await fetchImpl(JSON.parse(options.body))),crypto:webcrypto,URL:class extends URL{static createObjectURL(){return 'blob:private-download';}static revokeObjectURL(){}},URLSearchParams,AbortController,Uint8Array,Date,Intl,TypeError,Error,Blob,atob,
     setTimeout,clearTimeout,setInterval(){},navigator:{clipboard:{writeText:async()=>{}}},
-    loadBetaGithub:async(peers,options)=>{githubRequests.push({peers,options});return [];},betaGithubInitial:()=>[],normalizeSchedule,scheduleFile:readFile});
+    loadBetaGithub:async(peers,options)=>{githubRequests.push({peers,options});return [];},betaGithubInitial:()=>[],normalizeSchedule,scheduleFile:readFile,roadmapHTML,roadmapLibraryHTML,challengeFormValues});
   vm.runInContext(source,context,{filename:'beta-portal.js'});
   return {portal:context.portal,get,session,local,location,events,githubRequests,downloads};
 }
@@ -307,8 +308,8 @@ test('website links accept domains and http URLs while rejecting unsafe or malfo
   for(const raw of ['javascript:alert(1)','data:text/html,hello','//evil.example','https://person:secret@site.example','site.example\\@evil.example','https://site.example/a b','https://site.example/\npath','http://localhost','http://127.0.0.1','https://[::1]','https://site..example','https://-site.example','https://site.example:0','https://site.example:65536','https://site.example/<script>','https://site.example/"','https://site.example/\'','https://site.example/`', 'a'.repeat(64)+'.example', 'https://site.example/'+ 'x'.repeat(300)])assert.equal(h.portal.websiteUrl(raw),'',raw);
 });
 
-test('the beta home shows simple escaped peer names with safe website links before attendance',async()=>{
-  const own={...member('A'),website:'https://own.example'},data={...workspace('A'),member:own,permissions:['attendance'],peers:[
+test('an unlocked beta home shows simple escaped peer names with safe website links before attendance',async()=>{
+  const own={...member('A'),website:'https://own.example'},data={...workspace('A'),roadmap:{unlocks:{peerWork:true}},member:own,permissions:['attendance'],peers:[
     own,{id:'peer',name:'Lee <Builder>',website:'https://lee.example/work?a=1&b=2',email:'private@example.invalid'},
     {id:'missing',name:'No website'}, {id:'unsafe',name:'Unsafe site',website:'javascript:alert(1)'},
     {id:'credential',name:'Credential site',website:'https://person:secret@site.example'}]};
@@ -511,4 +512,67 @@ test('a reloaded staged file can finish saving without uploading its intact atta
   assert.equal(calls.find(body=>body.action==='schedulesave').schedule.keepFile,true);
   assert.equal(h.portal.state().workspace.schedules[0].ready,true);
   assert.match(h.get('beta-sections').innerHTML,/id="beta-schedule-download"/);
+});
+
+const roadmapFixture = () => ({completed:0,total:2,currentChallengeId:'portfolio',unlocks:{peerWork:false,teamReferences:false},peerWork:[],references:[],challenges:[
+  {id:'portfolio',title:'Your portfolio',brief:'Publish your own site.',locked:false,checklist:[{id:'domain',label:'Connect a domain'}],submission:null},
+  {id:'spend-portal',title:'Spend portal',teaser:'Build and improve.',locked:true,submission:null}
+]});
+function challengeForm(overrides={}) {
+  const fields={liveUrl:'https://portfolio.example',repoUrl:'https://github.com/intern/portfolio',notes:'Built, deployed, and checked.',iterationLinks:'',...overrides},status={textContent:'',setAttribute(){}};
+  return {dataset:{challengeForm:'portfolio'},elements:{namedItem:name=>({value:fields[name] || ''})},querySelectorAll:()=>[{value:'domain'}],querySelector:()=>status,status};
+}
+test('roadmap locks hide peer URLs even when an older backend includes them',async()=>{
+  const data={...workspace('A'),permissions:['github'],peers:[member('A'),{id:'peer',name:'Peer',github:'hidden-handle',website:'https://hidden-site.example'}]};
+  const h=harness(body=>body.action==='betalogin'?identity('A'):data);
+  await h.portal.signInWithAccess(ACCESS);
+  assert.doesNotMatch(h.get('beta-sections').innerHTML,/hidden-handle|hidden-site/);
+  assert.equal(h.githubRequests[0].peers.length,1);
+  assert.equal(h.portal.state().workspace.peers[1].github,'');
+});
+test('challenge save failure keeps editable evidence and a later successful draft stays locked',async()=>{
+  const current={...workspace('A'),roadmap:roadmapFixture()};let fail=true;
+  const h=harness(body=>{if(body.action==='betalogin')return identity('A');if(body.action==='challengesave'){
+    if(fail)throw new TypeError('Offline');
+    current.roadmap.challenges[0].submission={...body,status:'draft'};
+  }return current;});
+  await h.portal.signInWithAccess(ACCESS);
+  const form=challengeForm();await h.portal.saveChallenge(form,false);
+  assert.equal(h.portal.state().challengeDrafts.portfolio.notes,'Built, deployed, and checked.');
+  assert.ok(form.status.textContent);
+  await h.portal.refresh();assert.match(h.get('beta-sections').innerHTML,/Built, deployed, and checked/);
+  fail=false;await h.portal.saveChallenge(form,false);
+  assert.equal(h.portal.state().challengeDrafts.portfolio,undefined);
+  assert.equal(h.portal.state().workspace.roadmap.challenges[1].locked,true);
+});
+test('challenge responses cannot restore another identity after signout',async()=>{
+  const pending=deferred(),data={...workspace('A'),roadmap:roadmapFixture()};
+  const h=harness(body=>body.action==='betalogin'?identity('A'):body.action==='challengesave'?pending.promise:body.action==='logout'?{ok:true}:data);
+  await h.portal.signInWithAccess(ACCESS);const saving=h.portal.saveChallenge(challengeForm(),true);
+  h.events.get('beta-signout:click')();pending.resolve(data);await saving;
+  assert.equal(h.portal.state().workspace,null);assert.equal(Object.keys(h.portal.state().challengeDrafts).length,0);
+  assert.equal(h.get('beta-sections').innerHTML,'');
+});
+test('review approval selects the next challenge and announces its unlock on refresh',async()=>{
+  let current={...workspace('A'),roadmap:roadmapFixture()};
+  const h=harness(body=>body.action==='betalogin'?identity('A'):current);await h.portal.signInWithAccess(ACCESS);
+  current=JSON.parse(JSON.stringify(current));current.roadmap.completed=1;current.roadmap.currentChallengeId='spend-portal';current.roadmap.unlocks.peerWork=true;
+  current.roadmap.challenges[0].submission={status:'approved',checks:['domain']};Object.assign(current.roadmap.challenges[1],{locked:false,brief:'Practice iterations',checklist:[]});
+  await h.portal.refresh();assert.equal(h.portal.state().selectedChallenge,'spend-portal');
+  assert.match(h.get('beta-notice').textContent,/Portfolio approved/);assert.match(h.get('beta-sections').innerHTML,/data-challenge-form="spend-portal"/);
+});
+test('inspiration library fails closed and escapes unlocked links and text',()=>{
+  const roadmap={unlocks:{peerWork:false,teamReferences:false},peerWork:[{name:'Hidden',liveUrl:'https://secret.example'}],references:[{url:'https://reference.example'}]};
+  assert.doesNotMatch(roadmapLibraryHTML(roadmap),/secret.example|reference.example/);
+  roadmap.unlocks={peerWork:true,teamReferences:true};roadmap.peerWork=[{name:'<img src=x>',title:'<script>bad</script>',liveUrl:'javascript:alert(1)',repoUrl:'https://github.com/user/repo'}];
+  const html=roadmapLibraryHTML(roadmap);assert.doesNotMatch(html,/<img|<script|javascript:/);assert.match(html,/&lt;img/);assert.match(html,/noopener noreferrer/);
+});
+test('typing during a background challenge refresh remains in the draft',async()=>{
+  const data={...workspace('A'),roadmap:roadmapFixture()},pending=deferred();let slow=false;
+  const h=harness(body=>body.action==='betalogin'?identity('A'):slow&&body.action==='list'?pending.promise:data);
+  await h.portal.signInWithAccess(ACCESS);h.get('beta-challenge-detail').focus();slow=true;
+  const refreshing=h.portal.refresh(true),form=challengeForm({notes:'Typed while the service was refreshing'});
+  assert.equal(h.portal.captureChallengeDraft({target:{closest:()=>form}}),true);
+  pending.resolve(data);await refreshing;
+  assert.equal(h.portal.state().challengeDrafts.portfolio.notes,'Typed while the service was refreshing');
 });

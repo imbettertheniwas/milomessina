@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/invoice/beta.css">
+  <link rel="stylesheet" href="/invoice/beta-roadmap.css">
   <script type="module" src="/invoice/beta-portal.js"></script>
 </head>
 <body>
@@ -23,12 +24,12 @@
       <ol id="beta-join-progress" class="join-progress" aria-label="Join your beta group" hidden><li aria-current="step"><span>1</span> Welcome</li><li><span>2</span> Details</li><li><span>3</span> Schedule</li><li><span>4</span> Review</li></ol>
       <span id="beta-gate-eyebrow" class="eyebrow gate-eyebrow">Two weeks to learn and build</span>
       <h1 id="beta-gate-title" tabindex="-1">Arya’s two-week beta internship.</h1>
-      <p id="beta-gate-intro" class="gate-intro">Join a small group, track your attendance, build public internship projects on GitHub, and share what you learned at the end.</p>
+      <p id="beta-gate-intro" class="gate-intro">Build your basic tech skills one challenge at a time. Start with your own domain and portfolio, then unlock projects, examples, and more.</p>
       <div id="beta-invite-needed" class="invite-needed"><strong>One group. Your own two weeks.</strong><p>This is the permanent Beta signup link. If you’ve already joined on this device, your profile opens automatically. On another device, use your personal return link.</p></div>
       <form id="beta-join-form" novalidate hidden>
         <div id="beta-invite-summary" class="invite-summary"></div>
         <div id="beta-join-welcome">
-          <ol class="join-expectations"><li><span class="expectation-number">01</span><div><h2>Show up with your group.</h2><p>Record your attendance and see how the rest of your beta group is doing.</p></div></li><li><span class="expectation-number">02</span><div><h2>Make your internship projects public.</h2><p>Build your internship projects in public GitHub repositories so Arya and your group can follow your work.</p></div></li><li><span class="expectation-number">03</span><div><h2>Tell us what changed.</h2><p>Submit a recap of what you learned and accomplished by <strong id="beta-recap-due">the end of your two weeks</strong>.</p></div></li></ol>
+          <ol class="join-expectations"><li><span class="expectation-number">01</span><div><h2>Show up with your group.</h2><p>Record your attendance and see how the rest of your beta group is doing.</p></div></li><li><span class="expectation-number">02</span><div><h2>Build your skills, one challenge at a time.</h2><p>Start with a domain and portfolio, then build a practice spend portal. Submit your work for review to unlock the next step and learn from others.</p></div></li><li><span class="expectation-number">03</span><div><h2>Tell us what changed.</h2><p>Submit a recap of what you learned and accomplished by <strong id="beta-recap-due">the end of your two weeks</strong>.</p></div></li></ol>
           <button class="button primary" id="beta-join-start" type="button">Get started <span aria-hidden="true">↗</span></button>
         </div>
         <div id="beta-join-details" hidden>
@@ -64,7 +65,7 @@
     <div class="workspace-main">
       <header class="topbar"><span class="breadcrumb">Internal <span aria-hidden="true">/</span> <strong>Beta workspace</strong></span><div class="topbar-actions"><button class="button subtle" id="beta-refresh" type="button">Refresh</button><button class="button subtle" id="beta-signout" type="button">Sign out</button></div></header>
       <main class="content" id="beta-main">
-        <div class="intro"><div><div class="intro-meta"><span class="pill">Two-week beta</span><span id="beta-batch"></span></div><h1 id="beta-greeting" tabindex="-1">Your workspace</h1><p>Show up. Build something. Share what you learned.</p></div><span class="profile-avatar" id="beta-avatar" aria-hidden="true"></span></div>
+        <div class="intro"><div><div class="intro-meta"><span class="pill">Two-week beta</span><span id="beta-batch"></span></div><h1 id="beta-greeting" tabindex="-1">Your workspace</h1><p>Your next skill starts with something you ship.</p></div><span class="profile-avatar" id="beta-avatar" aria-hidden="true"></span></div>
         <section id="beta-recovery" class="recovery-card" aria-labelledby="beta-recovery-heading" hidden><div><span class="eyebrow">Your profile is ready</span><h2 id="beta-recovery-heading">Save your personal return link.</h2><p>This device will remember you. Save this private link if you want to open your profile on another device.</p><label class="sr-only" for="beta-return-link">Your personal return link</label><input id="beta-return-link" type="url" readonly autocomplete="off" spellcheck="false"></div><div class="recovery-actions"><button id="beta-copy-link" class="button" type="button">Copy link</button><button id="beta-hide-link" class="button subtle" type="button">Dismiss</button></div></section>
         <section id="beta-profile" class="profile-card" aria-label="Your profile" hidden></section>
         <p id="beta-error" class="page-message" role="alert" hidden></p>

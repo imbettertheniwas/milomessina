@@ -6,13 +6,13 @@ const api=(h,token,action,p={})=>h.ctx.betaApi({_session:token,action,...p});
 const join=(h,name='Maya',over={})=>h.ctx.internalSessionApi({action:'betajoin',invite:'beta',name,email:name.toLowerCase()+'@example.com',phone:'+1 212 555 0100',github:name.toLowerCase()+'-builds',...over});
 const setup=()=>{const h=harness(),operator=h.login('Arya');api(h,operator,'list');return {...h,operator};};
 
-test('onboarding saves optional public websites and safely exposes name links to the group',()=>{
+test('onboarding saves optional public websites while roadmap locks peer links',()=>{
  const h=setup(),maya=join(h,'Maya',{website:' Portfolio.Example.com/work?view=all#demo '}),riley=join(h,'Riley');
  assert.equal(maya.ok,true);assert.equal(maya.member.website,'https://portfolio.example.com/work?view=all#demo');
  assert.equal(riley.member.website,'');
  api(h,h.operator,'memberupdate',{id:maya.member.id,notes:'Private evaluation'});
  const peer=api(h,riley.token,'list').peers.find(p=>p.id===maya.member.id);
- assert.equal(peer.website,maya.member.website);assert.equal(peer.email,undefined);assert.equal(peer.phone,undefined);assert.equal(peer.notes,undefined);
+ assert.equal(peer.website,'');assert.equal(peer.github,'');assert.equal(peer.email,undefined);assert.equal(peer.phone,undefined);assert.equal(peer.notes,undefined);
  assert.equal(api(h,h.operator,'list').members.find(m=>m.id===maya.member.id).website,maya.member.website);
  assert.equal(h.ctx.internalSessionApi({action:'session',_session:maya.token}).member.website,maya.member.website);
  assert.notEqual(maya.member.website,maya.code);

@@ -194,6 +194,7 @@ function doGet() {
     betaPermanentGroup: true,
     betaDelete: true,
     betaSchedules: true,
+    betaRoadmap: true,
     recurringEdit: true,
     recurringReceipts: true,
     approvals: true,
@@ -400,6 +401,36 @@ var BETA_MEMBERS = ['id','name','email','batch','status','notes','codeHash','epo
 var BETA_DELETIONS = ['id','joinRequestHash','deletedAt'];
 var BETA_SCHEDULES = ['id','memberId','timezone','mode','blocks','noCommitments','fileName','fileType','fileSize','fileHash','uploads','ready','signature','updatedAt'];
 var BETA_SCHEDULE_MAX_BYTES = 2 * 1024 * 1024;
+var BETA_CHALLENGE_PROGRESS = ['id','memberId','challengeId','status','liveUrl','repoUrl','notes','checks','iterationLinks','submittedAt','reviewedAt','reviewedBy','feedback','updatedAt'];
+var BETA_CHALLENGE_REFERENCES = ['id','challengeId','title','url','notes','updatedAt','updatedBy'];
+var BETA_CHALLENGES = [
+  {id:'portfolio',title:'Your domain. Your portfolio.',teaser:'Set up your own home on the web.',brief:'Connect your domain and publish a responsive portfolio with an about section, projects, and a way to contact you. Keep the source in a public GitHub repository and deploy your changes from it.',reward:'Unlock the group’s work and the spend portal challenge.',checklist:[
+    {id:'domain',label:'Connect your own domain to the live portfolio.'},
+    {id:'portfolio',label:'Include about, projects, and contact sections.'},
+    {id:'responsive',label:'Check the page on a phone and a larger screen.'},
+    {id:'deploy',label:'Push the source to a public GitHub repository and deploy it.'}
+  ]},
+  {id:'spend-portal',title:'Build a spend portal.',teaser:'Practice shipping a working app, then improving it.',brief:'Build a small portal to track sample spending: add, edit, and delete expenses, see totals, filter records, and keep data after a refresh. The aim is to practice pushing and iterating, not to recreate our production CRM. After the first deployment, make at least three distinct improvements and link each follow-up commit or comparison. Use invented sample data.',reward:'Unlock the team’s reference builds and the next challenge.',checklist:[
+    {id:'sample-data',label:'Use invented sample spending, without real team finances.'},
+    {id:'manage-spend',label:'Add, edit, and delete spend records.'},
+    {id:'totals-filters',label:'Show totals and filter the records.'},
+    {id:'persistence',label:'Keep saved records after a page refresh.'},
+    {id:'iterations',label:'Ship at least three follow-up improvements and provide their GitHub links.'}
+  ]},
+  {id:'iterate',title:'Make the next version better.',teaser:'Use what you learned from other builds.',brief:'Explore the peer work and any team references you have unlocked. Improve one of your builds on mobile, make its main controls accessible, and give empty or error states useful guidance. Explain what changed and why, with a clear before-and-after description.',reward:'Unlock your feature challenge.',checklist:[
+    {id:'inspiration',label:'Describe an idea learned from another build and how you adapted it.'},
+    {id:'mobile',label:'Improve and check the mobile experience.'},
+    {id:'accessibility',label:'Check labels, keyboard access, and readable contrast.'},
+    {id:'states',label:'Add useful empty or error states.'},
+    {id:'before-after',label:'Explain the before-and-after result and deploy the improvements.'}
+  ]},
+  {id:'feature',title:'Ship one useful feature.',teaser:'Take a small idea all the way to release.',brief:'Choose one useful addition to your portfolio or spend portal. Describe who it helps, build it, check the behavior that matters, and deploy it. Write short release notes explaining the result and any remaining limitation.',reward:'Complete the starter roadmap.',checklist:[
+    {id:'purpose',label:'Describe the feature and who it helps.'},
+    {id:'build',label:'Build and deploy the feature.'},
+    {id:'check',label:'Run one focused check and record its result.'},
+    {id:'release-notes',label:'Write short release notes, including any limitation.'}
+  ]}
+];
 var BETA_SETUP_MESSAGE = 'This beta invitation is not available. Ask Arya for the current link.';
 function betaSecret() {
   return String(internalProperty('INTERNAL_BETA_SECRET') || '');
@@ -627,6 +658,127 @@ function betaWebsite(value) {
 function betaPublicWebsite(value) {
   // Old or manually edited sheet values must not become unsafe links.
   try{return betaWebsite(value);}catch(e){return '';}
+}
+function betaChallenge(id) {
+  return BETA_CHALLENGES.filter(function(challenge){return challenge.id===String(id||'');})[0]||null;
+}
+function betaChallengeRows() {return betaRead('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS);}
+function betaChallengeCompleted(memberId,rows) {
+  var completed=0;
+  BETA_CHALLENGES.some(function(challenge){
+    var progress=rows.filter(function(row){return row.memberId===memberId && row.challengeId===challenge.id;})[0];
+    if(!progress || progress.status!=='approved')return true;
+    completed++;return false;
+  });
+  return completed;
+}
+function betaChallengeArray(value) {
+  try{var parsed=JSON.parse(String(value||'[]'));return Array.isArray(parsed)?parsed:[];}catch(e){return [];}
+}
+function betaChallengePublic(row) {
+  var out=betaCleanRow(row,BETA_CHALLENGE_PROGRESS);
+  out.checks=betaChallengeArray(row.checks).filter(function(id){return typeof id==='string';});
+  out.iterationLinks=betaChallengeArray(row.iterationLinks).map(betaPublicWebsite).filter(function(url){return !!url;});
+  out.liveUrl=betaPublicWebsite(row.liveUrl);out.repoUrl=betaPublicWebsite(row.repoUrl);
+  return out;
+}
+function betaChallengeRepo(value) {
+  if(value===undefined || value==='')return '';
+  var url=betaWebsite(value),match=/^https:\/\/github\.com\/([a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38})\/([a-z\d_.-]+)\/?$/i.exec(url);
+  var repo=match?match[2].replace(/\.git$/i,''):'';
+  if(!match || !/[a-z\d_]/i.test(repo))throw new Error('Use the HTTPS link to a public GitHub repository, such as https://github.com/you/project.');
+  return 'https://github.com/'+match[1]+'/'+repo;
+}
+function betaChallengeIterations(value,repoUrl) {
+  if(value===undefined)return [];
+  if(!Array.isArray(value) || value.length>20)throw new Error('Add up to 20 GitHub commit or comparison links.');
+  var seen={},links=[];
+  value.forEach(function(item){
+    var url=betaWebsite(item),match=/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(commit\/[a-f\d]{7,40}|compare\/[^?#]+\.\.\.[^?#]+)\/?$/i.exec(url);
+    if(!match || !repoUrl || ('https://github.com/'+match[1]+'/'+match[2]).toLowerCase()!==repoUrl.toLowerCase())
+      throw new Error('Each iteration must link to a commit or comparison in the submitted GitHub repository.');
+    // A trailing slash or differently cased hash is still the same push.
+    var identity=url.replace(/\/$/,'').toLowerCase();
+    if(!seen[identity]){seen[identity]=true;links.push(url.replace(/\/$/,''));}
+  });
+  return links;
+}
+function betaChallengeSave(body,member) {
+  var challenge=betaChallenge(body.challengeId);
+  if(!challenge)throw new Error('Choose a roadmap challenge.');
+  var rows=betaChallengeRows(),completed=betaChallengeCompleted(member.id,rows),index=BETA_CHALLENGES.indexOf(challenge);
+  if(index>completed)throw new Error('Finish the previous challenge and have it approved to unlock this one.');
+  var existing=rows.filter(function(row){return row.memberId===member.id && row.challengeId===challenge.id;})[0];
+  var submit=body.submit===true,liveUrl=betaWebsite(body.liveUrl),repoUrl=betaChallengeRepo(body.repoUrl),notes=betaString(body,'notes',5000,submit);
+  var checks=body.checks===undefined?[]:body.checks,allowed=challenge.checklist.map(function(item){return item.id;}),unique=[];
+  if(!Array.isArray(checks) || checks.some(function(id){return typeof id!=='string' || allowed.indexOf(id)<0;}))throw new Error('Use the checklist for this challenge.');
+  checks.forEach(function(id){if(unique.indexOf(id)<0)unique.push(id);});
+  var iterationLinks=betaChallengeIterations(body.iterationLinks,repoUrl);
+  if(submit && (!liveUrl || !repoUrl))throw new Error('Include your live site and public GitHub repository before submitting.');
+  if(submit && unique.length!==allowed.length)throw new Error('Complete every item on the challenge checklist before submitting.');
+  if(submit && challenge.id==='spend-portal' && iterationLinks.length<3)throw new Error('Link at least three distinct follow-up commits or comparisons for your spend portal.');
+  if(existing && (existing.status==='submitted' || existing.status==='approved')) {
+    // A lost response can be retried after submission or even after review.
+    // Only the same evidence is a retry; never turn a stale draft into a write.
+    if(submit && existing.liveUrl===liveUrl && existing.repoUrl===repoUrl && existing.notes===notes &&
+       JSON.stringify(betaChallengeArray(existing.checks).sort())===JSON.stringify(unique.slice().sort()) &&
+       JSON.stringify(betaChallengeArray(existing.iterationLinks))===JSON.stringify(iterationLinks))return;
+    throw new Error(existing.status==='approved'?'This approved submission is complete and cannot be changed.':'This submission is waiting for review. You can edit it if changes are requested.');
+  }
+  var stamp=new Date().toISOString(),row=existing||{id:Utilities.getUuid(),memberId:member.id,challengeId:challenge.id};
+  row.status=submit?'submitted':'draft';row.liveUrl=liveUrl;row.repoUrl=repoUrl;row.notes=notes;row.checks=JSON.stringify(unique);row.iterationLinks=JSON.stringify(iterationLinks);
+  row.submittedAt=submit?stamp:'';row.reviewedAt='';row.reviewedBy='';row.feedback=existing?String(existing.feedback||''):'';row.updatedAt=stamp;
+  betaWrite('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS,row);
+}
+function betaChallengeReview(body,operator) {
+  var challenge=betaChallenge(body.challengeId),id=typeof body.memberId==='string'?body.memberId:'';
+  if(!challenge || !id)throw new Error('Choose an intern and challenge to review.');
+  var member=betaRead('internal_beta_members',BETA_MEMBERS).filter(function(item){return item.id===id;})[0];
+  if(!member)throw new Error('Beta participant not found.');
+  if(body.status!=='approved' && body.status!=='changes_requested')throw new Error('Approve the work or request changes.');
+  var rows=betaChallengeRows(),row=rows.filter(function(item){return item.memberId===id && item.challengeId===challenge.id;})[0];
+  if(!row || row.status!=='submitted')throw new Error('Only submitted work can be reviewed.');
+  if(BETA_CHALLENGES.indexOf(challenge)!==betaChallengeCompleted(id,rows))throw new Error('The previous challenge must be approved first.');
+  var feedback=betaString(body,'feedback',5000,body.status==='changes_requested'),stamp=new Date().toISOString();
+  row.status=body.status;row.feedback=feedback;row.reviewedBy=operator;row.reviewedAt=stamp;row.updatedAt=stamp;
+  betaWrite('internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS,row);
+}
+function betaChallengeReference(body,operator) {
+  var challenge=betaChallenge(body.challengeId);
+  if(!challenge)throw new Error('Choose a challenge for this reference.');
+  if(body.url===undefined)throw new Error('Include a reference URL, or an empty value to remove it.');
+  var url=betaWebsite(body.url),rows=betaRead('internal_beta_challenge_references',BETA_CHALLENGE_REFERENCES),row=rows.filter(function(item){return item.challengeId===challenge.id;})[0];
+  if(!url){if(row)betaTable('internal_beta_challenge_references',BETA_CHALLENGE_REFERENCES,false).deleteRow(row._row);return;}
+  var title=betaString(body,'title',120,true),notes=betaString(body,'notes',3000,false);
+  // Never turn the private internal workspace into a beta reference link.
+  if(/^https?:\/\/(?:www\.)?milomessina\.com(?::\d+)?\/(?:internal|invoice)(?:[/?#]|$)/i.test(url))throw new Error('Use a shareable demo without private internal workspace data.');
+  row=row||{id:Utilities.getUuid(),challengeId:challenge.id};row.title=title;row.url=url;row.notes=notes;row.updatedAt=new Date().toISOString();row.updatedBy=operator;
+  betaWrite('internal_beta_challenge_references',BETA_CHALLENGE_REFERENCES,row);
+}
+function betaChallengeReferencePublic(row) {
+  return {challengeId:row.challengeId,title:row.title,url:betaPublicWebsite(row.url),notes:row.notes};
+}
+function betaRoadmap(member,members,rows,references) {
+  var completed=betaChallengeCompleted(member.id,rows),unlocks={peerWork:completed>=1,teamReferences:completed>=2};
+  var roadmap={completed:completed,total:BETA_CHALLENGES.length,currentChallengeId:completed<BETA_CHALLENGES.length?BETA_CHALLENGES[completed].id:null,unlocks:unlocks};
+  roadmap.challenges=BETA_CHALLENGES.map(function(challenge,index){
+    var locked=index>completed,out={id:challenge.id,title:challenge.title,teaser:challenge.teaser,locked:locked,submission:null};
+    if(!locked){
+      out.brief=challenge.brief;out.reward=challenge.reward;out.checklist=challenge.checklist;
+      var row=rows.filter(function(item){return item.memberId===member.id && item.challengeId===challenge.id;})[0];
+      out.submission=row?betaChallengePublic(row):null;
+    }
+    return out;
+  });
+  roadmap.peerWork=[];
+  if(unlocks.peerWork)members.filter(function(peer){return peer.id!==member.id && peer.batchId===member.batchId && peer.status==='active';}).forEach(function(peer){
+    var peerCompleted=betaChallengeCompleted(peer.id,rows);
+    rows.filter(function(row){return row.memberId===peer.id && row.status==='approved' && BETA_CHALLENGES.indexOf(betaChallenge(row.challengeId))<peerCompleted && !!betaChallenge(row.challengeId);}).forEach(function(row){
+      var project=betaChallengePublic(row);roadmap.peerWork.push({memberId:peer.id,name:peer.name,challengeId:row.challengeId,title:betaChallenge(row.challengeId).title,liveUrl:project.liveUrl,repoUrl:project.repoUrl});
+    });
+  });
+  roadmap.references=unlocks.teamReferences?references.map(betaChallengeReferencePublic):[];
+  return roadmap;
 }
 function betaNewInvite() {return 'BATCH-'+Utilities.getUuid().replace(/-/g,'').toUpperCase();}
 function betaInviteHash(invite) {return internalDigest(betaSecret()+'\nbatch-invite\n'+String(invite||'').trim().toUpperCase());}
@@ -914,21 +1066,21 @@ function betaDeleteMember(body) {
   betaScheduleDelete(id);
   // Keep only the consumed join-attempt hash so a stale retry cannot recreate
   // the deleted profile's deterministic personal capability.
-  [['internal_beta_attendance',BETA_ATTENDANCE],['internal_beta_recaps',BETA_RECAPS]].forEach(function(table){
+  [['internal_beta_attendance',BETA_ATTENDANCE],['internal_beta_recaps',BETA_RECAPS],['internal_beta_challenge_progress',BETA_CHALLENGE_PROGRESS]].forEach(function(table){
     var rows=betaRead(table[0],table[1]).filter(function(r){return r.memberId===id;});
     rows.sort(function(a,b){return b._row-a._row;}).forEach(function(r){betaTable(table[0],table[1],false).deleteRow(r._row);});
   });
   betaTable('internal_beta_members',BETA_MEMBERS,false).deleteRow(member._row);
   return {deletedMemberId:id,alreadyDeleted:false};
 }
-function betaGroupData(manager,member,members,batches) {
+function betaGroupData(manager,member,members,batches,roadmap) {
   members=members || betaRead('internal_beta_members',BETA_MEMBERS);
   batches=batches || betaRead('internal_beta_batches',BETA_BATCHES);
   var batch=member?betaFindBatch(member,batches):null,group=betaPrimaryBatch(batches);
   var peers=members.filter(function(m){return manager || member && member.batchId && m.batchId===member.batchId;});
   var ids=peers.map(function(m){return m.id;});
   return {group:group?betaPublicBatch(group):null,batch:batch?betaPublicBatch(batch):null,batches:batches.filter(function(b){return manager || member&&b.id===member.batchId;}).map(betaPublicBatch),
-    peers:peers.map(function(m){var period=betaMemberPeriod(m);return {id:m.id,name:m.name,github:m.github,website:betaPublicWebsite(m.website),status:m.status,batchId:m.batchId,startDate:period.startDate,endDate:period.endDate};}),
+    peers:peers.map(function(m){var period=betaMemberPeriod(m),workVisible=manager || m.id===member.id || roadmap&&roadmap.unlocks.peerWork;return {id:m.id,name:m.name,github:workVisible?m.github:'',website:workVisible?betaPublicWebsite(m.website):'',status:m.status,batchId:m.batchId,startDate:period.startDate,endDate:period.endDate};}),
     schedules:betaRead('internal_beta_schedules',BETA_SCHEDULES).filter(function(s){return manager || member&&s.memberId===member.id;}).map(betaSchedulePublic),
     attendance:betaRead('internal_beta_attendance',BETA_ATTENDANCE).filter(function(a){return manager||ids.indexOf(a.memberId)>=0;}).map(function(a){return betaCleanRow(a,BETA_ATTENDANCE);}),
     recaps:betaRead('internal_beta_recaps',BETA_RECAPS).filter(function(r){return manager||member&&r.memberId===member.id;}).map(betaRecapPublic)};
@@ -939,12 +1091,17 @@ function betaApi(body) {
   if(!manager && !member)return reply(false,'Beta session expired or access changed. Sign in again.',{code:'AUTH_REQUIRED'});
   var action=String(body.action||'list'), configured=betaConfigured();
   if(!configured && action!=='list' && !(manager && action==='batchadd'))return reply(false,BETA_SETUP_MESSAGE,{code:'BETA_UNCONFIGURED'});
-  if(!manager && ['list','attendance','attendanceremove','recap','memberprofile','schedulesave','schedulefile'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
+  if(!manager && ['list','attendance','attendanceremove','recap','memberprofile','schedulesave','schedulefile','challengesave'].indexOf(action)<0)return reply(false,'Only Arya and Milo can manage the beta batch.',{code:'FORBIDDEN'});
   var target, stamp=new Date().toISOString(), extra={};
   try {
     if(manager && action==='list')betaEnsureGroup(operator);
     if(action==='schedulefile')return betaScheduleFile(body,manager,member);
     if(['batchadd','batchupdate','rotateinvite'].indexOf(action)>=0)extra=betaManageBatch(body,operator);
+    else if(action==='challengesave') {
+      if(manager)return reply(false,'Challenges must be submitted by the beta participant.',{code:'FORBIDDEN'});
+      betaChallengeSave(body,member);
+    } else if(action==='challengereview')betaChallengeReview(body,operator);
+    else if(action==='challengereference')betaChallengeReference(body,operator);
     else if(action==='attendance' || action==='attendanceremove') {
       if(manager)return reply(false,'Attendance is recorded by each beta participant.',{code:'FORBIDDEN'});
       betaAttendanceWrite(body,member);
@@ -991,9 +1148,14 @@ function betaApi(body) {
   // batch from the sheet made a manager page perform one remote read per intern.
   var finalMembers=betaRead('internal_beta_members',BETA_MEMBERS),batches=betaRead('internal_beta_batches',BETA_BATCHES);
   var visibleMembers=finalMembers.filter(function(m){return manager || m.id===member.id;});
-  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,betaSchedules:true,permissions:permissions,
+  var progress=betaChallengeRows(),references=betaRead('internal_beta_challenge_references',BETA_CHALLENGE_REFERENCES);
+  var result={manager:manager,configured:true,setupMessage:'',betaDelete:true,betaSchedules:true,betaRoadmap:true,permissions:permissions,
     members:visibleMembers.map(function(m){return betaPublicMember(m,manager,batches);}),member:member?betaPublicMember(member,false,batches):null};
-  var group=betaGroupData(manager,member,finalMembers,batches);
+  if(manager) {
+    result.roadmaps={};finalMembers.forEach(function(m){result.roadmaps[m.id]=betaRoadmap(m,finalMembers,progress,references);});
+    result.challengeCatalog=BETA_CHALLENGES;result.challengeProgress=progress.map(betaChallengePublic);result.challengeReferences=references.map(betaChallengeReferencePublic);
+  } else result.roadmap=betaRoadmap(member,finalMembers,progress,references);
+  var group=betaGroupData(manager,member,finalMembers,batches,result.roadmap);
   Object.keys(group).forEach(function(k){result[k]=group[k];});
   Object.keys(extra).forEach(function(k){result[k]=extra[k];});
   return reply(true,null,result);

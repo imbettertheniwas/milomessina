@@ -7,12 +7,16 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<'
 let data=null, selected='', busy=false, loadedFor='', githubRun=0, generation=0, deleteTarget=null, needsRender=false;
 let scheduleRun=0, scheduleUrl='', scheduleLoading=false;
 let overviewFilters={batch:'all',timezone:'all'};
+const challengeReviewDrafts=new Map(),challengeReferenceDrafts=new Map();
 const active=()=>document.body.dataset.consoleView==='beta' && bridge().operator?.();
 const batchOf=m=>(data?.batches || []).find(b=>b.id===m?.batchId) || data?.group;
 const periodOf=m=>({startDate:m?.startDate,endDate:m?.endDate});
 const attendanceOf=id=>(data?.attendance || []).filter(a=>a.memberId===id);
 const recapOf=id=>(data?.recaps || []).find(r=>r.memberId===id);
 const scheduleOf=id=>(data?.schedules || []).find(schedule=>schedule.memberId===id);
+const roadmapEnabled=()=>data?.betaRoadmap===true && Array.isArray(data.challengeCatalog);
+const challengeProgressOf=(memberId,challengeId)=>(data?.challengeProgress || []).find(row=>row.memberId===memberId && row.challengeId===challengeId);
+const reviewDraftKey=(memberId,challengeId)=>JSON.stringify([memberId,challengeId]);
 const SCHEDULE_FILE_TYPES={'application/pdf':'PDF','image/png':'PNG image','image/jpeg':'JPEG image','text/calendar':'Calendar file'};
 const scheduleFileType=type=>Object.prototype.hasOwnProperty.call(SCHEDULE_FILE_TYPES,type)?SCHEDULE_FILE_TYPES[type]:'';
 const message=(text,bad=false)=>{$('bt-message').textContent=text;$('bt-message').classList.toggle('bad',bad);};
@@ -35,7 +39,7 @@ async function api(action,payload={},options={}) {
   if(revision!==generation || requestToken!==bridge().session?.() || !bridge().operator?.() || (action!=='list' && !active()))throw Object.assign(new Error('Your session changed. Open Beta again.'),{code:'STALE'});
   if(!out.ok) {
     const unavailable=/unknown (form|action)/i.test(out.error || '');
-    throw Object.assign(new Error(unavailable?'Beta signup is not enabled on the shared internal service yet. Deploy the updated Apps Script before sharing an invite.':out.error || 'Could not save this change.'),{code:out.code});
+    throw Object.assign(new Error(unavailable?(action.startsWith('challenge')?'The challenge roadmap is not enabled on the shared service yet. Deploy the updated Apps Script to save challenge changes.':'Beta signup is not enabled on the shared internal service yet. Deploy the updated Apps Script before sharing an invite.'):out.error || 'Could not save this change.'),{code:out.code});
   }
   const next=out.data || out;
   // An authenticated file response is not a replacement for the manager list.
@@ -55,7 +59,7 @@ function render(preserveDetail=false) {
   if(refreshOverview)renderScheduleOverview();
   if(!shown.some(m=>m.id===selected))selected=shown[0]?.id || '';
   if(deleteTarget?.id!==selected)deleteTarget=null;
-  $('bt-roster').innerHTML=shown.length?shown.map(m=>`<button type="button" class="bt-person ${selected===m.id?'on':''}" data-member="${esc(m.id)}" aria-pressed="${selected===m.id}"><span class="bt-avatar">${esc(m.name.slice(0,1).toUpperCase())}</span><span><strong>${esc(m.name)}</strong><small>${attendanceOf(m.id).length} ${attendanceOf(m.id).length===1?'day':'days'} in · Recap due ${esc(dateLabel(periodOf(m).endDate))}</small><small>${recapOf(m.id)?.submittedAt?'Recap submitted':'Recap pending'}</small></span><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></button>`).join(''):`<div class="bt-empty"><b>${group.length?'No matches':'Ready for the first arrival'}</b><p>${group.length?'Try another name, email, phone, or GitHub.':'Share the permanent invite above. Interns appear here when they join.'}</p></div>`;
+  $('bt-roster').innerHTML=shown.length?shown.map(m=>`<button type="button" class="bt-person ${selected===m.id?'on':''}" data-member="${esc(m.id)}" aria-pressed="${selected===m.id}"><span class="bt-avatar">${esc(m.name.slice(0,1).toUpperCase())}</span><span><strong>${esc(m.name)}</strong><small>${attendanceOf(m.id).length} ${attendanceOf(m.id).length===1?'day':'days'} in · Recap due ${esc(dateLabel(periodOf(m).endDate))}</small><small>${recapOf(m.id)?.submittedAt?'Recap submitted':'Recap pending'}</small>${roadmapRoster(m.id)}</span><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></button>`).join(''):`<div class="bt-empty"><b>${group.length?'No matches':'Ready for the first arrival'}</b><p>${group.length?'Try another name, email, phone, or GitHub.':'Share the permanent invite above. Interns appear here when they join.'}</p></div>`;
   if(!preserveDetail || previousSelected!==selected)renderMember(group.find(m=>m.id===selected));
   if(data.configured===false)message(data.setupMessage || 'Beta access needs to be configured.',true);
   setBusy(busy);
@@ -63,7 +67,7 @@ function render(preserveDetail=false) {
 function renderScheduleOverview() {
   const view=buildBetaScheduleOverview(data,overviewFilters);
   if(view)overviewFilters={batch:view.batch,timezone:view.timezone};
-  $('bt-schedule-overview').innerHTML=betaScheduleOverviewHTML(view);
+  $('bt-schedule-overview').innerHTML=betaScheduleOverviewHTML(view)+challengeReferencesSection();
 }
 function deleteControls(m) {
   if(data.betaDelete===false)return '';
@@ -79,8 +83,54 @@ function renderMember(m) {
   paintGithub.controller?.abort();
   if(!m){$('bt-detail').innerHTML='<div class="bt-card bt-empty"><b>One view of the whole two weeks</b><p>Choose an intern to see attendance, GitHub activity, their recap, and your private evaluation notes.</p></div>';return;}
   const batch=periodOf(m),days=attendanceOf(m.id).map(a=>a.day).sort(),recap=recapOf(m.id),website=portfolioUrl(m.website);
-  $('bt-detail').innerHTML=`<form id="bt-member-form" class="bt-card"><div class="bt-card-head"><div><h3>${esc(m.name)}</h3><p>Your first two weeks · ${esc(dateLabel(batch?.startDate))} – ${esc(dateLabel(batch?.endDate))}</p>${website?`<a class="bt-portfolio" href="${esc(website)}" target="_blank" rel="noopener noreferrer">${esc(new URL(website).hostname)} ↗</a>`:""}</div><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></div><div class="bt-profile-grid"><div class="bt-profile-contact"><div class="bt-fields"><label>Name<input name="name" value="${esc(m.name)}" required maxlength="80"></label><label>Email<input name="email" value="${esc(m.email)}" type="email" maxlength="254"></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(m.phone)}" placeholder="Not provided"></label><label>GitHub username<input name="github" value="${esc(m.github)}" maxlength="39" placeholder="username"></label><label>Portfolio website (optional)<input name="website" type="text" inputmode="url" autocomplete="url" maxlength="300" value="${esc(m.website)}" placeholder="yourname.com"></label><label>Access status<select name="status">${['active','paused','graduated'].map(s=>`<option ${s===m.status?'selected':''}>${s}</option>`).join('')}</select></label></div><p class="bt-foot bt-contact-note">Contact details are visible to Arya and Milo only.${m.createdAt?` Joined ${esc(new Date(m.createdAt).toLocaleString())}.`:""}</p></div><div class="bt-profile-notes"><label>Private evaluation notes<textarea name="notes" rows="4" maxlength="5000" placeholder="Progress, feedback, and follow-ups…">${esc(m.notes)}</textarea><span>Visible to Arya and Milo only.</span></label></div></div><div class="bt-profile-actions"><div class="bt-actions"><button class="btn btn-p" type="submit">Save intern</button><button class="btn btn-g" data-code type="button">Replace personal return link</button></div><div id="bt-delete-controls">${deleteControls(m)}</div></div><p class="bt-foot">Pausing or graduating closes their beta access and keeps their record. It does not add them to the main team.</p></form>${scheduleSection(m)}<section class="bt-card"><div class="bt-card-head"><h3>Attendance</h3><span>${days.length} ${days.length===1?'day':'days'} in</span></div><div class="bt-days">${days.length?days.map(day=>`<span>${esc(dateLabel(day))}</span>`).join(''):'<p class="bt-muted">No attendance marked yet.</p>'}</div></section><section class="bt-card"><div class="bt-card-head"><h3>GitHub activity</h3>${m.github?`<a href="https://github.com/${encodeURIComponent(m.github)}" target="_blank" rel="noopener noreferrer">@${esc(m.github)} ↗</a>`:''}</div><div id="bt-github"><p class="bt-muted">Loading public activity…</p></div></section><section class="bt-card"><div class="bt-card-head"><h3>Two-week recap</h3><span>${recap?.submittedAt?'Submitted':recap?'Draft':'Not started'}</span></div><p class="bt-muted">Due ${esc(dateLabel(batch?.endDate))}</p>${recap?`<h4>What they learned</h4><p class="bt-long">${esc(recap.learned || 'Not added yet.')}</p><h4>What they accomplished</h4><p class="bt-long">${esc(recap.accomplished || 'Not added yet.')}</p>${recap.links?.length?`<h4>Work & links</h4><p class="bt-long">${recap.links.map(link=>`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`).join('<br>')}</p>`:''}`:'<p class="bt-muted">Their recap will appear here as they write it.</p>'}</section>`;
+  $('bt-detail').innerHTML=`<form id="bt-member-form" class="bt-card"><div class="bt-card-head"><div><h3>${esc(m.name)}</h3><p>Your first two weeks · ${esc(dateLabel(batch?.startDate))} – ${esc(dateLabel(batch?.endDate))}</p>${website?`<a class="bt-portfolio" href="${esc(website)}" target="_blank" rel="noopener noreferrer">${esc(new URL(website).hostname)} ↗</a>`:""}</div><span class="bt-status ${esc(m.status)}">${esc(m.status)}</span></div><div class="bt-profile-grid"><div class="bt-profile-contact"><div class="bt-fields"><label>Name<input name="name" value="${esc(m.name)}" required maxlength="80"></label><label>Email<input name="email" value="${esc(m.email)}" type="email" maxlength="254"></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(m.phone)}" placeholder="Not provided"></label><label>GitHub username<input name="github" value="${esc(m.github)}" maxlength="39" placeholder="username"></label><label>Portfolio website (optional)<input name="website" type="text" inputmode="url" autocomplete="url" maxlength="300" value="${esc(m.website)}" placeholder="yourname.com"></label><label>Access status<select name="status">${['active','paused','graduated'].map(s=>`<option ${s===m.status?'selected':''}>${s}</option>`).join('')}</select></label></div><p class="bt-foot bt-contact-note">Contact details are visible to Arya and Milo only.${m.createdAt?` Joined ${esc(new Date(m.createdAt).toLocaleString())}.`:""}</p></div><div class="bt-profile-notes"><label>Private evaluation notes<textarea name="notes" rows="4" maxlength="5000" placeholder="Progress, feedback, and follow-ups…">${esc(m.notes)}</textarea><span>Visible to Arya and Milo only.</span></label></div></div><div class="bt-profile-actions"><div class="bt-actions"><button class="btn btn-p" type="submit">Save intern</button><button class="btn btn-g" data-code type="button">Replace personal return link</button></div><div id="bt-delete-controls">${deleteControls(m)}</div></div><p class="bt-foot">Pausing or graduating closes their beta access and keeps their record. It does not add them to the main team.</p></form>${roadmapSection(m)}${scheduleSection(m)}<section class="bt-card"><div class="bt-card-head"><h3>Attendance</h3><span>${days.length} ${days.length===1?'day':'days'} in</span></div><div class="bt-days">${days.length?days.map(day=>`<span>${esc(dateLabel(day))}</span>`).join(''):'<p class="bt-muted">No attendance marked yet.</p>'}</div></section><section class="bt-card"><div class="bt-card-head"><h3>GitHub activity</h3>${m.github?`<a href="https://github.com/${encodeURIComponent(m.github)}" target="_blank" rel="noopener noreferrer">@${esc(m.github)} ↗</a>`:''}</div><div id="bt-github"><p class="bt-muted">Loading public activity…</p></div></section><section class="bt-card"><div class="bt-card-head"><h3>Two-week recap</h3><span>${recap?.submittedAt?'Submitted':recap?'Draft':'Not started'}</span></div><p class="bt-muted">Due ${esc(dateLabel(batch?.endDate))}</p>${recap?`<h4>What they learned</h4><p class="bt-long">${esc(recap.learned || 'Not added yet.')}</p><h4>What they accomplished</h4><p class="bt-long">${esc(recap.accomplished || 'Not added yet.')}</p>${recap.links?.length?`<h4>Work & links</h4><p class="bt-long">${recap.links.map(link=>`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`).join('<br>')}</p>`:''}`:'<p class="bt-muted">Their recap will appear here as they write it.</p>'}</section>`;
   paintGithub(m,batch,githubRun);
+}
+function roadmapSummary(memberId) {
+  const roadmap=data?.roadmaps?.[memberId] || {},catalog=data?.challengeCatalog || [];
+  const total=Number.isSafeInteger(roadmap.total) && roadmap.total>0?roadmap.total:catalog.length;
+  const completed=Math.min(total,Math.max(0,Number.isSafeInteger(roadmap.completed)?roadmap.completed:0));
+  return {...roadmap,total,completed};
+}
+function roadmapRoster(memberId) {
+  if(!roadmapEnabled())return '';
+  const summary=roadmapSummary(memberId),pending=(data.challengeProgress || []).some(row=>row.memberId===memberId && row.status==='submitted');
+  return `<small class="bt-roadmap-roster">${summary.completed}/${summary.total} challenges complete${pending?' · Review ready':''}</small>`;
+}
+function challengeEvidenceLink(value,label) {
+  const url=portfolioUrl(value);
+  return url?`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`:'';
+}
+function roadmapSection(member) {
+  if(!roadmapEnabled())return '<section class="bt-card bt-roadmap"><h3>Challenge roadmap</h3><p class="bt-muted">Challenge progress will appear after the updated shared service is deployed.</p></section>';
+  const summary=roadmapSummary(member.id),catalog=data.challengeCatalog,unlocks=summary.unlocks || {};
+  const cards=catalog.map((challenge,index)=>{
+    const progress=challengeProgressOf(member.id,challenge.id),status=progress?.status;
+    const complete=status==='approved',pending=status==='submitted',changes=status==='changes_requested';
+    const unlocked=complete || pending || changes || challenge.id===summary.currentChallengeId || index<=summary.completed;
+    const label=complete?'Complete':pending?'Waiting for review':changes?'Changes requested':unlocked?'In progress':'Locked';
+    const state=complete?'complete':pending?'pending':changes?'changes':unlocked?'current':'locked';
+    const checks=progress?.checks || [];
+    const checked=id=>Array.isArray(checks)?checks.includes(id):checks[id]===true;
+    const checklist=(challenge.checklist || []).map(item=>`<li class="${checked(item.id)?'done':''}"><span aria-hidden="true">${checked(item.id)?'✓':'○'}</span>${esc(item.label)}<span class="bt-check-state">${checked(item.id)?'Reported complete':'Not checked'}</span></li>`).join('');
+    const links=[challengeEvidenceLink(progress?.liveUrl,'Open live site'),challengeEvidenceLink(progress?.repoUrl,'Open repository')].filter(Boolean).join('');
+    const iterations=(Array.isArray(progress?.iterationLinks)?progress.iterationLinks:[]).map((link,i)=>challengeEvidenceLink(link,`Iteration ${i+1}`)).filter(Boolean).join('');
+    const draft=challengeReviewDrafts.get(reviewDraftKey(member.id,challenge.id));
+    const feedback=draft?.submittedAt===progress?.submittedAt?draft?.feedback || '':'';
+    const submitted=progress?.submittedAt && Number.isFinite(Date.parse(progress.submittedAt))?new Date(progress.submittedAt).toLocaleString():'';
+    const reviewed=progress?.reviewedAt && Number.isFinite(Date.parse(progress.reviewedAt))?new Date(progress.reviewedAt).toLocaleString():'';
+    return `<article class="bt-challenge ${state}"><div class="bt-challenge-head"><span class="bt-challenge-number" aria-hidden="true">${complete?'✓':index+1}</span><div><h4>${esc(challenge.title)}</h4><span class="bt-challenge-state">${label}</span></div></div><p class="bt-muted">${esc(challenge.brief || '')}</p>${unlocked?`<ul class="bt-challenge-checklist">${checklist}</ul>${links?`<div class="bt-challenge-links">${links}</div>`:''}${iterations?`<h5>Pushed iterations</h5><div class="bt-challenge-links">${iterations}</div>`:''}${progress?.notes?`<h5>Intern’s notes</h5><p class="bt-long">${esc(progress.notes)}</p>`:''}${submitted?`<p class="bt-foot">Submitted ${esc(submitted)}</p>`:''}${progress?.feedback?`<div class="bt-challenge-feedback"><h5>Reviewer feedback</h5><p class="bt-long">${esc(progress.feedback)}</p></div>`:''}${reviewed?`<p class="bt-foot">Reviewed ${esc(reviewed)}</p>`:''}${pending?`<form class="bt-challenge-review" data-challenge-review="${esc(challenge.id)}" data-member-id="${esc(member.id)}"><label>Review feedback<textarea name="feedback" rows="3" maxlength="5000" placeholder="Call out what works and the next change to make…">${esc(feedback)}</textarea><span>Required when requesting changes. Visible to this intern.</span></label><div class="bt-actions"><button class="btn btn-p" type="submit" data-review-status="approved">${index<catalog.length-1?'Approve &amp; unlock next':'Approve final challenge'}</button><button class="btn btn-g" type="submit" data-review-status="changes_requested">Request changes</button></div></form>`:complete?'<p class="bt-foot">Approved. This challenge is complete and cannot be reopened.</p>':changes?'<p class="bt-foot">The intern can revise their work and submit it again.</p>':'<p class="bt-foot">Review becomes available when the intern submits this challenge.</p>'}`:'<p class="bt-foot">Unlocks after the preceding challenge is approved.</p>'}</article>`;
+  }).join('');
+  return `<section class="bt-card bt-roadmap"><div class="bt-card-head"><div><h3>Challenge roadmap</h3><p>Build, publish, improve. Approvals unlock the next step.</p></div><span>${summary.completed} of ${summary.total} complete</span></div><progress class="bt-roadmap-progress" max="${Math.max(1,summary.total)}" value="${summary.completed}" aria-label="Challenges completed">${summary.completed}/${summary.total}</progress><div class="bt-roadmap-unlocks"><span class="${unlocks.peerWork?'unlocked':''}">${unlocks.peerWork?'✓':'○'} Peer work · ${unlocks.peerWork?'unlocked':'after challenge 1'}</span><span class="${unlocks.teamReferences?'unlocked':''}">${unlocks.teamReferences?'✓':'○'} Team examples · ${unlocks.teamReferences?'unlocked':'after challenge 2'}</span></div><div class="bt-challenges">${cards}</div></section>`;
+}
+function challengeReferencesSection() {
+  if(!roadmapEnabled())return '';
+  const challenges=data.challengeCatalog.filter(item=>['portfolio','spend-portal'].includes(item.id));
+  return `<section class="bt-card bt-challenge-references"><details${challengeReferenceDrafts.size?' open':''}><summary>Team example sites <span>Unlock after challenge 2</span></summary><p class="bt-muted">Add shareable demo versions for interns to explore after their first two approvals. Use sanitized examples with sample data only. These links do not grant access to the production internal console.</p><div class="bt-reference-grid">${challenges.map(challenge=>{
+    const saved=(data.challengeReferences || []).find(row=>row.challengeId===challenge.id) || {};
+    const reference=challengeReferenceDrafts.get(challenge.id) || saved;
+    return `<form data-challenge-reference="${esc(challenge.id)}"><h4>${esc(challenge.title)}</h4><label>Example title<input name="title" maxlength="120" value="${esc(reference.title || '')}" placeholder="Our ${challenge.id==='portfolio'?'portfolio':'practice spend portal'}"></label><label>Shareable demo URL<input name="url" type="url" inputmode="url" maxlength="300" value="${esc(reference.url || '')}" placeholder="https://demo.example.com"></label><label>What to learn from it<textarea name="notes" rows="3" maxlength="3000" placeholder="Point out a few choices to compare with their own version…">${esc(reference.notes || '')}</textarea></label><p class="bt-foot">${saved.url?'Clear the URL and save to remove this example.':'No example published yet.'}</p><div class="bt-actions"><button class="btn btn-g" type="submit">Save example</button>${challengeEvidenceLink(saved.url,'View saved example')}</div></form>`;
+  }).join('')}</div></details></section>`;
 }
 function scheduleSection(member) {
   const schedule=scheduleOf(member.id);
@@ -174,6 +224,7 @@ function clearPersonalLink() {
 }
 function clearPrivate() {
   generation++;data=null;loadedFor='';selected='';githubRun++;deleteTarget=null;needsRender=false;
+  challengeReviewDrafts.clear();challengeReferenceDrafts.clear();
   overviewFilters={batch:'all',timezone:'all'};
   clearScheduleFile();
   paintGithub.controller?.abort();
@@ -193,6 +244,8 @@ async function change(action,payload,success) {
     const out=await api(action,payload);
     if(revision!==generation)return;
     if(action==='memberdelete'){deleteTarget=null;clearPersonalLink();}
+    if(action==='challengereview')challengeReviewDrafts.delete(reviewDraftKey(payload.memberId,payload.challengeId));
+    if(action==='challengereference')challengeReferenceDrafts.delete(payload.challengeId);
     render();revealPersonalLink(out);message(success);
   }catch(error){if(revision===generation)requestError(error);}
   finally{if(revision===generation)setBusy(false);}
@@ -220,9 +273,33 @@ $('bt-copy-invite').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText($('bt-invite-link').value);message('Permanent invite link copied.');}
   catch{$('bt-invite-link').focus();$('bt-invite-link').select();message('Select and copy the link above.');}
 });
+$('bt-root').addEventListener('input',event=>{
+  const form=event.target.closest('form');
+  if(!form || busy || !active())return;
+  const payload=Object.fromEntries(new FormData(form));
+  if(form.dataset.challengeReview) {
+    const memberId=form.dataset.memberId,challengeId=form.dataset.challengeReview;
+    challengeReviewDrafts.set(reviewDraftKey(memberId,challengeId),{feedback:payload.feedback || '',submittedAt:challengeProgressOf(memberId,challengeId)?.submittedAt});
+  }
+  if(form.dataset.challengeReference)challengeReferenceDrafts.set(form.dataset.challengeReference,payload);
+});
 $('bt-root').addEventListener('submit',event=>{
   event.preventDefault();const form=event.target,payload=Object.fromEntries(new FormData(form));
-  if(form.id==='bt-member-form')change('memberupdate',{...payload,id:selected},'Intern saved.');
+  if(form.id==='bt-member-form')return change('memberupdate',{...payload,id:selected},'Intern saved.');
+  if(busy || !active() || !roadmapEnabled())return;
+  if(form.dataset?.challengeReview) {
+    const memberId=form.dataset.memberId,challengeId=form.dataset.challengeReview,status=event.submitter?.dataset.reviewStatus,feedback=String(payload.feedback || '').trim();
+    if(memberId!==selected || challengeProgressOf(memberId,challengeId)?.status!=='submitted' || !['approved','changes_requested'].includes(status))return;
+    if(status==='changes_requested' && !feedback){message('Add feedback so the intern knows what to improve.',true);return;}
+    return change('challengereview',{memberId,challengeId,status,feedback},status==='approved'?'Challenge approved. Their progress and unlocks are updated.':'Changes requested. The intern can update and resubmit.');
+  }
+  if(form.dataset?.challengeReference) {
+    const challengeId=form.dataset.challengeReference,url=String(payload.url || '').trim(),title=String(payload.title || '').trim(),notes=String(payload.notes || '').trim();
+    if(!['portfolio','spend-portal'].includes(challengeId))return;
+    if(url && !portfolioUrl(url)){message('Use a complete http or https demo URL.',true);return;}
+    if(url && !title){message('Give this team example a title.',true);return;}
+    return change('challengereference',{challengeId,title,url,notes},url?'Team example saved. Interns see it after challenge 2.':'Team example removed.');
+  }
 });
 $('bt-root').addEventListener('click',async event=>{
   const b=event.target.closest('button');if(!b || busy)return;
