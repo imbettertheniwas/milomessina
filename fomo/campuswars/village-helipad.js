@@ -1,3 +1,6 @@
+import {createMaybach} from './village-helipad-maybach.js?v=3';
+import {createHelipadGuests} from './village-helipad-guests.js?v=2';
+import {createHelipadAircraft} from './village-helipad-aircraft.js?v=2';
 // Appearance references and modeling notes: helipad-references.md.
 // This scenery has its own identities; neither guest is a registered member.
 export const HELIPAD_SITE={x:100,z:200,radius:24};
@@ -14,7 +17,7 @@ export function helipadState(seconds){
   const cabin=between(t,30,32)*(1-between(t,42,44))+between(t,72,74)*(1-between(t,81,83));
   const lift=between(t,45,51)*(1-between(t,64,71));
   const angle=between(t,51,64)*Math.PI*2;
-  const helicopter={x:Math.sin(angle)*24,y:lift*36,z:(Math.cos(angle)-1)*18,heading:angle};
+  const helicopter={x:Math.sin(angle)*24,y:lift*36,z:(Math.cos(angle)-1)*18,heading:angle+(between(t,48,51)-between(t,64,68))*Math.PI/2};
   const rotor=between(t,42,45)*(1-between(t,71,74));
   const guests=[0,1].map(i=>{
     const delay=i*1.4;
@@ -43,10 +46,20 @@ export function helipadState(seconds){
 export function createHelipad(T,extension=0){
   const root=new T.Group();root.name='Rasmr & Orangie · helicopter arrival';root.position.set(HELIPAD_SITE.x,0,HELIPAD_SITE.z+extension);
   const resources=new Set(),own=r=>(resources.add(r),r),materials=new Map();let night=false;
+  // A small local sky reflection gives polished paint, chrome and glazing a
+  // shared outdoor response without another network asset or render pass.
+  const skyPixels=new Uint8Array(64*32*4);
+  for(let y=0;y<32;y++)for(let x=0;x<64;x++){
+    const t=y/31,sky=t<.52,horizon=Math.exp(-Math.pow((t-.49)*13,2));
+    const softbox=Math.exp(-Math.pow((x/64-.72)*13,2)-Math.pow((t-.30)*9,2));
+    const color=sky?[111+104*horizon,143+78*horizon,174+53*horizon]:[83+79*horizon,87+81*horizon,78+90*horizon];
+    const n=(y*64+x)*4;for(let i=0;i<3;i++)skyPixels[n+i]=Math.min(255,color[i]+softbox*70);skyPixels[n+3]=255;
+  }
+  const environment=own(new T.DataTexture(skyPixels,64,32));environment.colorSpace=T.SRGBColorSpace;environment.mapping=T.EquirectangularReflectionMapping;environment.needsUpdate=true;
   const cube=own(new T.BoxGeometry(1,1,1)),ball=own(new T.SphereGeometry(1,22,14)),cylinder=own(new T.CylinderGeometry(1,1,1,24));
   const shape=new T.Shape();shape.moveTo(-.44,-.44);shape.lineTo(.44,-.44);shape.lineTo(.44,.44);shape.lineTo(-.44,.44);shape.closePath();
   const rounded=own(new T.ExtrudeGeometry(shape,{depth:.88,bevelEnabled:true,bevelSize:.06,bevelThickness:.06,bevelSegments:3,steps:1}));rounded.translate(0,0,-.44);
-  function mat(color,metal=0,rough=.65){const key=`${color}:${metal}:${rough}`;if(!materials.has(key))materials.set(key,own(new T.MeshStandardMaterial({color,metalness:metal,roughness:rough})));return materials.get(key);}
+  function mat(color,metal=0,rough=.65){const key=`${color}:${metal}:${rough}`;if(!materials.has(key))materials.set(key,own(new T.MeshStandardMaterial({color,metalness:metal,roughness:rough,...(metal>.2?{envMap:environment,envMapIntensity:.8}:{})})));return materials.get(key);}
   const black=mat(0x15191d,.5,.26),silver=mat(0xaeb9bb,.8,.25),cream=mat(0xd4c8b1,.55,.3),glass=mat(0x203540,.65,.16),rubber=mat(0x171a1b,0,.9),white=mat(0xe9ece7),gold=mat(0xc4a66d,.7,.3),violet=mat(0x7365b9,.4,.35);
   const group=(p,name,x=0,y=0,z=0)=>{const g=new T.Group();g.name=name;g.position.set(x,y,z);p.add(g);return g;};
   function mesh(p,g,m,x,y,z,sx=1,sy=1,sz=1){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.receiveShadow=true;p.add(o);return o;}
@@ -81,116 +94,29 @@ export function createHelipad(T,extension=0){
   for(const x of [-1,8])bar(fixed,silver,[x,0,17],[x,2.8,17],.055);
   label(fixed,'RASMR  ×  ORANGIE',3.5,2.65,17,10,1.25);
 
-  // Long-wheelbase Maybach: separate coach doors, two-tone paint, vertical
-  // chrome grille, hood star, multi-spoke wheels and a cream leather cabin.
-  const car=group(root,'Mercedes-Maybach',-12,.22,10);car.rotation.y=Math.PI;
-  round(car,black,0,.65,0,2.25,.67,5.8);round(car,cream,0,1,0,2.2,.40,5.6);
-  round(car,black,0,.32,0,2,.2,5.3);round(car,cream,0,1.56,-.12,1.92,.12,2.8);
-  round(car,glass,0,1.32,1.40,1.87,.52,.1).rotation.x=.30;
-  round(car,glass,0,1.32,-1.52,1.85,.5,.1).rotation.x=-.35;
-  round(car,black,0,.91,2.83,1.35,.55,.08);
-  for(let i=-7;i<=7;i++)box(car,silver,i*.078,.92,2.89,.025,.47,.025);
-  for(const x of [-.87,.87]){round(car,white,x,1.02,2.78,.42,.13,.12);round(car,mat(0x982f34),x,.92,-2.84,.43,.12,.09);}
-  const emblem=mesh(car,own(new T.TorusGeometry(.10,.009,6,24)),silver,0,1.34,2.53);for(let i=0;i<3;i++){const a=i*Math.PI*2/3;bar(car,silver,[0,1.34,2.53],[Math.sin(a)*.09,1.34+Math.cos(a)*.09,2.53],.007);}
-  for(const x of [-.54,.54])for(const z of [-.8,.7]){round(car,mat(0xc0a98b),x,.87,z,.62,.24,.65);round(car,mat(0xc0a98b),x,1.10,z-.23,.62,.57,.16);}
-  const doors=[];
-  for(const side of [-1,1])for(const z of [-1.35,.06]){
-    const door=group(car,'Maybach passenger door',side*1.075,.94,z+1.15);
-    round(door,cream,0,.03,-.6,.08,.40,1.29);round(door,black,0,-.23,-.6,.085,.22,1.29);
-    round(door,glass,0,.43,-.61,.065,.40,1.21);box(door,silver,0,.19,-.61,.09,.025,1.26);
-    box(door,silver,side*.045,.08,-1.03,.045,.035,.20);
-    doors.push({root:door,side});
-  }
-  for(const side of [-1,1]){box(car,black,side*.98,1.34,.0,.08,.5,.10);oval(car,black,side*1.21,1.19,1.3,.17,.09,.22);bar(car,silver,[side*1.13,.58,-2.5],[side*1.13,.58,2.5],.019);}
-  label(car,'MAYBACH',0,.59,2.903,.70,.17,'#161b20','#e3e1d8');
-  const wheels=[];
-  for(const side of [-1,1])for(const z of [-1.83,1.83]){
-    const wheel=group(car,'Maybach wheel',side*1.1,.39,z);wheels.push(wheel);
-    mesh(wheel,cylinder,rubber,0,0,0,.39,.24,.39).rotation.z=Math.PI/2;
-    mesh(wheel,cylinder,silver,side*.13,0,0,.30,.018,.30).rotation.z=Math.PI/2;
-    mesh(wheel,cylinder,black,side*.145,0,0,.24,.022,.24).rotation.z=Math.PI/2;
-    for(let i=0;i<14;i++){const a=i*Math.PI/7;bar(wheel,silver,[side*.16,0,0],[side*.16,Math.sin(a)*.27,Math.cos(a)*.27],.014);}
-    oval(wheel,silver,side*.17,0,0,.024,.08,.08);
-  }
+  const kit={T,root,own,mat,group,mesh,box,oval,round,bar,label,cube,ball,cylinder,black,silver,cream,glass,rubber,white,gold};
+  const {car,doors,wheels}=createMaybach(kit);
+  const {heli,cabinDoor,rotor,tailRotor,rotorBlur}=createHelipadAircraft(kit);
 
-  const heli=group(root,'VIP helicopter');
-  oval(heli,black,0,1.95,.20,1.24,1.04,2.43);
-  oval(heli,cream,0,1.43,.25,1.18,.54,2.25);
-  oval(heli,glass,0,2.15,1.55,1.10,.75,1.09);
-  bar(heli,silver,[0,2.77,1.65],[0,1.69,2.51],.04);
-  for(const side of [-1,1]){
-    oval(heli,glass,side*1.13,2.18,.5,.065,.54,.72);
-    round(heli,glass,side*1.19,2.08,-.88,.08,.6,.54);
-    bar(heli,gold,[side*1.1,1.65,-1.4],[side*1.1,1.65,1.45],.025);
-    for(const z of [-.9,1.1])bar(heli,silver,[side*.72,1.12,z],[side*1.55,.44,z+.14],.065);
-    bar(heli,black,[side*1.55,.39,-1.9],[side*1.55,.39,2.12],.095);
-    bar(heli,black,[side*1.55,.39,2.12],[side*1.55,.57,2.5],.095);
-  }
-  const cabinDoor=group(heli,'sliding passenger door',-1.22,1.95,-.2);
-  round(cabinDoor,black,0,0,0,.12,1.42,1.2);round(cabinDoor,glass,-.075,.30,0,.025,.62,1.02);box(cabinDoor,silver,-.1,-.16,.35,.04,.035,.24);
-  // Visible doorway and interior; the sliding door reveals this dark recess.
-  round(heli,rubber,-1.205,1.94,-.2,.045,1.39,1.12);
-  box(heli,silver,-1.45,.74,.25,.7,.1,.78);
-  bar(heli,black,[0,2,-1.4],[0,2.92,-7.0],.24);
-  const tail=box(heli,black,0,3.35,-6.8,.16,2.1,.92);tail.rotation.x=-.3;
-  box(heli,cream,0,2.85,-5.75,2.9,.10,.7);
-  round(heli,black,0,3.01,-.3,1.20,.55,2);
-  for(const side of [-1,1])oval(heli,rubber,side*.47,3.15,-1.22,.23,.2,.12);
-  bar(heli,silver,[0,2.95,0],[0,4.02,0],.09);
-  const rotor=group(heli,'main rotor',0,4.02,0);
-  for(let i=0;i<4;i++){const blade=group(rotor,'rotor blade');blade.rotation.y=i*Math.PI/2;box(blade,black,0,0,3.15,.24,.045,6.1);box(blade,cream,0,.004,6.05,.24,.05,.30);}
-  oval(rotor,silver,0,0,0,.28,.14,.28);
-  const tailRotor=group(heli,'tail rotor',-.22,3.2,-7);
-  for(let i=0;i<3;i++){const blade=box(tailRotor,black,0,0,0,.055,1.5,.10);blade.rotation.x=i*Math.PI/3;}
-  for(const side of [-1,1]){const branding=label(heli,'fomo',side*1.245,1.66,-.82,1.25,.34,'#eee6d8','#192025');branding.rotation.y=side*Math.PI/2;}
-
-  function person(index){
-    const isOrangie=index===1,skin=mat(isOrangie?0xe0b49c:0xc4967c),hair=mat(isOrangie?0x846343:0x29231f),shirt=mat(isOrangie?0x282728:0x344153),pants=mat(isOrangie?0x242a30:0x393b3f);
-    const actor=group(root,isOrangie?'Orangie':'Rasmr'),body=group(actor,'body',0,.91,0);const width=isOrangie?.36:.28;
-    oval(body,shirt,0,.37,0,width,.42,.20);oval(body,shirt,0,.20,0,width,.28,.20);
-    if(!isOrangie){oval(body,shirt,0,.64,-.095,.24,.15,.15);for(const x of [-.06,.06])bar(body,cream,[x,.65,.17],[x,.43,.19],.009);}
-    mesh(body,cylinder,skin,0,.77,0,.092,.20,.085);
-    const head=group(body,'portrait',0,1.00,.018);
-    oval(head,skin,0,0,0,isOrangie?.195:.168,.237,.172);
-    oval(head,skin,0,-.125,.017,isOrangie?.167:.141,.105,.144);
-    for(const side of [-1,1]){oval(head,skin,side*.175,-.008,-.005,.038,.065,.029);oval(head,white,side*.068,.035,.151,.039,.019,.015);oval(head,mat(0x443b31),side*.068,.036,.166,.015,.016,.007);oval(head,black,side*.068,.036,.171,.008,.011,.005);bar(head,hair,[side*.038,.079,.16],[side*.112,.088,.146],isOrangie?.009:.014);}
-    oval(head,skin,0,-.022,.176,.034,.055,.052);
-    bar(head,mat(0x9b6860),[-.048,-.103,.15],[.048,-.103,.15],.009);
-    oval(head,hair,0,.164,-.028,isOrangie?.194:.173,.115,.155);
-    // Sculpted curls and tapered temples remain recognizable from behind too.
-    for(let i=0;i<(isOrangie?45:24);i++){const a=i*2.399963,r=Math.sqrt((i+.5)/(isOrangie?45:24))*.17;oval(head,hair,Math.cos(a)*r,.218+(1-r/.20)*.037,Math.sin(a)*r-.025,isOrangie?.046:.038,isOrangie?.045:.023,isOrangie?.044:.041);}
-    if(isOrangie){
-      for(const side of [-1,1]){const g=group(head,'rectangular glasses',side*.078,.043,.177);for(const y of [-.027,.027])bar(g,black,[-.061,y,0],[.061,y,0],.009);for(const x of [-.061,.061])bar(g,black,[x,-.027,0],[x,.027,0],.009);bar(head,black,[side*.139,.043,.178],[side*.18,.052,-.027],.008);}
-      bar(head,black,[-.017,.049,.177],[.017,.049,.177],.009);
-    }else{
-      for(let i=0;i<32;i++){const x=Math.sin(i*2.4)*.12,y=-.14+Math.cos(i*1.4)*.022;oval(head,mat(0x725e50),x,y,.133-Math.abs(x)*.20,.003,.004,.002);}
-    }
-    label(body,isOrangie?'BALENCIAGA':'DEGODS',0,.41,.205,isOrangie?.59:.41,.12,isOrangie?'#d6c296':'#dedbd0',isOrangie?'#282728':'#344153');
-    const arms=[],legs=[];
-    for(const side of [-1,1]){
-      const arm=group(body,'arm',side*(width+.015),.56,0);arms.push(arm);
-      oval(arm,shirt,side*.02,-.12,0,.087,.19,.085);bar(arm,skin,[side*.02,-.20,0],[side*.035,-.47,.02],.058);oval(arm,skin,side*.035,-.50,.02,.06,.075,.045);
-      const leg=group(actor,'leg',side*.115,.91,0);legs.push(leg);mesh(leg,cylinder,pants,0,-.37,0,.095,.74,.10);round(leg,white,0,-.81,.045,.20,.15,.34);box(leg,rubber,0,-.876,.045,.20,.02,.32);
-    }
-    const name=label(actor,isOrangie?'ORANGIE':'RASMR',0,2.42,0,isOrangie?1.18:.96,.24,'#fff',isOrangie?'#7b512f':'#344153',true);
-    return {root:actor,body,head,arms,legs,name};
-  }
-  const guests=[person(0),person(1)];
-  // One local atlas, projected onto curved face surfaces; modeled heads remain
-  // as a fallback if loading fails. Never fetch a social-media asset at runtime.
+  const guests=createHelipadGuests(kit);
+  // Only the shaped facial surface gets the atlas. Hair, ears, glasses and
+  // side/back anatomy remain three dimensional at every viewing angle.
   let disposed=false;
   if(typeof document!=='undefined'){
     const atlas=own(new T.TextureLoader().load(new URL('./assets/helipad/creator-face-atlas.png',import.meta.url).href,()=>{
       if(disposed)return;
-      guests.forEach((guest,index)=>{
-        for(const child of guest.head.children)child.visible=false;
-        const geometry=own(new T.SphereGeometry(1,36,28,0,Math.PI));
-        const positions=geometry.attributes.position,uv=geometry.attributes.uv;
-        for(let i=0;i<positions.count;i++)uv.setXY(i,(index+.02+(positions.getX(i)+1)*.48)/2,.14+(positions.getY(i)+1)*.385);
-        const face=mesh(guest.head,geometry,own(new T.MeshStandardMaterial({map:atlas,roughness:1})),0,.012,0,index?.205:.18,.267,.19);
-        face.name='reference-based face';
-        oval(guest.head,mat(index?0xd3aa91:0xc4967c),0,.012,-.014,index?.201:.177,.262,.17);
-        oval(guest.head,mat(index?0x846343:0x29231f),0,.158,-.055,index?.17:.147,.10,.12);
+      guests.forEach(guest=>{
+        const portrait=own(new T.MeshStandardMaterial({map:atlas,roughness:.96}));
+        portrait.onBeforeCompile=shader=>{
+          shader.uniforms.portraitSkin={value:guest.skinTint};
+          shader.vertexShader='attribute float portraitBlend; varying float vPortraitBlend;\n'+shader.vertexShader;
+          shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvPortraitBlend=portraitBlend;');
+          shader.fragmentShader='uniform vec3 portraitSkin; varying float vPortraitBlend;\n'+shader.fragmentShader;
+          shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb=mix(portraitSkin,diffuseColor.rgb,vPortraitBlend);');
+        };
+        portrait.customProgramCacheKey=()=> 'helipad-portrait-edge-v1';
+        guest.portraitSurface.material=portrait;
+        guest.portraitSurface.visible=true;guest.faceDetails.visible=false;
       });
       setNight(night);document.dispatchEvent(new CustomEvent('village:artwork'));
     }));atlas.colorSpace=T.SRGBColorSpace;atlas.anisotropy=8;
@@ -200,14 +126,15 @@ export function createHelipad(T,extension=0){
   const shadowMaterial=own(new T.MeshBasicMaterial({map:shadowMap,color:0x000000,transparent:true,opacity:.45,depthWrite:false}));
   function shadow(w,d){const s=mesh(root,own(new T.PlaneGeometry(w,d)),shadowMaterial,0,.34,0);s.rotation.x=-Math.PI/2;return s;}
   const carShadow=shadow(4,7),heliShadow=shadow(6,8),peopleShadows=guests.map(()=>shadow(.9,.9));
+  heliShadow.material=own(shadowMaterial.clone());
   // Merge static pieces per material within each articulated group. Doors,
   // limbs, rotors and wheels retain their independent transforms.
   function bake(parent){
     for(const child of [...parent.children])if(child.isGroup)bake(child);
-    const sets=new Map();for(const child of parent.children)if(child.isMesh){const k=child.material;if(!sets.has(k))sets.set(k,[]);sets.get(k).push(child);}
-    for(const [material,items] of sets){if(items.length<2)continue;const pos=[],norm=[],uv=[];
-      for(const o of items){o.updateMatrix();const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrix);pos.push(...g.attributes.position.array);norm.push(...g.attributes.normal.array);uv.push(...g.attributes.uv.array);g.dispose();o.removeFromParent();}
-      const g=own(new T.BufferGeometry());g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('normal',new T.Float32BufferAttribute(norm,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));const m=new T.Mesh(g,material);m.receiveShadow=true;parent.add(m);
+    const sets=new Map();for(const child of parent.children)if(child.isMesh&&!child.userData.keepSeparate){const k=child.material;if(!sets.has(k))sets.set(k,[]);sets.get(k).push(child);}
+    for(const [material,items] of sets){if(items.length<2)continue;const pos=[],norm=[],uv=[],color=[];
+      for(const o of items){o.updateMatrix();const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrix);pos.push(...g.attributes.position.array);norm.push(...g.attributes.normal.array);uv.push(...g.attributes.uv.array);if(g.attributes.color)color.push(...g.attributes.color.array);g.dispose();o.removeFromParent();}
+      const g=own(new T.BufferGeometry());g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('normal',new T.Float32BufferAttribute(norm,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));if(color.length)g.setAttribute('color',new T.Float32BufferAttribute(color,3));const m=new T.Mesh(g,material);m.receiveShadow=true;parent.add(m);
     }
   }
   bake(fixed);bake(car);bake(heli);guests.forEach(g=>bake(g.root));
@@ -218,21 +145,28 @@ export function createHelipad(T,extension=0){
     car.position.z=state.carZ;car.visible=state.time>.05&&state.time<95.95;
     carShadow.position.set(-12,.34,state.carZ);carShadow.visible=car.visible;
     for(const w of wheels)w.rotation.x=(state.carZ-45)/.39;
-    for(const d of doors)d.root.rotation.y=d.side<0?-state.doors*1.13:0;
+    for(const d of doors)d.root.rotation.y=d.side<0?state.doors*1.13:0;
     heli.position.set(state.helicopter.x,state.helicopter.y,state.helicopter.z);heli.rotation.y=state.helicopter.heading;
-    cabinDoor.position.z=-.2-state.cabin*1.2;
+    cabinDoor.position.z=-.1-state.cabin*1.40;
     // Integral of a smooth acceleration gives continuous blade angles.
     const t=state.time,integral=(x,a,b)=>{const u=clamp((x-a)/(b-a));return (b-a)*(u*u*u-.5*u*u*u*u)+Math.max(0,x-b);};
     rotor.rotation.y=8*Math.PI*(integral(t,42,45)-integral(t,71,74));tailRotor.rotation.x=rotor.rotation.y*2;
+    rotorBlur.material.opacity=state.rotor*.085;rotorBlur.visible=state.rotor>.08;
+    const airborne=Math.min(1,state.helicopter.y/6);
+    heli.rotation.z=Math.sin(state.helicopter.heading)*-.055*airborne;heli.rotation.x=-Math.sin(state.helicopter.heading*.5)*.045*airborne;
     heliShadow.position.set(state.helicopter.x,.34,state.helicopter.z);heliShadow.scale.setScalar(1+state.helicopter.y*.035);
+    heliShadow.material.opacity=.45/(1+state.helicopter.y*.15);
     guests.forEach((g,i)=>{const p=state.guests[i];g.root.visible=p.visible;g.root.position.set(p.x,p.y,p.z);g.root.rotation.y=p.heading;
-      const stride=Math.sin(p.gait)*.36*p.walking;g.legs[0].rotation.x=stride;g.legs[1].rotation.x=-stride;g.arms[0].rotation.x=-stride*.7;g.arms[1].rotation.x=stride*.7;
+      const stride=Math.sin(p.gait)*.34*p.walking;g.legs[0].rotation.x=stride;g.legs[1].rotation.x=-stride;g.arms[0].rotation.x=-stride*.62;g.arms[1].rotation.x=stride*.62;
+      g.knees[0].rotation.x=Math.max(0,-Math.sin(p.gait))*.48*p.walking;g.knees[1].rotation.x=Math.max(0,Math.sin(p.gait))*.48*p.walking;
+      g.forearms.forEach((arm,j)=>{arm.rotation.x=-.085-Math.max(0,Math.sin(p.gait+j*Math.PI))*.16*p.walking;});
+      g.body.position.y=1.0+Math.sin(p.gait*2)*.012*p.walking;
       g.body.rotation.y=p.standing?Math.sin(t*.6+i)*.06:0;g.head.rotation.y=p.standing?Math.sin(t*.8+i)*.12:0;
       peopleShadows[i].visible=p.visible;peopleShadows[i].position.set(p.x,.34,p.z);
     });
     return state;
   }
   update(27);
-  function setNight(enabled){night=Boolean(enabled);for(const material of resources)if(material.isMeshStandardMaterial){material.emissive.copy(material.color);material.emissiveIntensity=night?(material.userData.lamp?1.8:.14):0;}}
+  function setNight(enabled){night=Boolean(enabled);for(const material of resources)if(material.isMeshStandardMaterial){material.emissive.copy(material.color);material.emissiveIntensity=night?(material.userData.lamp?1.8:material.vertexColors?.025:.14):(material.userData.dayGlow||0);if(material.envMap)material.envMapIntensity=night?.18:.8;}}
   return {root,car,heli,guests,doors,rotor,resources,update,setNight,get night(){return night;},get state(){return state;},restart(time,still=false){epoch=time-(still?27:0);lastTime=NaN;return update(time);},relocate(ext){root.position.z=HELIPAD_SITE.z+ext;},dispose(){disposed=true;for(const r of resources)r.dispose();resources.clear();}};
 }
