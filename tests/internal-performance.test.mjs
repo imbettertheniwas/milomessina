@@ -96,7 +96,7 @@ test('reused currency formatter preserves the existing amounts and rounding',()=
 
 test('ledger reads wait for a visible ledger-dependent view and refresh on a stale return',async()=>{
  let reads=0;
- const c=context(['ledgerView','refreshVisibleLedger'],{identity:{token:'session'},mode:'sheet',busy:false,
+ const c=context(['ledgerView','refreshVisibleLedger'],{identity:{token:'session'},mode:'sheet',busy:false,initialLedgerDeferred:false,
   document:{hidden:false},sheetReadAt:Date.now()-31000,view:'overview',api(){reads++;return Promise.resolve();}});
  for(const view of ['beta','schedules','posts','campus','applicants','visits','referrals','portals','admin','chapters','commits']){
   c.view=view;c.refreshVisibleLedger();
@@ -111,7 +111,7 @@ test('ledger reads wait for a visible ledger-dependent view and refresh on a sta
 
 test('the automatic ledger poll skips unrelated tabs',()=>{
  let reads=0,polling;
- const c=context(['ledgerView','goSheet'],{view:'beta',mode:'device',poll:null,document:{hidden:false},busy:false,
+ const c=context(['ledgerView','readInitialLedger','goSheet'],{view:'beta',mode:'device',poll:null,document:{hidden:false},busy:false,initialLedgerDeferred:false,
   setInterval(callback){polling=callback;return 1;},applyModeUi(){},setLive(){},ledgerReady(){},offerCarry(){},runSubs(){},
   api(){reads++;return Promise.resolve();}});
  c.goSheet();assert.equal(reads,1,'initial load still occurs');

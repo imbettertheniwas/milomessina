@@ -3558,7 +3558,7 @@ document.getElementById("t-refresh").addEventListener("click", function(){
   var b = this; b.disabled = true; b.textContent = "Refreshing…";
   var done = function(){ b.disabled = false; b.textContent = "Refresh"; };
   if (mode === "sheet") {
-    api("list")["catch"](function(e){ toast(fail(e), true); }).then(done);
+    (initialLedgerDeferred ? readInitialLedger(deferredLedgerSnapshot) : api("list"))["catch"](function(e){ toast(fail(e), true); }).then(done);
   } else {
     /* a second tab on this browser writes the same store */
     loadLocal(); render(); setLive(true, "on this device only");
@@ -4855,6 +4855,18 @@ function probeSheet(){
   });
 }
 
+var initialLedgerDeferred = false, deferredLedgerSnapshot = null;
+function readInitialLedger(seen){
+  var wasDeferred = initialLedgerDeferred;
+  initialLedgerDeferred = false;
+  deferredLedgerSnapshot = null;
+  setLive(true, seen ? "shared · from " + seenStamp(seen.at) : "shared · syncing…");
+  return api("list").then(function(){ ledgerReady(); offerCarry(false); return runSubs(); })["catch"](function(e){
+    if (seen && e && e.stale) { unSheet(); return; }
+    if (wasDeferred) { initialLedgerDeferred = true; deferredLedgerSnapshot = seen || null; }
+    fail(e);
+  });
+}
 function goSheet(seen){
   mode = "sheet";
   applyModeUi();
@@ -4866,18 +4878,16 @@ function goSheet(seen){
      second or two behind this and replaces it with its own stamp; what
      this has to get across in the meantime is which minute the board in
      front of you belongs to. */
-  setLive(true, seen ? "shared · from " + seenStamp(seen.at) : "shared · syncing…");
-  api("list").then(function(){ ledgerReady(); offerCarry(false); return runSubs(); })["catch"](function(e){
-    /* A snapshot got this page onto the sheet without asking the
-       deployment first, and this is the one answer that says the snapshot
-       was writing a cheque the sheet no longer honours — the script behind
-       the URL has gone back to a version with no ledger in it. Step off,
-       and say the same thing the long way round would have said. */
-    if (seen && e && e.stale) { unSheet(); return; }
-    fail(e);
-  });
+  // A direct Beta/Visits arrival needs its own table first. Keep the normal
+  // sheet setup, but leave the ledger off the shared service's request queue.
+  if (initialLedgerDeferred && (initialBetaRoute || !ledgerView())) {
+    deferredLedgerSnapshot = seen || null;
+    setLive(true, "shared");
+  }
+  else readInitialLedger(seen);
   if (!poll) poll = setInterval(function(){
     if (busy || document.hidden || !ledgerView()) return;
+    if (initialLedgerDeferred) { refreshVisibleLedger(); return; }
     api("list")["catch"](function(){ /* the banner already says it */ });
   }, 30000);
 }
@@ -4886,7 +4896,7 @@ function goSheet(seen){
    campus counts; other modules wait until their own view is opened, so
    hidden sections do not compete for the shared Apps Script lock. */
 function ledgerReady(){
-  if (!identity || ledgerReady.said) return;
+  if (!identity || initialLedgerDeferred || ledgerReady.said) return;
   ledgerReady.said = true;
   window.FOMO_SHEET.ledgerReady = true;
   window.dispatchEvent(new Event("fomo:ledger-ready"));
@@ -4896,6 +4906,7 @@ function ledgerView(){
 }
 function refreshVisibleLedger(){
   if (!identity || mode !== "sheet" || busy || document.hidden || !ledgerView() || Date.now() - sheetReadAt < 30000) return;
+  if (initialLedgerDeferred) { readInitialLedger(deferredLedgerSnapshot); return; }
   api("list")["catch"](function(){ /* the banner already says it */ });
 }
 /* On this browser's own ledger there is no round trip to queue behind, and
@@ -6894,7 +6905,7 @@ function open_(){
          instead of two — which on Apps Script, cold, is the difference
          between a few seconds and rather more than a few. Dropped
          unread if the verdict is that there is nothing to move onto. */
-      listAhead = fetch(ENDPOINT, {method:"POST", signal:AbortSignal.timeout(25000), body:JSON.stringify(
+      if (!initialLedgerDeferred) listAhead = fetch(ENDPOINT, {method:"POST", signal:AbortSignal.timeout(25000), body:JSON.stringify(
         {_api:"invoice", action:"list", _key:PASSCODE, _session:identity ? identity.token : ""})});
       /* A branch off it rather than a handler on the way through, so the
          answer itself is still there to be read. It does two things: an
@@ -6903,7 +6914,7 @@ function open_(){
          succeeded is thrown away rather than handed on — the sheet is
          reachable, so the thing to do with one dropped request is make
          it again, not report the sheet as down. */
-      listAhead["catch"](function(){ listAhead = null; });
+      if (listAhead) listAhead["catch"](function(){ listAhead = null; });
       var tries = 0;
       (function attempt(){
         probeSheet().then(function(verdict){
@@ -6963,8 +6974,8 @@ function open_(){
     if (document.hidden) return;
     refreshDate();
     tickClock();
-    /* a tab left open over the first of the month comes back owing a line */
-    runSubs();
+    /* Wait for the first ledger read before catching up browser rules. */
+    if (!initialLedgerDeferred) runSubs();
     refreshVisibleLedger();
   });
 }
@@ -7392,6 +7403,9 @@ function signedIn(out, token){
   });
   if(view==='person' && personOf===identity.who) $("pg-title").textContent='Your page';
   resetSplit();
+  // Beta's protected hash is restored just below, after the identity event.
+  // Account for it here so open_ does not start the hidden ledger first.
+  initialLedgerDeferred = view === 'visits' || initialBetaRoute && isOperator();
   open_();
   window.dispatchEvent(new Event("fomo:identity"));
   if (initialBetaRoute && isOperator()) { initialBetaRoute=false; setView("beta"); }

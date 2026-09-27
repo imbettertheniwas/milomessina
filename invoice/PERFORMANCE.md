@@ -2,6 +2,20 @@
 
 ## Follow-up: Beta and Visit requests — 27 September 2026
 
+A further live check still measured **6.36 s** for Beta and **10.60 s** for
+the first Visits read, while the Apps Script capability confirmed the backend
+update was not deployed. Repository publication is not Apps Script publication.
+
+A separate startup correction prioritizes direct `#/beta` and `#/visits`
+arrivals: it defers the unrelated first ledger read and its speculative request
+until a ledger-dependent view opens. The ordinary overview startup is unchanged.
+A browser fixture with a deliberately slow ledger verified that each direct tab
+requests only its own table after session validation, then loads the ledger and
+resumes normal background preparation when Ledger is opened. This fixes an extra
+startup wait; it does not make the old live spreadsheet execution faster.
+The startup correction passed **540 tests**, including manual Refresh recovery
+after a failed first ledger read and the existing access-control checks.
+
 A live authenticated check after the frontend release still measured **6.38 s**
 for the first Beta read and **9.62 s** for the first Visit requests read. Repeat
 isolated reads took 5.00 s and 4.42 s respectively. These measurements confirmed
