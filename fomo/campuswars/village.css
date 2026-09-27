@@ -131,7 +131,7 @@ dialog{width:580px;max-width:calc(100% - 32px);max-height:calc(100dvh - 48px);pa
   font-size:13px;font-weight:500;transition:background-color .15s,border-color .15s
 }
 .village-top-actions{align-items:center}
-.village-top-actions>.button{background:#dceab4;border-color:#eaf5cd;color:#182522;box-shadow:0 3px 12px #07101c26}
+.village-top-actions>.button{background:#516af6;border-color:#516af6;color:#f7f7f7;box-shadow:0 3px 12px #07101c26}
 .village-reset[aria-expanded=true],#village-street[aria-pressed=true]{background:#34496b;border-color:#b0c9f377}
 .village-drawer{background:#132035;backdrop-filter:none;border-color:#bbd0ef35;box-shadow:0 12px 40px #060e1c40}
 .drawer-heading h2{letter-spacing:-.035em}
@@ -150,7 +150,7 @@ dialog{background:#132035;border-color:#bbd0ef35}
 dialog::backdrop{backdrop-filter:none;background:#080f20b3}
 @media(hover:hover){
   .village-reset:hover,.village-view-tools button:hover,.party-tools button:hover{background:#304460;border-color:#c8daf166}
-  .village-top-actions>.button:hover{background:#e9f4cc}
+  .village-top-actions>.button:hover{background:#637af7;border-color:#637af7}
   .house-card:hover{border-color:#b7cbe477}
 }
 @media(max-width:1280px),(pointer:coarse){
