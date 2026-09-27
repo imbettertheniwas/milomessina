@@ -732,6 +732,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/internal.css">
 <link rel="stylesheet" href="/invoice/overview-details.css">
 <link rel="stylesheet" href="/invoice/beta-manager.css">
+<link rel="stylesheet" href="/invoice/beta-group-overview.css">
 </head>
 <body>
 <div id="gate">
@@ -1668,10 +1669,10 @@ td.date.run{color:var(--good)}
         <div class="toolbar"><span class="hint">Your beta interns, in one place.</span><span class="push"><a class="mini ghost" href="/internal/beta" target="_blank" rel="noopener">Open intern workspace ↗</a><button class="mini ghost" id="bt-refresh" type="button">Refresh</button></span></div>
         <div class="scroller pad" id="bt-root">
           <div class="bt-intro"><div><span class="bt-eyebrow">ARYA’S BOOTCAMP</span><h2>Beta</h2><p>One group. Each intern’s first two weeks of showing up, building, and learning.</p></div></div>
+          <section id="bt-group-overview" class="bt-card bt-group-overview" aria-label="Beta group progress"></section>
           <section class="bt-card bt-invite" aria-labelledby="bt-invite-title"><h3 id="bt-invite-title">Your permanent invite link</h3><p>Send this same link to every new beta intern. They add their details and join the group. The day they join is Day 1; their recap is due at the end of Day 14.</p><div class="bt-invite-row"><label class="sr-only" for="bt-invite-link">Permanent beta invite link</label><input id="bt-invite-link" type="url" readonly value="https://milomessina.com/internal/beta"><button class="btn btn-p" id="bt-copy-invite" type="button">Copy invite link</button></div></section>
           <p id="bt-message" role="status" aria-live="polite"></p>
           <div id="bt-code" hidden></div>
-          <div id="bt-summary" class="bt-summary"></div>
           <section id="bt-schedule-overview" class="bt-card bt-overview" aria-label="Beta group schedules"></section>
           <div class="bt-filter"><label class="bt-search">Find an intern <input id="bt-search" type="search" placeholder="Search names, email, phone, or GitHub"></label></div>
           <div class="bt-layout"><div id="bt-roster" class="bt-roster"></div><div id="bt-detail" class="bt-detail"></div></div>

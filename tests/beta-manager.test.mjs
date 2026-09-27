@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {buildBetaScheduleOverview, betaScheduleOverviewHTML} from '../invoice/beta-schedule-overview.js';
+import {buildBetaGroupOverview, betaGroupOverviewHTML} from '../invoice/beta-group-overview.js';
+import {betaGroupGithubInitial} from '../invoice/beta-github.js';
 
 const managerSource = readFileSync(new URL('../invoice/beta-manager.js', import.meta.url), 'utf8');
 const source = managerSource.replace(/^import[^\n]*\n/gm, '').replace(/load\(\);\s*$/, 'globalThis.manager = {load, change, state: () => ({data, selected, busy, loadedFor, generation})};');
@@ -11,13 +13,14 @@ const member = (id='a', over={}) => ({id,name:'Intern ' + id,email:id+'@example.
 const view = (members=[member()], over={}) => ({ok:true,manager:true,configured:true,group,batches:[group],members,attendance:[],recaps:[],...over});
 const deferred = () => {let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 const settle = () => new Promise(resolve=>setImmediate(resolve));
-function harness(fetchImpl, {github=async()=>[]}={}) {
+const githubResults=(members,total=0,message='Public commits loaded.')=>betaGroupGithubInitial(members).map(state=>state.status==='loading'?{...state,status:'ready',total,days:total?{[state.startDate]:total}:{},message}:state);
+function harness(fetchImpl, {github=async members=>githubResults(members)}={}) {
   const elements=new Map(),events=new Map(),requests=[],copied=[],githubCalls=[],objectUrls=[],revokedUrls=[];
   let token='operator-a',operator=true;
   const get=id=>{
     if(!elements.has(id)) elements.set(id,{id,value:'',innerHTML:'',textContent:'',hidden:false,disabled:false,dataset:{},
       classList:{toggle(){}},querySelectorAll(){return [];},replaceChildren(){this.innerHTML='';this.textContent='';},
-      addEventListener(type,fn){events.set(id+':'+type,fn);},focus(){},select(){},scrollIntoView(){}});
+      addEventListener(type,fn){events.set(id+':'+type,fn);},focus(){this.focused=true;},select(){},scrollIntoView(){this.scrolled=true;}});
     return elements.get(id);
   };
   const document={getElementById:get,body:{dataset:{consoleView:'beta'}}};
@@ -28,16 +31,16 @@ function harness(fetchImpl, {github=async()=>[]}={}) {
     static revokeObjectURL(url){revokedUrls.push(url);}
   }
   const context=vm.createContext({document,window,location:{origin:'https://example.invalid'},URL:FileURL,Blob,atob,Uint8Array,Date,Set,AbortController,AbortSignal,
-    setTimeout,clearTimeout,buildBetaScheduleOverview,betaScheduleOverviewHTML,navigator:{clipboard:{writeText:async text=>copied.push(text)}},
+    setTimeout,clearTimeout,buildBetaScheduleOverview,betaScheduleOverviewHTML,buildBetaGroupOverview,betaGroupOverviewHTML,betaGroupGithubInitial,navigator:{clipboard:{writeText:async text=>copied.push(text)}},
     FormData:class{constructor(form){return Object.entries(form.fields || {});}},
     fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);const out=await fetchImpl(body);return {ok:true,json:async()=>out};},
-    loadBetaGithub:async(members,options)=>{githubCalls.push({members,options});return github(members,options);}});
+    loadBetaGroupGithub:async(members,options)=>{githubCalls.push({members,options});return github(members,options);}});
   vm.runInContext(source,context,{filename:'beta-manager.js'});
   return {manager:context.manager,get,events,requests,copied,githubCalls,objectUrls,revokedUrls,document,bridge:window.FOMO_SHEET,setIdentity(next,enabled=true){token=next;operator=enabled;events.get('window:fomo:identity')();}};
 }
 function assertPrivateCleared(h) {
   assert.equal(h.manager.state().data,null);
-  for(const id of ['bt-summary','bt-schedule-overview','bt-roster','bt-detail','bt-code'])assert.equal(h.get(id).innerHTML,'',id+' should be cleared');
+  for(const id of ['bt-group-overview','bt-schedule-overview','bt-roster','bt-detail','bt-code'])assert.equal(h.get(id).innerHTML,'',id+' should be cleared');
   assert.equal(h.get('bt-code').hidden,true);
   assert.equal(h.get('bt-code').dataset.invite,undefined);
 }
@@ -73,17 +76,18 @@ test('member details and GitHub requests use each individual period instead of o
   const button={dataset:{member:'b'},hasAttribute:()=>false};
   await h.events.get('bt-root:click')({target:{closest:()=>button}});await settle();
   assert.ok(h.get('bt-detail').innerHTML.includes(label(second.endDate)));
-  assert.equal(h.githubCalls.at(-1).members[0].id,'b');
-  assert.equal(h.githubCalls.at(-1).options.startDate,second.startDate);
-  assert.equal(h.githubCalls.at(-1).options.endDate,second.endDate);
+  assert.equal(h.githubCalls.length,1,'selecting a member reuses the full group activity read');
+  assert.deepEqual(h.githubCalls[0].members.map(({id,startDate,endDate})=>({id,startDate,endDate})),[first,second].map(({id,startDate,endDate})=>({id,startDate,endDate})));
+  assert.equal(h.githubCalls[0].options.startDate,undefined,'the group loader uses each member period');
+  assert.equal(h.githubCalls[0].options.endDate,undefined);
 });
 
 test('missing member dates stay unavailable instead of borrowing an old group period',async()=>{
   const h=harness(()=>view([member('a',{startDate:'',endDate:''})]));
   await h.manager.load();await settle();
   assert.doesNotMatch(h.get('bt-detail').innerHTML,/2020/);
-  assert.equal(h.githubCalls.length,0);
-  assert.match(h.get('bt-github').innerHTML,/dates are unavailable/i);
+  assert.equal(h.githubCalls.length,0,'missing periods do not start public activity requests');
+  assert.match(h.get('bt-github').innerHTML,/complete activity period|dates are unavailable/i);
 });
 
 test('an expired manager refresh clears private records and a revealed return link',async()=>{
@@ -137,6 +141,146 @@ test('late GitHub results cannot return private detail after identity changes',a
   await settle();assertPrivateCleared(h);assert.doesNotMatch(h.get('bt-github').innerHTML,/Old account activity/);
 });
 
+test('the full group overview survives roster search and shares one activity load with member details',async()=>{
+  const members=[member('a'),member('b',{startDate:'2026-09-24',endDate:'2026-10-07'})];
+  const h=harness(()=>view(members,{attendance:[{memberId:'a',day:'2026-09-25'},{memberId:'b',day:'2026-09-25'}]}),{github:async list=>githubResults(list,5)});
+  await h.manager.load();await settle();
+  const overview=h.get('bt-group-overview').innerHTML;
+  assert.ok(overview.length>0);assert.match(overview,/Intern a/);assert.match(overview,/Intern b/);
+  assert.match(overview,/Public commits<\/span><strong>10<\/strong>/);
+  assert.match(overview,/Attendance days<\/span><strong>2<\/strong>/);
+  assert.match(h.get('bt-github').innerHTML,/5 public commits/);
+  h.get('bt-search').value='Intern b';h.events.get('bt-search:input')();await settle();
+  assert.equal(h.manager.state().selected,'b');assert.equal(h.get('bt-group-overview').innerHTML,overview);
+  assert.match(h.get('bt-github').innerHTML,/5 public commits/);
+  assert.equal(h.githubCalls.length,1);assert.equal(h.githubCalls[0].members.length,2);
+  h.get('bt-search').value='No matching intern';h.events.get('bt-search:input')();
+  assert.equal(h.get('bt-group-overview').innerHTML,overview,'no search results must not remove the whole group');
+  assert.equal(h.githubCalls.length,1);
+});
+
+test('ordinary member changes and cached Beta loads reuse group activity while page Refresh forces it',async()=>{
+  const h=harness(body=>view([member('a',{notes:body.action==='memberupdate'?'Updated note':'Original note'}),member('b')]));
+  await h.manager.load();await settle();
+  await h.manager.change('memberupdate',{id:'a',notes:'Updated note'},'Saved');await settle();
+  await h.manager.load();await click(h,button({'data-member':'b'}));await settle();
+  assert.equal(h.githubCalls.length,1);
+  assert.equal(h.githubCalls[0].options.force,false);
+  await h.events.get('bt-refresh:click')();await settle();
+  assert.equal(h.githubCalls.length,2);assert.equal(h.githubCalls[1].options.force,true);
+  assert.deepEqual(h.githubCalls[1].members.map(row=>row.id),['a','b']);
+});
+
+test('forced refresh aborts a pending group load and ignores its later progress and completion',async()=>{
+  const old=deferred(),fresh=deferred();let calls=0;
+  const h=harness(()=>view(),{github:()=>++calls===1?old.promise:fresh.promise});
+  await h.manager.load();assert.equal(h.githubCalls.length,1);
+  await h.manager.load(true);assert.equal(h.githubCalls.length,2);
+  assert.equal(h.githubCalls[0].options.signal.aborted,true);
+  const stale=githubResults([member()],999,'Stale group activity');
+  h.githubCalls[0].options.onProgress(stale);old.resolve(stale);await settle();
+  assert.doesNotMatch(h.get('bt-github').innerHTML,/Stale group activity|999 public/);
+  fresh.resolve(githubResults([member()],7,'Fresh group activity'));await settle();
+  assert.match(h.get('bt-github').innerHTML,/Fresh group activity|7 public/);
+});
+
+test('changing a member GitHub or individual period reloads group activity',async()=>{
+  let current=member();const h=harness(body=>{
+    if(body.action==='memberupdate')current={...current,...body.changes};
+    return view([current]);
+  });await h.manager.load();await settle();
+  await h.manager.change('memberupdate',{id:'a',changes:{github:'renamed-account'}},'Saved');await settle();
+  assert.equal(h.githubCalls.length,2);assert.equal(h.githubCalls[1].members[0].github,'renamed-account');
+  await h.manager.change('memberupdate',{id:'a',changes:{startDate:'2026-09-24',endDate:'2026-10-07'}},'Saved');await settle();
+  assert.equal(h.githubCalls.length,3);assert.equal(h.githubCalls[2].members[0].startDate,'2026-09-24');
+});
+
+test('deleting an intern aborts old group activity and prevents late results replacing the remaining group',async()=>{
+  const old=deferred(),fresh=deferred();let calls=0,removed=false;
+  const members=[member('a'),member('b')];
+  const h=harness(body=>{if(body.action==='memberdelete')removed=true;return view(removed?[members[1]]:members);},{github:()=>++calls===1?old.promise:fresh.promise});
+  await h.manager.load();await click(h,button({'data-delete-member':'a'}));await click(h,button({'data-confirm-delete':'a'}));
+  assert.equal(h.githubCalls[0].options.signal.aborted,true);assert.equal(h.githubCalls.length,2);
+  assert.deepEqual(h.githubCalls[1].members.map(row=>row.id),['b']);
+  fresh.resolve(githubResults([members[1]],3,'Current remaining group'));await settle();
+  const overview=h.get('bt-group-overview').innerHTML;
+  const stale=githubResults(members,999,'Discarded old group');h.githubCalls[0].options.onProgress(stale);old.resolve(stale);await settle();
+  assert.equal(h.get('bt-group-overview').innerHTML,overview);assert.doesNotMatch(overview,/Intern a/);
+  assert.match(h.get('bt-github').innerHTML,/Current remaining group/);assert.doesNotMatch(h.get('bt-github').innerHTML,/Discarded old group/);
+});
+
+test('leaving Beta aborts pending activity, ignores hidden progress, and restarts on return',async()=>{
+  const old=deferred(),fresh=deferred();let calls=0;
+  const h=harness(()=>view(),{github:()=>++calls===1?old.promise:fresh.promise});
+  await h.manager.load();const visible=h.get('bt-group-overview').innerHTML;
+  h.document.body.dataset.consoleView='ledger';h.events.get('window:fomo:view-change')();
+  assert.equal(h.githubCalls[0].options.signal.aborted,true);
+  const stale=githubResults([member()],999,'Hidden old activity');h.githubCalls[0].options.onProgress(stale);old.resolve(stale);await settle();
+  assert.equal(h.get('bt-group-overview').innerHTML,visible);assert.doesNotMatch(h.get('bt-github').innerHTML,/Hidden old activity/);
+  h.document.body.dataset.consoleView='beta';h.events.get('window:fomo:view-change')();await settle();
+  assert.equal(h.requests.length,1);assert.equal(h.githubCalls.length,2);
+  fresh.resolve(githubResults([member()],4,'Activity after return'));await settle();
+  assert.match(h.get('bt-github').innerHTML,/Activity after return/);
+});
+
+test('signout aborts group activity and rejects both late progress and completion',async()=>{
+  const pending=deferred(),h=harness(()=>view(),{github:()=>pending.promise});await h.manager.load();
+  h.setIdentity('',false);assert.equal(h.githubCalls[0].options.signal.aborted,true);
+  const stale=githubResults([member()],999,'Former session activity');h.githubCalls[0].options.onProgress(stale);pending.resolve(stale);await settle();
+  assertPrivateCleared(h);assert.doesNotMatch(h.get('bt-github').innerHTML,/Former session activity/);
+});
+
+test('group drilldowns clear search, select the intern, and focus the requested detail section',async()=>{
+  const h=harness(()=>view([member('a'),member('b')],{betaRoadmap:true,challengeCatalog:[{id:'portfolio',title:'Portfolio',checklist:[]}]}));
+  await h.manager.load();await settle();
+  for(const [section,id] of Object.entries({attendance:'bt-member-attendance',github:'bt-member-github',roadmap:'bt-member-roadmap',profile:'bt-member-form'})) {
+    h.get('bt-search').value='Intern a';h.events.get('bt-search:input')();
+    await click(h,button({'data-group-member':'b','data-group-section':section}));
+    assert.equal(h.manager.state().selected,'b');assert.equal(h.get('bt-search').value,'');
+    assert.equal(h.get(id).scrolled,true);assert.equal(h.get(id).focused,true);
+    assert.match(h.get('bt-detail').innerHTML,/Private evaluation b/);
+  }
+  assert.equal(h.githubCalls.length,1);assert.equal(h.requests.length,1);
+  await click(h,button({'data-group-member':'a','data-group-section':'not-a-section'}));
+  await click(h,button({'data-group-member':'deleted','data-group-section':'attendance'}));
+  assert.equal(h.manager.state().selected,'b','invalid and stale links do not change selection');
+});
+
+test('assignment disclosure stays open through activity updates, refresh and member selection, then resets on signout',async()=>{
+  const pending=deferred(),members=[member('a'),member('b')];let calls=0;
+  const h=harness(()=>view(members,{betaRoadmap:true,challengeCatalog:[{id:'portfolio',title:'Portfolio',checklist:[]}]}),{github:async list=>++calls===1?pending.promise:githubResults(list,6)});
+  await h.manager.load();
+  h.events.get('bt-root:toggle')({target:{open:true,hasAttribute:name=>name==='data-group-assignments'}});
+  h.githubCalls[0].options.onProgress(githubResults(members,2));
+  assert.match(h.get('bt-group-overview').innerHTML,/<details open class="bt-group-assignments"/);
+  assert.match(h.get('bt-group-overview').innerHTML,/Public commits<\/span><strong>4<\/strong>/);
+  await click(h,button({'data-member':'b'}));
+  assert.match(h.get('bt-group-overview').innerHTML,/<details open class="bt-group-assignments"/);
+  await h.manager.load(true);await settle();
+  assert.match(h.get('bt-group-overview').innerHTML,/<details open class="bt-group-assignments"/);
+  assert.match(h.get('bt-group-overview').innerHTML,/Public commits<\/span><strong>12<\/strong>/);
+  pending.resolve(githubResults(members,99));await settle();
+  h.setIdentity('',false);assertPrivateCleared(h);
+  h.setIdentity('operator-b');await settle();
+  assert.match(h.get('bt-group-overview').innerHTML,/<details class="bt-group-assignments"/);
+  assert.doesNotMatch(h.get('bt-group-overview').innerHTML,/<details open class="bt-group-assignments"/);
+});
+
+test('browser-normalized overview markup does not trigger unchanged repainting',async()=>{
+  const h=harness(()=>view([member('a'),member('b')],{betaRoadmap:true,challengeCatalog:[{id:'portfolio',title:'Portfolio',checklist:[]}]}));
+  await h.manager.load();await settle();
+  const overview=h.get('bt-group-overview');let markup=overview.innerHTML,writes=0;
+  Object.defineProperty(overview,'innerHTML',{
+    get(){return markup.replace('data-group-assignments>','data-group-assignments="">');},
+    set(value){markup=value;writes++;}
+  });
+  assert.notEqual(overview.innerHTML,markup,'the fixture mimics boolean attribute serialization in a browser');
+  await h.manager.load();h.get('bt-search').value='Intern b';h.events.get('bt-search:input')();
+  await click(h,button({'data-member':'b'}));
+  assert.equal(writes,0,'unchanged aggregate data keeps the existing DOM and disclosure state');
+  assert.equal(h.githubCalls.length,1);
+});
+
 test('delete confirmation names the intern and cancel preserves unsaved form content without a write',async()=>{
   const h=harness(()=>view([member('a',{name:'Alex <One>'})]));await h.manager.load();
   h.get('bt-member-form').fields={name:'Unsaved name',notes:'Unsaved private notes'};
@@ -178,9 +322,9 @@ test('confirmed delete uses the captured id, clears visible return links, and up
   await click(h,button({'data-delete-member':'a'}));await click(h,button({'data-confirm-delete':'a'}));
   assert.deepEqual(h.requests.filter(request=>request.action==='memberdelete').map(request=>request.id),['a']);
   assert.equal(h.manager.state().selected,'b');assert.deepEqual(h.manager.state().data.members.map(m=>m.id),['b']);
-  assert.match(h.get('bt-summary').innerHTML,/Beta interns<\/span><strong>1/);
-  assert.match(h.get('bt-summary').innerHTML,/Days attended<\/span><strong>0/);
-  assert.match(h.get('bt-summary').innerHTML,/Recaps submitted<\/span><strong>0/);
+  assert.match(h.get('bt-group-overview').innerHTML,/1 intern · 1 active/);
+  assert.match(h.get('bt-group-overview').innerHTML,/Attendance days<\/span><strong>0/);
+  assert.equal(h.manager.state().data.recaps.length,0);
   assert.equal(h.get('bt-code').hidden,true);assert.equal(h.get('bt-code').innerHTML,'');assert.equal(h.get('bt-code').dataset.invite,undefined);
   assert.match(h.get('bt-message').textContent,/Intern a was deleted/);
   assert.doesNotMatch(h.get('bt-detail').innerHTML,/Private evaluation a/);

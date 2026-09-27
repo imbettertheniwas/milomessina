@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {betaGithubUsername, betaGithubInitial, loadBetaGithub} from '../invoice/beta-github.js';
+import {betaGithubUsername, betaGithubInitial, loadBetaGithub,
+  betaGroupGithubInitial, loadBetaGroupGithub} from '../invoice/beta-github.js';
 
 const range = {startDate:'2026-09-12', endDate:'2026-09-25', now:()=>Date.parse('2026-09-25T18:00:00Z')};
 const person = {id:'beta-one', name:'New intern', github:'new-intern'};
@@ -108,4 +109,131 @@ test('future days are not reported as observed zero activity',async()=>{
   assert.equal(future.total,null);
   assert.equal(future.status,'error');
   assert.equal(calls,0);
+});
+
+test('group placeholders isolate missing, invalid and future personal periods',()=>{
+  const members = [
+    {...person, startDate:range.startDate, endDate:range.endDate},
+    {...person, id:'no-period'},
+    {...person, id:'half-period', startDate:range.startDate},
+    {...person, id:'bad-period', startDate:'2026-02-30', endDate:range.endDate},
+    {...person, id:'backwards', startDate:range.endDate, endDate:range.startDate},
+    {...person, id:'future', startDate:'2026-10-01', endDate:'2026-10-14'},
+    {...person, id:'no-github', github:'', startDate:range.startDate, endDate:range.endDate}
+  ];
+  const states = betaGroupGithubInitial(members, {now:range.now});
+  assert.deepEqual(states.map(state=>state.status), ['loading','missing','missing','error','error','error','missing']);
+  assert.ok(states.every(state=>state.total===null));
+  assert.match(states[1].message,/period/);
+  assert.match(states[3].message,/dates/);
+  assert.match(states[5].message,/not started/);
+  assert.match(states[6].message,/username/);
+});
+
+test('one group snapshot is projected into each intern’s own observed period',async()=>{
+  const calls=[], updates=[];
+  const members = [
+    {...person, startDate:'2026-09-01', endDate:'2026-09-14'},
+    {...person, id:'second', github:'second', startDate:'2026-09-20', endDate:'2026-10-03'},
+    {...person, id:'missing-period'}
+  ];
+  const states = await loadBetaGroupGithub(members, {now:range.now,
+    onProgress:states=>updates.push(states.map(state=>state.status)), fetchImpl:async url=>{
+      calls.push(url);
+      return response({since:'2026-09-01T00:00:00Z', updatedAt:'2026-09-25T17:59:00Z', people:{
+        First:{logins:['new-intern'], days:{'2026-09-01':1,'2026-09-14':2,'2026-09-15':30}},
+        Second:{logins:['second'], days:{'2026-09-19':40,'2026-09-20':4,'2026-09-25':5,'2026-09-26':60}}
+      }});
+    }});
+  assert.deepEqual(calls,['/api/commits']);
+  assert.deepEqual(states.map(state=>state.total),[3,9,null]);
+  assert.deepEqual(states.map(state=>state.throughDate),['2026-09-14','2026-09-25',null]);
+  assert.deepEqual(states.map(state=>state.ongoing),[false,true,false]);
+  assert.deepEqual(updates,[['loading','loading','missing'],['ready','loading','missing'],['ready','ready','missing']]);
+});
+
+test('group direct reads honor personal bounds and exclude private, forked and other-owned repositories',async()=>{
+  const calls=[];
+  const members = [
+    {...person, startDate:'2026-09-01', endDate:'2026-09-14'},
+    {...person, id:'second', github:'second', startDate:'2026-09-20', endDate:'2026-10-03'}
+  ];
+  const states = await loadBetaGroupGithub(members, {now:range.now, fetchImpl:async url=>{
+    calls.push(url);
+    if (url==='/api/commits') return response({},503);
+    if (url.includes('/users/')) {
+      const login = url.includes('/users/second/')?'second':'new-intern';
+      return response([repo(login+'/project'), {...repo(login+'/private'),private:true},
+        {...repo(login+'/fork'),fork:true}, repo('other-owner/project')]);
+    }
+    const login = url.includes('/repos/second/')?'second':'new-intern';
+    return response([commit('2026-09-01T00:00:00Z','a',login),commit('2026-09-14T23:59:59Z','b',login),
+      commit('2026-09-15T00:00:00Z','c',login),commit('2026-09-20T00:00:00Z','d',login),
+      commit('2026-09-25T23:59:59Z','e',login),commit('2026-09-26T00:00:00Z','f',login)]);
+  }});
+  assert.equal(calls.length,5);
+  assert.ok(calls[2].includes('since=2026-09-01T00%3A00%3A00Z'));
+  assert.ok(calls[4].includes('since=2026-09-20T00%3A00%3A00Z'));
+  assert.deepEqual(states.map(state=>state.total),[2,2]);
+  assert.deepEqual(states[0].days,{'2026-09-01':1,'2026-09-14':1});
+  assert.deepEqual(states[1].days,{'2026-09-20':1,'2026-09-25':1});
+});
+
+test('group request allowance is shared and capped at 48 while unread members remain unknown',async()=>{
+  for (const [maxReads, expected] of [[2,2],[1000,48]]) {
+    let reads=0, snapshots=0;
+    const members=Array.from({length:50},(_,index)=>({...person, id:'intern-'+index, github:'intern-'+index,
+      startDate:range.startDate, endDate:range.endDate}));
+    const states=await loadBetaGroupGithub(members,{now:range.now,maxReads,fetchImpl:async url=>{
+      if(url==='/api/commits') { snapshots++; return response({},503); }
+      reads++;
+      return response([]);
+    }});
+    assert.equal(snapshots,1);
+    assert.equal(reads,expected);
+    assert.ok(states.slice(0,expected).every(state=>state.status==='ready'&&state.total===0));
+    assert.ok(states.slice(expected).every(state=>state.status==='error'&&state.total===null));
+    assert.match(states[expected].message,/request limit/);
+  }
+});
+
+test('a group with no countable periods does not make network requests',async()=>{
+  let calls=0;
+  const states=await loadBetaGroupGithub([person,{...person,id:'bad',startDate:'bad',endDate:'bad'}],
+    {now:range.now,fetchImpl:async()=>{calls++;}});
+  assert.equal(calls,0);
+  assert.deepEqual(states.map(state=>state.status),['missing','error']);
+});
+
+test('group and detail loading reuse the same public cache',async()=>{
+  const previousFetch=globalThis.fetch;
+  const calls=[];
+  try {
+    globalThis.fetch=async url=>{calls.push(url);return response(url==='/api/commits'?{people:{}}:[]);};
+    const members=[{...person,startDate:range.startDate,endDate:range.endDate}];
+    const [first]=await loadBetaGroupGithub(members,{now:range.now});
+    const [cachedGroup]=await loadBetaGroupGithub(members,{now:range.now});
+    const [cachedDetail]=await loadBetaGithub([person],range);
+    assert.equal(calls.length,2);
+    assert.equal(first.status,'ready');
+    assert.deepEqual(cachedGroup,first);
+    assert.deepEqual(cachedDetail,first);
+  } finally { globalThis.fetch=previousFetch; }
+});
+
+test('group cancellation stops the batch without turning unread accounts into zero',async()=>{
+  const controller=new AbortController(), calls=[], updates=[];
+  const members=[{...person,startDate:range.startDate,endDate:range.endDate},
+    {...person,id:'second',github:'second',startDate:range.startDate,endDate:range.endDate}];
+  await assert.rejects(loadBetaGroupGithub(members,{now:range.now,signal:controller.signal,
+    onProgress:states=>{
+      updates.push(states.map(state=>state.status));
+      if(states[0].status==='ready')controller.abort();
+    },fetchImpl:async(url,options)=>{
+      assert.equal(options.signal,controller.signal);
+      calls.push(url);
+      return response(url==='/api/commits'?{people:{}}:[]);
+    }}),{name:'AbortError'});
+  assert.equal(calls.length,2);
+  assert.deepEqual(updates,[['loading','loading'],['ready','loading']]);
 });

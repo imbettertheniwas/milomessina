@@ -42,7 +42,7 @@ function fixture({route='overview',seen=false,backend='auto'}={}){
     probeSheet:async()=> 'shared',offerCarry(){c.offers++;},runSubs(){c.recurring++;},offers:0,recurring:0,
     fail(error){c.failure=error;},unSheet(){c.mode='device';},
     loadGh(){},buildGhLink(){},renderGh(){},refreshGh(){},tickClock(){},refreshDate(){},
-    buildBetaScheduleOverview:()=>null,betaScheduleOverviewHTML:()=>'',loadBetaGithub:async()=>[],
+    buildBetaScheduleOverview:()=>null,betaScheduleOverviewHTML:()=>'',buildBetaGroupOverview:()=>null,betaGroupOverviewHTML:()=>'',betaGroupGithubInitial:()=>[],loadBetaGroupGithub:async()=>[],
     fetch:async(_url,options)=>{calls.push(JSON.parse(options.body)._api);return {ok:true,text:async()=>'{}'};},
     api:async()=>{
       if(c.listAhead){await c.listAhead;c.listAhead=null;}else calls.push('invoice');

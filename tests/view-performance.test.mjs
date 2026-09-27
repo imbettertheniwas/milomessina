@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {buildBetaScheduleOverview, betaScheduleOverviewHTML} from '../invoice/beta-schedule-overview.js';
+import {buildBetaGroupOverview, betaGroupOverviewHTML} from '../invoice/beta-group-overview.js';
+import {betaGroupGithubInitial} from '../invoice/beta-github.js';
 
 const source = file => readFileSync(new URL('../invoice/' + file, import.meta.url), 'utf8');
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return {promise, resolve}; };
@@ -29,9 +31,9 @@ function viewHarness(file, fetchImpl = async () => response({ok:true, posts:[], 
     identity:()=>({who:'Milo'}), session:()=> 'test-session', admin:()=>true, operator:()=>true},
     addEventListener(type, fn){on('window:' + type, fn);}, dispatchEvent(){}};
   const context = vm.createContext({document, window, location, URL, Blob, AbortController, AbortSignal,
-    setTimeout, clearTimeout, buildBetaScheduleOverview, betaScheduleOverviewHTML, setInterval(){}, CustomEvent:class{constructor(type){this.type=type;}},
+    setTimeout, clearTimeout, buildBetaScheduleOverview, betaScheduleOverviewHTML, buildBetaGroupOverview, betaGroupOverviewHTML, betaGroupGithubInitial, setInterval(){}, CustomEvent:class{constructor(type){this.type=type;}},
     localStorage:{getItem(){return null;},setItem(){},removeItem(){}}, navigator:{clipboard:{writeText:async()=>{}}},
-    loadBetaGithub:async members => {githubCalls.push(members);return [];},
+    loadBetaGroupGithub:async members => {githubCalls.push(members);return betaGroupGithubInitial(members);},
     fetch:async (url, options) => {calls.push({url, options});return fetchImpl(url, options);}});
   vm.runInContext(source(file).replace(/^import [^\n]+\n/gm, ''), context, {filename:file});
   return {context, calls, writes, githubCalls, get, document, location,
@@ -183,6 +185,7 @@ test('searching the beta roster preserves the current detail and in-flight GitHu
   assert.equal(h.githubCalls.length, 1);
   assert.equal(h.writes.includes('bt-detail'), false);
   assert.equal(h.writes.includes('bt-schedule-overview'), false);
+  assert.equal(h.writes.includes('bt-group-overview'), false);
   assert.equal(h.writes.includes('bt-roster'), true);
 });
 

@@ -30,16 +30,33 @@ function windowFor({startDate, endDate, now = Date.now} = {}) {
 
 export function betaGithubInitial(members, options) {
   const range = windowFor(options);
+  return members.map(member => initialFor(member, range));
+}
+
+function initialFor(member, range, periodIssue) {
+  const raw = member.github || member.githubUsername || '';
+  const username = betaGithubUsername(raw);
+  const status = !raw ? 'missing' : !username || range.startDate > range.throughDate ? 'error' : 'loading';
+  const message = !raw ? 'No GitHub username linked.' : !username ? 'Check the GitHub username.' :
+    range.startDate > range.throughDate ? 'This activity period has not started yet.' : 'Loading public commits…';
+  return {memberId: member.id || member.memberId, name: member.name || '', username, status,
+    total: null, days: {}, commits: [], updatedAt: null, partial: false, reasons: [],
+    source: null, profileUrl: username ? 'https://github.com/' + encodeURIComponent(username) : '',
+    scope, message, ...range, ...periodIssue};
+}
+
+// Every intern has their own activity period. An incomplete roster entry must
+// remain unknown without preventing the rest of the group from loading.
+export function betaGroupGithubInitial(members, {now = Date.now} = {}) {
   return members.map(member => {
-    const raw = member.github || member.githubUsername || '';
-    const username = betaGithubUsername(raw);
-    const status = !raw ? 'missing' : !username || range.startDate > range.throughDate ? 'error' : 'loading';
-    const message = !raw ? 'No GitHub username linked.' : !username ? 'Check the GitHub username.' :
-      range.startDate > range.throughDate ? 'This activity period has not started yet.' : 'Loading public commits…';
-    return {memberId: member.id || member.memberId, name: member.name || '', username, status,
-      total: null, days: {}, commits: [], updatedAt: null, partial: false, reasons: [],
-      source: null, profileUrl: username ? 'https://github.com/' + encodeURIComponent(username) : '',
-      scope, message, ...range};
+    try {
+      return initialFor(member, windowFor({startDate: member.startDate, endDate: member.endDate, now}));
+    } catch {
+      const missing = !member.startDate || !member.endDate;
+      return initialFor(member, {startDate: member.startDate || null, endDate: member.endDate || null,
+        throughDate: null, ongoing: false}, {status: missing ? 'missing' : 'error',
+        message: missing ? 'No complete activity period is set.' : 'Check this intern’s activity dates.'});
+    }
   });
 }
 
@@ -84,11 +101,19 @@ function counted(state, data) {
     message: partial ? reasons.join(' ') : total ? 'Public commits loaded.' : 'No public commits found in this period.'};
 }
 
+function checkAbort(signal) {
+  if (!signal?.aborted) return;
+  const error = new Error('Public GitHub activity loading was cancelled.');
+  error.name = 'AbortError';
+  throw error;
+}
+
 async function directRead(state, context) {
   const {fetchImpl, signal, budget, now} = context;
   const days = {}, commits = [], reasons = [], seen = new Set();
   let successfulPages = 0;
   async function get(path) {
+    checkAbort(signal);
     if (budget.left <= 0) throw new Error('The batch reached its public GitHub request limit. Try again later.');
     budget.left--;
     const response = await fetchImpl('https://api.github.com' + path,
@@ -109,6 +134,7 @@ async function directRead(state, context) {
   if (listing.length >= 100) reasons.push('Only the first 100 owned repositories were checked.');
   const repos = listing.filter(repo => repo && !repo.private && !repo.fork &&
     /^[a-z\d_.-]+\/[a-z\d_.-]+$/i.test(String(repo.full_name || '')) &&
+    repo.full_name.split('/')[0].toLowerCase() === state.username.toLowerCase() &&
     typeof repo.pushed_at === 'string' && repo.pushed_at >= state.startDate);
   if (repos.length > MAX_REPOS) reasons.push('Only the six most recently pushed repositories were checked.');
   try {
@@ -141,7 +167,16 @@ async function directRead(state, context) {
 // The cache holds public counts only and never persists member data to disk.
 export async function loadBetaGithub(members, {startDate, endDate, fetchImpl = globalThis.fetch,
   onProgress, signal, now = Date.now, maxReads = 40, force = false} = {}) {
-  const states = betaGithubInitial(members, {startDate, endDate, now});
+  return loadStates(betaGithubInitial(members, {startDate, endDate, now}),
+    {fetchImpl, onProgress, signal, now, maxReads, force});
+}
+
+export async function loadBetaGroupGithub(members, options = {}) {
+  return loadStates(betaGroupGithubInitial(members, options), options);
+}
+
+async function loadStates(states, {fetchImpl = globalThis.fetch, onProgress, signal,
+  now = Date.now, maxReads = 40, force = false} = {}) {
   const cacheKey = state => [state.username.toLowerCase(), state.startDate, state.throughDate].join('|');
   const liveFetch = fetchImpl === globalThis.fetch;
   // A ready in-memory result should not wait for a network request before
@@ -154,6 +189,7 @@ export async function loadBetaGithub(members, {startDate, endDate, fetchImpl = g
   const publish = () => { if (typeof onProgress === 'function') onProgress(states.slice()); };
   publish();
   if (!states.some(state => state.status === 'loading')) return states;
+  checkAbort(signal);
   let snapshot = liveFetch && !force && now() - sharedSnapshotAt < 60000 ? sharedSnapshot : null;
   if (!snapshot) {
     try {
@@ -166,6 +202,7 @@ export async function loadBetaGithub(members, {startDate, endDate, fetchImpl = g
   }
   const budget = {left: Math.max(1, Math.min(48, Math.floor(maxReads) || 40))};
   for (let i = 0; i < states.length; i++) {
+    checkAbort(signal);
     const state = states[i];
     if (state.status !== 'loading') continue;
     const key = cacheKey(state);

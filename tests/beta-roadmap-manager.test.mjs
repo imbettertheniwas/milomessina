@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {buildBetaScheduleOverview,betaScheduleOverviewHTML} from '../invoice/beta-schedule-overview.js';
+import {buildBetaGroupOverview,betaGroupOverviewHTML} from '../invoice/beta-group-overview.js';
+import {betaGroupGithubInitial} from '../invoice/beta-github.js';
 
 const source=readFileSync(new URL('../invoice/beta-manager.js',import.meta.url),'utf8').replace(/^import[^\n]*\n/gm,'').replace(/load\(\);\s*$/,'globalThis.manager={load,change};');
 const catalog=['portfolio','spend-portal','iterate','feature'].map((id,index)=>({id,title:['Domain & portfolio','Practice spend portal','Push an improvement','Build a feature'][index],teaser:'Practice a useful skill.',brief:'Build and publish your work.',reward:'Unlock the next step',minIterations:index===1?3:0,revision:'',checklist:[{id:'publish',label:'Publish your site'},{id:'iterate',label:'Push a useful change'}]}));
@@ -16,7 +18,7 @@ function harness(response=()=>view()) {
     return elements.get(id);
   };
   const window={FOMO_SHEET:{endpoint:'https://example.invalid/api',key:'test',session:()=>token,operator:()=>operator},addEventListener(name,fn){events.set('window:'+name,fn);}};
-  const context=vm.createContext({document:{getElementById:get,body:{dataset:{consoleView:'beta'}}},window,location:{origin:'https://example.invalid'},URL,AbortController,AbortSignal,setTimeout,clearTimeout,buildBetaScheduleOverview,betaScheduleOverviewHTML,loadBetaGithub:async()=>[],FormData:class{constructor(form){return Object.entries(form.fields || {});}},navigator:{},fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return {json:async()=>response(body)};}});
+  const context=vm.createContext({document:{getElementById:get,body:{dataset:{consoleView:'beta'}}},window,location:{origin:'https://example.invalid'},URL,AbortController,AbortSignal,setTimeout,clearTimeout,buildBetaScheduleOverview,betaScheduleOverviewHTML,buildBetaGroupOverview,betaGroupOverviewHTML,betaGroupGithubInitial,loadBetaGroupGithub:async members=>betaGroupGithubInitial(members),FormData:class{constructor(form){return Object.entries(form.fields || {});}},navigator:{},fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return {json:async()=>response(body)};}});
   vm.runInContext(source,context);
   return {get,events,requests,manager:context.manager,signout(){token='';operator=false;events.get('window:fomo:identity')();}};
 }
@@ -51,6 +53,19 @@ test('only the selected submitted challenge can be reviewed and changes need fee
   assert.equal(request.action,'challengereview');assert.equal(request.memberId,'a');assert.equal(request.challengeId,'portfolio');assert.equal(request.status,'approved');assert.equal(request.feedback,'Ship it.');
   assert.match(h.get('bt-detail').innerHTML,/cannot be reopened/);assert.doesNotMatch(h.get('bt-detail').innerHTML,/data-challenge-review="portfolio"/);
   await submit(h,reviewForm({feedback:'Stale form'}),'changes_requested');assert.equal(h.requests.length,2);
+});
+
+test('review decisions immediately update whole-group assignment totals',async()=>{
+  let status='submitted';const h=harness(body=>{
+    if(body.action==='challengereview')status=body.status;
+    return view({challengeProgress:[progress({status})]});
+  });await h.manager.load();
+  assert.match(h.get('bt-group-overview').innerHTML,/Approved assignments<\/span><strong>0 \/ 8<\/strong>/);
+  assert.match(h.get('bt-group-overview').innerHTML,/Awaiting review<\/span><strong>1<\/strong>/);
+  await submit(h,reviewForm({feedback:'The portfolio is ready.'}));
+  assert.match(h.get('bt-group-overview').innerHTML,/Approved assignments<\/span><strong>1 \/ 8<\/strong>/);
+  assert.match(h.get('bt-group-overview').innerHTML,/Awaiting review<\/span><strong>0<\/strong>/);
+  assert.match(h.get('bt-group-overview').innerHTML,/Intern b/,'the aggregate still includes interns without submissions');
 });
 
 test('review feedback survives refresh and switching interns, but not a new submission or signout',async()=>{
