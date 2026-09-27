@@ -11,6 +11,64 @@
 [data-view="overview"] .grid2>.panel{align-self:stretch;display:flex;flex-direction:column}
 [data-view="overview"] .grid2>.panel>.panel-b:has(>.mbars){flex:1;display:flex;flex-direction:column}
 [data-view="overview"] .grid2>.panel>.panel-b>.mbars{flex:1;height:auto;min-height:110px}
+/* Spending activity stays compact even beside a long attention list. */
+[data-view="overview"] .grid2>.spend-panel{align-self:start;container-type:inline-size}
+.spend-panel .panel-h{padding:20px 20px 0;gap:8px}
+.spend-panel .ov-heading{padding:0;font-size:14px;font-weight:500}
+.spend-panel #ov-daily-note{flex-basis:auto;margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.spend-panel #ov-daily{padding:20px}
+.spend-summary{display:flex;flex-direction:column;gap:6px}
+.spend-summary strong{font-size:32px;font-weight:500;letter-spacing:-.045em;line-height:1.1;font-variant-numeric:tabular-nums}
+.spend-summary>span{font-size:12px;color:var(--muted)}
+.spend-totals{display:flex;flex-wrap:wrap;gap:5px 7px;margin-top:14px;font-size:12px;font-variant-numeric:tabular-nums}
+.spend-totals>span+span{color:var(--muted)}
+.spend-legend{display:flex;gap:14px;flex-wrap:wrap;margin:24px 0 20px}
+.spend-legend>span,.spend-status{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted)}
+.spend-legend i,.spend-status i{display:block;width:7px;height:7px;border-radius:50%;flex:none}
+.spend-owed{background:var(--owed)}
+.spend-paid{background:var(--good)}
+.spend-none{background:var(--muted-2)}
+.spend-activity-days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:3px;margin-bottom:22px}
+.spend-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-width:0;min-height:52px;padding:7px 0;border-radius:7px;color:var(--muted);cursor:pointer;font:inherit;transition:background .15s,color .15s}
+.spend-day:hover{background:var(--raise);color:var(--text)}
+.spend-day[aria-pressed="true"]{background:var(--violet-soft);color:var(--text)}
+.spend-day:focus-visible,.spend-purchase:focus-visible,.spend-view-day:focus-visible{outline:2px solid var(--violet-hi);outline-offset:2px}
+.spend-date{font-size:10.5px;line-height:14px;white-space:nowrap}
+.spend-dot{display:block;width:7px;height:7px;border-radius:50%;flex:none;position:relative}
+.spend-dot.is-mixed{background:linear-gradient(90deg,var(--owed) 50%,var(--good) 50%)}
+.spend-dot.is-largest{width:12px;height:12px;margin:-2.5px 0}
+.spend-dot.is-empty{width:4px;height:4px;margin:1.5px 0;opacity:.65}
+.spend-purchases{padding:18px 15px 12px;background:var(--raise);border-radius:10px;min-height:156px}
+.spend-purchases-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}
+.spend-purchases-heading h3{font-size:12.5px;font-weight:500;line-height:1.5;margin:0}
+.spend-purchases-heading>strong{font-size:24px;font-weight:500;letter-spacing:-.035em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.spend-purchase-list{display:flex;flex-direction:column}
+.spend-purchase{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0;color:inherit;text-decoration:none;border-radius:3px}
+.spend-purchase+.spend-purchase{border-top:1px solid var(--line-2);margin-top:4px;padding-top:12px}
+.spend-purchase-main{display:flex;flex-direction:column;gap:6px;min-width:0}
+.spend-purchase-title{font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.spend-purchase:hover .spend-purchase-title{text-decoration:underline;text-underline-offset:3px}
+.spend-purchase-by{font-size:10.5px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.spend-purchase-end{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;padding-top:3px}
+.spend-purchase-amount{font-size:13px;font-variant-numeric:tabular-nums;line-height:1.25}
+.spend-status{white-space:nowrap;line-height:1.4}
+.spend-view-day{display:flex;align-items:center;gap:6px;margin:9px 0 0;padding:5px 0;color:var(--muted);font:inherit;font-size:10.5px;cursor:pointer}
+.spend-view-day:hover{color:var(--text)}
+.spend-no-purchases{font-size:12px;line-height:1.6;color:var(--muted);margin:22px 0 10px}
+.spend-footer{margin-top:17px;font-size:10.5px;line-height:1.5;color:var(--muted)}
+@container(max-width:540px){
+ .spend-activity-days{grid-template-columns:repeat(7,minmax(0,1fr))}
+}
+@container(max-width:360px){
+ .spend-panel .panel-h{padding:16px 14px 0}
+ .spend-panel #ov-daily{padding:18px 14px 16px}
+ .spend-panel #ov-daily-note{font-size:10px}
+ .spend-purchases{padding:15px 12px 10px}
+ .spend-purchases-heading>strong{font-size:22px}
+ .spend-purchases-heading h3{font-size:11.5px}
+ .spend-purchase{gap:8px}
+ .spend-status{font-size:10px}
+}
 /* Nothing to show is the one body worth centring in the room it got. */
 [data-view="overview"] .grid2>.panel>:is(.att,.panel-b,.feed):has(>.empty){flex:1;display:flex;flex-direction:column;justify-content:center}
 [data-view="overview"] .empty{padding:22px 16px}

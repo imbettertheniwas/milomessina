@@ -879,8 +879,8 @@ td.date.run{color:var(--good)}
               <div class="panel-h"><h2><button class="ov-heading" data-ov-detail="attention">Needs attention <span>↗</span></button></h2><button class="note ov-link" id="ov-attn-note" data-ov-detail="attention"></button></div>
               <div class="att" id="ov-attn"></div>
             </div>
-            <div class="panel">
-              <div class="panel-h"><h2><button class="ov-heading" data-ledger-query="">Spend by day <span>↗</span></button></h2><span class="note" id="ov-daily-note"></span></div>
+            <div class="panel spend-panel">
+              <div class="panel-h"><h2><button class="ov-heading" data-ledger-query="" aria-label="Spending activity — view the ledger">Spending activity</button></h2><span class="note" id="ov-daily-note"></span></div>
               <div class="panel-b" id="ov-daily"></div>
             </div>
           </div>
@@ -5950,6 +5950,108 @@ function repeatMonthly(){
   return {n:n, v:v};
 }
 
+/* The activity strip uses the loaded ledger only. Keep its selection across
+   overview refreshes, including the later arrival of attendance and GitHub data. */
+var overviewSpendDay = "", overviewSpendPicked = false, overviewSpendActivity = null;
+function buildSpendActivity(source, endDay){
+  var span = [], byDay = Object.create(null), paid = 0, owed = 0, peak = 0;
+  var end = new Date(endDay + "T12:00:00");
+  for (var i = 13; i >= 0; i--) {
+    var date = new Date(end); date.setDate(end.getDate() - i);
+    var key = isoOf(date);
+    var day = {key:key, date:date, rows:[], paid:0, owed:0, total:0};
+    span.push(day); byDay[key] = day;
+  }
+  source.forEach(function(r){
+    var day = byDay[String(r.date || "").slice(0, 10)];
+    if (!day) return;
+    var cents = Math.round((Number(r.amount) || 0) * 100);
+    day.rows.push(r);
+    if (r.status === "reimbursed") day.paid += cents; else day.owed += cents;
+  });
+  span.forEach(function(day){
+    day.paid /= 100; day.owed /= 100;
+    day.total = (Math.round(day.paid * 100) + Math.round(day.owed * 100)) / 100;
+    paid += Math.round(day.paid * 100); owed += Math.round(day.owed * 100);
+    peak = Math.max(peak, day.total);
+  });
+  return {span:span, byDay:byDay, paid:paid / 100, owed:owed / 100,
+    total:(paid + owed) / 100, peak:peak};
+}
+function spendActivityDate(key){
+  return new Date(key + "T12:00:00").toLocaleDateString("en-US", {weekday:"short", month:"long", day:"numeric"});
+}
+function paintSpendActivity(){
+  var root = $("ov-daily"), focused = document.activeElement, restoreFocus = null;
+  if (focused && root.contains(focused)) {
+    ["data-spend-day", "href", "data-ledger-date"].some(function(attribute){
+      if (!focused.hasAttribute(attribute)) return false;
+      restoreFocus = {attribute:attribute, value:focused.getAttribute(attribute)};
+      return true;
+    });
+  }
+  var activity = overviewSpendActivity = buildSpendActivity(rows, today());
+  var span = activity.span, first = span[0].date, last = span[13].date;
+  if (!overviewSpendPicked || !activity.byDay[overviewSpendDay]) {
+    overviewSpendPicked = false;
+    var active = span.filter(function(day){ return day.rows.length; });
+    overviewSpendDay = (active[active.length - 1] || span[13]).key;
+  }
+  var sameYear = first.getFullYear() === last.getFullYear();
+  var sameMonth = sameYear && first.getMonth() === last.getMonth();
+  $("ov-daily-note").textContent = first.toLocaleDateString("en-US", {month:"short", day:"numeric", year:sameYear ? undefined : "numeric"}) +
+    "–" + (sameMonth ? last.getDate() + ", " + last.getFullYear() : last.toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"}));
+  $("ov-daily").innerHTML = '<div class="spend-summary"><strong>' + esc(money(activity.total)) +
+    '</strong><span>spent in the last 14 days</span></div>' +
+    '<div class="spend-totals"><span>' + esc(money(activity.owed)) + ' still owed</span><span>' + esc(money(activity.paid)) + ' reimbursed</span></div>' +
+    '<div class="spend-legend"><span><i class="spend-owed"></i>Still owed</span><span><i class="spend-paid"></i>Reimbursed</span><span><i class="spend-none"></i>No spend</span></div>' +
+    '<div class="spend-activity-days" role="group" aria-label="Spending in the last 14 days. Select a day to see its purchases.">' + span.map(function(day){
+      var n = day.rows.length, largest = activity.peak > 0 && day.total === activity.peak;
+      var mixed = day.paid > 0 && day.owed > 0;
+      var status = !n ? 'spend-none' : mixed ? 'is-mixed' : day.rows.some(function(r){ return r.status !== "reimbursed"; }) ? 'spend-owed' : 'spend-paid';
+      var label = spendActivityDate(day.key) + ': ' + (n ? money(day.total) + ' across ' + n + (n === 1 ? ' expense' : ' expenses') +
+        ', ' + money(day.owed) + ' still owed, ' + money(day.paid) + ' reimbursed' : 'No expenses') + (largest ? '. Largest spending day' : '');
+      return '<button type="button" class="spend-day" data-spend-day="' + day.key + '" aria-pressed="' + (day.key === overviewSpendDay) +
+        '" aria-controls="ov-spend-purchases" aria-label="' + esc(label) + '"><span class="spend-date" aria-hidden="true">' +
+        (day.date.getDate() === 1 ? esc(day.date.toLocaleDateString("en-US", {month:"short", day:"numeric"})) : day.date.getDate()) +
+        '</span><span class="spend-dot ' + status + (largest ? ' is-largest' : '') + (!n ? ' is-empty' : '') + '" aria-hidden="true"></span></button>';
+    }).join("") + '</div><div class="spend-purchases" id="ov-spend-purchases" aria-live="polite" aria-atomic="true"></div>' +
+    '<div class="spend-footer">One marker per day' + (activity.peak > 0 ? ' · largest day marked' : '') + '</div>';
+  paintSpendPurchases();
+  if (restoreFocus) {
+    var controls = [].slice.call(root.querySelectorAll('[data-spend-day],.spend-purchase,.spend-view-day'));
+    var target = controls.find(function(control){
+      return control.getAttribute(restoreFocus.attribute) === restoreFocus.value;
+    }) || controls.find(function(control){ return control.dataset.spendDay === overviewSpendDay; });
+    if (target) target.focus({preventScroll:true});
+  }
+}
+function paintSpendPurchases(){
+  var day = overviewSpendActivity && overviewSpendActivity.byDay[overviewSpendDay];
+  if (!day) return;
+  var n = day.rows.length;
+  $("ov-spend-purchases").innerHTML = '<div class="spend-purchases-heading"><h3>' + esc(spendActivityDate(day.key)) +
+    '</h3><strong>' + esc(money(day.total)) + '</strong></div>' + (n ?
+      '<div class="spend-purchase-list">' + day.rows.slice(0, 3).map(function(r){
+        var paid = r.status === "reimbursed";
+        return '<a class="spend-purchase" href="#/charge/' + encodeURIComponent(r.id) + '"><span class="spend-purchase-main"><span class="spend-purchase-title">' +
+          esc(r.what || "Expense") + '</span><span class="spend-purchase-by">Fronted by ' + esc(r.who) + (n === 1 ? ' · 1 expense' : '') + '</span></span>' +
+          '<span class="spend-purchase-end">' + (n > 1 ? '<span class="spend-purchase-amount">' + esc(money(r.amount)) + '</span>' : '') +
+          '<span class="spend-status"><i class="' + (paid ? 'spend-paid' : 'spend-owed') + '"></i>' + (paid ? 'Reimbursed' : 'Still owed') + '</span></span></a>';
+      }).join("") + '</div><button type="button" class="spend-view-day" data-ledger-date="' + day.key + '">View ' +
+      (n > 1 ? 'all ' + n + ' expenses' : 'day in ledger') + ' <span aria-hidden="true">→</span></button>' :
+      '<p class="spend-no-purchases">No expenses logged on this day.</p>');
+}
+function selectSpendDay(key){
+  if (!overviewSpendActivity || !overviewSpendActivity.byDay[key]) return;
+  overviewSpendDay = key;
+  overviewSpendPicked = true;
+  [].forEach.call($("ov-daily").querySelectorAll('[data-spend-day]'), function(button){
+    button.setAttribute("aria-pressed", String(button.dataset.spendDay === key));
+  });
+  paintSpendPurchases();
+}
+
 function paintOverview(){
   var now = today(), m = owedBy(), wk = weekStartDay();
 
@@ -6031,50 +6133,7 @@ function paintOverview(){
     ? top.map(function(i){ return i.html; }).join("")
     : '<div class="empty"><b>Nothing needs you.</b>Everyone is square, no rule is due this week, and everybody has a day marked.</div>';
 
-  /* ── spend by day ──
-     Every day of the last fortnight, not only the ones with a line on
-     them: a bootcamp that spends nothing from Tuesday to Friday is the
-     thing worth seeing, and a chart of only the days money moved cannot
-     show it. Empty days draw the same flat tick a zero month did. */
-  var DAY_SPAN = 14;
-  var span = [], byDay = {}, dMax = 1;
-  rows.forEach(function(r){
-    var k = String(r.date || "").slice(0, 10);
-    if (!k) return;
-    if (!byDay[k]) byDay[k] = {owed:0, paid:0, n:0};
-    var a = Number(r.amount) || 0;
-    byDay[k].n++;
-    if (r.status === "reimbursed") byDay[k].paid += a; else byDay[k].owed += a;
-  });
-  for (var i = DAY_SPAN - 1; i >= 0; i--) {
-    var dd = new Date(); dd.setDate(dd.getDate() - i);
-    var key = isoOf(dd);
-    var e = byDay[key] || {owed:0, paid:0, n:0};
-    dMax = Math.max(dMax, e.owed + e.paid);
-    span.push({k:key, d:dd.getDate(), e:e});
-  }
-  if (!rows.length) {
-    $("ov-daily").innerHTML = '<div class="hint">Days show up here once the first line is logged.</div>';
-    $("ov-daily-note").textContent = "";
-  } else {
-    var lit = span.filter(function(x){ return x.e.n; }).length;
-    $("ov-daily-note").textContent = niceDate(span[0].k) + " – " + niceDate(span[span.length - 1].k) +
-      " · " + (lit ? lit + (lit === 1 ? " day spent on" : " days spent on") : "nothing spent") +
-      " · peak " + shortMoney(dMax);
-    $("ov-daily").innerHTML = '<div class="mbars days">' + span.map(function(x){
-      var t = x.e.owed + x.e.paid, h = Math.max(4, Math.round(t / dMax * 96));
-      return '<button type="button" class="mb" data-ledger-date="' + x.k + '" title="' + esc(niceDate(x.k) + " — " +
-          (x.e.n ? money(t) + " across " + x.e.n + (x.e.n === 1 ? " line" : " lines")
-                 : "nothing logged")) + '">' +
-        (t > 0
-          ? '<span class="stk" style="height:' + h + 'px">' +
-              (x.e.owed > 0.005 ? '<i style="background:var(--owed);flex:' + x.e.owed + '"></i>' : "") +
-              (x.e.paid > 0.005 ? '<i style="background:var(--good);flex:' + x.e.paid + '"></i>' : "") +
-            "</span>"
-          : '<span class="zero"></span>') +
-        '<span class="mbl">' + x.d + "</span></button>";
-    }).join("") + "</div>";
-  }
+  paintSpendActivity();
 
   /* ── where the money goes ──
      The breakdown's first screen, small enough to sit on the overview.
@@ -6678,6 +6737,8 @@ function openLedgerDetail(values){
   setView("ledger"); render();
 }
 document.addEventListener("click",function(ev){
+  var spendDay=ev.target.closest('[data-spend-day]');
+  if(spendDay){ev.preventDefault();selectSpendDay(spendDay.dataset.spendDay);return;}
   var b=ev.target.closest('[data-ledger-date],[data-ledger-who],[data-ledger-cat],[data-ledger-cats],[data-ledger-status],[data-ledger-query]');
   if(b){
     ev.preventDefault();
