@@ -48,24 +48,27 @@ function cleanRecord(row) {
 // Concurrent reads for the same token can share the current verification, while
 // the next request still detects an expired or revoked Internal session.
 export function createInternalIdentityVerifier({fetchImpl=fetch,now=Date.now}={}) {
-  let capabilityUntil=0,capabilityPending=null;
+  let capabilityUntil=0,capabilityPending=null,capabilities=null;
   const identities=new Map();
-  async function hasIdentity(){
-    if(now()<capabilityUntil)return true;
+  async function readCapabilities(){
+    if(now()<capabilityUntil)return capabilities;
     capabilityPending ??= Promise.resolve().then(async()=>{
       // Legacy form receivers treat unknown POST namespaces as submissions.
       const response=await fetchImpl(INTERNAL_SESSION_URL,{signal:AbortSignal.timeout(15000)});
-      if(!response.ok || (await response.json()).identity!==true)return false;
+      if(!response.ok)return null;
+      const result=await response.json();
+      if(result.identity!==true)return null;
+      capabilities=result;
       capabilityUntil=now()+CAPABILITY_TTL_MS;
-      return true;
+      return capabilities;
     }).finally(()=>{capabilityPending=null;});
     return capabilityPending;
   }
-  return function verify(token){
+  function verify(token){
     if(typeof token!=='string' || !token || token.length>100)return Promise.resolve(false);
     if(identities.has(token))return identities.get(token);
     const pending=Promise.resolve().then(async()=>{
-      if(!await hasIdentity())return false;
+      if(!await readCapabilities())return false;
       const response=await fetchImpl(INTERNAL_SESSION_URL,{
         method:'POST',body:JSON.stringify({_api:'internal',action:'session',_session:token}),
         signal:AbortSignal.timeout(15000)
@@ -79,7 +82,11 @@ export function createInternalIdentityVerifier({fetchImpl=fetch,now=Date.now}={}
     }).finally(()=>{identities.delete(token);});
     identities.set(token,pending);
     return pending;
-  };
+  }
+  // The same probe protects both routes. Only deployment features are cached;
+  // authenticatedList checks the actual session inside every storage read.
+  verify.authenticatedListAvailable=async()=>((await readCapabilities())?.visitsAuthenticatedList===true);
+  return verify;
 }
 export function verifyInternalIdentity(env,token,fetchImpl=fetch) {
   return createInternalIdentityVerifier({fetchImpl})(token);
@@ -87,13 +94,20 @@ export function verifyInternalIdentity(env,token,fetchImpl=fetch) {
 export function createVisitHandler({env=process.env,store=createSheetStore(env),now=Date.now,verifyIdentity}={}) {
   verifyIdentity ??= createInternalIdentityVerifier({now});
   const reads=new Map();
-  function readStore(action){
-    if(reads.has(action))return reads.get(action);
-    const pending=Promise.resolve().then(()=>store(action)).finally(()=>{
-      if(reads.get(action)===pending)reads.delete(action);
+  function readStore(action,payload={},key=action){
+    if(reads.has(key))return reads.get(key);
+    const pending=Promise.resolve().then(()=>store(action,payload)).finally(()=>{
+      if(reads.get(key)===pending)reads.delete(key);
     });
-    reads.set(action,pending);
+    reads.set(key,pending);
     return pending;
+  }
+  function clearRequestReads(){
+    for(const key of reads.keys())if(key==='list' || key.startsWith('authenticatedList:'))reads.delete(key);
+  }
+  function requestList(data,res){
+    if(!Array.isArray(data?.requests))throw new Error('Invalid storage response');
+    return res.status(200).json({requests:data.requests.map(cleanRecord)});
   }
   return async function handler(req,res) {
     res.setHeader('Cache-Control','no-store');
@@ -129,6 +143,14 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         res.setHeader('Vercel-CDN-Cache-Control','max-age=60');
         return res.status(200).json({availability:normalizeAvailability(data?.availability)});
       }
+      if(action==='list' && env.VISITS_STORAGE_URL===INTERNAL_SESSION_URL && verifyIdentity.authenticatedListAvailable){
+        const token=req.headers?.['x-fomo-internal-session'];
+        if(typeof token!=='string' || !token || token.length>100)return fail(401,'Sign in to Internal to view visit requests.');
+        if(await verifyIdentity.authenticatedListAvailable()){
+          const data=await readStore('authenticatedList',{_session:token},'authenticatedList:'+token);
+          return requestList(data,res);
+        }
+      }
       if(action!=='submit'){
         const identity=await verifyIdentity(req.headers?.['x-fomo-internal-session']);
         if(!identity || identity.beta===true)return fail(401,'Sign in to Internal to view visit requests.');
@@ -146,14 +168,13 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
       }
       if(action==='list'){
         const data=await readStore('list');
-        if(!Array.isArray(data?.requests))throw new Error('Invalid storage response');
-        return res.status(200).json({requests:data.requests.map(cleanRecord)});
+        return requestList(data,res);
       }
       if(action==='update'){
         if(!uuid.test(body.id) || !statuses.has(body.status) || typeof body.internalNotes!=='string' ||
           body.internalNotes.length>3000 || !Number.isInteger(body.version) || body.version<1)return fail(400,'Check the status and notes.');
         const data=await store('update',{id:body.id,status:body.status,internalNotes:body.internalNotes.trim(),version:body.version,now:new Date(now()).toISOString()});
-        reads.delete('list');
+        clearRequestReads();
         return res.status(200).json({request:cleanRecord(data?.request)});
       }
       const invalid=validateRequest(body,new Date(now()));
@@ -165,10 +186,11 @@ export function createVisitHandler({env=process.env,store=createSheetStore(env),
         created_at:new Date(now()).toISOString(),updated_at:new Date(now()).toISOString(),
         internal_notes:'',version:1
       }});
-      reads.delete('list');
+      clearRequestReads();
       if(data?.reference!==body.requestId || data.status!=='pending')throw new Error('Invalid receipt');
       return res.status(data.duplicate?200:201).json({reference:data.reference,status:'pending'});
     } catch(error) {
+      if(error.code==='AUTH_REQUIRED')return fail(401,'Sign in to Internal to view visit requests.');
       if(error.code==='RATE_LIMIT')return fail(429,'Too many requests. Please try again later.');
       if(error.code==='CONFLICT')return fail(409,'This request changed. Refresh before trying again.');
       if(error.code==='NOT_FOUND')return fail(404,'This request is no longer available.');

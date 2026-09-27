@@ -47,16 +47,74 @@ var CONFIG = {
 
 /* ── the endpoint ────────────────────────────────────────────── */
 
+/* These snapshots belong to one HTTP request only. Permission checks always
+   start with fresh sheet rows; no private data or access decisions are cached
+   between requests. Reusing service handles also avoids reopening the same
+   spreadsheet for every beta table. */
+var internalRequestState = null;
+function internalRequestBegin(readOnly) {
+  rosterForget();
+  internalRequestState = {readOnly:!!readOnly,book:null,properties:{},betaTables:{},betaRows:{}};
+}
+function internalRequireWrite() {
+  if(internalRequestState && internalRequestState.readOnly) {
+    var error=new Error('This request needs a write lock.');
+    error.internalWriteRequired=true;
+    throw error;
+  }
+}
+function internalBook() {
+  if(internalRequestState && internalRequestState.book)return internalRequestState.book;
+  var book=CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  if(internalRequestState)internalRequestState.book=book;
+  return book;
+}
+function internalProperty(key) {
+  var memo=internalRequestState && internalRequestState.properties;
+  if(memo && Object.prototype.hasOwnProperty.call(memo,key))return memo[key];
+  var value=PropertiesService.getScriptProperties().getProperty(key);
+  if(memo)memo[key]=value;
+  return value;
+}
+function internalSetProperty(key,value) {
+  internalRequireWrite();
+  PropertiesService.getScriptProperties().setProperty(key,value);
+  if(internalRequestState)internalRequestState.properties[key]=value;
+}
+function internalPostReadOnly(body) {
+  // Invoice and referral lists can create records and must retain their lock.
+  return body._api==='beta' && String(body.action||'list')==='list' ||
+    body._api==='visits' && ['authenticatedList','list','settings'].indexOf(body.action)>=0;
+}
 function doPost(e) {
-  var lock = LockService.getScriptLock();
+  var lock = null,locked=false;
   try {
-    /* two people submitting in the same second must not race for the
-       same row, so everything below runs one at a time */
-    lock.waitLock(30000);
-
     if (!e || !e.postData || !e.postData.contents) return reply(false, 'empty request');
     var body = JSON.parse(e.postData.contents);
+    internalRequestBegin(internalPostReadOnly(body));
+    if(internalRequestState.readOnly) {
+      try {return internalPost(body);}
+      catch(err) {
+        if(!err || !err.internalWriteRequired)throw err;
+        // First-use setup or an old schema needs serialization. Discard every
+        // pre-lock snapshot so the retry sees writes that finished meanwhile.
+        internalRequestBegin(false);
+      }
+    }
+    lock=LockService.getScriptLock();
+    lock.waitLock(30000);
+    locked=true;
+    return internalPost(body);
+  } catch (err) {
+    return reply(false, String(err && err.message ? err.message : err));
+  } finally {
+    if(locked)lock.releaseLock();
+    internalRequestState=null;
+    rosterForget();
+  }
+}
 
+function internalPost(body) {
     /* The stipend ledger at /invoice reads and writes its own tab through
        this same deployment. It answers with the whole ledger rather than a
        bare confirmation, so it takes its branch here and never touches the
@@ -116,11 +174,6 @@ function doPost(e) {
     if (CONFIG.NOTIFY_EMAIL) notify(tabFor(body._page), row);
 
     return reply(true);
-  } catch (err) {
-    return reply(false, String(err && err.message ? err.message : err));
-  } finally {
-    lock.releaseLock();
-  }
 }
 
 /* Open the /exec URL in a browser and you should see this. If you get a
@@ -148,6 +201,7 @@ function doGet() {
     purchaseApproval: true,
     ledger: typeof invoiceApi === 'function',
     visits: typeof visitsApi === 'function',
+    visitsAuthenticatedList: true,
     visitHours: typeof visitAvailability === 'function',
     campus: typeof campusApi === 'function',
     posts: typeof postsApi === 'function',
@@ -348,7 +402,7 @@ var BETA_SCHEDULES = ['id','memberId','timezone','mode','blocks','noCommitments'
 var BETA_SCHEDULE_MAX_BYTES = 2 * 1024 * 1024;
 var BETA_SETUP_MESSAGE = 'This beta invitation is not available. Ask Arya for the current link.';
 function betaSecret() {
-  return String(PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_SECRET') || '');
+  return String(internalProperty('INTERNAL_BETA_SECRET') || '');
 }
 function betaEnsureSecret() {
   // Called only while an operator initializes the group, under doPost's lock.
@@ -356,7 +410,7 @@ function betaEnsureSecret() {
   var secret=betaSecret();
   if(!secret) {
     secret=Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');
-    PropertiesService.getScriptProperties().setProperty('INTERNAL_BETA_SECRET',secret);
+    internalSetProperty('INTERNAL_BETA_SECRET',secret);
   }
   if(secret.length<32)throw new Error('Beta access could not be initialized. Contact the workspace operator.');
 }
@@ -373,41 +427,69 @@ function internalSame(a, b) {
 function internalSessionPrefix() {return 'internal:';}
 function betaConfigured() {return betaSecret().length>=32;}
 function betaBook() {
-  return CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  return internalBook();
 }
-function betaTable(name, columns, create) {
-  var book=betaBook(), sheet=book.getSheetByName(name);
+function betaTableSnapshot(name, columns, create, withRows) {
+  var memo=internalRequestState && internalRequestState.betaTables;
+  var table=memo && memo[name];
+  if(table && (!create || table.sheet) && (!withRows || table.grid))return table;
+  var book=betaBook(),sheet=table?table.sheet:book.getSheetByName(name);
   if(!sheet && create) {
+    internalRequireWrite();
     sheet=book.insertSheet(name);
     sheet.getRange(1,1,1,columns.length).setValues([columns]).setFontWeight('bold');
     sheet.setFrozenRows(1);
   }
+  var grid=null;
   if(sheet) {
-    var head=sheet.getRange(1,1,1,columns.length).getValues()[0];
+    // A list needs both the header and rows. Fetch them together instead of
+    // making one header read, two row-count calls and a separate data read.
+    if(withRows)grid=sheet.getRange(1,1,Math.max(1,sheet.getLastRow()),columns.length).getValues();
+    var head=grid?grid[0]:sheet.getRange(1,1,1,columns.length).getValues()[0];
     // Extend earlier exact member schemas with appended fields. Never
     // overwrite an existing header, row or occupied column.
     var prefix=0;
     while(prefix<columns.length && head[prefix]===columns[prefix])prefix++;
     if(name==='internal_beta_members' && prefix>=13 && prefix<columns.length &&
        head.slice(prefix).every(function(v){return v==='';}) && sheet.getLastColumn()<=prefix) {
+      internalRequireWrite();
       sheet.getRange(1,prefix+1,1,columns.length-prefix).setValues([columns.slice(prefix)]).setFontWeight('bold');
       head=columns.slice();
+      if(grid)grid[0]=head;
     }
-    if(JSON.stringify(head)!==JSON.stringify(columns))
+    if(JSON.stringify(head)!==JSON.stringify(columns)) {
+      // An unlocked reader can catch a concurrent writer between creating a
+      // tab and writing its header. Retry behind that writer before failing.
+      internalRequireWrite();
       throw new Error('The ' + name + ' columns do not match. Restore the beta table headers before continuing.');
+    }
   }
-  return sheet;
+  table={sheet:sheet,grid:grid || (!sheet?[]:null)};
+  if(memo)memo[name]=table;
+  return table;
+}
+function betaTable(name, columns, create) {
+  var table=betaTableSnapshot(name,columns,create,false);
+  // Callers of betaTable write or delete rows. Keep the validated sheet
+  // handle, but discard row snapshots before handing it to those callers.
+  if(internalRequestState)delete internalRequestState.betaRows[name];
+  table.grid=null;
+  return table.sheet;
 }
 function betaRead(name,columns) {
-  var sheet=betaTable(name,columns,false);
-  if(!sheet || sheet.getLastRow()<2)return [];
-  return sheet.getRange(2,1,sheet.getLastRow()-1,columns.length).getValues().map(function(row,index){
+  var memo=internalRequestState && internalRequestState.betaRows;
+  if(memo && Object.prototype.hasOwnProperty.call(memo,name))return memo[name];
+  var table=betaTableSnapshot(name,columns,false,true);
+  var rows=(table.grid || []).slice(1).map(function(row,index){
     var out={_row:index+2};
     columns.forEach(function(key,n){var v=row[n];out[key]=typeof v==='string' && v.charCodeAt(0)===8203?v.slice(1):v;});
     return out;
   }).filter(function(row){return !!row.id;});
+  if(memo)memo[name]=rows;
+  return rows;
 }
 function betaWrite(name,columns,record) {
+  internalRequireWrite();
   var sheet=betaTable(name,columns,true), values=columns.map(function(key){
     var v=record[key] === undefined ? '' : record[key];
     // Explicit text encoding also protects operator-entered notes from sheet formulas.
@@ -474,19 +556,20 @@ function betaFindBatch(member,batches) {
 }
 function betaPrimaryBatch(batches) {
   batches=batches || betaRead('internal_beta_batches',BETA_BATCHES);
-  var selected=PropertiesService.getScriptProperties().getProperty('INTERNAL_BETA_GROUP_ID');
+  var selected=internalProperty('INTERNAL_BETA_GROUP_ID');
   if(selected) return batches.filter(function(b){return b.id===selected;})[0]||null;
   return batches[0]||null;
 }
 function betaEnsureGroup(operator) {
-  var props=PropertiesService.getScriptProperties(),group=betaPrimaryBatch();
+  var group=betaPrimaryBatch();
   if(!group) {
-    if(props.getProperty('INTERNAL_BETA_GROUP_ID'))throw new Error('The beta group record is missing. Restore it before continuing.');
+    if(internalProperty('INTERNAL_BETA_GROUP_ID'))throw new Error('The beta group record is missing. Restore it before continuing.');
+    internalRequireWrite();
     betaManageBatch({action:'batchadd',name:'Beta interns',startDate:betaToday()},operator);
     group=betaPrimaryBatch();
   }
   betaEnsureSecret();
-  if(!props.getProperty('INTERNAL_BETA_GROUP_ID'))props.setProperty('INTERNAL_BETA_GROUP_ID',String(group.id));
+  if(!internalProperty('INTERNAL_BETA_GROUP_ID'))internalSetProperty('INTERNAL_BETA_GROUP_ID',String(group.id));
   return group;
 }
 function betaGroupApi() {
@@ -650,7 +733,7 @@ function betaManageBatch(body,operator) {
     batch.updatedAt=stamp;
   }
   betaWrite('internal_beta_batches',BETA_BATCHES,batch);
-  if(action==='batchadd')PropertiesService.getScriptProperties().setProperty('INTERNAL_BETA_GROUP_ID',String(batch.id));
+  if(action==='batchadd')internalSetProperty('INTERNAL_BETA_GROUP_ID',String(batch.id));
   return extra;
 }
 function betaAttendanceWrite(body,member) {
@@ -899,7 +982,10 @@ function betaApi(body) {
       if(revoke)target.epoch=Number(target.epoch)+1;
       target.updatedAt=stamp;betaWrite('internal_beta_members',BETA_MEMBERS,target);
     } else if(action!=='list')throw new Error('Unknown beta action.');
-  } catch(e) {return reply(false,String(e.message||e),{code:'INVALID'});}
+  } catch(e) {
+    if(e && e.internalWriteRequired)throw e;
+    return reply(false,String(e.message||e),{code:'INVALID'});
+  }
   var permissions=manager?BETA_PERMISSIONS.slice():betaMemberPermissions(member);
   // Read the final rows once for this response. Resolving every person's
   // batch from the sheet made a manager page perform one remote read per intern.
@@ -1024,9 +1110,10 @@ var rosterMemo = null;
 function rosterForget() { rosterMemo = null; }
 
 function rosterSheet() {
-  var ss = CONFIG.SHEET_ID ? SpreadsheetApp.openById(CONFIG.SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  var ss = internalBook();
   var sh = ss.getSheetByName(ROSTER_TAB);
   if (sh) return sh;
+  internalRequireWrite();
   sh = ss.insertSheet(ROSTER_TAB);
   sh.getRange(1, 1, 1, ROSTER_COLS.length).setValues([ROSTER_COLS]).setFontWeight('bold');
   sh.setFrozenRows(1);
@@ -4171,8 +4258,8 @@ function visitBook() {
   if(!book)throw new Error('no spreadsheet - set VISITS_SHEET_ID');
   return book;
 }
-/* Called from doPost for body._api === 'visits'. The caller already holds the
-   script lock, so this must not take or release one of its own. */
+/* Called from doPost for body._api === 'visits'. Mutations run under its
+   script lock; list and settings reads never create or change a sheet. */
 function visitsApi(body) {
   try{
     var secret=PropertiesService.getScriptProperties().getProperty('VISITS_SERVICE_SECRET');
@@ -4181,6 +4268,12 @@ function visitsApi(body) {
     var given=String(body.secret||''),different=secret.length^given.length;
     for(var i=0;i<secret.length;i++)different|=secret.charCodeAt(i)^(given.charCodeAt(i)||0);
     if(different)return visitReply(false,null,'UNAUTHORIZED');
+    if(body.action==='authenticatedList'){
+      // Only the core session namespace grants guest access. Beta sessions
+      // remain separate even when a participant uses a core teammate's name.
+      var actor=typeof internalActor==='function'?internalActor(body):null;
+      if(['Milo','Bijan','Jesse','Luchi','Arya'].indexOf(actor)<0)return visitReply(false,null,'AUTH_REQUIRED');
+    }
     if(body.action==='throttle'){
       if(!/^[a-f0-9]{64}$/.test(body.key))return visitReply(false,null,'INVALID');
       var cache=CacheService.getScriptCache(),cacheKey='visit-login:'+body.key;
@@ -4201,6 +4294,7 @@ function visitsApi(body) {
     }
     var book=visitBook(),sheet=book.getSheetByName('visit_requests');
     if(!sheet){
+      if(body.action==='list' || body.action==='authenticatedList')return visitReply(true,{requests:[]});
       sheet=book.insertSheet('visit_requests');
       sheet.appendRow(VISIT_COLUMNS);
       sheet.setFrozenRows(1);
@@ -4209,7 +4303,12 @@ function visitsApi(body) {
     /* Only the columns this feature owns have to match. The form receiver in
        this same project appends a column to whatever tab a request names, and
        that must not take visit requests down. */
-    if(JSON.stringify(grid[0].slice(0,VISIT_COLUMNS.length))!==JSON.stringify(VISIT_COLUMNS))return visitReply(false,null,'SCHEMA');
+    if(JSON.stringify(grid[0].slice(0,VISIT_COLUMNS.length))!==JSON.stringify(VISIT_COLUMNS)) {
+      // A concurrent submission can be initializing this tab's first header.
+      // The shared dispatcher retries read-only requests behind that writer.
+      if(typeof internalRequireWrite==='function')internalRequireWrite();
+      return visitReply(false,null,'SCHEMA');
+    }
     var requests=grid.slice(1).map(function(row){
       var result={};VISIT_COLUMNS.forEach(function(key,n){
         var value=row[n];
@@ -4218,7 +4317,7 @@ function visitsApi(body) {
       });
       result.version=Number(result.version);return result;
     }).filter(function(r){return VISIT_ID.test(String(r.id));});
-    if(body.action==='list')return visitReply(true,{requests:requests.reverse()});
+    if(body.action==='list' || body.action==='authenticatedList')return visitReply(true,{requests:requests.reverse()});
     if(body.action==='submit'){
       var r=body.request;
       if(!r || !/^[0-9a-f-]{36}$/i.test(r.id) || r.status!=='pending' || r.time_zone!=='America/New_York')return visitReply(false,null,'INVALID');
@@ -4248,7 +4347,12 @@ function visitsApi(body) {
       return visitReply(true,{request:record});
     }
     return visitReply(false,null,'INVALID');
-  }catch(err){return visitReply(false,null,'UNAVAILABLE');}
+  }catch(err){
+    // A read may discover that the shared roster still needs initialization.
+    // Let the dispatcher retry under its write lock before touching any sheet.
+    if(err && err.internalWriteRequired)throw err;
+    return visitReply(false,null,'UNAVAILABLE');
+  }
 }
 function visitAvailability() {
   var raw=PropertiesService.getScriptProperties().getProperty('VISITS_AVAILABILITY');

@@ -18,7 +18,7 @@ function setup({operator=true,session='session'}={}) {
 test('common tabs warm only after the primary read and skip already opened views',async()=>{
  const h=setup();await h.flush();assert.deepEqual(h.warmed,[]);
  await h.bridge.read('campus','list');h.events.get('fomo:ledger-ready')();await h.flush();
- assert.deepEqual(h.warmed,['beta','schedules','posts']);
+ assert.deepEqual(h.warmed,['beta','visits','schedules','posts']);
 });
 test('hidden pages and unauthenticated sessions do not warm tabs; interns cannot warm beta',async()=>{
  for(const session of ['', 'session']){
@@ -26,7 +26,7 @@ test('hidden pages and unauthenticated sessions do not warm tabs; interns cannot
   assert.deepEqual(h.warmed,[]);
  }
  const h=setup({operator:false});h.events.get('fomo:ledger-ready')();await h.flush();
- assert.deepEqual(h.warmed,['schedules','posts','campus']);
+ assert.deepEqual(h.warmed,['visits','schedules','posts','campus']);
 });
 test('navigation intent preloads its tab and identity changes clear private responses',async()=>{
  const h=setup();h.events.get('pointerover')({target:{closest:()=>({dataset:{go:'beta'}})}});await settle();

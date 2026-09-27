@@ -1,4 +1,4 @@
-/* Visit requests are isolated from ledger storage and never cached in the browser. */
+/* Visit requests stay in this signed-in page only, never persistent browser storage. */
 const $ = id => document.getElementById(id);
 let editingVersion=null,requestEpoch=0;
 const state={requests:[],selected:null,busy:false,saving:false,loaded:false,authenticated:false};
@@ -15,16 +15,30 @@ function message(text,error=false){$('vr-message').textContent=text;$('vr-messag
    notes then blocks Refresh behind a prompt about discarding work that
    was never theirs to do. */
 const mayEdit=()=>{const b=window.FOMO_SHEET||{};return !!(b.admin && b.admin());};
-async function api(action,body) {
+async function api(action,body,options={}) {
   const bridge=window.FOMO_SHEET || {};
   const epoch=requestEpoch;
   if(['update','saveAvailability'].includes(action) && !mayEdit())throw new Error('Only Milo and Arya can change visit requests or opening hours.');
-  const response=await fetch('/api/visits?action='+action,{
+  if(action==='list' && bridge.read){
+    try {
+      const data=await bridge.read('visits','list',{},options);
+      if(epoch!==requestEpoch)throw new Error('Your Internal session changed.');
+      return data;
+    }catch(error){
+      if(epoch===requestEpoch && error.status===401){lock();message(error.message || 'Sign in to Internal to view visit requests.');}
+      throw error;
+    }
+  }
+  if(body)bridge.invalidate?.('visits');
+  let response;
+  try {
+  response=await fetch('/api/visits?action='+action,{
     method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',
     signal:!body ? globalThis.AbortSignal?.timeout?.(25000) : undefined,
     headers:{...(body?{'Content-Type':'application/json'}:{}),...(bridge.session && bridge.session()?{'X-Fomo-Internal-Session':bridge.session()}:{})},
     ...(body?{body:JSON.stringify(body)}:{})
   });
+  }finally{if(body)bridge.invalidate?.('visits');}
   const data=await response.json().catch(()=>({error:'Visit requests could not be loaded.'}));
   if(epoch!==requestEpoch)throw new Error('Your Internal session changed.');
   if(!response.ok){
@@ -148,7 +162,7 @@ function select(id){
   $('vr-status').disabled=!editable;$('vr-notes').readOnly=!editable;
   $('vr-details').hidden=false;render();$('vr-detail-name').focus();
 }
-async function refresh(){
+async function refresh(force=false){
   if(state.busy || state.saving)return;
   if(!window.FOMO_SHEET?.session?.()){lock();message('Sign in to Internal to view visit requests.');return;}
   const editing=state.requests.find(r=>r.id===state.selected);
@@ -158,7 +172,9 @@ async function refresh(){
   const epoch=requestEpoch;
   state.busy=true;$('vr-refresh').disabled=true;message('Loading visit requests…');
   try{
-    const data=await api('list');if(epoch!==requestEpoch)return;state.requests=data.requests;state.loaded=true;unlock();render();
+    const data=await api('list',undefined,{fresh:force});if(epoch!==requestEpoch)return;
+    if(!Array.isArray(data?.requests))throw new Error('Visit requests could not be loaded.');
+    state.requests=data.requests;state.loaded=true;unlock();render();
     // Opening hours have their own panel and should not delay the inbox.
     if($('vr-hours').open)loadHours(true);
     message('Requests are up to date.');
@@ -172,7 +188,7 @@ $('vr-copy').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText(publicLink);message('Form link copied.');}
   catch{$('vr-link-wrap').hidden=false;$('vr-link').focus();$('vr-link').select();message('Copy the selected link.');}
 });
-$('vr-refresh').addEventListener('click',refresh);
+$('vr-refresh').addEventListener('click',()=>refresh(true));
 $('vr-close').addEventListener('click',()=>{
   if(state.saving)return;
   const current=state.requests.find(r=>r.id===state.selected);

@@ -16,8 +16,8 @@ function visitBook() {
   if(!book)throw new Error('no spreadsheet - set VISITS_SHEET_ID');
   return book;
 }
-/* Called from doPost for body._api === 'visits'. The caller already holds the
-   script lock, so this must not take or release one of its own. */
+/* Called from doPost for body._api === 'visits'. Mutations run under its
+   script lock; list and settings reads never create or change a sheet. */
 function visitsApi(body) {
   try{
     var secret=PropertiesService.getScriptProperties().getProperty('VISITS_SERVICE_SECRET');
@@ -26,6 +26,12 @@ function visitsApi(body) {
     var given=String(body.secret||''),different=secret.length^given.length;
     for(var i=0;i<secret.length;i++)different|=secret.charCodeAt(i)^(given.charCodeAt(i)||0);
     if(different)return visitReply(false,null,'UNAUTHORIZED');
+    if(body.action==='authenticatedList'){
+      // Only the core session namespace grants guest access. Beta sessions
+      // remain separate even when a participant uses a core teammate's name.
+      var actor=typeof internalActor==='function'?internalActor(body):null;
+      if(['Milo','Bijan','Jesse','Luchi','Arya'].indexOf(actor)<0)return visitReply(false,null,'AUTH_REQUIRED');
+    }
     if(body.action==='throttle'){
       if(!/^[a-f0-9]{64}$/.test(body.key))return visitReply(false,null,'INVALID');
       var cache=CacheService.getScriptCache(),cacheKey='visit-login:'+body.key;
@@ -46,6 +52,7 @@ function visitsApi(body) {
     }
     var book=visitBook(),sheet=book.getSheetByName('visit_requests');
     if(!sheet){
+      if(body.action==='list' || body.action==='authenticatedList')return visitReply(true,{requests:[]});
       sheet=book.insertSheet('visit_requests');
       sheet.appendRow(VISIT_COLUMNS);
       sheet.setFrozenRows(1);
@@ -54,7 +61,12 @@ function visitsApi(body) {
     /* Only the columns this feature owns have to match. The form receiver in
        this same project appends a column to whatever tab a request names, and
        that must not take visit requests down. */
-    if(JSON.stringify(grid[0].slice(0,VISIT_COLUMNS.length))!==JSON.stringify(VISIT_COLUMNS))return visitReply(false,null,'SCHEMA');
+    if(JSON.stringify(grid[0].slice(0,VISIT_COLUMNS.length))!==JSON.stringify(VISIT_COLUMNS)) {
+      // A concurrent submission can be initializing this tab's first header.
+      // The shared dispatcher retries read-only requests behind that writer.
+      if(typeof internalRequireWrite==='function')internalRequireWrite();
+      return visitReply(false,null,'SCHEMA');
+    }
     var requests=grid.slice(1).map(function(row){
       var result={};VISIT_COLUMNS.forEach(function(key,n){
         var value=row[n];
@@ -63,7 +75,7 @@ function visitsApi(body) {
       });
       result.version=Number(result.version);return result;
     }).filter(function(r){return VISIT_ID.test(String(r.id));});
-    if(body.action==='list')return visitReply(true,{requests:requests.reverse()});
+    if(body.action==='list' || body.action==='authenticatedList')return visitReply(true,{requests:requests.reverse()});
     if(body.action==='submit'){
       var r=body.request;
       if(!r || !/^[0-9a-f-]{36}$/i.test(r.id) || r.status!=='pending' || r.time_zone!=='America/New_York')return visitReply(false,null,'INVALID');
@@ -93,7 +105,12 @@ function visitsApi(body) {
       return visitReply(true,{request:record});
     }
     return visitReply(false,null,'INVALID');
-  }catch(err){return visitReply(false,null,'UNAVAILABLE');}
+  }catch(err){
+    // A read may discover that the shared roster still needs initialization.
+    // Let the dispatcher retry under its write lock before touching any sheet.
+    if(err && err.internalWriteRequired)throw err;
+    return visitReply(false,null,'UNAVAILABLE');
+  }
 }
 function visitAvailability() {
   var raw=PropertiesService.getScriptProperties().getProperty('VISITS_AVAILABILITY');

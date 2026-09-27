@@ -4,13 +4,13 @@ const bridge = window.FOMO_SHEET;
 if (bridge?.tabData) {
   const tabs = bridge.tabData, read = bridge.read;
   const opened = new Set();
-  const views = {beta:'beta', schedules:'schedules', posts:'posts', applicants:'campus', campus:'campus', referrals:'refer'};
+  const views = {beta:'beta', visits:'visits', schedules:'schedules', posts:'posts', applicants:'campus', campus:'campus', referrals:'refer'};
   let epoch = 0, running = false, timer = null, ready = !!bridge.ledgerReady;
   bridge.read = async (...args) => {
     const revision = epoch;
     const out = await read(...args);
     if (revision !== epoch) throw Object.assign(new Error('Your session changed. Open the tab again.'), {code:'STALE'});
-    if (out?.ok === true) opened.add(args[0]);
+    if (out?.ok === true || args[0] === 'visits' && Array.isArray(out?.requests)) opened.add(args[0]);
     return out;
   };
   function allowed(api) {
@@ -23,7 +23,7 @@ if (bridge?.tabData) {
     try {
       // Only the common work views are warmed automatically. Referrals and
       // administrative tables begin when someone points to their navigation.
-      for (const api of ['beta','schedules','posts','campus']) {
+      for (const api of ['beta','visits','schedules','posts','campus']) {
         if (revision !== epoch || document.hidden) break;
         if (!opened.has(api) && allowed(api)) await tabs.warm(api);
       }

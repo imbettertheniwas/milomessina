@@ -9,7 +9,8 @@ function watch(sheet) {
   sheet.getRange = function(row, ...args) {
     const range = getRange.call(this, row, ...args);
     const getValues = range.getValues, setValues = range.setValues;
-    range.getValues = function() { if (row > 1) counts.reads++; return getValues.call(this); };
+    const includesData = row > 1 || Number(args[1] || 1) > 1;
+    range.getValues = function() { if (includesData) counts.reads++; return getValues.call(this); };
     range.setValues = function(values) { if (row > 1) counts.writes++; return setValues.call(this, values); };
     return range;
   };
@@ -34,7 +35,7 @@ function limitCapacity(sheet, initial) {
 
 test('beta manager sheet reads stay constant as the member list grows and writes remain fresh', () => {
   const h = harness(), operator = h.login('Arya');
-  const api = (action, payload={}) => h.ctx.betaApi({_session:operator, action, ...payload});
+  const api = (action, payload={}) => h.ctx.doPost({postData:{contents:JSON.stringify({_api:'beta', _session:operator, action, ...payload})}});
   const initialized = api('list');
   assert.equal(initialized.ok, true);
   const joined = h.ctx.internalSessionApi({action:'betajoin', invite:'beta', name:'Maya', email:'maya@example.com', phone:'+1 212 555 0100', github:'maya-builds'});
@@ -51,7 +52,7 @@ test('beta manager sheet reads stay constant as the member list grows and writes
   assert.equal(list.peers.length, 40);
   assert.ok(list.members.every(member => member.batch === initialized.group.name));
   assert.equal(members.reads, 1, 'load member rows once for the response');
-  assert.equal(batches.reads, 2, 'one initialization check and one final batch snapshot, regardless of member count');
+  assert.equal(batches.reads, 1, 'initialization and response share one fresh batch snapshot, regardless of member count');
   const renamed = api('batchupdate', {id:initialized.group.id, name:'Updated group'});
   assert.ok(renamed.members.every(member => member.batch === 'Updated group'));
   assert.equal(renamed.group.name, 'Updated group');

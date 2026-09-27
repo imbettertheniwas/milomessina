@@ -8,8 +8,14 @@ const html = read('index.html');
 function lift(source, name) {
   const at = source.indexOf('function ' + name + '(');
   assert.ok(at >= 0, 'Missing function ' + name);
+  let parameters = 0, bodyAt = -1;
+  for (let i = source.indexOf('(', at); i < source.length; i++) {
+    if (source[i] === '(') parameters++;
+    else if (source[i] === ')' && --parameters === 0) { bodyAt = source.indexOf('{', i + 1); break; }
+  }
+  assert.ok(bodyAt >= 0, 'Missing function body ' + name);
   let depth = 0;
-  for (let i = source.indexOf('{', at); i < source.length; i++) {
+  for (let i = bodyAt; i < source.length; i++) {
     if (source[i] === '{') depth++;
     else if (source[i] === '}' && --depth === 0) return source.slice(at, i + 1);
   }

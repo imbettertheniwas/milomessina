@@ -22,7 +22,7 @@ function setup({token = 'session-one', isOperator = true} = {}) {
     session: () => token, operator: () => isOperator,
     fetch: (url, options) => {
       const pending = deferred();
-      calls.push({url, options, body: JSON.parse(options.body), ...pending});
+      calls.push({url, options, body: options.body ? JSON.parse(options.body) : null, ...pending});
       return pending.promise;
     }});
   return {data, calls, timers, setToken(value) { token = value; }, setOperator(value) { isOperator = value; },
@@ -283,4 +283,68 @@ test('twenty-second deadline covers response body consumption and releases the w
   body.resolve({ok: true, value: 'too late'});
   respond(1); await queued;
   assert.equal(timers.size, 0);
+});
+
+test('visits preloads use authenticated same-origin GET and consume the warm inbox once', async () => {
+  const {data,calls,respond}=setup({isOperator:false});
+  const warm=data.warm('visits');await tick();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].url,'/api/visits?action=list');
+  assert.equal(calls[0].options.method,'GET');
+  assert.equal(calls[0].options.credentials,'same-origin');
+  assert.equal(calls[0].options.cache,'no-store');
+  assert.equal(calls[0].options.headers['X-Fomo-Internal-Session'],'session-one');
+  assert.equal(calls[0].options.body,undefined);
+  assert(calls[0].options.signal instanceof AbortSignal);
+  const inbox={requests:[{id:'guest',name:'Guest'}]};
+  respond(0,inbox);await warm;
+  assert.equal(await data.read('visits'),inbox);
+  assert.equal(calls.length,1,'opening the tab consumes its completed authenticated preload');
+  const fresh=data.read('visits');assert.equal(calls.length,2);
+  respond(1,{requests:[]});await fresh;
+});
+
+test('a malformed visit inbox is rejected, never cached, and can be retried', async () => {
+  const {data,calls,respond}=setup();
+  const warm=data.warm('visits');await tick();
+  const foreground=data.read('visits'),failed=assert.rejects(foreground,{code:'INVALID'});
+  respond(0,{ok:true});await failed;assert.equal(await warm,undefined);
+  const retry=data.read('visits');assert.equal(calls.length,2);
+  respond(1,{requests:[]});assert.deepEqual(await retry,{requests:[]});
+  const unsupported=data.read('visits','update',{id:'guest'});
+  await assert.rejects(unsupported,{code:'INVALID'});
+  assert.equal(calls.length,2,'mutations cannot use the preload transport');
+});
+
+test('explicit visit refresh discards warm data and preserves unauthorized status for the view', async () => {
+  const {data,calls,respond}=setup();
+  const warm=data.warm('visits');await tick();respond(0,{requests:[{id:'before'}]});await warm;
+  const fresh=data.read('visits','list',{}, {fresh:true});
+  const denied=assert.rejects(fresh,{code:'HTTP_ERROR',status:401,message:'Your Internal session expired.'});
+  assert.equal(calls.length,2);
+  respond(1,{error:'Your Internal session expired.'},401);await denied;
+  const again=data.read('visits');assert.equal(calls.length,3,'denial cannot reveal the old preload');
+  respond(2,{requests:[]});await again;
+});
+
+test('an unauthorized Visits response preserves its status even with a malformed error body', async () => {
+  for(const body of [null,'bad response',{error:{message:'not a string'}}]){
+    const {data,respond}=setup(),read=data.read('visits');
+    const denied=assert.rejects(read,{code:'HTTP_ERROR',status:401,message:'Visit requests could not be loaded. Please try again.'});
+    respond(0,body,401);await denied;
+  }
+});
+
+test('visit writes discard completed snapshots and pending reads without disturbing other tabs', async () => {
+  const {data,calls,respond}=setup();
+  const other=data.warm('posts');await tick();respond(0,{ok:true,posts:['current']});await other;
+  const warm=data.warm('visits');await tick();respond(1,{requests:[{id:'old'}]});await warm;
+  data.invalidate('visits');
+  const pending=data.read('visits'),stale=assert.rejects(pending,{code:'STALE'});
+  assert.equal(calls.length,3);
+  data.invalidate('visits');await stale;assert(calls[2].options.signal.aborted);
+  const fresh=data.read('visits');respond(2,{requests:[{id:'late'}]});respond(3,{requests:[{id:'new'}]});
+  assert.equal((await fresh).requests[0].id,'new');
+  assert.equal((await data.read('posts')).posts[0],'current');
+  assert.equal(calls.length,4);
 });

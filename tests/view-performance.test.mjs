@@ -205,3 +205,74 @@ test('view reads use the shared transport and writes invalidate before and after
     assert.deepEqual(events,['invalidate:'+api,'fetch','invalidate:'+api],file);
   }
 });
+
+test('visits consumes the shared preload on activation and explicit Refresh requests fresh data', async () => {
+  const h=viewHarness('visits.js',async()=>{throw Error('The view must use its shared reader');}),reads=[];
+  h.context.window.FOMO_SHEET.read=async(...args)=>{reads.push(args);return {requests:[]};};
+  h.location.hash='#/visits';await h.emit('window:fomo:view-change');await settle();
+  assert.equal(reads.length,1);assert.equal(reads[0][0],'visits');assert.equal(reads[0][1],'list');
+  assert.equal(reads[0][3].fresh,false);
+  assert.equal(vm.runInContext('state.loaded && state.authenticated',h.context),true);
+  await h.emit('window:hashchange');assert.equal(reads.length,1,'revisiting a loaded inbox needs no duplicate read');
+  await h.emit('vr-refresh:click');await settle();
+  assert.equal(reads.length,2);assert.equal(reads[1][3].fresh,true);
+  assert.equal(h.calls.length,0);
+});
+
+test('visits writes invalidate shared preloads on success and network failure', async () => {
+  const events=[];let fail=false;
+  const h=viewHarness('visits.js',async()=>{events.push('fetch');if(fail)throw Error('Offline');return response({request:{id:'guest'}});});
+  h.context.window.FOMO_SHEET.invalidate=api=>events.push('invalidate:'+api);
+  await vm.runInContext("api('update',{id:'guest',version:1,status:'confirmed',internalNotes:''})",h.context);
+  assert.deepEqual(events,['invalidate:visits','fetch','invalidate:visits']);
+  assert.equal(h.calls[0].options.method,'POST');assert.equal(h.calls[0].options.signal,undefined);
+  assert.equal(h.calls[0].options.headers['X-Fomo-Internal-Session'],'test-session');
+  events.length=0;fail=true;
+  await assert.rejects(vm.runInContext("api('update',{id:'guest',version:1,status:'confirmed',internalNotes:''})",h.context),/Offline/);
+  assert.deepEqual(events,['invalidate:visits','fetch','invalidate:visits']);
+});
+
+test('a 401 from the shared Visits reader locks the inbox and clears private UI data', async () => {
+  const h=viewHarness('visits.js');let expired=false;
+  h.context.window.FOMO_SHEET.read=async()=>{
+    if(expired)throw Object.assign(new Error('Your Internal session expired.'),{status:401});
+    return {requests:[{id:'guest',name:'Guest',email:'guest@example.invalid',social:'',notes:'',preferred_date:'2026-09-28',preferred_time:'10:00 AM',status:'pending'}]};
+  };
+  await vm.runInContext('refresh()',h.context);
+  assert.equal(h.context.window.FOMO_VISIT_STATS.total,1);
+  assert.equal(h.get('vr-workspace').hidden,false);
+  expired=true;await h.emit('vr-refresh:click');await settle();
+  assert.equal(h.get('vr-workspace').hidden,true);
+  assert.equal(h.context.window.FOMO_VISIT_STATS,null);
+  assert.equal(vm.runInContext('state.requests.length',h.context),0);
+  assert.equal(vm.runInContext('state.loaded || state.authenticated || state.busy',h.context),false);
+  assert.equal(h.get('vr-refresh').disabled,false);
+  assert.equal(h.get('vr-message').textContent,'Your Internal session expired.');
+});
+
+test('a malformed Visits result cannot mark the inbox loaded or authenticated', async () => {
+  for(const shared of [false,true]){
+    const h=viewHarness('visits.js',async()=>response({ok:true}));
+    if(shared)h.context.window.FOMO_SHEET.read=async()=>({ok:true});
+    await vm.runInContext('refresh()',h.context);
+    assert.equal(vm.runInContext('state.loaded || state.authenticated || state.busy',h.context),false);
+    assert.equal(vm.runInContext('state.requests.length',h.context),0);
+    assert.equal(h.get('vr-message').textContent,'Visit requests could not be loaded.');
+  }
+});
+
+test('a stale shared Visits denial cannot lock a newer identity or clear its loading state', async () => {
+  const h=viewHarness('visits.js'),first=deferred(),second=deferred();let reads=0;
+  h.context.window.FOMO_SHEET.read=async()=>{
+    if(++reads===1){await first.promise;throw Object.assign(new Error('Previous session expired'),{status:401});}
+    return second.promise;
+  };
+  const old=vm.runInContext('refresh()',h.context);
+  h.location.hash='#/visits';await h.emit('window:fomo:identity');
+  first.resolve();await old;
+  assert.equal(vm.runInContext('state.busy',h.context),true);
+  second.resolve({requests:[]});await settle();
+  assert.equal(vm.runInContext('state.authenticated',h.context),true);
+  assert.equal(h.get('vr-workspace').hidden,false);
+  assert.equal(h.get('vr-message').textContent,'Requests are up to date.');
+});

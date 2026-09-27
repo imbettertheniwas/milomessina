@@ -1,5 +1,45 @@
 # Internal performance audit — 25 September 2026
 
+## Follow-up: Beta and Visit requests — 27 September 2026
+
+A live authenticated check after the frontend release still measured **6.38 s**
+for the first Beta read and **9.62 s** for the first Visit requests read. Repeat
+isolated reads took 5.00 s and 4.42 s respectively. These measurements confirmed
+that spreadsheet execution and extra upstream round trips remained significant.
+
+The follow-up reduces a populated Beta manager list from **45 to 21**
+service-facing operations in the deterministic backend harness, including one
+spreadsheet open instead of seven. Handles, properties and table rows are reused
+only within the current request. Each request still checks fresh authorization.
+Configured Beta and Visits reads no longer wait for the global write lock;
+first-use initialization or schema repair retries under the lock with fresh
+snapshots. Invoice and referral lists remain locked because they can write.
+
+When storage and identity use the same deployment, Visits can verify the current
+core session and read its inbox in one upstream POST. A cold capability lookup
+adds one GET; supported warm reads use one POST instead of separate authorization
+and list POSTs. Legacy and separate-storage deployments keep their existing path.
+No completed authorization result or guest list is cached on the server.
+
+Visit requests now shares the page's authenticated preloading queue and one-use,
+60-second in-memory snapshots. Refresh bypasses a completed warm snapshot;
+identity changes and writes invalidate old work. Beta member selectors now wrap
+above a full-width profile, with contact fields and notes alongside each other
+on desktop and stacked on narrow screens.
+
+Validation: **533 tests passed**. Desktop and 390-pixel mobile browser checks
+used synthetic data in dark mode, verified member switching and the retained
+group schedule overview, and found no horizontal overflow or browser errors.
+The available Google account did not contain the live script project, so backend
+publication and post-deployment latency measurements remain pending its editor
+access. No production speedup is claimed for the unpublished backend changes.
+
+**Deployment requirement:** these backend reductions require updating the existing
+Apps Script deployment with the complete `fomo/setup/apps-script.gs`, preserving
+its CONFIG, Script Properties and URL. The website safely falls back until that
+deployment advertises `visitsAuthenticatedList: true`. The operation-count
+improvement is a local measurement, not a measured production speedup.
+
 ## Tab navigation update — 27 September 2026
 
 The current frontend warms Beta, schedules, week notes and campus data after the

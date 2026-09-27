@@ -5,7 +5,7 @@
     var fetchRequest = options.fetch || root.fetch.bind(root);
     var session = options.session || function () { return ''; };
     var operator = options.operator || function () { return false; };
-    var warmApis = new Set(['beta', 'refer', 'admin', 'schedules', 'posts', 'campus']);
+    var warmApis = new Set(['beta', 'visits', 'refer', 'admin', 'schedules', 'posts', 'campus']);
     var restrictedApis = new Set(['beta', 'refer', 'admin']);
     var flights = new Map(), cache = new Map(), revisions = new Map();
     var queue = [], active = new Set(), scheduled = false, epoch = 0;
@@ -104,13 +104,25 @@
         try {
           var body = Object.assign({}, record.payload, {_api: record.api, _key: options.key || '',
             _session: record.session, action: record.action});
-          var response = await fetchRequest(options.endpoint, {
-            method: 'POST', body: JSON.stringify(body), signal: record.controller.signal
-          });
-          if (!response.ok) throw error('HTTP_ERROR', 'Request failed (' + response.status + ').');
+          var visiting = record.api === 'visits';
+          if (visiting && record.action !== 'list') throw error('INVALID', 'Only the visit list can be preloaded.');
+          var response = await fetchRequest(visiting ? '/api/visits?action=list' : options.endpoint, visiting ? {
+            method:'GET', credentials:'same-origin', cache:'no-store',
+            headers:{'X-Fomo-Internal-Session':record.session}, signal:record.controller.signal
+          } : {method: 'POST', body: JSON.stringify(body), signal: record.controller.signal});
+          if (!response.ok) {
+            var failure = error('HTTP_ERROR', 'Request failed (' + response.status + ').');
+            failure.status = response.status;
+            if (visiting) {
+              var refused = await response.json().catch(function(){return {};});
+              failure.message = refused && typeof refused.error === 'string' && refused.error || 'Visit requests could not be loaded. Please try again.';
+            }
+            throw failure;
+          }
           var output = await response.json();
           if (!valid(record)) throw stale();
-          if (record.warm && !record.foreground && mayWarm(record.api, record.session) && output && output.ok === true) {
+          if (visiting && !Array.isArray(output && output.requests)) throw error('INVALID', 'Visit requests could not be loaded.');
+          if (record.warm && !record.foreground && mayWarm(record.api, record.session) && output && (output.ok === true || visiting)) {
             cache.set(record.key, {api: record.api, output: output, expires: Date.now() + 60000});
           }
           finish(record, null, output);
