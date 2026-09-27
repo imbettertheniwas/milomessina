@@ -1,5 +1,5 @@
 import {hash} from './village-district-layout.js?v=80';
-import {smooth} from './village-human-motion.js?v=80';
+import {smooth} from './village-human-motion.js?v=106';
 
 const clockCache=new WeakMap();
 

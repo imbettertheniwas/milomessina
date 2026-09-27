@@ -1,9 +1,9 @@
 import {hasChapterHouse} from './village-backyards.js?v=112';
-import {conversation,personalClock} from './village-human-behavior.js?v=80';
+import {conversation,personalClock} from './village-human-behavior.js?v=128';
 import {rankedHouseSizes} from './village-house-sizing.js?v=112';
 import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
-import {gaitPhase,smooth} from './village-human-motion.js?v=80';
-import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=80';
+import {gaitPhase,smooth} from './village-human-motion.js?v=106';
+import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=128';
 const lawnRoute=roundedLoop(-7.9,7,7.9,14.4,1.15);
 // Ease over the low lawn/path edges; the walking loop clears the porch steps.
 export function lawnGround(x,z){const edge=smooth((12-z)/.25);return .045+.085*smooth((7.5-Math.abs(x))/.25)*edge+.07*smooth((.825-Math.abs(x))/.2)*edge;}
@@ -99,9 +99,16 @@ export function crowdMembers(chapters,lots=createLots(chapters.length),houseSize
       for(let attempt=0;attempt<(isPorch?1:250);attempt++){
         const gx=isPorch?2.05:(hash(chapter.id,g,attempt,'x')-.5)*(14.4-2*radius),gz=isPorch?5.05:7.7+radius+hash(chapter.id,g,attempt,'z')*(5.6-2*radius);
         const seats=Array.from({length:size},(_,seat)=>{const a=phase+seat*Math.PI*2/size,r=radius*(.92+hash(chapter.id,g,seat,'radius')*.16);return {x:gx+Math.sin(a)*r,z:gz+Math.cos(a)*r,a};});
-        let clearance=3;for(const seat of seats)for(const other of occupied)clearance=Math.min(clearance,Math.hypot(seat.x-other.x,seat.z-other.z));
         const centerGap=groups.length?Math.min(...groups.map(other=>Math.hypot(other.x-gx,other.z-gz)-other.radius-radius)):2;
-        const score=clearance*4+Math.max(-1,Math.min(.5,centerGap))*.3-(Math.abs(gx)<.7?.15:0);
+        const centerBonus=Math.max(-1,Math.min(.5,centerGap))*.3,centerPenalty=Math.abs(gx)<.7?.15:0;
+        let clearance=3;
+        // Clearance only decreases. Once even this upper-bound score cannot
+        // win, remaining distances cannot change the chosen people or poses.
+        candidate:for(const seat of seats)for(const other of occupied){
+          clearance=Math.min(clearance,Math.hypot(seat.x-other.x,seat.z-other.z));
+          if(clearance*4+centerBonus-centerPenalty<=bestScore)break candidate;
+        }
+        const score=clearance*4+centerBonus-centerPenalty;
         if(score>bestScore){bestScore=score;best={x:gx,z:gz,radius,seats};}
       }
       groups.push(best);occupied.push(...best.seats);

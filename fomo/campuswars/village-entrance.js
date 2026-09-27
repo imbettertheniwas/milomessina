@@ -1,4 +1,4 @@
-import {createEntranceEyesTexture} from './village-floor-logo.js?v=36';
+import {createEntranceEyesTexture} from './village-floor-logo.js?v=79';
 import {districtSpecs} from './village-district-layout.js?v=80';
 
 export function createVillageEntrance(T,extension=0){

@@ -1,18 +1,20 @@
 import {backyardUnlocked} from './village-backyards.js?v=112';
-import {createVillagePopulation} from './village-population.js?v=4';
-import {createLiveArrivals} from './village-arrivals.js?v=120';
+import {createVillagePopulation} from './village-population.js?v=128';
+import {createLiveArrivals} from './village-arrivals.js?v=128';
 import {createHelipad} from './village-helipad.js?v=1';
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=128';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality,createResolutionBudget} from './village-quality.js?v=127';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=127';
-import {createDistricts} from './village-districts.js?v=125';
+import {createVillageRendererAsync} from './village-renderer.js?v=128';
+import {chapterSceneKey} from './village-startup.js?v=128';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
+import {createDistricts} from './village-districts.js?v=128';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=70';
 import {createMoneyRain} from './village-money-rain.js?v=111';
-import {prewarmVillage} from './village-prewarm.js?v=113';
+import {prewarmVillage} from './village-prewarm.js?v=128';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
@@ -178,6 +180,13 @@ async function startVillage(){
   let chapterBuildRevision=0;
   async function updateChapters(event){
     const buildRevision=++chapterBuildRevision,previous=village;
+    // Status/arrival updates and the initial standings sort often describe the
+    // exact world already built. They must not recreate its GPU resources.
+    if(chapterSceneKey(event.detail.chapters)===chapterSceneKey(chapters)){
+      arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);
+      if(event.detail.selectedId)choose(event.detail.selectedId,false);
+      return;
+    }
     const next=await createVillageRendererAsync(THREE,event.detail.chapters,{streets:previous.streets,houseFinishes:previous.houseFinishes,camera,arrivals});
     if(buildRevision!==chapterBuildRevision){next.dispose();return;}
     chapters=event.detail.chapters;arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);scene.remove(previous.world);scene.add(next.world);next.world.add(next.streets);village=next;previous.dispose();
@@ -446,12 +455,20 @@ async function startVillage(){
   const initial=new URLSearchParams(location.hash.slice(1)).get('chapter');choose(village.anchors.some(a=>a.id===initial)?initial:selected,false,false);
   camera.position.set(0,104,104);camera.lookAt(target);camera.updateMatrixWorld();
   async function prepare(){
-    while(districts.building){await new Promise(resolve=>requestAnimationFrame(resolve));districts.update(target.x,target.z);}
+    // Use the latest available roster before compiling. Previously the first
+    // live response made us warm the saved world, throw it away, then warm the
+    // replacement again while the loading cover stayed up.
+    // Let already-completed feed requests dispatch after synchronous scenery
+    // construction, then drain updates again after every district build.
+    await yieldVillageBuild();
+    do{
+      while(pendingChapterUpdate){
+        const event=pendingChapterUpdate;pendingChapterUpdate=null;
+        await updateChapters(event);
+      }
+      while(districts.building){await yieldVillageBuild();districts.update(target.x,target.z);}
+    }while(pendingChapterUpdate);
     return prewarmVillage(THREE,renderer,scene,camera,applyLighting,moneyRain,{mobile:quality.mobile||Boolean(village.streaming),variantRoots:[districts.stadium.root,helipad.root]}).then(()=>{
-    if(pendingChapterUpdate){
-      const event=pendingChapterUpdate;pendingChapterUpdate=null;
-      return updateChapters(event).then(()=>prepare());
-    }
     if(renderer.getContext?.().isContextLost())return;
     ready=true;lastTime=0;lastRender=0;framePacer.reset();
     applyLighting(nightToggle.getAttribute('aria-pressed')==='true'?1:0);
@@ -460,6 +477,13 @@ async function startVillage(){
     if(visible&&entrancePending){if(overlayOpen){finishIntro();resetView();}else beginIntro();}
     if(!entrancePending&&!entranceActive)arrivals.start(chapters,partyTime,reduced);
     wake();
+    // A response that arrived during GPU compilation is a normal live refresh.
+    // Present the complete, warmed village now and keep it usable while the
+    // updated houses build, instead of restarting the entire loading sequence.
+    if(pendingChapterUpdate){
+      const event=pendingChapterUpdate;pendingChapterUpdate=null;
+      return updateChapters(event);
+    }
   });}
   function showLoadingError(error){
     console.error('Unable to prepare Greek village:',error);

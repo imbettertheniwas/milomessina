@@ -34,7 +34,7 @@ function harness({fail=false,mobile=false}={}){
 
 // Each variant compiles, then flies the route a pixel at a time; the last draw
 // is the full-canvas opening frame the loading cover lifts off.
-const sequence=()=>[['compile',1],...INTRO_PREWARM_TIMES.map(()=>['render',1]),['compile',0],...INTRO_PREWARM_TIMES.map(()=>['render',0]),['present',0]];
+const sequence=()=>[['compile',1],['compile',0],['compile',1],...INTRO_PREWARM_TIMES.map(()=>['render',1]),['compile',0],...INTRO_PREWARM_TIMES.map(()=>['render',0]),['present',0]];
 
 test('both lighting variants compile and fly the whole route before playback state is restored',async()=>{
   const h=harness();await h.run();
@@ -117,4 +117,62 @@ test('the warm-up lens matches the flight lens at every sampled beat',()=>{
     const radius=camera.position.distanceTo(new THREE.Vector3(...expected.target));
     assert(Math.abs(radius-expected.radius)<1e-6,`radius ${radius} did not match ${expected.radius}`);
   }
+});
+
+function parallelHarness({reject=false,throwAt=0}={}){
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),geometry=new THREE.BoxGeometry(),texture=new THREE.Texture();
+  const material=new THREE.MeshStandardMaterial({map:texture}),customUniform={value:1};
+  material.onBeforeCompile=shader=>{shader.uniforms.test=customUniform;};material.customProgramCacheKey=()=> 'village-test-shader';
+  const a=new THREE.Mesh(geometry,material),b=new THREE.Mesh(geometry,material),multi=new THREE.Mesh(geometry,[material,material]);
+  const district=new THREE.Group();district.add(new THREE.PointLight());scene.add(a,b,multi,district);
+  const references=[a.material,b.material,multi.material],snapshots=[],pending=[],disposed=new Set(),draws=[];
+  const cloneMaterial=material.clone;material.clone=function(){const clone=cloneMaterial.call(this);clone.addEventListener('dispose',()=>disposed.add(clone));return clone;};
+  let night=0,call=0,textureDisposed=false,geometryDisposed=false;
+  texture.addEventListener('dispose',()=>{textureDisposed=true;});geometry.addEventListener('dispose',()=>{geometryDisposed=true;});
+  const renderer={
+    shadowMap:{needsUpdate:false},getScissor:t=>t,getScissorTest:()=>false,setScissor(){},setScissorTest(){},
+    compileAsync(){
+      call++;
+      const clone=a.material;
+      if(throwAt===call)throw new Error('synchronous compilation failure');
+      if(clone!==material){
+        assert.equal(b.material,clone);assert.deepEqual(multi.material,[clone,clone]);
+        assert.equal(clone.map,texture);assert.equal(clone.onBeforeCompile,material.onBeforeCompile);assert.equal(clone.customProgramCacheKey,material.customProgramCacheKey);
+        snapshots.push({night,district:district.visible,material:clone});
+        return new Promise((resolve,rejectJob)=>pending.push(()=>reject&&pending.length===4?rejectJob(new Error('asynchronous compilation failure')):resolve()));
+      }
+      assert.equal(disposed.size,0,'temporary programs were released before real materials adopted them');
+      return Promise.resolve();
+    },
+    render(){assert.equal(a.material,material);draws.push({night,district:district.visible});}
+  };
+  return {scene,snapshots,pending,disposed,draws,
+    run:()=>prewarmVillage(THREE,renderer,scene,camera,value=>{night=value;},{update(){},clear(){}},{variantRoots:[district]}),
+    assertRestored({finished=true}={}){assert.equal(a.material,references[0]);assert.equal(b.material,references[1]);assert.equal(multi.material,references[2]);assert.equal(district.visible,true);if(finished)assert.equal(night,0);assert(!textureDisposed);assert(!geometryDisposed);}
+  };
+}
+
+test('all lighting and district shader jobs start before waiting, with independent material state',async()=>{
+  const h=parallelHarness(),finished=h.run();
+  assert.deepEqual(h.snapshots.map(({night,district})=>[night,district]),[[1,true],[1,false],[0,true],[0,false]]);
+  assert.equal(new Set(h.snapshots.map(entry=>entry.material)).size,4);
+  // The scene is already restored while GPU compilation is still pending.
+  h.assertRestored();assert.equal(h.draws.length,0);assert.equal(h.disposed.size,0);
+  for(const resolve of h.pending)resolve();await finished;
+  assert.equal(h.disposed.size,4);assert(h.draws.length>0);h.assertRestored();
+});
+
+test('asynchronous shader failure waits for every job and releases only temporary materials',async()=>{
+  const h=parallelHarness({reject:true}),finished=h.run();
+  h.pending[0]();await Promise.resolve();assert.equal(h.disposed.size,0);
+  for(const settle of h.pending.slice(1))settle();
+  await assert.rejects(finished,/asynchronous compilation failure/);
+  assert.equal(h.disposed.size,4);assert.equal(h.draws.length,0);h.assertRestored();
+});
+
+test('synchronous shader failure restores scene references while earlier jobs finish',async()=>{
+  const h=parallelHarness({throwAt:2}),finished=h.run();
+  assert.equal(h.pending.length,1);h.assertRestored({finished:false});assert.equal(h.disposed.size,0);
+  h.pending[0]();await assert.rejects(finished,/synchronous compilation failure/);
+  assert.equal(h.disposed.size,2);assert.equal(h.draws.length,0);h.assertRestored();
 });

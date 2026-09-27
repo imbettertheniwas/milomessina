@@ -1,11 +1,11 @@
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=103';
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=107';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=128';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=128';
 import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=80';
-import {createCampusKit} from './village-campus-kit.js?v=101';
+import {createCampusKit} from './village-campus-kit.js?v=128';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=113';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=128';
 import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=102';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=128';
 import {campusDistrictExists} from './village-campus-bounds.js?v=1';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){

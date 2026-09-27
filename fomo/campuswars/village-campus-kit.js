@@ -1,5 +1,5 @@
-import {createVehicleKit} from './village-vehicles.js?v=77';
-import {createCampusBannerTexture} from './village-floor-logo.js?v=24';
+import {createVehicleKit} from './village-vehicles.js?v=128';
+import {createCampusBannerTexture} from './village-floor-logo.js?v=79';
 import {hash,pick} from './village-district-layout.js?v=80';
 import {buildPlace} from './village-places.js?v=80';
 // Shared architectural parts, textures and landscape geometry. All static parts

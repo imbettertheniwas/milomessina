@@ -1,7 +1,7 @@
 // One world-space spatial grid covers chapter members and campus visitors.
 // Steering uses swept circles, so fast walkers cannot skip through a neighbour
 // between frames. Rendering/LOD never determines who occupies a walking lane.
-import {gaitPhase} from './village-human-motion.js?v=80';
+import {gaitPhase} from './village-human-motion.js?v=106';
 
 const CELL=2,STEP=1/30,GAP=.025;
 const turns=[0,.35,-.35,.7,-.7,1.15,-1.15,1.55,-1.55].map(angle=>({angle,cos:Math.cos(angle),sin:Math.sin(angle)}));
@@ -61,11 +61,22 @@ export function createPedestrianSpacing(){
     grid.clear();
     // New streamed neighbours and night visitors take the remaining space;
     // existing people retain their progress and do not jump back to a route.
-    const order=preserve?[...agents].sort((a,b)=>Number(Boolean(b.ready))-Number(Boolean(a.ready))):agents;
-    for(const a of order){
-      const keep=preserve&&a.ready&&!a.hidden,position={x:a.x,z:a.z};
-      if(!keep){a.delay=0;a.travel=0;a.vx=a.vz=0;}
-      const target=sample(a,time-a.delay);place(a,keep?position:target);
+    const placements=agents.map(a=>{
+      let keep=preserve&&a.ready&&!a.hidden;
+      const position={x:a.x,z:a.z},restart=()=>{a.delay=0;a.travel=0;a.vx=a.vz=0;};
+      if(!keep)restart();
+      let target=sample(a,time-a.delay);
+      // A live roster can move a whole block or rebuild a person's route.
+      // Their old world position then belongs to the previous layout; searching
+      // for space around it cannot reach the new sidewalk or seat.
+      if(keep&&(a.hidden||!allowed(a,position.x,position.z))){
+        keep=false;restart();target=sample(a,time);
+      }
+      return {a,keep,target:keep?position:target};
+    });
+    if(preserve)placements.sort((a,b)=>Number(Boolean(b.keep))-Number(Boolean(a.keep)));
+    for(const {a,keep,target} of placements){
+      place(a,target);
       a.oldX=a.x;a.oldZ=a.z;
       if(!keep){a.gaitOrigin=a.pose.gait||0;a.heading=a.pose.rotation??a.pose.angle??0;}
       a.ready=true;

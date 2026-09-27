@@ -1,5 +1,24 @@
 # fomo Campus Wars
 
+## Startup without reducing graphics quality
+
+The page preloads its complete module graph, with one URL per module so shared
+artwork caches are reused. Keep the preload URLs and versioned imports in sync;
+`tests/village-module-loading.test.mjs` checks the production graph.
+
+Startup submits all four lighting/district shader variants concurrently using
+temporary material copies, then adopts the compiled programs into the original
+materials. Every intro-route upload, shadow pass and full opening frame remains.
+Pixel density, antialiasing, textures, geometry and population budgets are unchanged.
+Construction yields to browser tasks without waiting for a display refresh, and
+crowd placement prunes candidates only when they cannot beat the existing result.
+
+Available roster changes are coalesced before warmup. Identical standings or
+arrival-only updates reuse the scene. Responses arriving during compilation use
+the normal live refresh after the completed village becomes usable, rather than
+restarting the loading sequence. Relocated campus visitors restart on their new
+routes while unaffected walkers retain their progress.
+
 ## Mobile rendering and visual polish
 
 Daylight uses a clearer blue sky, cooler fill light and warmer ground bounce

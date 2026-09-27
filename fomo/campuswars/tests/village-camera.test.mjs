@@ -1,4 +1,5 @@
 import {createVillagePopulation} from '../village-population.js';
+import {chapterSceneKey} from '../village-startup.js';
 import {backyardUnlocked} from '../village-backyards.js';
 import {createHelipad} from '../village-helipad.js';
 import {createLiveArrivals} from '../village-arrivals.js';
@@ -17,8 +18,8 @@ import {createFomoBlimp,DISCORD_INVITE} from '../village-blimp.js';
 import {createMoneyRain} from '../village-money-rain.js';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from '../village-intro.js';
 
-async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650},initialChapters=[]){
-  const elements=new Map(),events=new Map(),selections=[],lighting=[],builds=[],pixelRatios=[];let intersection,frame,camera,finishWarmup,blimp,helipad,mockVillage,renders=0;
+async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650},initialChapters=[],duringBuild=null){
+  const elements=new Map(),events=new Map(),selections=[],lighting=[],builds=[],pixelRatios=[],warmups=[];let intersection,frame,camera,finishWarmup,blimp,helipad,mockVillage,renders=0;
   function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,dataset:{},style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
   element('village-drawer').hidden=true;
   element('chapters-data').textContent=JSON.stringify({chapters:initialChapters});
@@ -27,13 +28,13 @@ async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobi
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={createResolutionBudget,createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:()=>({then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
-  sandbox.createVillageRendererAsync=async (...args)=>sandbox.createVillage(...args);
+  const sandbox={yieldVillageBuild:()=>Promise.resolve(),chapterSceneKey,createResolutionBudget,createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:(...args)=>(warmups.push(args),{then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  sandbox.createVillageRendererAsync=async (...args)=>{const result=sandbox.createVillage(...args);if(builds.length===1)duringBuild?.(event=>events.get('document:chapters:update')(event));return result;};
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
-  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+  for(let i=0;i<12;i++)await Promise.resolve();
   let now=100;
-  return {helipad:()=>helipad,village:()=>mockVillage,blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,lighting,lens:()=>camera.fov,element,fire(name,event){events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
+  return {warmups,helipad:()=>helipad,village:()=>mockVillage,blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,lighting,lens:()=>camera.fov,element,fire(name,event){events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
 }
 test('phones lower resolution under sustained missed frames and recover when rendering is smooth',async()=>{
   const h=await cameraHarness(false,'',false,true);
@@ -259,18 +260,41 @@ test('the intro waits for GPU warmup and starts its clock only when ready',async
 });
 
 
-test('live rosters arriving during compilation are coalesced and warmed before playback',async()=>{
+test('live rosters arriving during compilation refresh the usable village without restarting warmup',async()=>{
   const h=await cameraHarness(false,'',true);h.show(true);
   h.fire('document:chapters:update',{detail:{chapters:[{id:'old',joined:0}]}});
   const chapters=[{id:'latest',joined:0}];
   h.fire('document:chapters:update',{detail:{chapters}});
   assert.equal(h.builds.length,1,'the compiling world must remain intact');
-  h.finishWarmup();
+  await h.finishWarmup();
   assert.equal(h.builds.length,2);assert.equal(h.builds[1],chapters);
-  assert.equal(h.element('village-loading').hidden,false,'new materials must warm before playback');
-  assert.equal(h.step(1),undefined);
-  h.finishWarmup();assert.equal(h.element('village-loading').hidden,true);
+  assert.equal(h.element('village-loading').hidden,true,'the complete warmed village remains usable during its live refresh');
+  assert.equal(h.warmups.length,1,'a late feed response never replays the whole loading sequence');
   assert(h.step(.02).y>75);
+});
+
+test('live rosters received during construction replace the saved world before any warmup',async()=>{
+  const chapters=[{id:'latest',joined:2}];
+  const h=await cameraHarness(false,'',true,false,undefined,[],fire=>{
+    fire({detail:{chapters:[{id:'older',joined:1}]}});
+    fire({detail:{chapters}});
+  });
+  assert.equal(h.builds.length,2);
+  assert.equal(h.builds[1],chapters);
+  assert.equal(h.warmups.length,1,'never compile the obsolete saved world');
+  h.finishWarmup();assert.equal(h.element('village-loading').hidden,true);
+});
+
+test('standings sorting and arrival-only updates never rebuild or repeat startup warmup',async()=>{
+  const initial=[{id:'b',joined:0},{id:'a',joined:1}];
+  const h=await cameraHarness(false,'',true,false,undefined,initial);
+  const chapters=[{joined:1,rank:1,progress:.5,id:'a'},{rank:2,progress:0,id:'b',joined:0}];
+  h.fire('document:chapters:update',{detail:{chapters,arrivals:[]}});
+  h.finishWarmup();
+  assert.equal(h.builds.length,1);assert.equal(h.warmups.length,1);
+  assert.equal(h.element('village-loading').hidden,true);
+  h.fire('document:chapters:update',{detail:{chapters}});
+  assert.equal(h.builds.length,1);
 });
 
 test('street navigation moves at eye level, turns around, honors ends and exits to overview',async()=>{
@@ -317,6 +341,7 @@ test('a lost graphics context shows recovery text and restoration resumes render
   assert(prevented);assert.equal(h.element('village-loading').hidden,false);
   assert.match(h.element('village-loading').textContent,/Restoring/);
   h.fire('canvas:webglcontextrestored');
+  for(let i=0;i<4;i++)await Promise.resolve();
   assert.equal(h.element('village-loading').hidden,true);assert(h.step(.02));
 });
 

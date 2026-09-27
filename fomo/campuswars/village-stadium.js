@@ -1,7 +1,7 @@
 import {hash} from './village-district-layout.js?v=80';
 import {footballState,footballPlayer,footballBall} from './village-football.js?v=88';
 import {createStadiumFireworks} from './village-stadium-fireworks.js?v=1';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=36';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
 
 export const STADIUM_SITE={x:0,z:200,width:82,depth:84};
 export function createStadium(T,extension=0){

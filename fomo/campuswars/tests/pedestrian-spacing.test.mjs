@@ -91,3 +91,39 @@ test('a walker waits with planted feet when a narrow path is occupied, then resu
   for(let i=361;i<=540;i++)poses=spacing.update(i/60,[path]);
   assert(poses.get(path)[0].x>waiting.x+1,'Removing the obstruction lets the walker carry on');
 });
+
+test('rebuilt routes and relocated blocks restart at their new positions without moving unchanged neighbours',()=>{
+  const spacing=createPedestrianSpacing(),people=[person('visitor',{walking:false})];
+  const group=(id,x,offsetZ=0)=>pedestrianGroup(id,people,()=>({x,z:0,walking:false}),{
+    offsetZ,allowed:(px,pz,s)=>Math.hypot(px-s.x,pz-s.z)<.5
+  });
+  const unchanged=group('unchanged',20),before=group('relocated',0),routeBefore=group('new-route',10);
+  spacing.update(0,[unchanged,before,routeBefore]);
+  const moved=group('relocated',0,40),routeMoved=group('new-route',50);
+  const poses=spacing.update(.03,[unchanged,moved,routeMoved]);
+  assert.equal(spacing.agents.length,3);check(spacing.agents);
+  assert.equal(poses.get(unchanged)[0].x,20);
+  assert.equal(spacing.agents.find(a=>a.group===moved).z,40);
+  assert.equal(poses.get(routeMoved)[0].x,50);
+  for(const a of spacing.agents){
+    assert.equal(a.delay,0);
+    assert(a.group.allowed(a.x-a.group.offsetX,a.z-a.group.offsetZ,a.pose,a.person));
+  }
+});
+
+test('a live roster expanding the village keeps every person on the rebuilt campus',()=>{
+  const chapters=Array.from({length:36},(_,i)=>({id:`live-${i}`,name:'Alpha Beta',letters:'ΑΒ',school:'University',joined:i===0?60:i===1?20:0,active:100}));
+  const before=createVillage(T,chapters.slice(0,17)),after=createVillage(T,chapters);
+  const oldDistricts=createDistricts(T,before.extension,before.streetTotal),newDistricts=createDistricts(T,after.extension,after.streetTotal);
+  const spacing=createPedestrianSpacing();
+  try{
+    spacing.update(0,[...before.pedestrians,...oldDistricts.pedestrians]);
+    const groups=[...after.pedestrians,...newDistricts.pedestrians];
+    for(const time of [.03,.06,.1]){
+      const poses=spacing.update(time,groups);check(spacing.agents);
+      assert.equal(spacing.agents.length,groups.reduce((sum,g)=>sum+g.people.length,0));
+      for(const group of groups)assert.equal(poses.get(group).length,group.people.length);
+      for(const a of spacing.agents)assert(a.hidden||a.group.allowed(a.x-a.group.offsetX,a.z-a.group.offsetZ,a.pose,a.person),a.id);
+    }
+  }finally{before.dispose();after.dispose();oldDistricts.dispose();newDistricts.dispose();}
+});

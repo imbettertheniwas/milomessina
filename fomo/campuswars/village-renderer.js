@@ -1,11 +1,12 @@
 import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
 import {villageQuality} from './village-quality.js?v=127';
-import {createVillage,buildVillageSteps} from './village-world.js?v=127';
+import {createVillage,buildVillageSteps} from './village-world.js?v=128';
 import {houseStandings} from './village-competition.js?v=111';
 import {rankedHouseSizes} from './village-house-sizing.js?v=112';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=112';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=128';
 import {unoccludedHouses} from './village-occlusion.js?v=112';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
 
 export const STREAMING_THRESHOLD=80;
 export function villageRenderLayout(T,input,previousFinishes){
@@ -49,7 +50,7 @@ export async function createVillageRendererAsync(T,chapters,options={}){
   let result;
   do{
     const start=performance.now();do{result=steps.next();}while(!result.done&&performance.now()-start<4);
-    if(!result.done)await new Promise(resolve=>requestAnimationFrame(resolve));
+    if(!result.done)await yieldVillageBuild();
   }while(!result.done);
   return streaming?streamedRenderer(T,layout,result.value,indices,options.attachStreet??false,options.arrivals):result.value;
 }
