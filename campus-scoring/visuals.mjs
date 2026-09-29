@@ -1,16 +1,16 @@
 const fmt=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ns='http://www.w3.org/2000/svg';
 let outline=null;
 fetch(new URL('data/us-outline.json',import.meta.url)).then(r=>r.ok?r.json():null).then(d=>{outline=d;document.dispatchEvent(new Event('mapready'));}).catch(()=>{});
 function bind(root,open){root.querySelectorAll('[data-campus]').forEach(el=>{el.addEventListener('click',()=>open(el.dataset.campus));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(el.dataset.campus);}});});}
 export function renderVisuals(ranked,rollout,labels,open){
- const mean=ranked.reduce((a,s)=>a+(s.overall_score??0),0)/ranked.length;
- document.querySelector('#mean-score').textContent=`Mean ${fmt(mean,1)}`;
+ const scored=ranked.filter(s=>s.overall_score!==null);
+ const mean=scored.length?scored.reduce((a,s)=>a+s.overall_score,0)/scored.length:null;
+ document.querySelector('#mean-score').textContent=mean===null?'No observed scores':`Mean ${fmt(mean,1)}`;
  const y=v=>188-(v/100)*158,x=i=>32+i*(568/Math.max(1,ranked.length-1));
  const grid=[0,25,50,75,100].map(v=>`<line x1="27" y1="${y(v)}" x2="607" y2="${y(v)}" class="chart-grid"/><text x="18" y="${y(v)+3}" text-anchor="end" class="axis-label">${v}</text>`).join('');
- const dots=ranked.map((s,i)=>`<g class="chart-campus" role="button" tabindex="0" data-campus="${s.unitid}" aria-label="${esc(s.school)}, score ${fmt(s.overall_score,1)}, coverage ${fmt(s.weighted_completeness_pct)} percent"><title>${esc(s.school)} · Score ${fmt(s.overall_score,1)} · Evidence ${fmt(s.weighted_completeness_pct)}% · Range ${fmt(s.score_lower_bound,1)}–${fmt(s.score_upper_bound,1)}</title><rect x="${x(i)-5}" y="20" width="10" height="174" fill="transparent"/><line x1="${x(i)}" x2="${x(i)}" y1="${y(s.score_upper_bound)}" y2="${y(s.score_lower_bound)}" class="range-stem"/><circle cx="${x(i)}" cy="${y(s.overall_score)}" r="${i<3?4.5:3}" class="score-dot"/><circle cx="${x(i)}" cy="${y(s.score_lower_bound)}" r="1.8" class="floor-dot"/></g>`).join('');
- document.querySelector('#score-chart').innerHTML=`<svg viewBox="0 0 630 210" aria-label="Ranked campus scores and unresolved ranges">${grid}<line x1="27" x2="607" y1="${y(mean)}" y2="${y(mean)}" class="mean-line"/>${dots}</svg>`;
+ const dots=ranked.map((s,i)=>`<g class="chart-campus" role="button" tabindex="0" data-campus="${s.unitid}" aria-label="${esc(s.school)}, score ${fmt(s.overall_score,1)}, coverage ${fmt(s.weighted_completeness_pct)} percent"><title>${esc(s.school)} · Score ${fmt(s.overall_score,1)} · Evidence ${fmt(s.weighted_completeness_pct)}% · Range ${fmt(s.score_lower_bound,1)}–${fmt(s.score_upper_bound,1)}</title><rect x="${x(i)-5}" y="20" width="10" height="174" fill="transparent"/><line x1="${x(i)}" x2="${x(i)}" y1="${y(s.score_upper_bound)}" y2="${y(s.score_lower_bound)}" class="range-stem"/>${s.overall_score===null?'':`<circle cx="${x(i)}" cy="${y(s.overall_score)}" r="${i<3?4.5:3}" class="score-dot"/>`}<circle cx="${x(i)}" cy="${y(s.score_lower_bound)}" r="1.8" class="floor-dot"/></g>`).join('');
+ document.querySelector('#score-chart').innerHTML=`<svg viewBox="0 0 630 210" aria-label="Ranked campus scores and unresolved ranges">${grid}${mean===null?'':`<line x1="27" x2="607" y1="${y(mean)}" y2="${y(mean)}" class="mean-line"/>`}${dots}</svg>`;
  bind(document.querySelector('#score-chart'),open);
  const chosen=new Set(rollout.campuses.map(s=>s.unitid));
  const px=lon=>22+(lon+125)*6.1,py=lat=>20+(50-lat)*7.2;

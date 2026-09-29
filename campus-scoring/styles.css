@@ -6,3 +6,5 @@
 @media(prefers-reduced-motion:no-preference){button,a{transition:background .18s,color .18s,border-color .18s}.visual-card{animation:arrive .45s ease both}.map-card{animation-delay:.06s}.signal-card{animation-delay:.12s}dialog[open]{animation:arrive .2s ease both}@keyframes arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}}
 
 #settings-error{padding:12px;background:#f0ebe7;border-radius:5px;font-size:11px;line-height:1.6;color:#775d4c}@media(max-width:760px){.stats span:not(.coverage-stripe){display:block;font-size:7px;min-height:19px;line-height:1.4}.stats small{min-height:24px}.stats strong{margin-top:8px}}
+
+.location,.score-sub,.reason-cell,.table-help,.metric-meta,.signal .signal-note,.micro-label,.map-foot,.chart-caption{color:#767676}.axis-label{fill:#767676}.signal span{font-size:10px}.reason-cell{font-size:10px;line-height:1.7}.location{font-size:10px}.score-sub{font-size:9px}@media(max-width:760px){.location,.score-sub{font-size:8px}.signal span{font-size:9px}.signal .signal-note{font-size:8px}}
