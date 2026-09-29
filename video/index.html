@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Watch Greek Wars.">
+  <title>Greek Wars</title>
+  <link rel="canonical" href="https://milomessina.com/video">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; background: #050506; }
+    body {
+      height: 100svh;
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #f6f6f8;
+      overflow: hidden;
+    }
+    main { position: relative; min-width: 0; min-height: 0; }
+    video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
+    footer { display: flex; align-items: center; justify-content: center; gap: 24px; min-height: 48px; padding: 2px 16px; }
+    button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 44px; padding: 0 10px; border: 0; border-radius: 8px;
+      background: transparent; color: #b9b9c3; font: inherit; font-size: 12px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    button:hover { color: #fff; }
+    button:focus-visible, video:focus-visible { outline: 2px solid #8091ff; outline-offset: -2px; }
+    button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    [hidden] { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body>
+  <main aria-label="Greek Wars film">
+    <video id="film" autoplay muted playsinline loop preload="auto"
+      poster="/video/greek-wars-v13-poster.jpg"
+      tabindex="0" aria-label="Greek Wars. Press Space to pause or play.">
+      <source src="/video/greek-wars-v13-234c398a.mp4" type="video/mp4">
+      Your browser does not support video. <a href="/video/greek-wars-v13-234c398a.mp4">Open the video</a>.
+    </video>
+  </main>
+  <footer aria-label="Playback options">
+    <button id="play" type="button" aria-label="Play video">
+      <svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>
+      <svg id="pause-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M8 5v14M16 5v14"/></svg>
+      <span id="play-label">Play</span>
+    </button>
+    <button id="sound" type="button" aria-label="Turn sound on" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4Z"/>
+        <path id="sound-off" d="m16 9 6 6m0-6-6 6"/>
+        <path id="sound-on" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" hidden/>
+      </svg>
+      <span id="sound-label">Sound on</span>
+    </button>
+    <span id="status" class="sr-only" role="status" aria-live="polite"></span>
+  </footer>
+  <script>
+    const film = document.getElementById('film');
+    const playButton = document.getElementById('play');
+    const soundButton = document.getElementById('sound');
+    const status = document.getElementById('status');
+
+    function updatePlayback() {
+      const paused = film.paused;
+      document.getElementById('play-icon').toggleAttribute('hidden', !paused);
+      document.getElementById('pause-icon').toggleAttribute('hidden', paused);
+      document.getElementById('play-label').textContent = paused ? 'Play' : 'Pause';
+      playButton.setAttribute('aria-label', paused ? 'Play video' : 'Pause video');
+    }
+    function updateSound() {
+      document.getElementById('sound-off').toggleAttribute('hidden', !film.muted);
+      document.getElementById('sound-on').toggleAttribute('hidden', film.muted);
+      document.getElementById('sound-label').textContent = film.muted ? 'Sound on' : 'Mute';
+      soundButton.setAttribute('aria-label', film.muted ? 'Turn sound on' : 'Mute video');
+      soundButton.setAttribute('aria-pressed', String(!film.muted));
+    }
+    async function play() {
+      try {
+        await film.play();
+        status.textContent = '';
+      } catch {
+        status.textContent = 'Tap Play to start the video.';
+      }
+      updatePlayback();
+    }
+    function togglePlayback() { film.paused ? play() : film.pause(); }
+    playButton.addEventListener('click', togglePlayback);
+    film.addEventListener('click', togglePlayback);
+    film.addEventListener('keydown', (event) => {
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault();
+        togglePlayback();
+      }
+    });
+    soundButton.addEventListener('click', () => {
+      film.muted = !film.muted;
+      updateSound();
+      if (film.paused) play();
+    });
+    film.addEventListener('play', updatePlayback);
+    film.addEventListener('pause', updatePlayback);
+    film.addEventListener('volumechange', updateSound);
+    film.addEventListener('error', () => {
+      status.textContent = 'The video could not load. Please refresh to try again.';
+    });
+    film.muted = true;
+    updatePlayback();
+    updateSound();
+    play();
+  </script>
+</body>
+</html>
