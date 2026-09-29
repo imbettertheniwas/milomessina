@@ -1,0 +1,46 @@
+{
+  "default": {
+    "enrollment": 20,
+    "demographics": 10,
+    "greek": 25,
+    "creators": 15,
+    "programs": 10,
+    "customers": 5,
+    "cost": 5,
+    "geography": 5,
+    "performance": 5
+  },
+  "beverage": {
+    "enrollment": 20,
+    "demographics": 10,
+    "greek": 35,
+    "creators": 10,
+    "programs": 5,
+    "customers": 5,
+    "cost": 5,
+    "geography": 3,
+    "performance": 7
+  },
+  "beauty": {
+    "enrollment": 10,
+    "demographics": 20,
+    "greek": 10,
+    "creators": 30,
+    "programs": 10,
+    "customers": 5,
+    "cost": 5,
+    "geography": 3,
+    "performance": 7
+  },
+  "fintech": {
+    "enrollment": 25,
+    "demographics": 10,
+    "greek": 5,
+    "creators": 10,
+    "programs": 20,
+    "customers": 15,
+    "cost": 3,
+    "geography": 5,
+    "performance": 7
+  }
+}

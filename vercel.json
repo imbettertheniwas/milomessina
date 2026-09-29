@@ -75,6 +75,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/campus", "destination": "/campus/index.html" },
+    { "source": "/campus/", "destination": "/campus/index.html" },
     { "source": "/video", "destination": "/video/index.html" },
     { "source": "/video/", "destination": "/video/index.html" },
     { "source": "/internal/beta", "destination": "/invoice/beta.html" },

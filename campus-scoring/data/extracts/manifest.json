@@ -1,0 +1,74 @@
+[
+  {
+    "id": "HD2024",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/hd2024.zip",
+    "accessed": "2026-09-29",
+    "sha256": "d98425c123d7c0e872aec6e83960dfb501884818bf17385c340790f3d1f28345",
+    "bytes": 1088372,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2024"
+  },
+  {
+    "id": "EF2023A",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023a.zip",
+    "accessed": "2026-09-29",
+    "sha256": "d1fbd91cbda965e6bf75b9167825ec121d9ebf218ef7bc164276ef0443290237",
+    "bytes": 2979525,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023"
+  },
+  {
+    "id": "EF2023B",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023b.zip",
+    "accessed": "2026-09-29",
+    "sha256": "1aa81bcff050d82920c2d4ab921b91c763e2f9ff77adc45b2f0978bb6270b9cc",
+    "bytes": 1741540,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023"
+  },
+  {
+    "id": "EF2023C",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023c.zip",
+    "accessed": "2026-09-29",
+    "sha256": "add4ece19bb4f8a5b7a893f60c9f96411beed137ec62a48e21be949253a332ee",
+    "bytes": 181241,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023"
+  },
+  {
+    "id": "EF2023A_DIST",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023a_dist.zip",
+    "accessed": "2026-09-29",
+    "sha256": "82cf7c0db273ba3f594a5ffa54c6d5ea14bd01db15e8cdb886b3d1663a1fcb97",
+    "bytes": 221386,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023"
+  },
+  {
+    "id": "C2024_A",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/c2024_a.zip",
+    "accessed": "2026-09-29",
+    "sha256": "03234cc27fe4e7eb835a66d4f37aaec11bdac8dfa278f971584e1b20d03e1159",
+    "bytes": 4680679,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023-24"
+  },
+  {
+    "id": "gsa",
+    "url": "https://www.gsa.gov/system/files/FY2027PerDiemZipCode_Validated090126.xlsx",
+    "accessed": "2026-09-29",
+    "sha256": "0837f8d7a50bfc1029263b04bec7490873dbe3084554e5128c2ae23ba3eec7f1",
+    "bytes": 3158613,
+    "publisher": "U.S. General Services Administration",
+    "data_year": "FY2027"
+  },
+  {
+    "id": "airports",
+    "url": "https://davidmegginson.github.io/ourairports-data/airports.csv",
+    "accessed": "2026-09-29",
+    "sha256": "e5b485bd1453002071231563dcc54fbf1efacb7c3cbaa486c73247b3aa1b2398",
+    "bytes": 12733496,
+    "publisher": "OurAirports",
+    "data_year": null
+  }
+]

@@ -1,0 +1,3228 @@
+{
+  "metadata": {
+    "as_of": "2026-09-29",
+    "profile": "beauty",
+    "category_weights": {
+      "enrollment": 10,
+      "demographics": 20,
+      "greek": 10,
+      "creators": 30,
+      "programs": 10,
+      "customers": 5,
+      "cost": 5,
+      "geography": 3,
+      "performance": 7
+    },
+    "rollout_policy": {
+      "count": 20,
+      "max_per_region": 6,
+      "max_per_metro": 2,
+      "new_region_bonus": 4,
+      "nearby_trip_bonus": 2,
+      "trip_radius_km": 200,
+      "min_weighted_completeness_pct": 45,
+      "min_observed_categories": 4
+    },
+    "metrics_version": "1.0",
+    "notice": "Provisional public-data shortlist. No supplied customer/campaign data; no audited creator census. Scores are decision rules, not validated outcome predictions."
+  },
+  "campuses": [
+    {
+      "rank": 3,
+      "school": "Indiana University-Bloomington",
+      "unitid": "151351",
+      "city": "Bloomington",
+      "state": "IN",
+      "region": "Great Lakes",
+      "overall_score": 86.17,
+      "score_lower_bound": 52.56,
+      "score_upper_bound": 91.56,
+      "weighted_completeness_pct": 61,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 60.14,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 86.58,
+      "demographics_score": 96.96,
+      "greek_score": 59.82,
+      "creators_score": 100,
+      "programs_score": 85.75,
+      "customers_score": null,
+      "cost_score": 84,
+      "geography_score": 62.22,
+      "performance_score": null,
+      "undergraduates": 36833,
+      "non_distance_undergraduates": 36633,
+      "on_campus_residents": null,
+      "age_18_24_pct": 96.95924849998643,
+      "women_pct": 49.79502076941873,
+      "out_of_state_freshmen_pct": 40.575916230366495,
+      "age_18_19_pct": 47.951565172535496,
+      "age_20_21_pct": 42.36146933456411,
+      "age_22_24_pct": 6.646213992886813,
+      "age_25_plus_pct": 1.2733146906306845,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 53.87434554973822,
+      "international_pct": 4.973800667879347,
+      "hispanic_pct": 8.405505932180382,
+      "black_pct": 4.156598702250699,
+      "asian_pct": 9.912306898704966,
+      "greek_pct": 24,
+      "greek_chapters": 70,
+      "greek_members": 8000,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 41.66212534059945,
+      "relevant_awards": 3058,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 132,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 74,
+      "airport_km": 64.45245992577372,
+      "metro_presence": 1,
+      "nearby_campuses": 2,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 96.95924849998643,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.391849699997287
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_opportunity",
+          "source_ids": [
+            "review-87c1af0c2e15"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 41.66212534059945,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 5.832697547683925
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-aa8f25dd62b7; primary-46; review-87c1af0c2e15; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 86.57818633664783,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 96.95924849998643,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 59.81836533450245,
+          "completeness_pct": 100,
+          "confidence_score": 60.56249999999998
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 32.0625
+        },
+        "programs": {
+          "score": 85.7474994324487,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 84,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 62.21901602969051,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 1,
+      "rollout_priority": 56.563786570190466,
+      "rollout_reason": "Evidence-supported score floor 52.56; observed opportunity 86.17. Adds Great Lakes regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 6,
+      "school": "Pennsylvania State University-Main Campus",
+      "unitid": "214777",
+      "city": "University Park",
+      "state": "PA",
+      "region": "Mid East",
+      "overall_score": 83.31,
+      "score_lower_bound": 52.49,
+      "score_upper_bound": 89.49,
+      "weighted_completeness_pct": 63,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 64.77,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 93.77,
+      "demographics_score": 97.35,
+      "greek_score": 51.9,
+      "creators_score": 100,
+      "programs_score": 59.13,
+      "customers_score": null,
+      "cost_score": 84,
+      "geography_score": 81.6,
+      "performance_score": null,
+      "undergraduates": 42223,
+      "non_distance_undergraduates": 42016,
+      "on_campus_residents": 14500,
+      "age_18_24_pct": 97.34741728441844,
+      "women_pct": 47.11413210809275,
+      "out_of_state_freshmen_pct": null,
+      "age_18_19_pct": 39.710584278710655,
+      "age_20_21_pct": 46.858347346233096,
+      "age_22_24_pct": 10.778485659474693,
+      "age_25_plus_pct": 1.7715463136205385,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": null,
+      "international_pct": 9.873765483267414,
+      "hispanic_pct": 9.10877957511309,
+      "black_pct": 4.6751770362124905,
+      "asian_pct": 7.095658764180659,
+      "greek_pct": 17,
+      "greek_chapters": 68,
+      "greek_members": 6800,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 24.757192596664833,
+      "relevant_awards": 2702,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 132,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 74,
+      "airport_km": 6.00167052269325,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 97.34741728441844,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.46948345688369
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-9125e4da57a5"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 42016,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.622202222433598
+        }
+      ],
+      "important_gaps": "Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; review-9d5969dca67f; EF2023B; review-15c7129ae87a; review-091eac730a78; review-9125e4da57a5; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 93.76882514139844,
+          "completeness_pct": 100,
+          "confidence_score": 66.18499999999999
+        },
+        "demographics": {
+          "score": 97.34741728441844,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 51.895362799886534,
+          "completeness_pct": 100,
+          "confidence_score": 68.02000000000001
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 56.99999999999999
+        },
+        "programs": {
+          "score": 59.12813179080701,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 84,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 81.59933179092269,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 2,
+      "rollout_priority": 56.4854140659125,
+      "rollout_reason": "Evidence-supported score floor 52.49; observed opportunity 83.31. Adds Mid East regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 5,
+      "school": "University of South Carolina-Columbia",
+      "unitid": "218663",
+      "city": "Columbia",
+      "state": "SC",
+      "region": "Southeast",
+      "overall_score": 84.22,
+      "score_lower_bound": 51.38,
+      "score_upper_bound": 90.38,
+      "weighted_completeness_pct": 61,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 64.23,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 74.86,
+      "demographics_score": 95.69,
+      "greek_score": 59.68,
+      "creators_score": 100,
+      "programs_score": 78.24,
+      "customers_score": null,
+      "cost_score": 92.5,
+      "geography_score": 79.6,
+      "performance_score": null,
+      "undergraduates": 28470,
+      "non_distance_undergraduates": 27761,
+      "on_campus_residents": null,
+      "age_18_24_pct": 95.69371268001404,
+      "women_pct": 57.77660695468914,
+      "out_of_state_freshmen_pct": 44.82852848749829,
+      "age_18_19_pct": 47.748507200561995,
+      "age_20_21_pct": 40.291534949069195,
+      "age_22_24_pct": 7.653670530382859,
+      "age_25_plus_pct": 2.8275377590446085,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 54.21505670173521,
+      "international_pct": 2.072356866877415,
+      "hispanic_pct": 5.904460835967686,
+      "black_pct": 9.286968739023534,
+      "asian_pct": 4.425711275026344,
+      "greek_pct": 30,
+      "greek_chapters": 53,
+      "greek_members": 10000,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 37.3698354047699,
+      "relevant_awards": 2225,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 115,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 74,
+      "airport_km": 11.000090646617219,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 95.69371268001404,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.138742536002812
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-462ac2cf66fa"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 37.3698354047699,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 5.231776956667788
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-0d27ccdb7052; primary-21; review-462ac2cf66fa; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 74.85593953344059,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 95.69371268001404,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 59.68090883002242,
+          "completeness_pct": 100,
+          "confidence_score": 75.88125000000001
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 78.24123751076507,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 92.5,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 79.59996374135311,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 3,
+      "rollout_priority": 55.375018869889765,
+      "rollout_reason": "Evidence-supported score floor 51.38; observed opportunity 84.22. Adds Southeast regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 12,
+      "school": "The University of Texas at Austin",
+      "unitid": "228778",
+      "city": "Austin",
+      "state": "TX",
+      "region": "Southwest",
+      "overall_score": 81.13,
+      "score_lower_bound": 49.49,
+      "score_upper_bound": 88.49,
+      "weighted_completeness_pct": 61,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 61.68,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 92.73,
+      "demographics_score": 97.04,
+      "greek_score": 47.96,
+      "creators_score": 100,
+      "programs_score": 57.93,
+      "customers_score": null,
+      "cost_score": 58,
+      "geography_score": 83.21,
+      "performance_score": null,
+      "undergraduates": 42444,
+      "non_distance_undergraduates": 42201,
+      "on_campus_residents": null,
+      "age_18_24_pct": 97.0408067100179,
+      "women_pct": 57.89039675808124,
+      "out_of_state_freshmen_pct": 8.811933937133723,
+      "age_18_19_pct": 44.31957402695316,
+      "age_20_21_pct": 44.38318725850532,
+      "age_22_24_pct": 8.33804542455942,
+      "age_25_plus_pct": 1.8518518518518519,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 87.5759190197123,
+      "international_pct": 4.502403166525304,
+      "hispanic_pct": 28.185373668834227,
+      "black_pct": 4.6602582225991895,
+      "asian_pct": 25.247384789369523,
+      "greek_pct": 16,
+      "greek_chapters": 60,
+      "greek_members": 7200,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 24.098110326398167,
+      "relevant_awards": 2525,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 184,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 80,
+      "airport_km": 11.983653289678502,
+      "metro_presence": 1,
+      "nearby_campuses": 2,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 97.0408067100179,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.40816134200358
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-3d81986beddb"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 42201,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.631742930463932
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-11; primary-10; review-3d81986beddb; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 92.72837234749144,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 97.04080671001789,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 47.95620789202901,
+          "completeness_pct": 100,
+          "confidence_score": 57.736249999999984
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 45.599999999999994
+        },
+        "programs": {
+          "score": 57.92619481296903,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 58.00000000000001,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 83.2065386841286,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 4,
+      "rollout_priority": 53.49160561269687,
+      "rollout_reason": "Evidence-supported score floor 49.49; observed opportunity 81.13. Adds Southwest regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 15,
+      "school": "Clemson University",
+      "unitid": "217882",
+      "city": "Clemson",
+      "state": "SC",
+      "region": "Southeast",
+      "overall_score": 79.96,
+      "score_lower_bound": 48.78,
+      "score_upper_bound": 87.78,
+      "weighted_completeness_pct": 61,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 63.69,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 65.82,
+      "demographics_score": 97.13,
+      "greek_score": 56.03,
+      "creators_score": 100,
+      "programs_score": 62.07,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 67.52,
+      "performance_score": null,
+      "undergraduates": 22875,
+      "non_distance_undergraduates": 22694,
+      "on_campus_residents": null,
+      "age_18_24_pct": 97.12786885245902,
+      "women_pct": 52.992349726775956,
+      "out_of_state_freshmen_pct": 48.21984868713841,
+      "age_18_19_pct": 38.662295081967216,
+      "age_20_21_pct": 45.85355191256831,
+      "age_22_24_pct": 12.612021857923498,
+      "age_25_plus_pct": 2.378142076502732,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 50.801068090787716,
+      "international_pct": 0.839344262295082,
+      "hispanic_pct": 8.690710382513661,
+      "black_pct": 5.451366120218579,
+      "asian_pct": 2.837158469945355,
+      "greek_pct": 27.9,
+      "greek_chapters": 50,
+      "greek_members": 6704,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 27.567949170490646,
+      "relevant_awards": 1562,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 61.19837288717852,
+      "metro_presence": 1,
+      "nearby_campuses": 3,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 97.12786885245902,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.425573770491805
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_opportunity",
+          "source_ids": [
+            "review-893c61b65978"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 27.567949170490646,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 3.859512883868691
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-ab00ca7f94e8; review-893c61b65978; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 65.82184945891483,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 97.12786885245902,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 56.0302275619253,
+          "completeness_pct": 100,
+          "confidence_score": 72.58000000000001
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 62.071304349806304,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 67.52065084512859,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 5,
+      "rollout_priority": 50.776381400233944,
+      "rollout_reason": "Evidence-supported score floor 48.78; observed opportunity 79.96. Southeast coverage retained. Within 200 km great-circle of University of South Carolina-Columbia",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "University of South Carolina-Columbia"
+      ]
+    },
+    {
+      "rank": 1,
+      "school": "University of Georgia",
+      "unitid": "139959",
+      "city": "Athens",
+      "state": "GA",
+      "region": "Southeast",
+      "overall_score": 88.53,
+      "score_lower_bound": 48.69,
+      "score_upper_bound": 93.69,
+      "weighted_completeness_pct": 55,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 62.71,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 79.86,
+      "demographics_score": 97.49,
+      "greek_score": 89.17,
+      "creators_score": 100,
+      "programs_score": 81.02,
+      "customers_score": null,
+      "cost_score": 73,
+      "geography_score": 49.56,
+      "performance_score": null,
+      "undergraduates": 31514,
+      "non_distance_undergraduates": 31409,
+      "on_campus_residents": null,
+      "age_18_24_pct": 97.49317763533668,
+      "women_pct": 57.82826680205623,
+      "out_of_state_freshmen_pct": 17.133094695737064,
+      "age_18_19_pct": 37.256457447483655,
+      "age_20_21_pct": 46.26197880307165,
+      "age_22_24_pct": 13.974741384781368,
+      "age_25_plus_pct": 1.8214127054642382,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 82.47640741945982,
+      "international_pct": 1.2343720251316874,
+      "hispanic_pct": 7.618836072856508,
+      "black_pct": 5.968775782192042,
+      "asian_pct": 12.686425080916418,
+      "greek_pct": null,
+      "greek_chapters": 69,
+      "greek_members": 9867,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 38.549710424710426,
+      "relevant_awards": 3195,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 154,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 74,
+      "airport_km": 86.09986571953917,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 97.49317763533668,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.49863552706734
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "observed_presence",
+          "source_ids": [
+            "primary-43"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 38.549710424710426,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 5.396959459459461
+        }
+      ],
+      "important_gaps": "On-campus resident students; Greek-life undergraduate participation; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-3; primary-4; primary-43; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 79.86170209268636,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 97.49317763533669,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 89.1666384850921,
+          "completeness_pct": 40.00000000000001,
+          "confidence_score": 72.43749999999999
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 81.02027229620408,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 73,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 49.56005371218433,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 6,
+      "rollout_priority": 50.692863351909836,
+      "rollout_reason": "Evidence-supported score floor 48.69; observed opportunity 88.53. Southeast coverage retained. Within 200 km great-circle of Clemson University",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "Clemson University"
+      ]
+    },
+    {
+      "rank": 7,
+      "school": "Miami University-Oxford",
+      "unitid": "204024",
+      "city": "Oxford",
+      "state": "OH",
+      "region": "Great Lakes",
+      "overall_score": 82.95,
+      "score_lower_bound": 48.11,
+      "score_upper_bound": 90.11,
+      "weighted_completeness_pct": 58,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 64.46,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 51.65,
+      "demographics_score": 97.69,
+      "greek_score": 64.61,
+      "creators_score": 100,
+      "programs_score": 78.73,
+      "customers_score": null,
+      "cost_score": 84.5,
+      "geography_score": 71.46,
+      "performance_score": null,
+      "undergraduates": 16478,
+      "non_distance_undergraduates": 16390,
+      "on_campus_residents": null,
+      "age_18_24_pct": 97.69389489015657,
+      "women_pct": 51.50503701905571,
+      "out_of_state_freshmen_pct": 35.78867157734315,
+      "age_18_19_pct": 44.216531132418986,
+      "age_20_21_pct": 45.272484524820975,
+      "age_22_24_pct": 8.204879232916616,
+      "age_25_plus_pct": 1.1591212525791965,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 63.14452628905258,
+      "international_pct": 3.7019055710644495,
+      "hispanic_pct": 4.521179754824614,
+      "black_pct": 2.919043573249181,
+      "asian_pct": 2.5913338997451145,
+      "greek_pct": 36,
+      "greek_chapters": null,
+      "greek_members": 5804,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 38.37725019566919,
+      "relevant_awards": 1471,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 131,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 74,
+      "airport_km": 51.340843586457645,
+      "metro_presence": 1,
+      "nearby_campuses": 3,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 97.69389489015657,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.538778978031317
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-e1bec07e7cbb"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 38.37725019566919,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 5.372815027393688
+        }
+      ],
+      "important_gaps": "On-campus resident students; Recognized FSL organizations; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-14; review-e1bec07e7cbb; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 51.64609909045631,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 97.69389489015657,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 64.60967884635365,
+          "completeness_pct": 70.00000000000001,
+          "confidence_score": 82.78571428571429
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 78.729269246256,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 84.5,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 71.46366256541694,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 7,
+      "rollout_priority": 50.112688533638135,
+      "rollout_reason": "Evidence-supported score floor 48.11; observed opportunity 82.95. Great Lakes coverage retained. Within 200 km great-circle of Indiana University-Bloomington",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "Indiana University-Bloomington"
+      ]
+    },
+    {
+      "rank": 13,
+      "school": "Florida State University",
+      "unitid": "134097",
+      "city": "Tallahassee",
+      "state": "FL",
+      "region": "Southeast",
+      "overall_score": 80.79,
+      "score_lower_bound": 50.09,
+      "score_upper_bound": 88.09,
+      "weighted_completeness_pct": 62,
+      "data_completeness_pct": 60.47,
+      "confidence_score": 63.65,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 79.53,
+      "demographics_score": 96.23,
+      "greek_score": 51.15,
+      "creators_score": 100,
+      "programs_score": 61.51,
+      "customers_score": null,
+      "cost_score": 89.33,
+      "geography_score": 81.06,
+      "performance_score": null,
+      "undergraduates": 32217,
+      "non_distance_undergraduates": 30622,
+      "on_campus_residents": null,
+      "age_18_24_pct": 96.22559518266753,
+      "women_pct": 56.61296830865692,
+      "out_of_state_freshmen_pct": 15.554423501443368,
+      "age_18_19_pct": 35.956172207219794,
+      "age_20_21_pct": 47.93742434118633,
+      "age_22_24_pct": 12.331998634261415,
+      "age_25_plus_pct": 3.147406648663749,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 83.34182373917473,
+      "international_pct": 2.113790855759382,
+      "hispanic_pct": 22.956824036999098,
+      "black_pct": 7.409131824812987,
+      "asian_pct": 3.768196914672378,
+      "greek_pct": 23,
+      "greek_chapters": 50,
+      "greek_members": 6800,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 29.053905390539054,
+      "relevant_awards": 2641,
+      "relevant_clubs": 7,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 121.33333333333333,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 80,
+      "airport_km": 7.35119018772262,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 96.22559518266753,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.24511903653351
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-f0927a28ccb4"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 29.053905390539054,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 4.067546754675469
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-2; review-f0927a28ccb4; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 79.53221117504775,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 96.22559518266753,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 51.145362799886534,
+          "completeness_pct": 100,
+          "confidence_score": 72.67500000000001
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 61.510451153841124,
+          "completeness_pct": 100,
+          "confidence_score": 58.53524999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 89.33333333333334,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 81.05952392491096,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 8,
+      "rollout_priority": 50.091729710324095,
+      "rollout_reason": "Evidence-supported score floor 50.09; observed opportunity 80.79. Southeast coverage retained. No selected nearby trip partner yet",
+      "new_region_bonus": 0,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 10,
+      "school": "Michigan State University",
+      "unitid": "171100",
+      "city": "East Lansing",
+      "state": "MI",
+      "region": "Great Lakes",
+      "overall_score": 81.37,
+      "score_lower_bound": 49.64,
+      "score_upper_bound": 88.64,
+      "weighted_completeness_pct": 61,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 64.55,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 90.51,
+      "demographics_score": 95.81,
+      "greek_score": 41.94,
+      "creators_score": 100,
+      "programs_score": 64.15,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 79.89,
+      "performance_score": null,
+      "undergraduates": 40483,
+      "non_distance_undergraduates": 40007,
+      "on_campus_residents": null,
+      "age_18_24_pct": 95.81305733270756,
+      "women_pct": 51.36477039745078,
+      "out_of_state_freshmen_pct": 17.80132172453582,
+      "age_18_19_pct": 45.09547217350493,
+      "age_20_21_pct": 40.76772966430354,
+      "age_22_24_pct": 9.949855494899094,
+      "age_25_plus_pct": 1.8303979448163428,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 75.79985314171824,
+      "international_pct": 5.673986611664155,
+      "hispanic_pct": 6.232245633969814,
+      "black_pct": 6.503964627127436,
+      "asian_pct": 8.000889262159426,
+      "greek_pct": 11.9,
+      "greek_chapters": 56,
+      "greek_members": 4874,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 28.137490007993605,
+      "relevant_awards": 2464,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 10.278342305374347,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 95.81305733270756,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.162611466541513
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_opportunity",
+          "source_ids": [
+            "review-699a57f456f7"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 40007,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.515802910024749
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-7c18273636fc; review-699a57f456f7; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 90.5086948070647,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 95.81305733270756,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 41.94088756759198,
+          "completeness_pct": 100,
+          "confidence_score": 77.80500000000002
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 64.1458957623186,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 79.88866307785025,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 9,
+      "rollout_priority": 49.63718631881007,
+      "rollout_reason": "Evidence-supported score floor 49.64; observed opportunity 81.37. Great Lakes coverage retained. No selected nearby trip partner yet",
+      "new_region_bonus": 0,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 11,
+      "school": "University of Florida",
+      "unitid": "134130",
+      "city": "Gainesville",
+      "state": "FL",
+      "region": "Southeast",
+      "overall_score": 81.31,
+      "score_lower_bound": 49.6,
+      "score_upper_bound": 88.6,
+      "weighted_completeness_pct": 61,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 67.7,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 83.35,
+      "demographics_score": 96.95,
+      "greek_score": 53.87,
+      "creators_score": 100,
+      "programs_score": 54.11,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 80.47,
+      "performance_score": null,
+      "undergraduates": 34924,
+      "non_distance_undergraduates": 33583,
+      "on_campus_residents": null,
+      "age_18_24_pct": 96.95338449203986,
+      "women_pct": 55.61218646203184,
+      "out_of_state_freshmen_pct": 15.424430641821946,
+      "age_18_19_pct": 34.5092200206162,
+      "age_20_21_pct": 46.601191157942964,
+      "age_22_24_pct": 15.842973313480702,
+      "age_25_plus_pct": 2.76600618485855,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 79.0150842945874,
+      "international_pct": 2.5455274309930136,
+      "hispanic_pct": 24.118084984537855,
+      "black_pct": 5.050967815828656,
+      "asian_pct": 11.785591570266865,
+      "greek_pct": 21,
+      "greek_chapters": 62,
+      "greek_members": 8400,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 21.97394895689929,
+      "relevant_awards": 2075,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 8.821094468533081,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 96.95338449203986,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.390676898407975
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-c288875cf2bd"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 33583,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.135701098084877
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-5d67a1998a9f; review-3bf088a0125d; review-c288875cf2bd; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 83.35172156515611,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 96.95338449203986,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 53.870303517825256,
+          "completeness_pct": 100,
+          "confidence_score": 84.21750000000002
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 56.99999999999999
+        },
+        "programs": {
+          "score": 54.11006558386775,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 80.47156221258678,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 10,
+      "rollout_priority": 49.5998977443287,
+      "rollout_reason": "Evidence-supported score floor 49.6; observed opportunity 81.31. Southeast coverage retained. No selected nearby trip partner yet",
+      "new_region_bonus": 0,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 2,
+      "school": "Ohio State University-Main Campus",
+      "unitid": "204796",
+      "city": "Columbus",
+      "state": "OH",
+      "region": "Great Lakes",
+      "overall_score": 87.5,
+      "score_lower_bound": 47.25,
+      "score_upper_bound": 93.25,
+      "weighted_completeness_pct": 54,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 61.87,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 95.17,
+      "demographics_score": 91.73,
+      "greek_score": 75,
+      "creators_score": 100,
+      "programs_score": 64.18,
+      "customers_score": null,
+      "cost_score": 81,
+      "geography_score": 88.06,
+      "performance_score": null,
+      "undergraduates": 45728,
+      "non_distance_undergraduates": 44160,
+      "on_campus_residents": null,
+      "age_18_24_pct": 91.72935619314205,
+      "women_pct": 50.43080825752274,
+      "out_of_state_freshmen_pct": 26.1721657157033,
+      "age_18_19_pct": 35.81831700489853,
+      "age_20_21_pct": 43.19235479356193,
+      "age_22_24_pct": 12.718684394681596,
+      "age_25_plus_pct": 5.611441567529741,
+      "age_unknown_pct": 0.00437368789363191,
+      "in_state_freshmen_pct": 65.18233688910941,
+      "international_pct": 7.081000699790063,
+      "hispanic_pct": 5.642057382785165,
+      "black_pct": 7.97979356193142,
+      "asian_pct": 9.9916899930021,
+      "greek_pct": null,
+      "greek_chapters": 60,
+      "greek_members": null,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 27.710843373493976,
+      "relevant_awards": 3220,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 138,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 80,
+      "airport_km": 9.851261525160227,
+      "metro_presence": 1,
+      "nearby_campuses": 3,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 91.72935619314205,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 18.345871238628412
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-72f419d12d50"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 44160,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.730279962683051
+        }
+      ],
+      "important_gaps": "On-campus resident students; Greek-life undergraduate participation; Greek community membership; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-8; review-72f419d12d50; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 95.17387386648853,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 91.72935619314205,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 75,
+          "completeness_pct": 30.000000000000004,
+          "confidence_score": 60.562499999999986
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 64.18014166987773,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 80.99999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 88.0594953899359,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 11,
+      "rollout_priority": 49.247778759934576,
+      "rollout_reason": "Evidence-supported score floor 47.25; observed opportunity 87.5. Great Lakes coverage retained. Within 200 km great-circle of Miami University-Oxford",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "Miami University-Oxford"
+      ]
+    },
+    {
+      "rank": 20,
+      "school": "Baylor University",
+      "unitid": "223232",
+      "city": "Waco",
+      "state": "TX",
+      "region": "Southwest",
+      "overall_score": 78.53,
+      "score_lower_bound": 47.12,
+      "score_upper_bound": 87.12,
+      "weighted_completeness_pct": 60,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 63.48,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 47.57,
+      "demographics_score": 96.18,
+      "greek_score": 46.11,
+      "creators_score": 100,
+      "programs_score": 72.97,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 82.96,
+      "performance_score": null,
+      "undergraduates": 15155,
+      "non_distance_undergraduates": 14831,
+      "on_campus_residents": null,
+      "age_18_24_pct": 96.17947871989442,
+      "women_pct": 59.663477400197955,
+      "out_of_state_freshmen_pct": 36.961109436237564,
+      "age_18_19_pct": 40.897393599472124,
+      "age_20_21_pct": 47.06697459584296,
+      "age_22_24_pct": 8.215110524579346,
+      "age_25_plus_pct": 2.0653249752556913,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 60.23515224600543,
+      "international_pct": 3.1474760805014848,
+      "hispanic_pct": 16.364236225668098,
+      "black_pct": 5.008248102936324,
+      "asian_pct": 8.677004289013526,
+      "greek_pct": 28,
+      "greek_chapters": 36,
+      "greek_members": null,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 34.889368591473286,
+      "relevant_awards": 1293,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 12.603052824838151,
+      "metro_presence": 1,
+      "nearby_campuses": 2,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 96.17947871989442,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.235895743978887
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_program",
+          "source_ids": [
+            "review-8fa950184759"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 34.889368591473286,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 4.884511602806262
+        }
+      ],
+      "important_gaps": "On-campus resident students; Greek community membership; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-b0b0274e893b; primary-35; review-8fa950184759; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 47.56993749391453,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 96.17947871989442,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 46.111111111111114,
+          "completeness_pct": 90,
+          "confidence_score": 72.2
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 72.96741254546978,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 82.95877887006473,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 12,
+      "rollout_priority": 49.11732123868628,
+      "rollout_reason": "Evidence-supported score floor 47.12; observed opportunity 78.53. Southwest coverage retained. Within 200 km great-circle of The University of Texas at Austin",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "The University of Texas at Austin"
+      ]
+    },
+    {
+      "rank": 30,
+      "school": "University of Michigan-Ann Arbor",
+      "unitid": "170976",
+      "city": "Ann Arbor",
+      "state": "MI",
+      "region": "Great Lakes",
+      "overall_score": 75.82,
+      "score_lower_bound": 47.01,
+      "score_upper_bound": 85.01,
+      "weighted_completeness_pct": 62,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 65.7,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 82.89,
+      "demographics_score": 95.6,
+      "greek_score": 49.38,
+      "creators_score": 100,
+      "programs_score": 35.83,
+      "customers_score": null,
+      "cost_score": 80,
+      "geography_score": 71.13,
+      "performance_score": null,
+      "undergraduates": 33730,
+      "non_distance_undergraduates": 33712,
+      "on_campus_residents": null,
+      "age_18_24_pct": 95.59739104654611,
+      "women_pct": 53.009190631485325,
+      "out_of_state_freshmen_pct": null,
+      "age_18_19_pct": 43.29380373554699,
+      "age_20_21_pct": 44.87696412689001,
+      "age_22_24_pct": 7.4266231841091015,
+      "age_25_plus_pct": 1.6276311888526533,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": null,
+      "international_pct": 8.304180254965905,
+      "hispanic_pct": 9.982211680996146,
+      "black_pct": 4.524162466646902,
+      "asian_pct": 18.544322561517937,
+      "greek_pct": 18.33,
+      "greek_chapters": 58,
+      "greek_members": 6221,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 13.121743249644718,
+      "relevant_awards": 1108,
+      "relevant_clubs": 3,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 140,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 80,
+      "airport_km": 32.17565164012786,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 95.59739104654611,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.119478209309225
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "documented_opportunity",
+          "source_ids": [
+            "review-34c33924bd78"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 33712,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.144026645466437
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; primary-19; review-34c33924bd78; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 82.88922669077225,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 95.59739104654611,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 49.380631963195,
+          "completeness_pct": 100,
+          "confidence_score": 95.00000000000001
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 32.0625
+        },
+        "programs": {
+          "score": 35.833726548503584,
+          "completeness_pct": 100,
+          "confidence_score": 58.53524999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 80,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 71.12973934394884,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 13,
+      "rollout_priority": 49.00594437605933,
+      "rollout_reason": "Evidence-supported score floor 47.01; observed opportunity 75.82. Great Lakes coverage retained. Within 200 km great-circle of Michigan State University",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "Michigan State University"
+      ]
+    },
+    {
+      "rank": 8,
+      "school": "University of Colorado Boulder",
+      "unitid": "126614",
+      "city": "Boulder",
+      "state": "CO",
+      "region": "Rocky Mountains",
+      "overall_score": 82.89,
+      "score_lower_bound": 44.76,
+      "score_upper_bound": 90.76,
+      "weighted_completeness_pct": 54,
+      "data_completeness_pct": 53.49,
+      "confidence_score": 61.87,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 79.81,
+      "demographics_score": 93.33,
+      "greek_score": 37.5,
+      "creators_score": 100,
+      "programs_score": 65.36,
+      "customers_score": null,
+      "cost_score": 75.5,
+      "geography_score": 73.12,
+      "performance_score": null,
+      "undergraduates": 32105,
+      "non_distance_undergraduates": 30996,
+      "on_campus_residents": null,
+      "age_18_24_pct": 93.33437159320978,
+      "women_pct": 46.67808752530758,
+      "out_of_state_freshmen_pct": 44.89795918367347,
+      "age_18_19_pct": 42.744120853449616,
+      "age_20_21_pct": 38.71982557234076,
+      "age_22_24_pct": 11.870425167419405,
+      "age_25_plus_pct": 5.54742251985672,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 53.432282003710576,
+      "international_pct": 2.741006073820277,
+      "hispanic_pct": 13.51191403208223,
+      "black_pct": 1.8906712350101231,
+      "asian_pct": 6.213985360535742,
+      "greek_pct": null,
+      "greek_chapters": 30,
+      "greek_members": null,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 29.312678598285455,
+      "relevant_awards": 1949,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 149,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 80,
+      "airport_km": 17.18999461248318,
+      "metro_presence": 1,
+      "nearby_campuses": 0,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 93.33437159320978,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 18.66687431864196
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "observed_presence",
+          "source_ids": [
+            "primary-44"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 29.312678598285455,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 4.1037750037599645
+        }
+      ],
+      "important_gaps": "On-campus resident students; Greek-life undergraduate participation; Greek community membership; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-16; primary-44; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 79.80501396428664,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 93.33437159320978,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 37.5,
+          "completeness_pct": 30.000000000000004,
+          "confidence_score": 60.562499999999986
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 65.3625058601161,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 75.5,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 73.12400215500672,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 14,
+      "rollout_priority": 48.76262102784555,
+      "rollout_reason": "Evidence-supported score floor 44.76; observed opportunity 82.89. Adds Rocky Mountains regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 4,
+      "school": "The University of Alabama",
+      "unitid": "100751",
+      "city": "Tuscaloosa",
+      "state": "AL",
+      "region": "Southeast",
+      "overall_score": 84.62,
+      "score_lower_bound": 48.24,
+      "score_upper_bound": 91.24,
+      "weighted_completeness_pct": 57,
+      "data_completeness_pct": 53.49,
+      "confidence_score": 63.07,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 79.63,
+      "demographics_score": 90.31,
+      "greek_score": 66.67,
+      "creators_score": 100,
+      "programs_score": 83.74,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 46.59,
+      "performance_score": null,
+      "undergraduates": 33435,
+      "non_distance_undergraduates": 30054,
+      "on_campus_residents": null,
+      "age_18_24_pct": 90.3065649768207,
+      "women_pct": 56.372065201136536,
+      "out_of_state_freshmen_pct": 63.67918830776664,
+      "age_18_19_pct": 42.934051144010766,
+      "age_20_21_pct": 37.6551517870495,
+      "age_22_24_pct": 9.717362045760431,
+      "age_25_plus_pct": 6.014655301330941,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 35.70479526512864,
+      "international_pct": 0.924181247196052,
+      "hispanic_pct": 6.882009869896815,
+      "black_pct": 11.242709735307313,
+      "asian_pct": 1.4894571556751908,
+      "greek_pct": 40,
+      "greek_chapters": null,
+      "greek_members": null,
+      "verified_creators_per_1000": null,
+      "creator_program_present": 1,
+      "relevant_awards_pct": 40.590461771385314,
+      "relevant_awards": 2681,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 83.51653995221086,
+      "metro_presence": 1,
+      "nearby_campuses": 0,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 90.3065649768207,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 18.06131299536414
+        },
+        {
+          "metric": "creator_program_present",
+          "label": "Documented student content program",
+          "value": 1,
+          "unit": "indicator",
+          "qualifier": "observed_presence",
+          "source_ids": [
+            "primary-42"
+          ],
+          "contribution_points": 9.000000000000002
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 40.590461771385314,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 5.6826646479939456
+        }
+      ],
+      "important_gaps": "On-campus resident students; Recognized FSL organizations; Greek community membership; Verified active creators per 1,000 undergraduates; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-1; primary-42; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 79.62837128980723,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 90.3065649768207,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 66.66666666666667,
+          "completeness_pct": 60.00000000000001,
+          "confidence_score": 72.675
+        },
+        "creators": {
+          "score": 100,
+          "completeness_pct": 30,
+          "confidence_score": 42.74999999999999
+        },
+        "programs": {
+          "score": 83.7373124539871,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 46.59338401911565,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 15,
+      "rollout_priority": 48.23574233998103,
+      "rollout_reason": "Evidence-supported score floor 48.24; observed opportunity 84.62. Southeast coverage retained. No selected nearby trip partner yet",
+      "new_region_bonus": 0,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 16,
+      "school": "Texas Christian University",
+      "unitid": "228875",
+      "city": "Fort Worth",
+      "state": "TX",
+      "region": "Southwest",
+      "overall_score": 79.91,
+      "score_lower_bound": 41.55,
+      "score_upper_bound": 89.55,
+      "weighted_completeness_pct": 52,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 67.08,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 33.99,
+      "demographics_score": 96.84,
+      "greek_score": 83.95,
+      "creators_score": null,
+      "programs_score": 84.67,
+      "customers_score": null,
+      "cost_score": 54,
+      "geography_score": 79.09,
+      "performance_score": null,
+      "undergraduates": 10937,
+      "non_distance_undergraduates": 10937,
+      "on_campus_residents": null,
+      "age_18_24_pct": 96.83642680808265,
+      "women_pct": 61.99140532138612,
+      "out_of_state_freshmen_pct": 52.21061093247589,
+      "age_18_19_pct": 35.978787601718935,
+      "age_20_21_pct": 46.22839901252629,
+      "age_22_24_pct": 14.629240193837433,
+      "age_25_plus_pct": 2.998994239736674,
+      "age_unknown_pct": 0.009143275121148396,
+      "in_state_freshmen_pct": 44.21221864951769,
+      "international_pct": 4.525921184968456,
+      "hispanic_pct": 18.094541464752673,
+      "black_pct": 4.087043979153333,
+      "asian_pct": 2.4138246319831764,
+      "greek_pct": 59.69,
+      "greek_chapters": 40,
+      "greek_members": 5980,
+      "verified_creators_per_1000": null,
+      "creator_program_present": null,
+      "relevant_awards_pct": 42.74225975070366,
+      "relevant_awards": 1063,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 192,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 80,
+      "airport_km": 12.271349404452229,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 96.83642680808265,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.36728536161653
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 42.74225975070366,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 5.983916365098514
+        },
+        {
+          "metric": "greek_pct",
+          "label": "Greek-life undergraduate participation",
+          "value": 59.69,
+          "unit": "percent",
+          "qualifier": "reported",
+          "source_ids": [
+            "review-4c6e7f4aa1eb"
+          ],
+          "contribution_points": 5.969000000000002
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Documented student content program; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-4c6e7f4aa1eb; primary-34; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 33.990763317016835,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 96.83642680808265,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 83.94857437584936,
+          "completeness_pct": 100,
+          "confidence_score": 71.36875000000002
+        },
+        "creators": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "programs": {
+          "score": 84.67242450560244,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 54,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 79.0914602382191,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 16,
+      "rollout_priority": 43.55466587721361,
+      "rollout_reason": "Evidence-supported score floor 41.55; observed opportunity 79.91. Southwest coverage retained. Within 200 km great-circle of Baylor University",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "Baylor University"
+      ]
+    },
+    {
+      "rank": 26,
+      "school": "University of Illinois Urbana-Champaign",
+      "unitid": "145637",
+      "city": "Champaign",
+      "state": "IL",
+      "region": "Great Lakes",
+      "overall_score": 77.05,
+      "score_lower_bound": 40.06,
+      "score_upper_bound": 88.06,
+      "weighted_completeness_pct": 52,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 68.52,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 84.87,
+      "demographics_score": 97.29,
+      "greek_score": 56.32,
+      "creators_score": null,
+      "programs_score": 43.26,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 80.7,
+      "performance_score": null,
+      "undergraduates": 35564,
+      "non_distance_undergraduates": 35128,
+      "on_campus_residents": null,
+      "age_18_24_pct": 97.28658193679001,
+      "women_pct": 47.109436508829155,
+      "out_of_state_freshmen_pct": 13.213213213213214,
+      "age_18_19_pct": 45.121471150601735,
+      "age_20_21_pct": 44.803734113148124,
+      "age_22_24_pct": 7.361376673040153,
+      "age_25_plus_pct": 1.2231470025868856,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 73.48948948948949,
+      "international_pct": 14.677764031042628,
+      "hispanic_pct": 13.617703295467326,
+      "black_pct": 5.497131931166348,
+      "asian_pct": 22.494657518839276,
+      "greek_pct": 16.998874778974443,
+      "greek_chapters": 91,
+      "greek_members": 6345,
+      "verified_creators_per_1000": null,
+      "creator_program_present": null,
+      "relevant_awards_pct": 15.721439385117037,
+      "relevant_awards": 1350,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 8.256091545947786,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 97.28658193679001,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 19.457316387358006
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 35128,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.233375562160707
+        },
+        {
+          "metric": "greek_chapters",
+          "label": "Recognized FSL organizations",
+          "value": 91,
+          "unit": "organizations",
+          "qualifier": "derived_sum",
+          "source_ids": [
+            "primary-9"
+          ],
+          "contribution_points": 3.000000000000001
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Documented student content program; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-c9005e714267; primary-9; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 84.86841541853501,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 97.28658193679001,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 56.32051582326575,
+          "completeness_pct": 100,
+          "confidence_score": 78.85000000000001
+        },
+        "creators": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "programs": {
+          "score": 43.26310132348436,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 80.69756338162088,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 17,
+      "rollout_priority": 42.063447223729604,
+      "rollout_reason": "Evidence-supported score floor 40.06; observed opportunity 77.05. Great Lakes coverage retained. Within 200 km great-circle of Indiana University-Bloomington",
+      "new_region_bonus": 0,
+      "trip_bonus": 2,
+      "trip_neighbors": [
+        "Indiana University-Bloomington"
+      ]
+    },
+    {
+      "rank": 35,
+      "school": "University of Iowa",
+      "unitid": "153658",
+      "city": "Iowa City",
+      "state": "IA",
+      "region": "Plains",
+      "overall_score": 72.94,
+      "score_lower_bound": 37.93,
+      "score_upper_bound": 85.93,
+      "weighted_completeness_pct": 52,
+      "data_completeness_pct": 55.81,
+      "confidence_score": 65,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 63.57,
+      "demographics_score": 94.05,
+      "greek_score": 39.78,
+      "creators_score": null,
+      "programs_score": 68.09,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 68.53,
+      "performance_score": null,
+      "undergraduates": 22130,
+      "non_distance_undergraduates": 21306,
+      "on_campus_residents": null,
+      "age_18_24_pct": 94.04880253050158,
+      "women_pct": 56.1455038409399,
+      "out_of_state_freshmen_pct": 46.09004739336493,
+      "age_18_19_pct": 43.75508359692725,
+      "age_20_21_pct": 39.521012200632626,
+      "age_22_24_pct": 10.772706732941709,
+      "age_25_plus_pct": 5.029371893357434,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 52.468404423380726,
+      "international_pct": 1.5815634884771803,
+      "hispanic_pct": 9.091730682331676,
+      "black_pct": 2.9100768187980117,
+      "asian_pct": 4.667871667419792,
+      "greek_pct": 16,
+      "greek_chapters": 40,
+      "greek_members": 3800,
+      "verified_creators_per_1000": null,
+      "creator_program_present": null,
+      "relevant_awards_pct": 31.422293248102278,
+      "relevant_awards": 1573,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 28.682447511177067,
+      "metro_presence": 1,
+      "nearby_campuses": 0,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 94.04880253050158,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 18.809760506100318
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 31.422293248102278,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 4.39912105473432
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 21306,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 3.1475732848535225
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Documented student content program; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; primary-20; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 63.56946646401154,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 94.04880253050158,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 39.775942753705955,
+          "completeness_pct": 100,
+          "confidence_score": 60.56249999999998
+        },
+        "creators": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "programs": {
+          "score": 68.08524814967188,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 68.52702099552917,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 18,
+      "rollout_priority": 41.92639506192818,
+      "rollout_reason": "Evidence-supported score floor 37.93; observed opportunity 72.94. Adds Plains regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 21,
+      "school": "San Diego State University",
+      "unitid": "122409",
+      "city": "San Diego",
+      "state": "CA",
+      "region": "Far West",
+      "overall_score": 78.48,
+      "score_lower_bound": 36.1,
+      "score_upper_bound": 90.1,
+      "weighted_completeness_pct": 46,
+      "data_completeness_pct": 53.49,
+      "confidence_score": 65.58,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 81.91,
+      "demographics_score": 86.93,
+      "greek_score": 59.89,
+      "creators_score": null,
+      "programs_score": 72.66,
+      "customers_score": null,
+      "cost_score": 42.58,
+      "geography_score": 79.19,
+      "performance_score": null,
+      "undergraduates": 34050,
+      "non_distance_undergraduates": 32339,
+      "on_campus_residents": null,
+      "age_18_24_pct": 86.928046989721,
+      "women_pct": 56.478707782672544,
+      "out_of_state_freshmen_pct": 23.336579032781565,
+      "age_18_19_pct": 34.23788546255506,
+      "age_20_21_pct": 34.49045521292217,
+      "age_22_24_pct": 18.19970631424376,
+      "age_25_plus_pct": 11.794419970631424,
+      "age_unknown_pct": null,
+      "in_state_freshmen_pct": 74.6024018175917,
+      "international_pct": 2.563876651982379,
+      "hispanic_pct": 35.944199706314244,
+      "black_pct": 3.6387665198237884,
+      "asian_pct": 13.248164464023494,
+      "greek_pct": null,
+      "greek_chapters": 40,
+      "greek_members": 4500,
+      "verified_creators_per_1000": null,
+      "creator_program_present": null,
+      "relevant_awards_pct": 33.35268842178609,
+      "relevant_awards": 2872,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 214.83333333333334,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 86,
+      "airport_km": 12.033943640501437,
+      "metro_presence": 1,
+      "nearby_campuses": 1,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 86.928046989721,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 17.385609397944204
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 33.35268842178609,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 4.669376379050054
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 32339,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 4.053732662730865
+        }
+      ],
+      "important_gaps": "On-campus resident students; Greek-life undergraduate participation; Verified active creators per 1,000 undergraduates; Documented student content program; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-20a248ae9cfa; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 81.91433845441964,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 86.92804698972101,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 59.889766361338005,
+          "completeness_pct": 40.00000000000001,
+          "confidence_score": 60.562499999999986
+        },
+        "creators": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "programs": {
+          "score": 72.658040217389,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 42.58333333333333,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 79.18642254379941,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 19,
+      "rollout_priority": 40.100830091296956,
+      "rollout_reason": "Evidence-supported score floor 36.1; observed opportunity 78.48. Adds Far West regional coverage. No selected nearby trip partner yet",
+      "new_region_bonus": 4,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    },
+    {
+      "rank": 28,
+      "school": "University of Oklahoma-Norman Campus",
+      "unitid": "207500",
+      "city": "Norman",
+      "state": "OK",
+      "region": "Southwest",
+      "overall_score": 76.43,
+      "score_lower_bound": 39.74,
+      "score_upper_bound": 87.74,
+      "weighted_completeness_pct": 52,
+      "data_completeness_pct": 58.14,
+      "confidence_score": 65.78,
+      "status": "provisional — incomplete evidence",
+      "enrollment_score": 63.02,
+      "demographics_score": 91.26,
+      "greek_score": 58.18,
+      "creators_score": null,
+      "programs_score": 74.02,
+      "customers_score": null,
+      "cost_score": 93.5,
+      "geography_score": 70.09,
+      "performance_score": null,
+      "undergraduates": 22025,
+      "non_distance_undergraduates": 20938,
+      "on_campus_residents": null,
+      "age_18_24_pct": 91.25539160045403,
+      "women_pct": 51.459704880817256,
+      "out_of_state_freshmen_pct": 47.72989611388996,
+      "age_18_19_pct": 40.935300794551644,
+      "age_20_21_pct": 36.64472190692395,
+      "age_22_24_pct": 13.675368898978434,
+      "age_25_plus_pct": 7.160045402951192,
+      "age_unknown_pct": 0.009080590238365494,
+      "in_state_freshmen_pct": 49.961523662947286,
+      "international_pct": 3.2190692395005676,
+      "hispanic_pct": 14.16572077185017,
+      "black_pct": 4.821793416572077,
+      "asian_pct": 6.987514188422248,
+      "greek_pct": 30,
+      "greek_chapters": 50,
+      "greek_members": 7000,
+      "verified_creators_per_1000": null,
+      "creator_program_present": null,
+      "relevant_awards_pct": 35.19895059029296,
+      "relevant_awards": 1610,
+      "relevant_clubs": null,
+      "customers_per_1000": null,
+      "lodging_proxy_usd": 113,
+      "labor_hourly_usd": null,
+      "venue_day_usd": null,
+      "permit_days": null,
+      "travel_quote_usd": null,
+      "meals_proxy_usd": 68,
+      "airport_km": 24.777493604495426,
+      "metro_presence": 1,
+      "nearby_campuses": 0,
+      "cac_usd": null,
+      "conversion_pct": null,
+      "roi_pct": null,
+      "engagement_pct": null,
+      "samples": null,
+      "leads": null,
+      "revenue_usd": null,
+      "ambassador_conversions": null,
+      "event_attendance": null,
+      "strongest_reasons": [
+        {
+          "metric": "age_18_24_pct",
+          "label": "Undergraduates age 18–24",
+          "value": 91.25539160045403,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "EF2023B"
+          ],
+          "contribution_points": 18.251078320090812
+        },
+        {
+          "metric": "relevant_awards_pct",
+          "label": "Relevant bachelor awards share",
+          "value": 35.19895059029296,
+          "unit": "percent",
+          "qualifier": "derived_ratio",
+          "source_ids": [
+            "C2024_A"
+          ],
+          "contribution_points": 4.927853082641016
+        },
+        {
+          "metric": "non_distance_undergraduates",
+          "label": "Undergraduates taking non-distance courses",
+          "value": 20938,
+          "unit": "students",
+          "qualifier": "derived_difference",
+          "source_ids": [
+            "EF2023A_DIST"
+          ],
+          "contribution_points": 3.1097384826367924
+        }
+      ],
+      "important_gaps": "On-campus resident students; Verified active creators per 1,000 undergraduates; Documented student content program; Verified relevant student organizations; Active customers per 1,000 undergraduates; Local activation labor hourly rate; Verified venue day cost; Published permitting lead time; Verified travel cost per trip; Campaign customer acquisition cost; Campaign conversion rate; Campaign contribution ROI; Qualified engagement rate",
+      "scope_note": "IPEDS reporting institution; non-distance enrollment is a physical-addressability proxy, not a count of campus residents.",
+      "source_ids": "EF2023A; EF2023A_DIST; EF2023B; EF2023C; review-1362efcb49ab; C2024_A; gsa; HD2024; airports",
+      "category_scores": {
+        "enrollment": {
+          "score": 63.0190727584002,
+          "completeness_pct": 80,
+          "confidence_score": 68.6
+        },
+        "demographics": {
+          "score": 91.25539160045405,
+          "completeness_pct": 100,
+          "confidence_score": 68.6
+        },
+        "greek": {
+          "score": 58.17621995080833,
+          "completeness_pct": 100,
+          "confidence_score": 64.60000000000002
+        },
+        "creators": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "programs": {
+          "score": 74.020669392132,
+          "completeness_pct": 90,
+          "confidence_score": 58.30999999999999
+        },
+        "customers": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        },
+        "cost": {
+          "score": 93.49999999999999,
+          "completeness_pct": 40,
+          "confidence_score": 73.49999999999999
+        },
+        "geography": {
+          "score": 70.08900255820183,
+          "completeness_pct": 100,
+          "confidence_score": 60.62400000000001
+        },
+        "performance": {
+          "score": null,
+          "completeness_pct": 0,
+          "confidence_score": null
+        }
+      },
+      "rollout_order": 20,
+      "rollout_priority": 39.74475645788159,
+      "rollout_reason": "Evidence-supported score floor 39.74; observed opportunity 76.43. Southwest coverage retained. No selected nearby trip partner yet",
+      "new_region_bonus": 0,
+      "trip_bonus": 0,
+      "trip_neighbors": []
+    }
+  ],
+  "exclusions": [
+    {
+      "unitid": "238032",
+      "school": "West Virginia University",
+      "reason": "Insufficient evidence for provisional rollout threshold"
+    },
+    {
+      "unitid": "123961",
+      "school": "University of Southern California",
+      "reason": "Insufficient evidence for provisional rollout threshold"
+    },
+    {
+      "unitid": "236939",
+      "school": "Washington State University",
+      "reason": "Insufficient evidence for provisional rollout threshold"
+    }
+  ],
+  "requested": 20,
+  "selected": 20,
+  "complete": true,
+  "method": "Greedy evidence-floor selection with regional/metro caps and transparent bonuses; not a globally optimal routing solution."
+}

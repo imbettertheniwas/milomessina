@@ -1,0 +1,546 @@
+[
+  {
+    "unitid": "134097",
+    "school": "Florida State University",
+    "niche_party_rank": 1,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 32217,
+    "selected": true
+  },
+  {
+    "unitid": "160755",
+    "school": "Tulane University of Louisiana",
+    "niche_party_rank": 2,
+    "princeton_greek_rank": 19,
+    "undergraduates_2023": 8077,
+    "selected": true
+  },
+  {
+    "unitid": "240444",
+    "school": "University of Wisconsin-Madison",
+    "niche_party_rank": 3,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 36797,
+    "selected": true
+  },
+  {
+    "unitid": "202480",
+    "school": "University of Dayton",
+    "niche_party_rank": 4,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 8176,
+    "selected": true
+  },
+  {
+    "unitid": "123961",
+    "school": "University of Southern California",
+    "niche_party_rank": 5,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 21023,
+    "selected": true
+  },
+  {
+    "unitid": "139959",
+    "school": "University of Georgia",
+    "niche_party_rank": 8,
+    "princeton_greek_rank": 8,
+    "undergraduates_2023": 31514,
+    "selected": true
+  },
+  {
+    "unitid": "238032",
+    "school": "West Virginia University",
+    "niche_party_rank": 9,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 18615,
+    "selected": true
+  },
+  {
+    "unitid": "145637",
+    "school": "University of Illinois Urbana-Champaign",
+    "niche_party_rank": 10,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 35564,
+    "selected": true
+  },
+  {
+    "unitid": "163453",
+    "school": "Morgan State University",
+    "niche_party_rank": 11,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 8300,
+    "selected": true
+  },
+  {
+    "unitid": "228778",
+    "school": "The University of Texas at Austin",
+    "niche_party_rank": 12,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 42444,
+    "selected": true
+  },
+  {
+    "unitid": "100751",
+    "school": "The University of Alabama",
+    "niche_party_rank": 13,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 33435,
+    "selected": true
+  },
+  {
+    "unitid": "196413",
+    "school": "Syracuse University",
+    "niche_party_rank": 14,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 15739,
+    "selected": true
+  },
+  {
+    "unitid": "131520",
+    "school": "Howard University",
+    "niche_party_rank": 15,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 10190,
+    "selected": true
+  },
+  {
+    "unitid": "229063",
+    "school": "Texas Southern University",
+    "niche_party_rank": 16,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 6619,
+    "selected": false
+  },
+  {
+    "unitid": "171100",
+    "school": "Michigan State University",
+    "niche_party_rank": 17,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 40483,
+    "selected": true
+  },
+  {
+    "unitid": "122409",
+    "school": "San Diego State University",
+    "niche_party_rank": 18,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 34050,
+    "selected": true
+  },
+  {
+    "unitid": "151351",
+    "school": "Indiana University-Bloomington",
+    "niche_party_rank": 19,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 36833,
+    "selected": true
+  },
+  {
+    "unitid": "204024",
+    "school": "Miami University-Oxford",
+    "niche_party_rank": 21,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 16478,
+    "selected": true
+  },
+  {
+    "unitid": "135726",
+    "school": "University of Miami",
+    "niche_party_rank": 22,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 12883,
+    "selected": true
+  },
+  {
+    "unitid": "138947",
+    "school": "Clark Atlanta University",
+    "niche_party_rank": 23,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 3495,
+    "selected": false
+  },
+  {
+    "unitid": "133650",
+    "school": "Florida Agricultural and Mechanical University",
+    "niche_party_rank": 24,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 7796,
+    "selected": true
+  },
+  {
+    "unitid": "126614",
+    "school": "University of Colorado Boulder",
+    "niche_party_rank": 25,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 32105,
+    "selected": true
+  },
+  {
+    "unitid": "110705",
+    "school": "University of California-Santa Barbara",
+    "niche_party_rank": 26,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 23232,
+    "selected": true
+  },
+  {
+    "unitid": "176017",
+    "school": "University of Mississippi",
+    "niche_party_rank": 27,
+    "princeton_greek_rank": 16,
+    "undergraduates_2023": 19094,
+    "selected": true
+  },
+  {
+    "unitid": "170976",
+    "school": "University of Michigan-Ann Arbor",
+    "niche_party_rank": 28,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 33730,
+    "selected": true
+  },
+  {
+    "unitid": "153658",
+    "school": "University of Iowa",
+    "niche_party_rank": 29,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 22130,
+    "selected": true
+  },
+  {
+    "unitid": "221838",
+    "school": "Tennessee State University",
+    "niche_party_rank": 30,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 6765,
+    "selected": false
+  },
+  {
+    "unitid": "137847",
+    "school": "The University of Tampa",
+    "niche_party_rank": 31,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 10111,
+    "selected": true
+  },
+  {
+    "unitid": "215062",
+    "school": "University of Pennsylvania",
+    "niche_party_rank": 32,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 11611,
+    "selected": true
+  },
+  {
+    "unitid": "213543",
+    "school": "Lehigh University",
+    "niche_party_rank": 33,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 5811,
+    "selected": false
+  },
+  {
+    "unitid": "217402",
+    "school": "Providence College",
+    "niche_party_rank": 34,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 4191,
+    "selected": false
+  },
+  {
+    "unitid": "218663",
+    "school": "University of South Carolina-Columbia",
+    "niche_party_rank": 35,
+    "princeton_greek_rank": 18,
+    "undergraduates_2023": 28470,
+    "selected": true
+  },
+  {
+    "unitid": "217882",
+    "school": "Clemson University",
+    "niche_party_rank": 36,
+    "princeton_greek_rank": 12,
+    "undergraduates_2023": 22875,
+    "selected": true
+  },
+  {
+    "unitid": "234076",
+    "school": "University of Virginia-Main Campus",
+    "niche_party_rank": 37,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 17612,
+    "selected": true
+  },
+  {
+    "unitid": "236939",
+    "school": "Washington State University",
+    "niche_party_rank": 38,
+    "princeton_greek_rank": 24,
+    "undergraduates_2023": 21923,
+    "selected": true
+  },
+  {
+    "unitid": "155317",
+    "school": "University of Kansas",
+    "niche_party_rank": 39,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 20696,
+    "selected": true
+  },
+  {
+    "unitid": "216339",
+    "school": "Temple University",
+    "niche_party_rank": 40,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 21720,
+    "selected": true
+  },
+  {
+    "unitid": "140553",
+    "school": "Morehouse College",
+    "niche_party_rank": 41,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 2738,
+    "selected": false
+  },
+  {
+    "unitid": "232423",
+    "school": "James Madison University",
+    "niche_party_rank": 42,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 21006,
+    "selected": true
+  },
+  {
+    "unitid": "130943",
+    "school": "University of Delaware",
+    "niche_party_rank": 43,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 19772,
+    "selected": true
+  },
+  {
+    "unitid": "199102",
+    "school": "North Carolina A & T State University",
+    "niche_party_rank": 44,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 12216,
+    "selected": true
+  },
+  {
+    "unitid": "229115",
+    "school": "Texas Tech University",
+    "niche_party_rank": 46,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 32635,
+    "selected": true
+  },
+  {
+    "unitid": "134130",
+    "school": "University of Florida",
+    "niche_party_rank": 47,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 34924,
+    "selected": true
+  },
+  {
+    "unitid": "228459",
+    "school": "Texas State University",
+    "niche_party_rank": 48,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 34547,
+    "selected": true
+  },
+  {
+    "unitid": "221999",
+    "school": "Vanderbilt University",
+    "niche_party_rank": 49,
+    "princeton_greek_rank": 14,
+    "undergraduates_2023": 7152,
+    "selected": true
+  },
+  {
+    "unitid": "104179",
+    "school": "University of Arizona",
+    "niche_party_rank": 50,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 41899,
+    "selected": true
+  },
+  {
+    "unitid": "218973",
+    "school": "Wofford College",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 1,
+    "undergraduates_2023": 1873,
+    "selected": false
+  },
+  {
+    "unitid": "211291",
+    "school": "Bucknell University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 2,
+    "undergraduates_2023": 3846,
+    "selected": false
+  },
+  {
+    "unitid": "150163",
+    "school": "Butler University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 3,
+    "undergraduates_2023": 4519,
+    "selected": false
+  },
+  {
+    "unitid": "100858",
+    "school": "Auburn University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 4,
+    "undergraduates_2023": 26874,
+    "selected": true
+  },
+  {
+    "unitid": "152673",
+    "school": "Wabash College",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 5,
+    "undergraduates_2023": 845,
+    "selected": false
+  },
+  {
+    "unitid": "228875",
+    "school": "Texas Christian University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 6,
+    "undergraduates_2023": 10937,
+    "selected": true
+  },
+  {
+    "unitid": "223232",
+    "school": "Baylor University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 7,
+    "undergraduates_2023": 15155,
+    "selected": true
+  },
+  {
+    "unitid": "221759",
+    "school": "The University of Tennessee-Knoxville",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 9,
+    "undergraduates_2023": 28883,
+    "selected": true
+  },
+  {
+    "unitid": "130253",
+    "school": "Sacred Heart University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 10,
+    "undergraduates_2023": 6960,
+    "selected": true
+  },
+  {
+    "unitid": "234207",
+    "school": "Washington and Lee University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 11,
+    "undergraduates_2023": 1898,
+    "selected": false
+  },
+  {
+    "unitid": "221519",
+    "school": "The University of the South",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 13,
+    "undergraduates_2023": 1615,
+    "selected": false
+  },
+  {
+    "unitid": "150400",
+    "school": "DePauw University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 15,
+    "undergraduates_2023": 1819,
+    "selected": false
+  },
+  {
+    "unitid": "157818",
+    "school": "Transylvania University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 17,
+    "undergraduates_2023": 1022,
+    "selected": false
+  },
+  {
+    "unitid": "221351",
+    "school": "Rhodes College",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 20,
+    "undergraduates_2023": 1936,
+    "selected": false
+  },
+  {
+    "unitid": "156408",
+    "school": "Centre College",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 21,
+    "undergraduates_2023": 1356,
+    "selected": false
+  },
+  {
+    "unitid": "232256",
+    "school": "Hampden-Sydney College",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 22,
+    "undergraduates_2023": 876,
+    "selected": false
+  },
+  {
+    "unitid": "228343",
+    "school": "Southwestern University",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 23,
+    "undergraduates_2023": 1457,
+    "selected": false
+  },
+  {
+    "unitid": "207500",
+    "school": "University of Oklahoma-Norman Campus",
+    "niche_party_rank": null,
+    "princeton_greek_rank": 25,
+    "undergraduates_2023": 22025,
+    "selected": true
+  },
+  {
+    "unitid": "214777",
+    "school": "Pennsylvania State University-Main Campus",
+    "niche_party_rank": 6,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 42223,
+    "selected": true
+  },
+  {
+    "unitid": "204796",
+    "school": "Ohio State University-Main Campus",
+    "niche_party_rank": 7,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 45728,
+    "selected": true
+  },
+  {
+    "unitid": "204857",
+    "school": "Ohio University-Main Campus",
+    "niche_party_rank": 20,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 19100,
+    "selected": true
+  },
+  {
+    "unitid": "196060",
+    "school": "University at Albany",
+    "niche_party_rank": 45,
+    "princeton_greek_rank": null,
+    "undergraduates_2023": 12190,
+    "selected": true
+  }
+]

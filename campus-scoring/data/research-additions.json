@@ -1,0 +1,597 @@
+[
+  {
+    "school": "Texas Tech University",
+    "url": "https://www.depts.ttu.edu/fsl/",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        50,
+        "lower_bound"
+      ],
+      "greek_members": [
+        4800,
+        "lower_bound"
+      ]
+    },
+    "note": "FSL office overview states more than 50 recognized organizations and 4,800+ members. Counts have no explicit reference semester; website modification date is not a data year."
+  },
+  {
+    "school": "San Diego State University",
+    "url": "https://sacd.sdsu.edu/student-life-leadership/fraternity-and-sorority-life",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        40,
+        "lower_bound"
+      ],
+      "greek_members": [
+        4500,
+        "lower_bound"
+      ]
+    },
+    "note": "Office reports more than 40 recognized social chapters and over 4,500 affiliated students. Some NPHC chapters are city-wide; membership is office-reported ecosystem scope and not used to derive undergraduate penetration."
+  },
+  {
+    "school": "Morgan State University",
+    "url": "https://www.morgan.edu/osld/greeklife",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        19,
+        "reported"
+      ]
+    },
+    "note": "Office reports 19 fraternities, sororities and social fellowships across two councils. Definition is broader than exclusively social fraternities and sororities."
+  },
+  {
+    "school": "University of Delaware",
+    "url": "https://www.udel.edu/students/involvement/fsll/policies/becoming-a-recognized-fraternity-or-sorority/",
+    "year": null,
+    "values": {
+      "greek_pct": [
+        27,
+        "reported_approximate"
+      ]
+    },
+    "note": "Official expansion-policy overview reports about 27% of the undergraduate population. Page is undated; not recast as a 2026 census."
+  },
+  {
+    "school": "The University of Tampa",
+    "url": "https://www.ut.edu/campus-life/fraternity-and-sorority-life/recruitment-intake",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        26,
+        "reported"
+      ],
+      "greek_members": [
+        2170,
+        "reported"
+      ]
+    },
+    "note": "Recruitment page reports 2,170 members and 26 chapters. Recruitment dates on the page cover 2026 but count reference period is unspecified."
+  },
+  {
+    "school": "Clemson University",
+    "url": "https://media.clemson.edu/studentaffairs/website-documents/division/about/annual-reports/impact-report-2024-25.pdf",
+    "year": "2024-25",
+    "values": {
+      "greek_members": [
+        6704,
+        "reported"
+      ],
+      "greek_pct": [
+        27.9,
+        "reported"
+      ],
+      "greek_chapters": [
+        50,
+        "lower_bound"
+      ]
+    },
+    "note": "FY25 Student Affairs Impact Report, Greek-community feature: 6,704 members, 27.9% undergraduate participation and 50+ chapters. Annual-report period; not claimed to be current Fall 2026."
+  },
+  {
+    "school": "University of Dayton",
+    "url": "https://udayton.edu/life/involvement/greek/index.php",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        22,
+        "reported"
+      ],
+      "greek_members": [
+        1400,
+        "lower_bound"
+      ]
+    },
+    "note": "FSL office overview gives 22 chapters (8 CPC, 6 IFC, 2 MGC, 6 NPHC) and more than 1,400 students. Conflict: Sept 8, 2026 university job 503820 gives 25 chapters and over 1,200 members; specialist community page used pending reconciliation.",
+    "secondary_url": "https://employment.udayton.edu/en-us/job/503820/assistant-director-fraternity-and-sorority-life"
+  },
+  {
+    "school": "Pennsylvania State University-Main Campus",
+    "url": "https://www.psu.edu/news/administration/story/commagency-students-bring-penn-states-capital-day-life-through-storytelling",
+    "year": "Spring 2026",
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "CommAgency is a University Park student creative agency with a social-media division and documented student-produced social campaigns. Presence only; its 89 agency students are not assumed to be 89 eligible influencers."
+  },
+  {
+    "school": "University of Florida",
+    "url": "https://dialcenter.clas.ufl.edu/2026/02/04/to-learn-lead-and-communicate-with-impact-ambassador-leadership-program/",
+    "year": "2026",
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "Dial Center Ambassador Leadership Program tasks students with running social-media accounts. Open to all majors and years; verified recruitment infrastructure, not an audited creator census."
+  },
+  {
+    "school": "Ohio State University-Main Campus",
+    "url": "https://sportsandsociety.osu.edu/student-engagement/meet-our-interns",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "Sports and Society Institute describes an active student internship program including social media, writing, photography, video and podcasts. Presence only; page has no explicit cohort year."
+  },
+  {
+    "school": "Indiana University-Bloomington",
+    "url": "https://plus.college.indiana.edu/our-team/social-media-internship.html",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_opportunity"
+      ]
+    },
+    "note": "College of Arts and Sciences advertises a student hourly social-media specialist and internship-credit opportunity producing marketing and video content. Documents a recruitment channel, not a filled position or current creator count."
+  },
+  {
+    "school": "Michigan State University",
+    "url": "https://careernetwork.msu.edu/jobs/msu-international-studies-and-programs-student-social-media-and-digital-content-creator/",
+    "year": "2026",
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_opportunity"
+      ]
+    },
+    "note": "MSU International Studies and Programs advertised an on-campus student content-creator role June 1-July 2, 2026. Evidence of a university content opportunity; the expired listing does not verify hiring or available creators."
+  },
+  {
+    "school": "Florida State University",
+    "url": "https://jimmorancollege.fsu.edu/student-engagement/student-organizations",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ],
+      "relevant_clubs": [
+        7,
+        "audited_subset"
+      ]
+    },
+    "note": "Named relevant organizations: AATCC Club; JMC Autopreneurs; BRAGfsu; Collegiate Entrepreneurs Organization; Clutch magazine; Collegiate Merchandising Association; Society for Advancement of Management. Deduplicated department-directory subset, not a campus census. Clutch explicitly produces editorial and social-media content."
+  },
+  {
+    "school": "The University of Tennessee-Knoxville",
+    "url": "https://studentlife.utk.edu/gogreek/community-statistics/",
+    "year": null,
+    "values": {
+      "greek_pct": [
+        29,
+        "reported_rounded"
+      ],
+      "greek_chapters": [
+        49,
+        "reported"
+      ]
+    },
+    "note": "FSL statistics page reports 29% undergraduate participation and 49 active chapters. Overview period unspecified; historical accreditation detail on page is not assigned to these counts."
+  },
+  {
+    "school": "University of South Carolina-Columbia",
+    "url": "https://grin.sc.edu/uofsc/posts/2026/08/rushtok-hashtag-uofsc-sorority-recruitment-greek-life-usc-most-potential-new-members.php",
+    "year": "Spring 2026",
+    "values": {
+      "greek_pct": [
+        30,
+        "lower_bound"
+      ]
+    },
+    "note": "University news dated August 10, 2026 explicitly states more than 30% of Spring 2026 undergraduates belonged to one of four Greek councils. This resolves the older overview's ambiguous student-body denominator."
+  },
+  {
+    "school": "Baylor University",
+    "url": "https://magazine.web.baylor.edu/news/story/2025/lasting-impact",
+    "year": "2025",
+    "values": {
+      "greek_pct": [
+        28,
+        "reported_approximate"
+      ]
+    },
+    "note": "Baylor Magazine, December 9, 2025, reports about 28% undergraduate participation. Dated university publication preferred to undated learning-outcomes page describing almost 30%."
+  },
+  {
+    "school": "James Madison University",
+    "url": "https://www.jmu.edu/osl/fsl/about/index.shtml",
+    "year": "2026",
+    "values": {
+      "greek_members": [
+        5000,
+        "reported_approximate"
+      ]
+    },
+    "note": "FSL office page dated August 12, 2026 describes roughly 5,000 undergraduate members in the Panhellenic/Interfraternity community. Not divided by a different-period enrollment."
+  },
+  {
+    "school": "University of Illinois Urbana-Champaign",
+    "url": "https://fsaffairs.illinois.edu/programs/grade-reports/2026/spring-PHC",
+    "year": "Spring 2026",
+    "values": {
+      "greek_members": [
+        6345,
+        "reported"
+      ],
+      "greek_pct": [
+        16.998874778974443,
+        "derived_ratio"
+      ]
+    },
+    "note": "Spring 2026 benchmark table: all fraternity/sorority members 6,345, all undergraduate students 37,326; penetration = 100*6345/37326, same-report denominator. FSL scope includes professional and cultural groups broader than exclusively social chapters."
+  },
+  {
+    "school": "University of Oklahoma-Norman Campus",
+    "url": "https://www.ou.edu/content/dam/studentlife/fsps/fsps-assets/fsps-site-documents/experience-guides/2026%20Fraternity%20and%20Sorority%20Experience%20Guide.pdf",
+    "year": "2026",
+    "values": {
+      "greek_pct": [
+        30,
+        "reported_approximate"
+      ],
+      "greek_members": [
+        7000,
+        "lower_bound"
+      ],
+      "greek_chapters": [
+        50,
+        "lower_bound"
+      ]
+    },
+    "note": "2026 official experience guide reports more than 7,000 members, about 30% of undergraduates and 50+ Greek-letter organizations. Includes five councils; broader than exclusively social chapters."
+  },
+  {
+    "school": "Indiana University-Bloomington",
+    "url": "https://family.iu.edu/involvement-belonging/sororities-fraternities/joining/how-to-join.html",
+    "year": null,
+    "values": {
+      "greek_pct": [
+        24,
+        "reported_approximate"
+      ],
+      "greek_chapters": [
+        70,
+        "lower_bound"
+      ]
+    },
+    "note": "Official joining overview explicitly reports approximately 24% of the undergraduate student body. Undated; membership descriptions vary between almost and more than 8,000 on university pages."
+  },
+  {
+    "school": "University of Wisconsin-Madison",
+    "url": "https://parent.wisc.edu/parents-and-family-resources/student-involvement-and-community/",
+    "year": null,
+    "values": {
+      "greek_pct": [
+        15,
+        "reported_approximate"
+      ]
+    },
+    "note": "University Parent and Family Program reports approximately 15% of undergraduates affiliated. Undated; its nearly-70/6,000+ ecosystem counts differ from FSL office 60+/5,000+ figures retained for those separate metrics."
+  },
+  {
+    "school": "University of Kansas",
+    "url": "https://kusfl.ku.edu/about",
+    "year": null,
+    "values": {
+      "greek_pct": [
+        22.6,
+        "reported"
+      ]
+    },
+    "note": "FSL About page explicitly defines 22.6% as undergraduate participation, resolving the less-specific student denominator in its Fall 2025 executive summary."
+  },
+  {
+    "school": "Washington State University",
+    "url": "https://pullman.wsu.edu/community-life/",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        50,
+        "lower_bound"
+      ],
+      "greek_members": [
+        3500,
+        "reported_approximate"
+      ]
+    },
+    "note": "Pullman campus community page reports 50+ organizations and nearly 3,500 members. Broader than exclusively social chapters: professional and multicultural included. Admissions fair page has conflicting 60+/5,500 figures; campus-specific overview used. Its 22% student denominator is ambiguous and not stored as undergraduate penetration."
+  },
+  {
+    "school": "Texas Christian University",
+    "url": "https://greeks.tcu.edu/wp-content/uploads/2026/08/Averages-and-Comparison-Spring-2026.pdf",
+    "year": "Spring 2026",
+    "values": {
+      "greek_pct": [
+        59.69,
+        "reported"
+      ],
+      "greek_members": [
+        5980,
+        "reported"
+      ]
+    },
+    "note": "Official Spring 2026 FSL grade report, page 2: 5,980 members and 59.69% of total undergraduate population. Includes IGC, IFC, MGC, NPHC, PHC; broader than exclusively social organizations. Dated FSL report preferred to admissions FAQ's conflicting approximate 35%."
+  },
+  {
+    "school": "Pennsylvania State University-Main Campus",
+    "url": "https://studentaffairs.psu.edu/sites/default/files/2024_PSU_FSLProgramReviewReport.pdf",
+    "publisher": "RISE Partnerships / Penn State Student Affairs",
+    "year": "Spring 2024",
+    "values": {
+      "greek_pct": [
+        17,
+        "reported_rounded"
+      ]
+    },
+    "note": "University-commissioned 2024 program review, printed page 9, reports 17% of undergraduate students affiliated in Spring 2024. Textual reported value, not an estimate from the chart."
+  },
+  {
+    "school": "Pennsylvania State University-Main Campus",
+    "url": "https://studentaffairs.psu.edu/sites/default/files/2024_PSU_FSLProgramReviewReport.pdf",
+    "publisher": "RISE Partnerships / Penn State Student Affairs",
+    "year": "Fall 2024",
+    "values": {
+      "greek_members": [
+        6800,
+        "lower_bound"
+      ],
+      "greek_chapters": [
+        68,
+        "reported"
+      ]
+    },
+    "note": "Program review, printed page 8, reports 68 recognized organizations and more than 6,800 undergraduate members in Fall 2024. Dated roster scope preferred to office overview's inconsistent 70/over-70 text."
+  },
+  {
+    "school": "Pennsylvania State University-Main Campus",
+    "url": "https://newkensington.psu.edu/content/parent-and-family-guide-2024",
+    "year": "2023-24",
+    "values": {
+      "on_campus_residents": [
+        14500,
+        "lower_bound"
+      ]
+    },
+    "note": "University-hosted Parents and Families Guide explicitly describes University Park housing: over 14,500 undergraduate residents, separate from more than 300 graduate residents. Historical guide period; not housing capacity."
+  },
+  {
+    "school": "University of Wisconsin-Madison",
+    "url": "https://www.housing.wisc.edu/future-residents/",
+    "year": null,
+    "values": {
+      "on_campus_residents": [
+        9000,
+        "reported_approximate"
+      ]
+    },
+    "note": "University Housing overview describes residence halls as home to about 9,000 undergraduate residents, separate from graduate/family apartments. Undated planning overview; source-reported approximation, not calculated from beds or a percentage."
+  },
+  {
+    "school": "Baylor University",
+    "url": "https://studentmedia.artsandsciences.baylor.edu/",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "Department of Student Media explicitly provides student work in digital media, social media, broadcasting, design, photography and marketing. Presence only; does not establish creator reach or availability."
+  },
+  {
+    "school": "Clemson University",
+    "url": "https://career.clemson.edu/jobs/clemson-university-campus-recreation-social-media-intern-fall-2026/",
+    "year": "Fall 2026",
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_opportunity"
+      ]
+    },
+    "note": "Campus Recreation UPIC internship advertises student creation and management of social content for Fall 2026. Listing is expired; it documents an institutional opportunity, not confirmed staff or creator headcount."
+  },
+  {
+    "school": "Miami University-Oxford",
+    "url": "https://miamioh.edu/centers-institutes/division-of-student-life/work-in-student-life/student-employment-opportunities.html",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "Student Life employment overview describes a team of five to six student social-media assistants producing content across platforms. Presence only; the stated team range is not used as a creator census."
+  },
+  {
+    "school": "University of South Carolina-Columbia",
+    "url": "https://cas.ed.sc.edu/about/offices_and_divisions/student_affairs/student-services/student_life/student_media/index.php",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "Official Student Media/Garnet Media Group overview documents student-created SGTV content published on social platforms including YouTube and Instagram. Not a census of independent student influencers."
+  },
+  {
+    "school": "University of Michigan-Ann Arbor",
+    "url": "https://lsa.umich.edu/comm/undergraduates/academic-opportunities/internship-resources.html",
+    "year": null,
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_opportunity"
+      ],
+      "relevant_clubs": [
+        3,
+        "audited_subset"
+      ]
+    },
+    "note": "Ann Arbor LSA Communication and Media offers student Content Creator/Social Media Assistant work. Named student media subset: The Michigan Daily, WOLV-TV, WCBN. Three deduplicated organizations; not a campuswide directory census."
+  },
+  {
+    "school": "The University of Texas at Austin",
+    "url": "https://advertising.utexas.edu/news/tower-bridge-communications-university-texas-austin",
+    "year": "2024",
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "October 8, 2024 university article documents Tower & Bridge Communications, a student-run social-media and PR agency with content-creator roles. Program presence, not creator density."
+  },
+  {
+    "school": "University of Southern California",
+    "url": "https://annenberg.usc.edu/events/content-creator-academy",
+    "year": "2026",
+    "values": {
+      "creator_program_present": [
+        1,
+        "documented_program"
+      ]
+    },
+    "note": "USC Annenberg's July 27-31, 2026 student Content Creator Academy focuses on vertical-video community storytelling. Historical training-program presence; no assumption about attendance or current campaign availability."
+  },
+  {
+    "school": "Auburn University",
+    "url": "https://studentaffairs.auburn.edu/greek/",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        53,
+        "reported"
+      ]
+    },
+    "note": "Current Greek Life office introduction identifies 53 organizations. No explicit semester is attached to the chapter count."
+  },
+  {
+    "school": "University of California-Santa Barbara",
+    "url": "https://seal.sa.ucsb.edu/fraternity-sorority-life",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        50,
+        "reported_approximate"
+      ]
+    },
+    "note": "Office by-the-numbers panel reports approximately 50 recognized Greek-letter organizations. Professional council included; broader than exclusively social organizations."
+  },
+  {
+    "school": "University of Mississippi",
+    "url": "https://olemiss.edu/greeks/",
+    "year": null,
+    "values": {
+      "greek_chapters": [
+        36,
+        "reported"
+      ]
+    },
+    "note": "New official FSL office site reports 36 organizations; 16 IFC + 9 NPHC + 11 College Panhellenic. Office warns older search results may be outdated."
+  },
+  {
+    "school": "North Carolina A & T State University",
+    "url": "https://www.ncat.edu/campus-life/student-affairs/departments/student-activities/greek-life/chapter-status.php",
+    "year": "May 2026",
+    "values": {
+      "greek_chapters": [
+        11,
+        "derived_count"
+      ]
+    },
+    "note": "Count of explicitly active list: Omega Psi Phi; Phi Beta Sigma; Iota Phi Theta; Phi Mu Alpha Sinfonia; Kappa Kappa Psi; Groove Phi Groove; Alpha Kappa Alpha; Delta Sigma Theta; Sigma Gamma Rho; Zeta Phi Beta; Tau Beta Sigma. Excludes suspended Alpha Phi Alpha. Scope broader than exclusively social organizations."
+  },
+  {
+    "school": "University of Florida",
+    "url": "https://greeks.ufl.edu/wp-content/uploads/2026/05/26-27-Guide-to-Florida-Greeks.pdf",
+    "year": "2026–27 guide; participation period unspecified",
+    "values": {
+      "greek_pct": [
+        21,
+        "reported_rounded"
+      ],
+      "greek_chapters": [
+        62,
+        "reported"
+      ]
+    },
+    "note": "Official 2026–27 guide explicitly reports 21% of undergraduates are Greek and 62 chapters. The participation period is unspecified; adjacent GPA statistics refer to Fall 2025."
+  },
+  {
+    "school": "University of Florida",
+    "url": "https://greeks.ufl.edu/wp-content/uploads/2026/05/26-27-Guide-to-Florida-Greeks.pdf",
+    "year": "Fall 2025",
+    "values": {
+      "greek_members": [
+        8400,
+        "lower_bound"
+      ]
+    },
+    "note": "Page 6 reports 8400+ Fall 2025 members. Council subtotals sum to 8,302; the undated welcome says more than 8,600. Retain the dated headline with its qualifier and disclose the internal inconsistency; do not reconstruct participation from these counts."
+  },
+  {
+    "school": "Michigan State University",
+    "url": "https://fsl.msu.edu/about/Fall%202025%20FSL%20Semester%20Report.pdf",
+    "year": "Fall 2025",
+    "values": {
+      "greek_members": [
+        4874,
+        "reported"
+      ],
+      "greek_pct": [
+        11.9,
+        "reported_rounded"
+      ],
+      "greek_chapters": [
+        56,
+        "reported"
+      ]
+    },
+    "note": "All-community report explicitly reports 4,874 members, 11.9% of the MSU undergraduate student body (40,869), and 56 chapters. Replaces Fall 2024 counts. IFC 28, MGC 8, NPHC 6, PC 14."
+  },
+  {
+    "school": "University of Arizona",
+    "url": "https://greek.arizona.edu/sites/default/files/2026-01/Fall-2025-Chapter-Academic-Membership-Performance-Reports.pdf",
+    "year": "Fall 2025",
+    "values": {
+      "greek_members": [
+        6668,
+        "reported"
+      ]
+    },
+    "note": "Official chapter report: 4,455 sorority and 2,213 fraternity members total 6,668. Its reported 12.8% uses 51,942 undergraduates with unresolved campus/system scope; exclude that percentage from campus scoring pending clarification."
+  }
+]

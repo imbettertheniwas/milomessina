@@ -1,0 +1,1256 @@
+{
+  "sources": {
+    "primary-1": {
+      "id": "primary-1",
+      "url": "https://ofsl.sl.ua.edu/",
+      "publisher": "The University of Alabama",
+      "accessed": "2026-09-29",
+      "data_year": "Fall 2025",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Percentage is explicitly main-campus undergraduate population."
+    },
+    "primary-2": {
+      "id": "primary-2",
+      "url": "https://studentaffairs.fsu.edu/article/leadership-training-supports-greek-organization-success",
+      "publisher": "Florida State University",
+      "accessed": "2026-09-29",
+      "data_year": "2025",
+      "as_of": "2025-09-10",
+      "source_type": "university_primary",
+      "note": "University reports about 23%, over 50 chapters and over 6,800 members."
+    },
+    "primary-3": {
+      "id": "primary-3",
+      "url": "https://greeklife.uga.edu/our-story/",
+      "publisher": "University of Georgia",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Undated current office overview."
+    },
+    "primary-4": {
+      "id": "primary-4",
+      "url": "https://greeklife.uga.edu/wp-content/uploads/sites/9/2025/05/Fall-2024-Greek-Life-Grade-Report.pdf",
+      "publisher": "University of Georgia",
+      "accessed": "2026-09-29",
+      "data_year": "Fall 2024",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-5": {
+      "id": "primary-5",
+      "url": "https://fsl.wisc.edu/",
+      "publisher": "University of Wisconsin-Madison",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Office states 60+ organizations and over 5,000 members."
+    },
+    "primary-6": {
+      "id": "primary-6",
+      "url": "https://greek.tulane.edu/our-community",
+      "publisher": "Tulane University of Louisiana",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Participation denominator is full-time undergraduates, not all undergraduates."
+    },
+    "primary-7": {
+      "id": "primary-7",
+      "url": "https://studentaffairs.psu.edu/student-life/fraternity-sorority-life",
+      "publisher": "Pennsylvania State University-Main Campus",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Overview says 70 chapters; later text says over 70. Rounded community summary; verify roster before contracting."
+    },
+    "primary-8": {
+      "id": "primary-8",
+      "url": "https://activities.osu.edu/involvement/get-involved-guide/gig-sfl/",
+      "publisher": "Ohio State University-Main Campus",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "University overview says over 60 chapters across four councils."
+    },
+    "primary-9": {
+      "id": "primary-9",
+      "url": "https://fsaffairs.illinois.edu/information/snapshot",
+      "publisher": "University of Illinois Urbana-Champaign",
+      "accessed": "2026-09-29",
+      "data_year": "2025",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Chapters = 50 fraternities + 1 coed organization + 40 sororities; includes cultural organizations."
+    },
+    "primary-10": {
+      "id": "primary-10",
+      "url": "https://studentlife.utexas.edu/sfl/find-a-chapter.php",
+      "publisher": "The University of Texas at Austin",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Office describes around 60 recognized social sororities and fraternities."
+    },
+    "primary-11": {
+      "id": "primary-11",
+      "url": "https://studentlife.utexas.edu/sfl/our-community.php",
+      "publisher": "The University of Texas at Austin",
+      "accessed": "2026-09-29",
+      "data_year": "2023-24",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Page explicitly attributes data to its 2023-24 information guide; do not treat live page date as data year."
+    },
+    "primary-12": {
+      "id": "primary-12",
+      "url": "https://fsl.msu.edu/Fall-2024-All-FSL-Semester-Report.pdf",
+      "publisher": "Michigan State University",
+      "accessed": "2026-09-29",
+      "data_year": "Fall 2024",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Dated report preferred over conflicting undated 58/61-chapter summaries. Published 12.34% denominator is labeled student body; not scored as undergraduate penetration."
+    },
+    "primary-13": {
+      "id": "primary-13",
+      "url": "https://www.ohio.edu/student-affairs/assessment/reports/annual",
+      "publisher": "Ohio University-Main Campus",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Annual-report page states 29 values-based fraternal organizations; data year not established in retrieved excerpt."
+    },
+    "primary-14": {
+      "id": "primary-14",
+      "url": "https://miamioh.edu/life-at-miami/student-involvement/fraternity-sorority-life/about/facts-and-stats/",
+      "publisher": "Miami University-Oxford",
+      "accessed": "2026-09-29",
+      "data_year": "Spring 2026",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Full-time Oxford undergraduate denominator. Published gender subtotals do not sum to published total; use reported total without reconstructing it."
+    },
+    "primary-15": {
+      "id": "primary-15",
+      "url": "https://doso.studentaffairs.miami.edu/greek-life/councils-chapters/index.html",
+      "publisher": "University of Miami",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-16": {
+      "id": "primary-16",
+      "url": "https://www.colorado.edu/greeks/",
+      "publisher": "University of Colorado Boulder",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "University-recognized chapters only; unaffiliated Boulder fraternities excluded."
+    },
+    "primary-17": {
+      "id": "primary-17",
+      "url": "https://seal.sa.ucsb.edu/fraternity-sorority-life",
+      "publisher": "University of California-Santa Barbara",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-18": {
+      "id": "primary-18",
+      "url": "https://greeks.wp2.olemiss.edu/wp-content/uploads/sites/42/2024/06/UM-Fraternity-Sorority-Academic-Report-Spring-2024.pdf",
+      "publisher": "University of Mississippi",
+      "accessed": "2026-09-29",
+      "data_year": "Spring 2024",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Participation uses same-report Oxford undergraduate denominator 15,751; not the IPEDS institutional total."
+    },
+    "primary-19": {
+      "id": "primary-19",
+      "url": "https://fsl.umich.edu/article/community-statistics",
+      "publisher": "University of Michigan-Ann Arbor",
+      "accessed": "2026-09-29",
+      "data_year": "Winter 2026",
+      "as_of": "2026-04-26",
+      "source_type": "university_primary",
+      "note": "Office reports winter enrollment 33,945; fall 2025 participation is separately 14.14%. Seasonal recruitment changes matter."
+    },
+    "primary-20": {
+      "id": "primary-20",
+      "url": "https://fsl.uiowa.edu/community",
+      "publisher": "University of Iowa",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Current FSL office page used over admissions page reporting 15%; explicit conflict retained."
+    },
+    "primary-21": {
+      "id": "primary-21",
+      "url": "https://www.sc.edu/about/offices_and_divisions/fraternity_and_sorority_life/",
+      "publisher": "University of South Carolina-Columbia",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Page also says more than 30% of student body; ambiguous denominator excluded from penetration metric."
+    },
+    "primary-22": {
+      "id": "primary-22",
+      "url": "https://studentaffairs.virginia.edu/subsite/fsl/recruitment-intake/prospective-members-parents",
+      "publisher": "University of Virginia-Main Campus",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-23": {
+      "id": "primary-23",
+      "url": "https://studentaffairs.virginia.edu/subsite/fsl/about/frequently-asked-questions",
+      "publisher": "University of Virginia-Main Campus",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Office FAQ says approximately 28% of undergraduates; faculty handbook states 27% of student body, different scope."
+    },
+    "primary-24": {
+      "id": "primary-24",
+      "url": "https://studentaffairsassessment.ku.edu/sites/studentaffairsassessment/files/images/Student%20Affairs%202023-2024%20Annual%20Impact%20Report-compressed_1.pdf",
+      "publisher": "University of Kansas",
+      "accessed": "2026-09-29",
+      "data_year": "2023-24",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Dated annual report; newer summary with broader organization/house scope not substituted."
+    },
+    "primary-25": {
+      "id": "primary-25",
+      "url": "https://studentaffairs.temple.edu/student-leadership-engagement/fraternity-sorority-life",
+      "publisher": "Temple University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-26": {
+      "id": "primary-26",
+      "url": "https://www.jmu.edu/osl/fsl/potential-members/how-to-join.shtml",
+      "publisher": "James Madison University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "20% figure labeled student population, not explicitly undergraduate; penetration left unavailable."
+    },
+    "primary-27": {
+      "id": "primary-27",
+      "url": "https://www.albany.edu/student-engagement-belonging/student-activities/fraternity-and-sorority-life",
+      "publisher": "University at Albany",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-28": {
+      "id": "primary-28",
+      "url": "https://greeks.ufl.edu/",
+      "publisher": "University of Florida",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-29": {
+      "id": "primary-29",
+      "url": "https://fsl.dos.txst.edu/",
+      "publisher": "Texas State University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-30": {
+      "id": "primary-30",
+      "url": "https://www.vanderbilt.edu/student-affairs/greek-life/annual-awards-and-reports/",
+      "publisher": "Vanderbilt University",
+      "accessed": "2026-09-29",
+      "data_year": "2025-26",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-31": {
+      "id": "primary-31",
+      "url": "https://www.vanderbilt.edu/student-affairs/greek-life/",
+      "publisher": "Vanderbilt University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-32": {
+      "id": "primary-32",
+      "url": "https://studentaffairs.auburn.edu/greek/articles/2026/07/2025-26-greek-community-report-released.php",
+      "publisher": "Auburn University",
+      "accessed": "2026-09-29",
+      "data_year": "2025-26",
+      "as_of": "2026-07-06",
+      "source_type": "university_primary",
+      "note": "University annual report release."
+    },
+    "primary-33": {
+      "id": "primary-33",
+      "url": "https://studentlife.utk.edu/gogreek/councils-organizations/chapters/",
+      "publisher": "The University of Tennessee-Knoxville",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-34": {
+      "id": "primary-34",
+      "url": "https://greeks.tcu.edu/",
+      "publisher": "Texas Christian University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-35": {
+      "id": "primary-35",
+      "url": "https://fsl.web.baylor.edu/meet-community",
+      "publisher": "Baylor University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Active-chapter directory used over general taxonomy page that says over 40."
+    },
+    "primary-36": {
+      "id": "primary-36",
+      "url": "https://www.sacredheart.edu/sacred-heart-life/student-events--activities/fraternity--sorority-life/",
+      "publisher": "Sacred Heart University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "10 sororities + 7 fraternities; approximate members 1,600 + 700."
+    },
+    "primary-37": {
+      "id": "primary-37",
+      "url": "https://www.ou.edu/content/dam/studentlife/fssl/docs/FSPS%20Experience%20Guide%202023.pdf",
+      "publisher": "University of Oklahoma-Norman Campus",
+      "accessed": "2026-09-29",
+      "data_year": "2023",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "29% participation denominator described as overall student body; excluded from undergraduate penetration."
+    },
+    "primary-38": {
+      "id": "primary-38",
+      "url": "https://www.famu.edu/students/student-activities/greek-life/councils-and-chapters.php",
+      "publisher": "Florida Agricultural and Mechanical University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Office umbrella includes professional and music organizations; broader than exclusively social chapters. Proxy comparability is limited."
+    },
+    "primary-39": {
+      "id": "primary-39",
+      "url": "https://studentaffairs.howard.edu/activities/fsl",
+      "publisher": "Howard University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Broad fraternal ecosystem includes social fellowships and societies. Not exclusively social fraternities/sororities."
+    },
+    "primary-40": {
+      "id": "primary-40",
+      "url": "https://ofsl.universitylife.upenn.edu/chapters/",
+      "publisher": "University of Pennsylvania",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": ""
+    },
+    "primary-41": {
+      "id": "primary-41",
+      "url": "https://experience.syracuse.edu/student-engagement/greek-life/councils-and-chapters/",
+      "publisher": "Syracuse University",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Broad Greek-letter organizations including professional council; directory scope."
+    },
+    "primary-42": {
+      "id": "primary-42",
+      "url": "https://sl.ua.edu/students/student-life-ambassadors/",
+      "publisher": "The University of Alabama",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Student Life social media ambassador program is documented. Presence is not creator count, reach, or density."
+    },
+    "primary-43": {
+      "id": "primary-43",
+      "url": "https://brand.uga.edu/social-media/social-media-ambassadors/",
+      "publisher": "University of Georgia",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Digital Dawgs student content program. Presence is not creator count, reach, or density."
+    },
+    "primary-44": {
+      "id": "primary-44",
+      "url": "https://www.colorado.edu/education/student-life/student-ambassadors",
+      "publisher": "University of Colorado Boulder",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Education student ambassadors assist with social media and web content; college-specific program."
+    },
+    "primary-45": {
+      "id": "primary-45",
+      "url": "https://sacredheart.smartcatalogiq.com/en/2024-2025/2024-2025-undergraduate-catalog/university-life/student-clubs-and-organizations/",
+      "publisher": "Sacred Heart University",
+      "accessed": "2026-09-29",
+      "data_year": "2024-25",
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Audited relevant subset: Fashion Club, Marketing Club, SHU Host, SHU Innovate, Women in Business Network, Film Club, Her Campus, Sports Media Club, Spectrum, The Pulse, WHRT, PRSSA. Presence in catalog does not confirm current activity."
+    },
+    "primary-46": {
+      "id": "primary-46",
+      "url": "https://studentlife.indiana.edu/involvement-belonging/sororities-fraternities/index.html",
+      "publisher": "Indiana University-Bloomington",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "University explicitly reports more than 8,000 IU Bloomington members; no cross-year participation percentage inferred."
+    },
+    "primary-47": {
+      "id": "primary-47",
+      "url": "https://fsl.usc.edu/",
+      "publisher": "University of Southern California",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "34 recognized chapters and 2,200+ members. Unaffiliated fraternities are outside this university-recognized scope."
+    },
+    "primary-48": {
+      "id": "primary-48",
+      "url": "https://greek.arizona.edu/organizations",
+      "publisher": "University of Arizona",
+      "accessed": "2026-09-29",
+      "data_year": null,
+      "as_of": null,
+      "source_type": "university_primary",
+      "note": "Count of 52 distinct organization rows in the unfiltered official directory, accessed 2026-09-29. Row count is a directory-presence measure; check standing before activation."
+    }
+  },
+  "observations": [
+    {
+      "unitid": "100751",
+      "metric": "greek_pct",
+      "value": 40,
+      "qualifier": "reported_rounded",
+      "source_ids": [
+        "primary-1"
+      ],
+      "data_year": "Fall 2025",
+      "note": "Percentage is explicitly main-campus undergraduate population."
+    },
+    {
+      "unitid": "134097",
+      "metric": "greek_pct",
+      "value": 23,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-2"
+      ],
+      "data_year": "2025",
+      "note": "University reports about 23%, over 50 chapters and over 6,800 members."
+    },
+    {
+      "unitid": "134097",
+      "metric": "greek_chapters",
+      "value": 50,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-2"
+      ],
+      "data_year": "2025",
+      "note": "University reports about 23%, over 50 chapters and over 6,800 members."
+    },
+    {
+      "unitid": "134097",
+      "metric": "greek_members",
+      "value": 6800,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-2"
+      ],
+      "data_year": "2025",
+      "note": "University reports about 23%, over 50 chapters and over 6,800 members."
+    },
+    {
+      "unitid": "139959",
+      "metric": "greek_chapters",
+      "value": 69,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-3"
+      ],
+      "data_year": null,
+      "note": "Undated current office overview."
+    },
+    {
+      "unitid": "139959",
+      "metric": "greek_members",
+      "value": 9867,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-4"
+      ],
+      "data_year": "Fall 2024",
+      "note": ""
+    },
+    {
+      "unitid": "240444",
+      "metric": "greek_chapters",
+      "value": 60,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-5"
+      ],
+      "data_year": null,
+      "note": "Office states 60+ organizations and over 5,000 members."
+    },
+    {
+      "unitid": "240444",
+      "metric": "greek_members",
+      "value": 5000,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-5"
+      ],
+      "data_year": null,
+      "note": "Office states 60+ organizations and over 5,000 members."
+    },
+    {
+      "unitid": "160755",
+      "metric": "greek_chapters",
+      "value": 25,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-6"
+      ],
+      "data_year": null,
+      "note": "Participation denominator is full-time undergraduates, not all undergraduates."
+    },
+    {
+      "unitid": "160755",
+      "metric": "greek_pct",
+      "value": 35,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-6"
+      ],
+      "data_year": null,
+      "note": "Participation denominator is full-time undergraduates, not all undergraduates."
+    },
+    {
+      "unitid": "214777",
+      "metric": "greek_chapters",
+      "value": 70,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-7"
+      ],
+      "data_year": null,
+      "note": "Overview says 70 chapters; later text says over 70. Rounded community summary; verify roster before contracting."
+    },
+    {
+      "unitid": "204796",
+      "metric": "greek_chapters",
+      "value": 60,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-8"
+      ],
+      "data_year": null,
+      "note": "University overview says over 60 chapters across four councils."
+    },
+    {
+      "unitid": "145637",
+      "metric": "greek_chapters",
+      "value": 91,
+      "qualifier": "derived_sum",
+      "source_ids": [
+        "primary-9"
+      ],
+      "data_year": "2025",
+      "note": "Chapters = 50 fraternities + 1 coed organization + 40 sororities; includes cultural organizations."
+    },
+    {
+      "unitid": "145637",
+      "metric": "greek_members",
+      "value": 6230,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-9"
+      ],
+      "data_year": "2025",
+      "note": "Chapters = 50 fraternities + 1 coed organization + 40 sororities; includes cultural organizations."
+    },
+    {
+      "unitid": "228778",
+      "metric": "greek_chapters",
+      "value": 60,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-10"
+      ],
+      "data_year": null,
+      "note": "Office describes around 60 recognized social sororities and fraternities."
+    },
+    {
+      "unitid": "228778",
+      "metric": "greek_pct",
+      "value": 16,
+      "qualifier": "reported_rounded",
+      "source_ids": [
+        "primary-11"
+      ],
+      "data_year": "2023-24",
+      "note": "Page explicitly attributes data to its 2023-24 information guide; do not treat live page date as data year."
+    },
+    {
+      "unitid": "228778",
+      "metric": "greek_members",
+      "value": 7200,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-11"
+      ],
+      "data_year": "2023-24",
+      "note": "Page explicitly attributes data to its 2023-24 information guide; do not treat live page date as data year."
+    },
+    {
+      "unitid": "171100",
+      "metric": "greek_chapters",
+      "value": 56,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-12"
+      ],
+      "data_year": "Fall 2024",
+      "note": "Dated report preferred over conflicting undated 58/61-chapter summaries. Published 12.34% denominator is labeled student body; not scored as undergraduate penetration."
+    },
+    {
+      "unitid": "171100",
+      "metric": "greek_members",
+      "value": 5092,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-12"
+      ],
+      "data_year": "Fall 2024",
+      "note": "Dated report preferred over conflicting undated 58/61-chapter summaries. Published 12.34% denominator is labeled student body; not scored as undergraduate penetration."
+    },
+    {
+      "unitid": "204857",
+      "metric": "greek_chapters",
+      "value": 29,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-13"
+      ],
+      "data_year": null,
+      "note": "Annual-report page states 29 values-based fraternal organizations; data year not established in retrieved excerpt."
+    },
+    {
+      "unitid": "204024",
+      "metric": "greek_pct",
+      "value": 36,
+      "qualifier": "reported_rounded",
+      "source_ids": [
+        "primary-14"
+      ],
+      "data_year": "Spring 2026",
+      "note": "Full-time Oxford undergraduate denominator. Published gender subtotals do not sum to published total; use reported total without reconstructing it."
+    },
+    {
+      "unitid": "204024",
+      "metric": "greek_members",
+      "value": 5804,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-14"
+      ],
+      "data_year": "Spring 2026",
+      "note": "Full-time Oxford undergraduate denominator. Published gender subtotals do not sum to published total; use reported total without reconstructing it."
+    },
+    {
+      "unitid": "135726",
+      "metric": "greek_chapters",
+      "value": 33,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-15"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "135726",
+      "metric": "greek_members",
+      "value": 3800,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-15"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "126614",
+      "metric": "greek_chapters",
+      "value": 30,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-16"
+      ],
+      "data_year": null,
+      "note": "University-recognized chapters only; unaffiliated Boulder fraternities excluded."
+    },
+    {
+      "unitid": "110705",
+      "metric": "greek_pct",
+      "value": 13,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-17"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "110705",
+      "metric": "greek_members",
+      "value": 3000,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-17"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "176017",
+      "metric": "greek_members",
+      "value": 8408,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-18"
+      ],
+      "data_year": "Spring 2024",
+      "note": "Participation uses same-report Oxford undergraduate denominator 15,751; not the IPEDS institutional total."
+    },
+    {
+      "unitid": "176017",
+      "metric": "greek_pct",
+      "value": 53.380737730937724,
+      "qualifier": "derived_ratio",
+      "source_ids": [
+        "primary-18"
+      ],
+      "data_year": "Spring 2024",
+      "note": "Participation uses same-report Oxford undergraduate denominator 15,751; not the IPEDS institutional total."
+    },
+    {
+      "unitid": "170976",
+      "metric": "greek_chapters",
+      "value": 58,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-19"
+      ],
+      "data_year": "Winter 2026",
+      "note": "Office reports winter enrollment 33,945; fall 2025 participation is separately 14.14%. Seasonal recruitment changes matter."
+    },
+    {
+      "unitid": "170976",
+      "metric": "greek_members",
+      "value": 6221,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-19"
+      ],
+      "data_year": "Winter 2026",
+      "note": "Office reports winter enrollment 33,945; fall 2025 participation is separately 14.14%. Seasonal recruitment changes matter."
+    },
+    {
+      "unitid": "170976",
+      "metric": "greek_pct",
+      "value": 18.33,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-19"
+      ],
+      "data_year": "Winter 2026",
+      "note": "Office reports winter enrollment 33,945; fall 2025 participation is separately 14.14%. Seasonal recruitment changes matter."
+    },
+    {
+      "unitid": "153658",
+      "metric": "greek_pct",
+      "value": 16,
+      "qualifier": "reported_rounded",
+      "source_ids": [
+        "primary-20"
+      ],
+      "data_year": null,
+      "note": "Current FSL office page used over admissions page reporting 15%; explicit conflict retained."
+    },
+    {
+      "unitid": "153658",
+      "metric": "greek_chapters",
+      "value": 40,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-20"
+      ],
+      "data_year": null,
+      "note": "Current FSL office page used over admissions page reporting 15%; explicit conflict retained."
+    },
+    {
+      "unitid": "153658",
+      "metric": "greek_members",
+      "value": 3800,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-20"
+      ],
+      "data_year": null,
+      "note": "Current FSL office page used over admissions page reporting 15%; explicit conflict retained."
+    },
+    {
+      "unitid": "218663",
+      "metric": "greek_chapters",
+      "value": 53,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-21"
+      ],
+      "data_year": null,
+      "note": "Page also says more than 30% of student body; ambiguous denominator excluded from penetration metric."
+    },
+    {
+      "unitid": "218663",
+      "metric": "greek_members",
+      "value": 10000,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-21"
+      ],
+      "data_year": null,
+      "note": "Page also says more than 30% of student body; ambiguous denominator excluded from penetration metric."
+    },
+    {
+      "unitid": "234076",
+      "metric": "greek_chapters",
+      "value": 53,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-22"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "234076",
+      "metric": "greek_pct",
+      "value": 28,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-23"
+      ],
+      "data_year": null,
+      "note": "Office FAQ says approximately 28% of undergraduates; faculty handbook states 27% of student body, different scope."
+    },
+    {
+      "unitid": "155317",
+      "metric": "greek_chapters",
+      "value": 42,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-24"
+      ],
+      "data_year": "2023-24",
+      "note": "Dated annual report; newer summary with broader organization/house scope not substituted."
+    },
+    {
+      "unitid": "155317",
+      "metric": "greek_members",
+      "value": 3903,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-24"
+      ],
+      "data_year": "2023-24",
+      "note": "Dated annual report; newer summary with broader organization/house scope not substituted."
+    },
+    {
+      "unitid": "216339",
+      "metric": "greek_chapters",
+      "value": 34,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-25"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "216339",
+      "metric": "greek_members",
+      "value": 1800,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-25"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "232423",
+      "metric": "greek_chapters",
+      "value": 33,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-26"
+      ],
+      "data_year": null,
+      "note": "20% figure labeled student population, not explicitly undergraduate; penetration left unavailable."
+    },
+    {
+      "unitid": "196060",
+      "metric": "greek_chapters",
+      "value": 25,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-27"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "134130",
+      "metric": "greek_chapters",
+      "value": 61,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-28"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "228459",
+      "metric": "greek_chapters",
+      "value": 44,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-29"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "221999",
+      "metric": "greek_pct",
+      "value": 33,
+      "qualifier": "reported_rounded",
+      "source_ids": [
+        "primary-30"
+      ],
+      "data_year": "2025-26",
+      "note": ""
+    },
+    {
+      "unitid": "221999",
+      "metric": "greek_chapters",
+      "value": 30,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-31"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "100858",
+      "metric": "greek_pct",
+      "value": 37,
+      "qualifier": "reported_rounded",
+      "source_ids": [
+        "primary-32"
+      ],
+      "data_year": "2025-26",
+      "note": "University annual report release."
+    },
+    {
+      "unitid": "100858",
+      "metric": "greek_members",
+      "value": 10000,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-32"
+      ],
+      "data_year": "2025-26",
+      "note": "University annual report release."
+    },
+    {
+      "unitid": "221759",
+      "metric": "greek_chapters",
+      "value": 50,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-33"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "228875",
+      "metric": "greek_chapters",
+      "value": 40,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-34"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "223232",
+      "metric": "greek_chapters",
+      "value": 36,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-35"
+      ],
+      "data_year": null,
+      "note": "Active-chapter directory used over general taxonomy page that says over 40."
+    },
+    {
+      "unitid": "130253",
+      "metric": "greek_chapters",
+      "value": 17,
+      "qualifier": "derived_sum",
+      "source_ids": [
+        "primary-36"
+      ],
+      "data_year": null,
+      "note": "10 sororities + 7 fraternities; approximate members 1,600 + 700."
+    },
+    {
+      "unitid": "130253",
+      "metric": "greek_members",
+      "value": 2300,
+      "qualifier": "reported_approximate",
+      "source_ids": [
+        "primary-36"
+      ],
+      "data_year": null,
+      "note": "10 sororities + 7 fraternities; approximate members 1,600 + 700."
+    },
+    {
+      "unitid": "207500",
+      "metric": "greek_chapters",
+      "value": 56,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-37"
+      ],
+      "data_year": "2023",
+      "note": "29% participation denominator described as overall student body; excluded from undergraduate penetration."
+    },
+    {
+      "unitid": "207500",
+      "metric": "greek_members",
+      "value": 6000,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-37"
+      ],
+      "data_year": "2023",
+      "note": "29% participation denominator described as overall student body; excluded from undergraduate penetration."
+    },
+    {
+      "unitid": "133650",
+      "metric": "greek_chapters",
+      "value": 31,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-38"
+      ],
+      "data_year": null,
+      "note": "Office umbrella includes professional and music organizations; broader than exclusively social chapters. Proxy comparability is limited."
+    },
+    {
+      "unitid": "131520",
+      "metric": "greek_chapters",
+      "value": 40,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-39"
+      ],
+      "data_year": null,
+      "note": "Broad fraternal ecosystem includes social fellowships and societies. Not exclusively social fraternities/sororities."
+    },
+    {
+      "unitid": "215062",
+      "metric": "greek_chapters",
+      "value": 36,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-40"
+      ],
+      "data_year": null,
+      "note": ""
+    },
+    {
+      "unitid": "196413",
+      "metric": "greek_chapters",
+      "value": 60,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-41"
+      ],
+      "data_year": null,
+      "note": "Broad Greek-letter organizations including professional council; directory scope."
+    },
+    {
+      "unitid": "100751",
+      "metric": "creator_program_present",
+      "value": 1,
+      "qualifier": "observed_presence",
+      "source_ids": [
+        "primary-42"
+      ],
+      "data_year": null,
+      "note": "Student Life social media ambassador program is documented. Presence is not creator count, reach, or density."
+    },
+    {
+      "unitid": "139959",
+      "metric": "creator_program_present",
+      "value": 1,
+      "qualifier": "observed_presence",
+      "source_ids": [
+        "primary-43"
+      ],
+      "data_year": null,
+      "note": "Digital Dawgs student content program. Presence is not creator count, reach, or density."
+    },
+    {
+      "unitid": "126614",
+      "metric": "creator_program_present",
+      "value": 1,
+      "qualifier": "observed_presence",
+      "source_ids": [
+        "primary-44"
+      ],
+      "data_year": null,
+      "note": "Education student ambassadors assist with social media and web content; college-specific program."
+    },
+    {
+      "unitid": "130253",
+      "metric": "relevant_clubs",
+      "value": 12,
+      "qualifier": "audited_subset",
+      "source_ids": [
+        "primary-45"
+      ],
+      "data_year": "2024-25",
+      "note": "Audited relevant subset: Fashion Club, Marketing Club, SHU Host, SHU Innovate, Women in Business Network, Film Club, Her Campus, Sports Media Club, Spectrum, The Pulse, WHRT, PRSSA. Presence in catalog does not confirm current activity."
+    },
+    {
+      "unitid": "151351",
+      "metric": "greek_members",
+      "value": 8000,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-46"
+      ],
+      "data_year": null,
+      "note": "University explicitly reports more than 8,000 IU Bloomington members; no cross-year participation percentage inferred."
+    },
+    {
+      "unitid": "123961",
+      "metric": "greek_chapters",
+      "value": 34,
+      "qualifier": "reported",
+      "source_ids": [
+        "primary-47"
+      ],
+      "data_year": null,
+      "note": "34 recognized chapters and 2,200+ members. Unaffiliated fraternities are outside this university-recognized scope."
+    },
+    {
+      "unitid": "123961",
+      "metric": "greek_members",
+      "value": 2200,
+      "qualifier": "lower_bound",
+      "source_ids": [
+        "primary-47"
+      ],
+      "data_year": null,
+      "note": "34 recognized chapters and 2,200+ members. Unaffiliated fraternities are outside this university-recognized scope."
+    },
+    {
+      "unitid": "104179",
+      "metric": "greek_chapters",
+      "value": 52,
+      "qualifier": "derived_count",
+      "source_ids": [
+        "primary-48"
+      ],
+      "data_year": null,
+      "note": "Count of 52 distinct organization rows in the unfiltered official directory, accessed 2026-09-29. Row count is a directory-presence measure; check standing before activation."
+    }
+  ]
+}

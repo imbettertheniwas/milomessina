@@ -1,0 +1,302 @@
+[
+  {
+    "unitid": "134097",
+    "school": "Florida State University",
+    "latitude": 30.443147,
+    "longitude": -84.295064
+  },
+  {
+    "unitid": "160755",
+    "school": "Tulane University of Louisiana",
+    "latitude": 29.940069,
+    "longitude": -90.122144
+  },
+  {
+    "unitid": "240444",
+    "school": "University of Wisconsin-Madison",
+    "latitude": 43.075409,
+    "longitude": -89.404098
+  },
+  {
+    "unitid": "202480",
+    "school": "University of Dayton",
+    "latitude": 39.739547,
+    "longitude": -84.176113
+  },
+  {
+    "unitid": "123961",
+    "school": "University of Southern California",
+    "latitude": 34.021281,
+    "longitude": -118.284169
+  },
+  {
+    "unitid": "139959",
+    "school": "University of Georgia",
+    "latitude": 33.956262,
+    "longitude": -83.374039
+  },
+  {
+    "unitid": "238032",
+    "school": "West Virginia University",
+    "latitude": 39.634371,
+    "longitude": -79.954391
+  },
+  {
+    "unitid": "145637",
+    "school": "University of Illinois Urbana-Champaign",
+    "latitude": 40.104718,
+    "longitude": -88.229114
+  },
+  {
+    "unitid": "163453",
+    "school": "Morgan State University",
+    "latitude": 39.344161,
+    "longitude": -76.585565
+  },
+  {
+    "unitid": "228778",
+    "school": "The University of Texas at Austin",
+    "latitude": 30.282825,
+    "longitude": -97.738273
+  },
+  {
+    "unitid": "100751",
+    "school": "The University of Alabama",
+    "latitude": 33.211875,
+    "longitude": -87.545978
+  },
+  {
+    "unitid": "196413",
+    "school": "Syracuse University",
+    "latitude": 43.036644,
+    "longitude": -76.133989
+  },
+  {
+    "unitid": "131520",
+    "school": "Howard University",
+    "latitude": 38.922392,
+    "longitude": -77.018966
+  },
+  {
+    "unitid": "171100",
+    "school": "Michigan State University",
+    "latitude": 42.73212,
+    "longitude": -84.476111
+  },
+  {
+    "unitid": "122409",
+    "school": "San Diego State University",
+    "latitude": 32.77525,
+    "longitude": -117.071228
+  },
+  {
+    "unitid": "151351",
+    "school": "Indiana University-Bloomington",
+    "latitude": 39.16609,
+    "longitude": -86.526559
+  },
+  {
+    "unitid": "204024",
+    "school": "Miami University-Oxford",
+    "latitude": 39.507757,
+    "longitude": -84.732954
+  },
+  {
+    "unitid": "135726",
+    "school": "University of Miami",
+    "latitude": 25.72126,
+    "longitude": -80.278662
+  },
+  {
+    "unitid": "133650",
+    "school": "Florida Agricultural and Mechanical University",
+    "latitude": 30.428504,
+    "longitude": -84.290226
+  },
+  {
+    "unitid": "126614",
+    "school": "University of Colorado Boulder",
+    "latitude": 40.008781,
+    "longitude": -105.270823
+  },
+  {
+    "unitid": "110705",
+    "school": "University of California-Santa Barbara",
+    "latitude": 34.416297,
+    "longitude": -119.846426
+  },
+  {
+    "unitid": "176017",
+    "school": "University of Mississippi",
+    "latitude": 34.365529,
+    "longitude": -89.537434
+  },
+  {
+    "unitid": "170976",
+    "school": "University of Michigan-Ann Arbor",
+    "latitude": 42.278374,
+    "longitude": -83.73481
+  },
+  {
+    "unitid": "153658",
+    "school": "University of Iowa",
+    "latitude": 41.661935,
+    "longitude": -91.536425
+  },
+  {
+    "unitid": "137847",
+    "school": "The University of Tampa",
+    "latitude": 27.948455,
+    "longitude": -82.46483
+  },
+  {
+    "unitid": "215062",
+    "school": "University of Pennsylvania",
+    "latitude": 39.950929,
+    "longitude": -75.19391
+  },
+  {
+    "unitid": "218663",
+    "school": "University of South Carolina-Columbia",
+    "latitude": 33.996788,
+    "longitude": -81.026935
+  },
+  {
+    "unitid": "217882",
+    "school": "Clemson University",
+    "latitude": 34.679381,
+    "longitude": -82.835114
+  },
+  {
+    "unitid": "234076",
+    "school": "University of Virginia-Main Campus",
+    "latitude": 38.035665,
+    "longitude": -78.503428
+  },
+  {
+    "unitid": "236939",
+    "school": "Washington State University",
+    "latitude": 46.730448,
+    "longitude": -117.158168
+  },
+  {
+    "unitid": "155317",
+    "school": "University of Kansas",
+    "latitude": 38.958549,
+    "longitude": -95.247567
+  },
+  {
+    "unitid": "216339",
+    "school": "Temple University",
+    "latitude": 39.980546,
+    "longitude": -75.156859
+  },
+  {
+    "unitid": "232423",
+    "school": "James Madison University",
+    "latitude": 38.436311,
+    "longitude": -78.870484
+  },
+  {
+    "unitid": "130943",
+    "school": "University of Delaware",
+    "latitude": 39.679577,
+    "longitude": -75.752822
+  },
+  {
+    "unitid": "199102",
+    "school": "North Carolina A & T State University",
+    "latitude": 36.07282,
+    "longitude": -79.773375
+  },
+  {
+    "unitid": "229115",
+    "school": "Texas Tech University",
+    "latitude": 33.583448,
+    "longitude": -101.874783
+  },
+  {
+    "unitid": "134130",
+    "school": "University of Florida",
+    "latitude": 29.64629,
+    "longitude": -82.347911
+  },
+  {
+    "unitid": "228459",
+    "school": "Texas State University",
+    "latitude": 29.888885,
+    "longitude": -97.943029
+  },
+  {
+    "unitid": "221999",
+    "school": "Vanderbilt University",
+    "latitude": 36.14659,
+    "longitude": -86.803369
+  },
+  {
+    "unitid": "104179",
+    "school": "University of Arizona",
+    "latitude": 32.232672,
+    "longitude": -110.950815
+  },
+  {
+    "unitid": "100858",
+    "school": "Auburn University",
+    "latitude": 32.599378,
+    "longitude": -85.488258
+  },
+  {
+    "unitid": "228875",
+    "school": "Texas Christian University",
+    "latitude": 32.70961,
+    "longitude": -97.364758
+  },
+  {
+    "unitid": "223232",
+    "school": "Baylor University",
+    "latitude": 31.546872,
+    "longitude": -97.121041
+  },
+  {
+    "unitid": "221759",
+    "school": "The University of Tennessee-Knoxville",
+    "latitude": 35.952082,
+    "longitude": -83.925852
+  },
+  {
+    "unitid": "130253",
+    "school": "Sacred Heart University",
+    "latitude": 41.220893,
+    "longitude": -73.243332
+  },
+  {
+    "unitid": "207500",
+    "school": "University of Oklahoma-Norman Campus",
+    "latitude": 35.209407,
+    "longitude": -97.444211
+  },
+  {
+    "unitid": "214777",
+    "school": "Pennsylvania State University-Main Campus",
+    "latitude": 40.7965,
+    "longitude": -77.862848
+  },
+  {
+    "unitid": "204796",
+    "school": "Ohio State University-Main Campus",
+    "latitude": 39.999803,
+    "longitude": -83.007525
+  },
+  {
+    "unitid": "204857",
+    "school": "Ohio University-Main Campus",
+    "latitude": 39.326798,
+    "longitude": -82.100985
+  },
+  {
+    "unitid": "196060",
+    "school": "University at Albany",
+    "latitude": 42.685489,
+    "longitude": -73.824662
+  }
+]

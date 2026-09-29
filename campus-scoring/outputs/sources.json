@@ -1,0 +1,973 @@
+{
+  "HD2024": {
+    "id": "HD2024",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/hd2024.zip",
+    "accessed": "2026-09-29",
+    "sha256": "d98425c123d7c0e872aec6e83960dfb501884818bf17385c340790f3d1f28345",
+    "bytes": 1088372,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2024",
+    "source_type": "federal_primary"
+  },
+  "EF2023A": {
+    "id": "EF2023A",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023a.zip",
+    "accessed": "2026-09-29",
+    "sha256": "d1fbd91cbda965e6bf75b9167825ec121d9ebf218ef7bc164276ef0443290237",
+    "bytes": 2979525,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023",
+    "source_type": "federal_primary"
+  },
+  "EF2023B": {
+    "id": "EF2023B",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023b.zip",
+    "accessed": "2026-09-29",
+    "sha256": "1aa81bcff050d82920c2d4ab921b91c763e2f9ff77adc45b2f0978bb6270b9cc",
+    "bytes": 1741540,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023",
+    "source_type": "federal_primary"
+  },
+  "EF2023C": {
+    "id": "EF2023C",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023c.zip",
+    "accessed": "2026-09-29",
+    "sha256": "add4ece19bb4f8a5b7a893f60c9f96411beed137ec62a48e21be949253a332ee",
+    "bytes": 181241,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023",
+    "source_type": "federal_primary"
+  },
+  "EF2023A_DIST": {
+    "id": "EF2023A_DIST",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/ef2023a_dist.zip",
+    "accessed": "2026-09-29",
+    "sha256": "82cf7c0db273ba3f594a5ffa54c6d5ea14bd01db15e8cdb886b3d1663a1fcb97",
+    "bytes": 221386,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023",
+    "source_type": "federal_primary"
+  },
+  "C2024_A": {
+    "id": "C2024_A",
+    "url": "https://nces.ed.gov/ipeds/datacenter/data/c2024_a.zip",
+    "accessed": "2026-09-29",
+    "sha256": "03234cc27fe4e7eb835a66d4f37aaec11bdac8dfa278f971584e1b20d03e1159",
+    "bytes": 4680679,
+    "publisher": "NCES / U.S. Department of Education",
+    "data_year": "2023-24",
+    "source_type": "federal_primary"
+  },
+  "gsa": {
+    "id": "gsa",
+    "url": "https://www.gsa.gov/system/files/FY2027PerDiemZipCode_Validated090126.xlsx",
+    "accessed": "2026-09-29",
+    "sha256": "0837f8d7a50bfc1029263b04bec7490873dbe3084554e5128c2ae23ba3eec7f1",
+    "bytes": 3158613,
+    "publisher": "U.S. General Services Administration",
+    "data_year": "FY2027",
+    "source_type": "federal_primary"
+  },
+  "airports": {
+    "id": "airports",
+    "url": "https://davidmegginson.github.io/ourairports-data/airports.csv",
+    "accessed": "2026-09-29",
+    "sha256": "e5b485bd1453002071231563dcc54fbf1efacb7c3cbaa486c73247b3aa1b2398",
+    "bytes": 12733496,
+    "publisher": "OurAirports",
+    "data_year": null,
+    "source_type": "open_geographic_dataset"
+  },
+  "primary-1": {
+    "id": "primary-1",
+    "url": "https://ofsl.sl.ua.edu/",
+    "publisher": "The University of Alabama",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2025",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Percentage is explicitly main-campus undergraduate population."
+  },
+  "primary-2": {
+    "id": "primary-2",
+    "url": "https://studentaffairs.fsu.edu/article/leadership-training-supports-greek-organization-success",
+    "publisher": "Florida State University",
+    "accessed": "2026-09-29",
+    "data_year": "2025",
+    "as_of": "2025-09-10",
+    "source_type": "university_primary",
+    "note": "University reports about 23%, over 50 chapters and over 6,800 members."
+  },
+  "primary-3": {
+    "id": "primary-3",
+    "url": "https://greeklife.uga.edu/our-story/",
+    "publisher": "University of Georgia",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Undated current office overview."
+  },
+  "primary-4": {
+    "id": "primary-4",
+    "url": "https://greeklife.uga.edu/wp-content/uploads/sites/9/2025/05/Fall-2024-Greek-Life-Grade-Report.pdf",
+    "publisher": "University of Georgia",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2024",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-5": {
+    "id": "primary-5",
+    "url": "https://fsl.wisc.edu/",
+    "publisher": "University of Wisconsin-Madison",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Office states 60+ organizations and over 5,000 members."
+  },
+  "primary-6": {
+    "id": "primary-6",
+    "url": "https://greek.tulane.edu/our-community",
+    "publisher": "Tulane University of Louisiana",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Participation denominator is full-time undergraduates, not all undergraduates."
+  },
+  "primary-7": {
+    "id": "primary-7",
+    "url": "https://studentaffairs.psu.edu/student-life/fraternity-sorority-life",
+    "publisher": "Pennsylvania State University-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Overview says 70 chapters; later text says over 70. Rounded community summary; verify roster before contracting."
+  },
+  "primary-8": {
+    "id": "primary-8",
+    "url": "https://activities.osu.edu/involvement/get-involved-guide/gig-sfl/",
+    "publisher": "Ohio State University-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "University overview says over 60 chapters across four councils."
+  },
+  "primary-9": {
+    "id": "primary-9",
+    "url": "https://fsaffairs.illinois.edu/information/snapshot",
+    "publisher": "University of Illinois Urbana-Champaign",
+    "accessed": "2026-09-29",
+    "data_year": "2025",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Chapters = 50 fraternities + 1 coed organization + 40 sororities; includes cultural organizations."
+  },
+  "primary-10": {
+    "id": "primary-10",
+    "url": "https://studentlife.utexas.edu/sfl/find-a-chapter.php",
+    "publisher": "The University of Texas at Austin",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Office describes around 60 recognized social sororities and fraternities."
+  },
+  "primary-11": {
+    "id": "primary-11",
+    "url": "https://studentlife.utexas.edu/sfl/our-community.php",
+    "publisher": "The University of Texas at Austin",
+    "accessed": "2026-09-29",
+    "data_year": "2023-24",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Page explicitly attributes data to its 2023-24 information guide; do not treat live page date as data year."
+  },
+  "primary-12": {
+    "id": "primary-12",
+    "url": "https://fsl.msu.edu/Fall-2024-All-FSL-Semester-Report.pdf",
+    "publisher": "Michigan State University",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2024",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Dated report preferred over conflicting undated 58/61-chapter summaries. Published 12.34% denominator is labeled student body; not scored as undergraduate penetration."
+  },
+  "primary-13": {
+    "id": "primary-13",
+    "url": "https://www.ohio.edu/student-affairs/assessment/reports/annual",
+    "publisher": "Ohio University-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Annual-report page states 29 values-based fraternal organizations; data year not established in retrieved excerpt."
+  },
+  "primary-14": {
+    "id": "primary-14",
+    "url": "https://miamioh.edu/life-at-miami/student-involvement/fraternity-sorority-life/about/facts-and-stats/",
+    "publisher": "Miami University-Oxford",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2026",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Full-time Oxford undergraduate denominator. Published gender subtotals do not sum to published total; use reported total without reconstructing it."
+  },
+  "primary-15": {
+    "id": "primary-15",
+    "url": "https://doso.studentaffairs.miami.edu/greek-life/councils-chapters/index.html",
+    "publisher": "University of Miami",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-16": {
+    "id": "primary-16",
+    "url": "https://www.colorado.edu/greeks/",
+    "publisher": "University of Colorado Boulder",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "University-recognized chapters only; unaffiliated Boulder fraternities excluded."
+  },
+  "primary-17": {
+    "id": "primary-17",
+    "url": "https://seal.sa.ucsb.edu/fraternity-sorority-life",
+    "publisher": "University of California-Santa Barbara",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-18": {
+    "id": "primary-18",
+    "url": "https://greeks.wp2.olemiss.edu/wp-content/uploads/sites/42/2024/06/UM-Fraternity-Sorority-Academic-Report-Spring-2024.pdf",
+    "publisher": "University of Mississippi",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2024",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Participation uses same-report Oxford undergraduate denominator 15,751; not the IPEDS institutional total."
+  },
+  "primary-19": {
+    "id": "primary-19",
+    "url": "https://fsl.umich.edu/article/community-statistics",
+    "publisher": "University of Michigan-Ann Arbor",
+    "accessed": "2026-09-29",
+    "data_year": "Winter 2026",
+    "as_of": "2026-04-26",
+    "source_type": "university_primary",
+    "note": "Office reports winter enrollment 33,945; fall 2025 participation is separately 14.14%. Seasonal recruitment changes matter."
+  },
+  "primary-20": {
+    "id": "primary-20",
+    "url": "https://fsl.uiowa.edu/community",
+    "publisher": "University of Iowa",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Current FSL office page used over admissions page reporting 15%; explicit conflict retained."
+  },
+  "primary-21": {
+    "id": "primary-21",
+    "url": "https://www.sc.edu/about/offices_and_divisions/fraternity_and_sorority_life/",
+    "publisher": "University of South Carolina-Columbia",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Page also says more than 30% of student body; ambiguous denominator excluded from penetration metric."
+  },
+  "primary-22": {
+    "id": "primary-22",
+    "url": "https://studentaffairs.virginia.edu/subsite/fsl/recruitment-intake/prospective-members-parents",
+    "publisher": "University of Virginia-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-23": {
+    "id": "primary-23",
+    "url": "https://studentaffairs.virginia.edu/subsite/fsl/about/frequently-asked-questions",
+    "publisher": "University of Virginia-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Office FAQ says approximately 28% of undergraduates; faculty handbook states 27% of student body, different scope."
+  },
+  "primary-24": {
+    "id": "primary-24",
+    "url": "https://studentaffairsassessment.ku.edu/sites/studentaffairsassessment/files/images/Student%20Affairs%202023-2024%20Annual%20Impact%20Report-compressed_1.pdf",
+    "publisher": "University of Kansas",
+    "accessed": "2026-09-29",
+    "data_year": "2023-24",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Dated annual report; newer summary with broader organization/house scope not substituted."
+  },
+  "primary-25": {
+    "id": "primary-25",
+    "url": "https://studentaffairs.temple.edu/student-leadership-engagement/fraternity-sorority-life",
+    "publisher": "Temple University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-26": {
+    "id": "primary-26",
+    "url": "https://www.jmu.edu/osl/fsl/potential-members/how-to-join.shtml",
+    "publisher": "James Madison University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "20% figure labeled student population, not explicitly undergraduate; penetration left unavailable."
+  },
+  "primary-27": {
+    "id": "primary-27",
+    "url": "https://www.albany.edu/student-engagement-belonging/student-activities/fraternity-and-sorority-life",
+    "publisher": "University at Albany",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-28": {
+    "id": "primary-28",
+    "url": "https://greeks.ufl.edu/",
+    "publisher": "University of Florida",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-29": {
+    "id": "primary-29",
+    "url": "https://fsl.dos.txst.edu/",
+    "publisher": "Texas State University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-30": {
+    "id": "primary-30",
+    "url": "https://www.vanderbilt.edu/student-affairs/greek-life/annual-awards-and-reports/",
+    "publisher": "Vanderbilt University",
+    "accessed": "2026-09-29",
+    "data_year": "2025-26",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-31": {
+    "id": "primary-31",
+    "url": "https://www.vanderbilt.edu/student-affairs/greek-life/",
+    "publisher": "Vanderbilt University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-32": {
+    "id": "primary-32",
+    "url": "https://studentaffairs.auburn.edu/greek/articles/2026/07/2025-26-greek-community-report-released.php",
+    "publisher": "Auburn University",
+    "accessed": "2026-09-29",
+    "data_year": "2025-26",
+    "as_of": "2026-07-06",
+    "source_type": "university_primary",
+    "note": "University annual report release."
+  },
+  "primary-33": {
+    "id": "primary-33",
+    "url": "https://studentlife.utk.edu/gogreek/councils-organizations/chapters/",
+    "publisher": "The University of Tennessee-Knoxville",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-34": {
+    "id": "primary-34",
+    "url": "https://greeks.tcu.edu/",
+    "publisher": "Texas Christian University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-35": {
+    "id": "primary-35",
+    "url": "https://fsl.web.baylor.edu/meet-community",
+    "publisher": "Baylor University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Active-chapter directory used over general taxonomy page that says over 40."
+  },
+  "primary-36": {
+    "id": "primary-36",
+    "url": "https://www.sacredheart.edu/sacred-heart-life/student-events--activities/fraternity--sorority-life/",
+    "publisher": "Sacred Heart University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "10 sororities + 7 fraternities; approximate members 1,600 + 700."
+  },
+  "primary-37": {
+    "id": "primary-37",
+    "url": "https://www.ou.edu/content/dam/studentlife/fssl/docs/FSPS%20Experience%20Guide%202023.pdf",
+    "publisher": "University of Oklahoma-Norman Campus",
+    "accessed": "2026-09-29",
+    "data_year": "2023",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "29% participation denominator described as overall student body; excluded from undergraduate penetration."
+  },
+  "primary-38": {
+    "id": "primary-38",
+    "url": "https://www.famu.edu/students/student-activities/greek-life/councils-and-chapters.php",
+    "publisher": "Florida Agricultural and Mechanical University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Office umbrella includes professional and music organizations; broader than exclusively social chapters. Proxy comparability is limited."
+  },
+  "primary-39": {
+    "id": "primary-39",
+    "url": "https://studentaffairs.howard.edu/activities/fsl",
+    "publisher": "Howard University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Broad fraternal ecosystem includes social fellowships and societies. Not exclusively social fraternities/sororities."
+  },
+  "primary-40": {
+    "id": "primary-40",
+    "url": "https://ofsl.universitylife.upenn.edu/chapters/",
+    "publisher": "University of Pennsylvania",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": ""
+  },
+  "primary-41": {
+    "id": "primary-41",
+    "url": "https://experience.syracuse.edu/student-engagement/greek-life/councils-and-chapters/",
+    "publisher": "Syracuse University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Broad Greek-letter organizations including professional council; directory scope."
+  },
+  "primary-42": {
+    "id": "primary-42",
+    "url": "https://sl.ua.edu/students/student-life-ambassadors/",
+    "publisher": "The University of Alabama",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Student Life social media ambassador program is documented. Presence is not creator count, reach, or density."
+  },
+  "primary-43": {
+    "id": "primary-43",
+    "url": "https://brand.uga.edu/social-media/social-media-ambassadors/",
+    "publisher": "University of Georgia",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Digital Dawgs student content program. Presence is not creator count, reach, or density."
+  },
+  "primary-44": {
+    "id": "primary-44",
+    "url": "https://www.colorado.edu/education/student-life/student-ambassadors",
+    "publisher": "University of Colorado Boulder",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Education student ambassadors assist with social media and web content; college-specific program."
+  },
+  "primary-45": {
+    "id": "primary-45",
+    "url": "https://sacredheart.smartcatalogiq.com/en/2024-2025/2024-2025-undergraduate-catalog/university-life/student-clubs-and-organizations/",
+    "publisher": "Sacred Heart University",
+    "accessed": "2026-09-29",
+    "data_year": "2024-25",
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Audited relevant subset: Fashion Club, Marketing Club, SHU Host, SHU Innovate, Women in Business Network, Film Club, Her Campus, Sports Media Club, Spectrum, The Pulse, WHRT, PRSSA. Presence in catalog does not confirm current activity."
+  },
+  "primary-46": {
+    "id": "primary-46",
+    "url": "https://studentlife.indiana.edu/involvement-belonging/sororities-fraternities/index.html",
+    "publisher": "Indiana University-Bloomington",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "University explicitly reports more than 8,000 IU Bloomington members; no cross-year participation percentage inferred."
+  },
+  "primary-47": {
+    "id": "primary-47",
+    "url": "https://fsl.usc.edu/",
+    "publisher": "University of Southern California",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "34 recognized chapters and 2,200+ members. Unaffiliated fraternities are outside this university-recognized scope."
+  },
+  "primary-48": {
+    "id": "primary-48",
+    "url": "https://greek.arizona.edu/organizations",
+    "publisher": "University of Arizona",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "as_of": null,
+    "source_type": "university_primary",
+    "note": "Count of 52 distinct organization rows in the unfiltered official directory, accessed 2026-09-29. Row count is a directory-presence measure; check standing before activation."
+  },
+  "review-d73ea7f3241b": {
+    "id": "review-d73ea7f3241b",
+    "url": "https://www.depts.ttu.edu/fsl/",
+    "publisher": "Texas Tech University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "FSL office overview states more than 50 recognized organizations and 4,800+ members. Counts have no explicit reference semester; website modification date is not a data year."
+  },
+  "review-20a248ae9cfa": {
+    "id": "review-20a248ae9cfa",
+    "url": "https://sacd.sdsu.edu/student-life-leadership/fraternity-and-sorority-life",
+    "publisher": "San Diego State University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Office reports more than 40 recognized social chapters and over 4,500 affiliated students. Some NPHC chapters are city-wide; membership is office-reported ecosystem scope and not used to derive undergraduate penetration."
+  },
+  "review-49262ac94d14": {
+    "id": "review-49262ac94d14",
+    "url": "https://www.morgan.edu/osld/greeklife",
+    "publisher": "Morgan State University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Office reports 19 fraternities, sororities and social fellowships across two councils. Definition is broader than exclusively social fraternities and sororities."
+  },
+  "review-655080560e8d": {
+    "id": "review-655080560e8d",
+    "url": "https://www.udel.edu/students/involvement/fsll/policies/becoming-a-recognized-fraternity-or-sorority/",
+    "publisher": "University of Delaware",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Official expansion-policy overview reports about 27% of the undergraduate population. Page is undated; not recast as a 2026 census."
+  },
+  "review-13117f3df44e": {
+    "id": "review-13117f3df44e",
+    "url": "https://www.ut.edu/campus-life/fraternity-and-sorority-life/recruitment-intake",
+    "publisher": "The University of Tampa",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Recruitment page reports 2,170 members and 26 chapters. Recruitment dates on the page cover 2026 but count reference period is unspecified."
+  },
+  "review-ab00ca7f94e8": {
+    "id": "review-ab00ca7f94e8",
+    "url": "https://media.clemson.edu/studentaffairs/website-documents/division/about/annual-reports/impact-report-2024-25.pdf",
+    "publisher": "Clemson University",
+    "accessed": "2026-09-29",
+    "data_year": "2024-25",
+    "source_type": "university_primary",
+    "note": "FY25 Student Affairs Impact Report, Greek-community feature: 6,704 members, 27.9% undergraduate participation and 50+ chapters. Annual-report period; not claimed to be current Fall 2026."
+  },
+  "review-0ea048cba0b7": {
+    "id": "review-0ea048cba0b7",
+    "url": "https://udayton.edu/life/involvement/greek/index.php",
+    "publisher": "University of Dayton",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "FSL office overview gives 22 chapters (8 CPC, 6 IFC, 2 MGC, 6 NPHC) and more than 1,400 students. Conflict: Sept 8, 2026 university job 503820 gives 25 chapters and over 1,200 members; specialist community page used pending reconciliation."
+  },
+  "review-9125e4da57a5": {
+    "id": "review-9125e4da57a5",
+    "url": "https://www.psu.edu/news/administration/story/commagency-students-bring-penn-states-capital-day-life-through-storytelling",
+    "publisher": "Pennsylvania State University-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2026",
+    "source_type": "university_primary",
+    "note": "CommAgency is a University Park student creative agency with a social-media division and documented student-produced social campaigns. Presence only; its 89 agency students are not assumed to be 89 eligible influencers."
+  },
+  "review-c288875cf2bd": {
+    "id": "review-c288875cf2bd",
+    "url": "https://dialcenter.clas.ufl.edu/2026/02/04/to-learn-lead-and-communicate-with-impact-ambassador-leadership-program/",
+    "publisher": "University of Florida",
+    "accessed": "2026-09-29",
+    "data_year": "2026",
+    "source_type": "university_primary",
+    "note": "Dial Center Ambassador Leadership Program tasks students with running social-media accounts. Open to all majors and years; verified recruitment infrastructure, not an audited creator census."
+  },
+  "review-72f419d12d50": {
+    "id": "review-72f419d12d50",
+    "url": "https://sportsandsociety.osu.edu/student-engagement/meet-our-interns",
+    "publisher": "Ohio State University-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Sports and Society Institute describes an active student internship program including social media, writing, photography, video and podcasts. Presence only; page has no explicit cohort year."
+  },
+  "review-87c1af0c2e15": {
+    "id": "review-87c1af0c2e15",
+    "url": "https://plus.college.indiana.edu/our-team/social-media-internship.html",
+    "publisher": "Indiana University-Bloomington",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "College of Arts and Sciences advertises a student hourly social-media specialist and internship-credit opportunity producing marketing and video content. Documents a recruitment channel, not a filled position or current creator count."
+  },
+  "review-699a57f456f7": {
+    "id": "review-699a57f456f7",
+    "url": "https://careernetwork.msu.edu/jobs/msu-international-studies-and-programs-student-social-media-and-digital-content-creator/",
+    "publisher": "Michigan State University",
+    "accessed": "2026-09-29",
+    "data_year": "2026",
+    "source_type": "university_primary",
+    "note": "MSU International Studies and Programs advertised an on-campus student content-creator role June 1-July 2, 2026. Evidence of a university content opportunity; the expired listing does not verify hiring or available creators."
+  },
+  "review-f0927a28ccb4": {
+    "id": "review-f0927a28ccb4",
+    "url": "https://jimmorancollege.fsu.edu/student-engagement/student-organizations",
+    "publisher": "Florida State University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Named relevant organizations: AATCC Club; JMC Autopreneurs; BRAGfsu; Collegiate Entrepreneurs Organization; Clutch magazine; Collegiate Merchandising Association; Society for Advancement of Management. Deduplicated department-directory subset, not a campus census. Clutch explicitly produces editorial and social-media content."
+  },
+  "review-bea28af363a6": {
+    "id": "review-bea28af363a6",
+    "url": "https://studentlife.utk.edu/gogreek/community-statistics/",
+    "publisher": "The University of Tennessee-Knoxville",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "FSL statistics page reports 29% undergraduate participation and 49 active chapters. Overview period unspecified; historical accreditation detail on page is not assigned to these counts."
+  },
+  "review-0d27ccdb7052": {
+    "id": "review-0d27ccdb7052",
+    "url": "https://grin.sc.edu/uofsc/posts/2026/08/rushtok-hashtag-uofsc-sorority-recruitment-greek-life-usc-most-potential-new-members.php",
+    "publisher": "University of South Carolina-Columbia",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2026",
+    "source_type": "university_primary",
+    "note": "University news dated August 10, 2026 explicitly states more than 30% of Spring 2026 undergraduates belonged to one of four Greek councils. This resolves the older overview's ambiguous student-body denominator."
+  },
+  "review-b0b0274e893b": {
+    "id": "review-b0b0274e893b",
+    "url": "https://magazine.web.baylor.edu/news/story/2025/lasting-impact",
+    "publisher": "Baylor University",
+    "accessed": "2026-09-29",
+    "data_year": "2025",
+    "source_type": "university_primary",
+    "note": "Baylor Magazine, December 9, 2025, reports about 28% undergraduate participation. Dated university publication preferred to undated learning-outcomes page describing almost 30%."
+  },
+  "review-c5f95944d825": {
+    "id": "review-c5f95944d825",
+    "url": "https://www.jmu.edu/osl/fsl/about/index.shtml",
+    "publisher": "James Madison University",
+    "accessed": "2026-09-29",
+    "data_year": "2026",
+    "source_type": "university_primary",
+    "note": "FSL office page dated August 12, 2026 describes roughly 5,000 undergraduate members in the Panhellenic/Interfraternity community. Not divided by a different-period enrollment."
+  },
+  "review-c9005e714267": {
+    "id": "review-c9005e714267",
+    "url": "https://fsaffairs.illinois.edu/programs/grade-reports/2026/spring-PHC",
+    "publisher": "University of Illinois Urbana-Champaign",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2026",
+    "source_type": "university_primary",
+    "note": "Spring 2026 benchmark table: all fraternity/sorority members 6,345, all undergraduate students 37,326; penetration = 100*6345/37326, same-report denominator. FSL scope includes professional and cultural groups broader than exclusively social chapters."
+  },
+  "review-1362efcb49ab": {
+    "id": "review-1362efcb49ab",
+    "url": "https://www.ou.edu/content/dam/studentlife/fsps/fsps-assets/fsps-site-documents/experience-guides/2026%20Fraternity%20and%20Sorority%20Experience%20Guide.pdf",
+    "publisher": "University of Oklahoma-Norman Campus",
+    "accessed": "2026-09-29",
+    "data_year": "2026",
+    "source_type": "university_primary",
+    "note": "2026 official experience guide reports more than 7,000 members, about 30% of undergraduates and 50+ Greek-letter organizations. Includes five councils; broader than exclusively social chapters."
+  },
+  "review-aa8f25dd62b7": {
+    "id": "review-aa8f25dd62b7",
+    "url": "https://family.iu.edu/involvement-belonging/sororities-fraternities/joining/how-to-join.html",
+    "publisher": "Indiana University-Bloomington",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Official joining overview explicitly reports approximately 24% of the undergraduate student body. Undated; membership descriptions vary between almost and more than 8,000 on university pages."
+  },
+  "review-c3d591e293a1": {
+    "id": "review-c3d591e293a1",
+    "url": "https://parent.wisc.edu/parents-and-family-resources/student-involvement-and-community/",
+    "publisher": "University of Wisconsin-Madison",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "University Parent and Family Program reports approximately 15% of undergraduates affiliated. Undated; its nearly-70/6,000+ ecosystem counts differ from FSL office 60+/5,000+ figures retained for those separate metrics."
+  },
+  "review-3e2094c88bfa": {
+    "id": "review-3e2094c88bfa",
+    "url": "https://kusfl.ku.edu/about",
+    "publisher": "University of Kansas",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "FSL About page explicitly defines 22.6% as undergraduate participation, resolving the less-specific student denominator in its Fall 2025 executive summary."
+  },
+  "review-77bd028b4565": {
+    "id": "review-77bd028b4565",
+    "url": "https://pullman.wsu.edu/community-life/",
+    "publisher": "Washington State University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Pullman campus community page reports 50+ organizations and nearly 3,500 members. Broader than exclusively social chapters: professional and multicultural included. Admissions fair page has conflicting 60+/5,500 figures; campus-specific overview used. Its 22% student denominator is ambiguous and not stored as undergraduate penetration."
+  },
+  "review-4c6e7f4aa1eb": {
+    "id": "review-4c6e7f4aa1eb",
+    "url": "https://greeks.tcu.edu/wp-content/uploads/2026/08/Averages-and-Comparison-Spring-2026.pdf",
+    "publisher": "Texas Christian University",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2026",
+    "source_type": "university_primary",
+    "note": "Official Spring 2026 FSL grade report, page 2: 5,980 members and 59.69% of total undergraduate population. Includes IGC, IFC, MGC, NPHC, PHC; broader than exclusively social organizations. Dated FSL report preferred to admissions FAQ's conflicting approximate 35%."
+  },
+  "review-15c7129ae87a": {
+    "id": "review-15c7129ae87a",
+    "url": "https://studentaffairs.psu.edu/sites/default/files/2024_PSU_FSLProgramReviewReport.pdf",
+    "publisher": "RISE Partnerships / Penn State Student Affairs",
+    "accessed": "2026-09-29",
+    "data_year": "Spring 2024",
+    "source_type": "university_primary",
+    "note": "University-commissioned 2024 program review, printed page 9, reports 17% of undergraduate students affiliated in Spring 2024. Textual reported value, not an estimate from the chart."
+  },
+  "review-091eac730a78": {
+    "id": "review-091eac730a78",
+    "url": "https://studentaffairs.psu.edu/sites/default/files/2024_PSU_FSLProgramReviewReport.pdf",
+    "publisher": "RISE Partnerships / Penn State Student Affairs",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2024",
+    "source_type": "university_primary",
+    "note": "Program review, printed page 8, reports 68 recognized organizations and more than 6,800 undergraduate members in Fall 2024. Dated roster scope preferred to office overview's inconsistent 70/over-70 text."
+  },
+  "review-9d5969dca67f": {
+    "id": "review-9d5969dca67f",
+    "url": "https://newkensington.psu.edu/content/parent-and-family-guide-2024",
+    "publisher": "Pennsylvania State University-Main Campus",
+    "accessed": "2026-09-29",
+    "data_year": "2023-24",
+    "source_type": "university_primary",
+    "note": "University-hosted Parents and Families Guide explicitly describes University Park housing: over 14,500 undergraduate residents, separate from more than 300 graduate residents. Historical guide period; not housing capacity."
+  },
+  "review-2ce9eda415b1": {
+    "id": "review-2ce9eda415b1",
+    "url": "https://www.housing.wisc.edu/future-residents/",
+    "publisher": "University of Wisconsin-Madison",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "University Housing overview describes residence halls as home to about 9,000 undergraduate residents, separate from graduate/family apartments. Undated planning overview; source-reported approximation, not calculated from beds or a percentage."
+  },
+  "review-8fa950184759": {
+    "id": "review-8fa950184759",
+    "url": "https://studentmedia.artsandsciences.baylor.edu/",
+    "publisher": "Baylor University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Department of Student Media explicitly provides student work in digital media, social media, broadcasting, design, photography and marketing. Presence only; does not establish creator reach or availability."
+  },
+  "review-893c61b65978": {
+    "id": "review-893c61b65978",
+    "url": "https://career.clemson.edu/jobs/clemson-university-campus-recreation-social-media-intern-fall-2026/",
+    "publisher": "Clemson University",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2026",
+    "source_type": "university_primary",
+    "note": "Campus Recreation UPIC internship advertises student creation and management of social content for Fall 2026. Listing is expired; it documents an institutional opportunity, not confirmed staff or creator headcount."
+  },
+  "review-e1bec07e7cbb": {
+    "id": "review-e1bec07e7cbb",
+    "url": "https://miamioh.edu/centers-institutes/division-of-student-life/work-in-student-life/student-employment-opportunities.html",
+    "publisher": "Miami University-Oxford",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Student Life employment overview describes a team of five to six student social-media assistants producing content across platforms. Presence only; the stated team range is not used as a creator census."
+  },
+  "review-462ac2cf66fa": {
+    "id": "review-462ac2cf66fa",
+    "url": "https://cas.ed.sc.edu/about/offices_and_divisions/student_affairs/student-services/student_life/student_media/index.php",
+    "publisher": "University of South Carolina-Columbia",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Official Student Media/Garnet Media Group overview documents student-created SGTV content published on social platforms including YouTube and Instagram. Not a census of independent student influencers."
+  },
+  "review-34c33924bd78": {
+    "id": "review-34c33924bd78",
+    "url": "https://lsa.umich.edu/comm/undergraduates/academic-opportunities/internship-resources.html",
+    "publisher": "University of Michigan-Ann Arbor",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Ann Arbor LSA Communication and Media offers student Content Creator/Social Media Assistant work. Named student media subset: The Michigan Daily, WOLV-TV, WCBN. Three deduplicated organizations; not a campuswide directory census."
+  },
+  "review-3d81986beddb": {
+    "id": "review-3d81986beddb",
+    "url": "https://advertising.utexas.edu/news/tower-bridge-communications-university-texas-austin",
+    "publisher": "The University of Texas at Austin",
+    "accessed": "2026-09-29",
+    "data_year": "2024",
+    "source_type": "university_primary",
+    "note": "October 8, 2024 university article documents Tower & Bridge Communications, a student-run social-media and PR agency with content-creator roles. Program presence, not creator density."
+  },
+  "review-46225f32a56e": {
+    "id": "review-46225f32a56e",
+    "url": "https://annenberg.usc.edu/events/content-creator-academy",
+    "publisher": "University of Southern California",
+    "accessed": "2026-09-29",
+    "data_year": "2026",
+    "source_type": "university_primary",
+    "note": "USC Annenberg's July 27-31, 2026 student Content Creator Academy focuses on vertical-video community storytelling. Historical training-program presence; no assumption about attendance or current campaign availability."
+  },
+  "review-e649b2ecd67a": {
+    "id": "review-e649b2ecd67a",
+    "url": "https://studentaffairs.auburn.edu/greek/",
+    "publisher": "Auburn University",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Current Greek Life office introduction identifies 53 organizations. No explicit semester is attached to the chapter count."
+  },
+  "review-7b5f573fe495": {
+    "id": "review-7b5f573fe495",
+    "url": "https://seal.sa.ucsb.edu/fraternity-sorority-life",
+    "publisher": "University of California-Santa Barbara",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "Office by-the-numbers panel reports approximately 50 recognized Greek-letter organizations. Professional council included; broader than exclusively social organizations."
+  },
+  "review-583f7763205d": {
+    "id": "review-583f7763205d",
+    "url": "https://olemiss.edu/greeks/",
+    "publisher": "University of Mississippi",
+    "accessed": "2026-09-29",
+    "data_year": null,
+    "source_type": "university_primary",
+    "note": "New official FSL office site reports 36 organizations; 16 IFC + 9 NPHC + 11 College Panhellenic. Office warns older search results may be outdated."
+  },
+  "review-6a31436b2e06": {
+    "id": "review-6a31436b2e06",
+    "url": "https://www.ncat.edu/campus-life/student-affairs/departments/student-activities/greek-life/chapter-status.php",
+    "publisher": "North Carolina A & T State University",
+    "accessed": "2026-09-29",
+    "data_year": "May 2026",
+    "source_type": "university_primary",
+    "note": "Count of explicitly active list: Omega Psi Phi; Phi Beta Sigma; Iota Phi Theta; Phi Mu Alpha Sinfonia; Kappa Kappa Psi; Groove Phi Groove; Alpha Kappa Alpha; Delta Sigma Theta; Sigma Gamma Rho; Zeta Phi Beta; Tau Beta Sigma. Excludes suspended Alpha Phi Alpha. Scope broader than exclusively social organizations."
+  },
+  "review-5d67a1998a9f": {
+    "id": "review-5d67a1998a9f",
+    "url": "https://greeks.ufl.edu/wp-content/uploads/2026/05/26-27-Guide-to-Florida-Greeks.pdf",
+    "publisher": "University of Florida",
+    "accessed": "2026-09-29",
+    "data_year": "2026–27 guide; participation period unspecified",
+    "source_type": "university_primary",
+    "note": "Official 2026–27 guide explicitly reports 21% of undergraduates are Greek and 62 chapters. The participation period is unspecified; adjacent GPA statistics refer to Fall 2025."
+  },
+  "review-3bf088a0125d": {
+    "id": "review-3bf088a0125d",
+    "url": "https://greeks.ufl.edu/wp-content/uploads/2026/05/26-27-Guide-to-Florida-Greeks.pdf",
+    "publisher": "University of Florida",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2025",
+    "source_type": "university_primary",
+    "note": "Page 6 reports 8400+ Fall 2025 members. Council subtotals sum to 8,302; the undated welcome says more than 8,600. Retain the dated headline with its qualifier and disclose the internal inconsistency; do not reconstruct participation from these counts."
+  },
+  "review-7c18273636fc": {
+    "id": "review-7c18273636fc",
+    "url": "https://fsl.msu.edu/about/Fall%202025%20FSL%20Semester%20Report.pdf",
+    "publisher": "Michigan State University",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2025",
+    "source_type": "university_primary",
+    "note": "All-community report explicitly reports 4,874 members, 11.9% of the MSU undergraduate student body (40,869), and 56 chapters. Replaces Fall 2024 counts. IFC 28, MGC 8, NPHC 6, PC 14."
+  },
+  "review-b5d5b8198254": {
+    "id": "review-b5d5b8198254",
+    "url": "https://greek.arizona.edu/sites/default/files/2026-01/Fall-2025-Chapter-Academic-Membership-Performance-Reports.pdf",
+    "publisher": "University of Arizona",
+    "accessed": "2026-09-29",
+    "data_year": "Fall 2025",
+    "source_type": "university_primary",
+    "note": "Official chapter report: 4,455 sorority and 2,213 fraternity members total 6,668. Its reported 12.8% uses 51,942 undergraduates with unresolved campus/system scope; exclude that percentage from campus scoring pending clarification."
+  },
+  "selection-niche1": {
+    "id": "selection-niche1",
+    "url": "https://www.niche.com/colleges/search/top-party-schools/",
+    "publisher": "Niche",
+    "accessed": "2026-09-29",
+    "data_year": "2027 ranking edition",
+    "source_type": "student_review_ranking"
+  },
+  "selection-niche2": {
+    "id": "selection-niche2",
+    "url": "https://www.niche.com/colleges/search/top-party-schools/?page=2",
+    "publisher": "Niche",
+    "accessed": "2026-09-29",
+    "data_year": "2027 ranking edition",
+    "source_type": "student_review_ranking"
+  },
+  "selection-princeton": {
+    "id": "selection-princeton",
+    "url": "https://www.princetonreview.com/college-rankings?rankings=lots-greek-life",
+    "publisher": "The Princeton Review",
+    "accessed": "2026-09-29",
+    "data_year": "2027 ranking edition",
+    "source_type": "student_review_ranking"
+  }
+}

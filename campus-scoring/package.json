@@ -1,0 +1,13 @@
+{
+  "name": "campus-scoring-model",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Evidence-backed campus activation scoring and rollout planning",
+  "scripts": {
+    "build": "python3 scripts/prepare.py && node scripts/build.mjs && python3 scripts/document.py && node scripts/publish.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "start": "python3 -m http.server 8080"
+  },
+  "engines": {"node": ">=20", "python": ">=3.10"}
+}

@@ -1,0 +1,597 @@
+{
+  "undergraduates": {
+    "label": "Undergraduate enrollment",
+    "category": "enrollment",
+    "weight": 0.3,
+    "normalization": {
+      "method": "log",
+      "min": 5000,
+      "max": 50000
+    },
+    "unit": "students",
+    "definition": "IPEDS fall undergraduate full- and part-time headcount; reporting institution boundary.",
+    "update_frequency": "annual"
+  },
+  "non_distance_undergraduates": {
+    "label": "Undergraduates taking non-distance courses",
+    "category": "enrollment",
+    "weight": 0.5,
+    "normalization": {
+      "method": "log",
+      "min": 5000,
+      "max": 50000
+    },
+    "unit": "students",
+    "definition": "Undergraduate headcount less exclusively distance-education students; physical-addressability proxy, not residents.",
+    "update_frequency": "annual"
+  },
+  "on_campus_residents": {
+    "label": "On-campus resident students",
+    "category": "enrollment",
+    "weight": 0.2,
+    "normalization": {
+      "method": "log",
+      "min": 1000,
+      "max": 15000
+    },
+    "unit": "students",
+    "definition": "Verified undergraduate residents in university-owned/operated housing; capacity is not occupancy.",
+    "update_frequency": "annual"
+  },
+  "age_18_24_pct": {
+    "label": "Undergraduates age 18\u201324",
+    "category": "demographics",
+    "weight": 1,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Sum of 18\u201319, 20\u201321 and 22\u201324 undergraduate age bins divided by all-age undergraduate count.",
+    "update_frequency": "annual"
+  },
+  "women_pct": {
+    "label": "Reported undergraduate women share",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "target",
+      "target": 50,
+      "tolerance": 50
+    },
+    "unit": "percent",
+    "definition": "IPEDS reported women / undergraduate total. Disabled by default; client supplies an appropriate target. Not gender identity.",
+    "update_frequency": "annual"
+  },
+  "out_of_state_freshmen_pct": {
+    "label": "Domestic out-of-state first-time entrants",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "target",
+      "target": 50,
+      "tolerance": 50
+    },
+    "unit": "percent",
+    "definition": "US first-time entrants minus in-state entrants / all first-time entrants. Not all-undergraduate mix.",
+    "update_frequency": "annual"
+  },
+  "age_18_19_pct": {
+    "label": "Age 18\u201319",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "age_20_21_pct": {
+    "label": "Age 20\u201321",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "age_22_24_pct": {
+    "label": "Age 22\u201324",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "age_25_plus_pct": {
+    "label": "Age 25+",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "age_unknown_pct": {
+    "label": "Age unknown",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "in_state_freshmen_pct": {
+    "label": "In-state first-time entrants",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "international_pct": {
+    "label": "International/nonresident share",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "hispanic_pct": {
+    "label": "Hispanic share",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "black_pct": {
+    "label": "Black share",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "asian_pct": {
+    "label": "Asian share",
+    "category": "demographics",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Descriptive IPEDS undergraduate percentage (residency fields refer only to first-time entrants). Disabled by default.",
+    "update_frequency": "annual"
+  },
+  "greek_pct": {
+    "label": "Greek-life undergraduate participation",
+    "category": "greek",
+    "weight": 0.6,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 60,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "University-published undergraduate participation, or same-period members/undergraduates from one report. Full-time-only denominators are labeled.",
+    "update_frequency": "semester"
+  },
+  "greek_chapters": {
+    "label": "Recognized FSL organizations",
+    "category": "greek",
+    "weight": 0.3,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 80,
+      "invert": false
+    },
+    "unit": "organizations",
+    "definition": "Office-published recognized FSL ecosystem count. Scope may include professional/cultural groups; bounds and broader definitions are labeled.",
+    "update_frequency": "semester"
+  },
+  "greek_members": {
+    "label": "Greek community membership",
+    "category": "greek",
+    "weight": 0.1,
+    "normalization": {
+      "method": "log",
+      "min": 0,
+      "max": 12000
+    },
+    "unit": "students",
+    "definition": "Reported membership; never divide by a different-year enrollment to invent participation.",
+    "update_frequency": "semester"
+  },
+  "verified_creators_per_1000": {
+    "label": "Verified active creators per 1,000 undergraduates",
+    "category": "creators",
+    "weight": 0.7,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 10,
+      "invert": false
+    },
+    "unit": "creators/1,000",
+    "definition": "Deduplicated public student creator census under docs/CREATORS.md. No audited census yet.",
+    "update_frequency": "quarterly"
+  },
+  "creator_program_present": {
+    "label": "Documented student content program",
+    "category": "creators",
+    "weight": 0.3,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 1,
+      "invert": false
+    },
+    "unit": "indicator",
+    "definition": "Official evidence of a student content program or campus-specific university-advertised student content role. Advertised opportunities are qualified and discounted; no filled position or current creator roster is implied. A weak recruitment-infrastructure proxy, not creator density. Unknown is not zero.",
+    "update_frequency": "semester"
+  },
+  "relevant_awards_pct": {
+    "label": "Relevant bachelor awards share",
+    "category": "programs",
+    "weight": 0.7,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 50,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "Relevant first-major bachelor awards / all first-major bachelor awards; selected six-digit CIP codes, not current enrollment.",
+    "update_frequency": "annual"
+  },
+  "relevant_awards": {
+    "label": "Relevant bachelor awards",
+    "category": "programs",
+    "weight": 0.2,
+    "normalization": {
+      "method": "log",
+      "min": 0,
+      "max": 5000
+    },
+    "unit": "awards",
+    "definition": "First-major bachelor awards in business, communications, media technology, design/fashion, film/photo and sports management; overlapping prefixes deduplicated.",
+    "update_frequency": "annual"
+  },
+  "relevant_clubs": {
+    "label": "Verified relevant student organizations",
+    "category": "programs",
+    "weight": 0.1,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 30,
+      "invert": false
+    },
+    "unit": "organizations",
+    "definition": "Deduplicated audited directory subset with names in evidence note. Lower bound on relevant organizations; not proof of active members.",
+    "update_frequency": "semester"
+  },
+  "customers_per_1000": {
+    "label": "Active customers per 1,000 undergraduates",
+    "category": "customers",
+    "weight": 1,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 100,
+      "invert": false
+    },
+    "unit": "customers/1,000",
+    "definition": "Client-specific, same-window deduplicated active customers / campus undergraduates; school match methodology required.",
+    "update_frequency": "monthly"
+  },
+  "lodging_proxy_usd": {
+    "label": "Federal lodging allowance benchmark",
+    "category": "cost",
+    "weight": 0.4,
+    "normalization": {
+      "method": "linear",
+      "min": 100,
+      "max": 300,
+      "invert": true
+    },
+    "unit": "USD/night",
+    "definition": "Equal-month average FY2027 GSA lodging allowance for matched campus ZIP. Proxy only; not a hotel quote.",
+    "update_frequency": "annual"
+  },
+  "labor_hourly_usd": {
+    "label": "Local activation labor hourly rate",
+    "category": "cost",
+    "weight": 0.2,
+    "normalization": {
+      "method": "linear",
+      "min": 15,
+      "max": 45,
+      "invert": true
+    },
+    "unit": "USD/hour",
+    "definition": "Verified local occupation wage or dated vendor quote with occupation and scope specified.",
+    "update_frequency": "annual"
+  },
+  "venue_day_usd": {
+    "label": "Verified venue day cost",
+    "category": "cost",
+    "weight": 0.2,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 5000,
+      "invert": true
+    },
+    "unit": "USD/day",
+    "definition": "Comparable dated venue quote for standard activation; event size and inclusions required.",
+    "update_frequency": "per campaign"
+  },
+  "permit_days": {
+    "label": "Published permitting lead time",
+    "category": "cost",
+    "weight": 0.1,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 60,
+      "invert": true
+    },
+    "unit": "days",
+    "definition": "Published campus commercial-activation lead time; not a subjective difficulty rating.",
+    "update_frequency": "per campaign"
+  },
+  "travel_quote_usd": {
+    "label": "Verified travel cost per trip",
+    "category": "cost",
+    "weight": 0.1,
+    "normalization": {
+      "method": "linear",
+      "min": 100,
+      "max": 2000,
+      "invert": true
+    },
+    "unit": "USD/trip",
+    "definition": "Dated quote with origin, campaign dates, traveler count and baggage/ground transport scope.",
+    "update_frequency": "per campaign"
+  },
+  "meals_proxy_usd": {
+    "label": "Federal meals/incidental allowance",
+    "category": "cost",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 50,
+      "max": 100,
+      "invert": true
+    },
+    "unit": "USD/day",
+    "definition": "GSA administrative benchmark, reported separately from verified activation costs.",
+    "update_frequency": "annual"
+  },
+  "airport_km": {
+    "label": "Nearest scheduled-service airport distance",
+    "category": "geography",
+    "weight": 0.6,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 150,
+      "invert": true
+    },
+    "unit": "km",
+    "definition": "Haversine distance to US medium/large airport with scheduled_service=yes; not road distance, fare or route availability.",
+    "update_frequency": "quarterly"
+  },
+  "metro_presence": {
+    "label": "Metropolitan-area membership",
+    "category": "geography",
+    "weight": 0.2,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 1,
+      "invert": false
+    },
+    "unit": "indicator",
+    "definition": "IPEDS CBSATYPE=1. Does not measure metro population or proximity to downtown.",
+    "update_frequency": "annual"
+  },
+  "nearby_campuses": {
+    "label": "Nearby reference-universe campuses",
+    "category": "geography",
+    "weight": 0.2,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 5,
+      "invert": false
+    },
+    "unit": "campuses",
+    "definition": "Other fixed reference campuses within 200 km great-circle; cohort-defined cluster opportunity.",
+    "update_frequency": "annual"
+  },
+  "cac_usd": {
+    "label": "Campaign customer acquisition cost",
+    "category": "performance",
+    "weight": 0.35,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 150,
+      "invert": true
+    },
+    "unit": "USD/customer",
+    "definition": "Comparable campaign spend / incremental acquired customers, with attribution window and client ID.",
+    "update_frequency": "per campaign"
+  },
+  "conversion_pct": {
+    "label": "Campaign conversion rate",
+    "category": "performance",
+    "weight": 0.25,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 20,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "100 * attributed new customers / eligible measured leads; sum numerators and denominators across comparable campaigns.",
+    "update_frequency": "per campaign"
+  },
+  "roi_pct": {
+    "label": "Campaign contribution ROI",
+    "category": "performance",
+    "weight": 0.25,
+    "normalization": {
+      "method": "linear",
+      "min": -100,
+      "max": 200,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "100 * (attributable contribution margin minus activation spend) / activation spend; not gross revenue ROAS.",
+    "update_frequency": "per campaign"
+  },
+  "engagement_pct": {
+    "label": "Qualified engagement rate",
+    "category": "performance",
+    "weight": 0.15,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 15,
+      "invert": false
+    },
+    "unit": "percent",
+    "definition": "100 * qualified engagements / observed impressions, using consistent platform definitions.",
+    "update_frequency": "per campaign"
+  },
+  "samples": {
+    "label": "Samples distributed",
+    "category": "performance",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 10000,
+      "invert": false
+    },
+    "unit": "samples",
+    "definition": "First-party campaign outcome with client, campaign, dates, attribution and denominator definitions. Stored without automatic scoring.",
+    "update_frequency": "per campaign"
+  },
+  "leads": {
+    "label": "Qualified leads",
+    "category": "performance",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 10000,
+      "invert": false
+    },
+    "unit": "leads",
+    "definition": "First-party campaign outcome with client, campaign, dates, attribution and denominator definitions. Stored without automatic scoring.",
+    "update_frequency": "per campaign"
+  },
+  "revenue_usd": {
+    "label": "Attributed revenue",
+    "category": "performance",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 10000,
+      "invert": false
+    },
+    "unit": "USD",
+    "definition": "First-party campaign outcome with client, campaign, dates, attribution and denominator definitions. Stored without automatic scoring.",
+    "update_frequency": "per campaign"
+  },
+  "ambassador_conversions": {
+    "label": "Ambassador-attributed conversions",
+    "category": "performance",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 10000,
+      "invert": false
+    },
+    "unit": "customers",
+    "definition": "First-party campaign outcome with client, campaign, dates, attribution and denominator definitions. Stored without automatic scoring.",
+    "update_frequency": "per campaign"
+  },
+  "event_attendance": {
+    "label": "Verified event attendance",
+    "category": "performance",
+    "weight": 0,
+    "normalization": {
+      "method": "linear",
+      "min": 0,
+      "max": 10000,
+      "invert": false
+    },
+    "unit": "people",
+    "definition": "First-party campaign outcome with client, campaign, dates, attribution and denominator definitions. Stored without automatic scoring.",
+    "update_frequency": "per campaign"
+  }
+}

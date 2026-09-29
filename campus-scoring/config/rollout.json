@@ -1,0 +1,10 @@
+{
+  "count": 20,
+  "max_per_region": 6,
+  "max_per_metro": 2,
+  "new_region_bonus": 4,
+  "nearby_trip_bonus": 2,
+  "trip_radius_km": 200,
+  "min_weighted_completeness_pct": 45,
+  "min_observed_categories": 4
+}

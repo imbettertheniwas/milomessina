@@ -1,0 +1,5052 @@
+[
+  {
+    "ident": "5A8",
+    "name": "Aleknagik / New Airport",
+    "latitude_deg": "59.2826004028",
+    "longitude_deg": "-158.617996216",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Aleknagik",
+    "iata_code": "WKK"
+  },
+  {
+    "ident": "K61B",
+    "name": "Boulder City Municipal Airport",
+    "latitude_deg": "35.947161",
+    "longitude_deg": "-114.858799",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Boulder City",
+    "iata_code": "BLD"
+  },
+  {
+    "ident": "KABE",
+    "name": "Lehigh Valley International Airport",
+    "latitude_deg": "40.651773",
+    "longitude_deg": "-75.442797",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Allentown/Bethlehem",
+    "iata_code": "ABE"
+  },
+  {
+    "ident": "KABI",
+    "name": "Abilene Regional Airport",
+    "latitude_deg": "32.4113006592",
+    "longitude_deg": "-99.68190002440001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Abilene",
+    "iata_code": "ABI"
+  },
+  {
+    "ident": "KABQ",
+    "name": "Albuquerque International Sunport",
+    "latitude_deg": "35.039976",
+    "longitude_deg": "-106.608925",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Albuquerque",
+    "iata_code": "ABQ"
+  },
+  {
+    "ident": "KABR",
+    "name": "Aberdeen Regional Airport",
+    "latitude_deg": "45.449100494384766",
+    "longitude_deg": "-98.42179870605469",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Aberdeen",
+    "iata_code": "ABR"
+  },
+  {
+    "ident": "KABY",
+    "name": "Southwest Georgia Regional Airport",
+    "latitude_deg": "31.532946",
+    "longitude_deg": "-84.196215",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Albany",
+    "iata_code": "ABY"
+  },
+  {
+    "ident": "KACK",
+    "name": "Nantucket Memorial Airport",
+    "latitude_deg": "41.25310135",
+    "longitude_deg": "-70.06020355",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Nantucket",
+    "iata_code": "ACK"
+  },
+  {
+    "ident": "KACT",
+    "name": "Waco Regional Airport",
+    "latitude_deg": "31.611299514770508",
+    "longitude_deg": "-97.23049926757812",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Waco",
+    "iata_code": "ACT"
+  },
+  {
+    "ident": "KACV",
+    "name": "California Redwood Coast-Humboldt County Airport",
+    "latitude_deg": "40.978101",
+    "longitude_deg": "-124.109",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Arcata/Eureka",
+    "iata_code": "ACV"
+  },
+  {
+    "ident": "KACY",
+    "name": "Atlantic City International Airport",
+    "latitude_deg": "39.456201",
+    "longitude_deg": "-74.577511",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Atlantic City",
+    "iata_code": "ACY"
+  },
+  {
+    "ident": "KAEX",
+    "name": "Alexandria International Airport",
+    "latitude_deg": "31.325828",
+    "longitude_deg": "-92.546702",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Alexandria",
+    "iata_code": "AEX"
+  },
+  {
+    "ident": "KAGS",
+    "name": "Augusta Regional At Bush Field",
+    "latitude_deg": "33.3699",
+    "longitude_deg": "-81.9645",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Augusta",
+    "iata_code": "AGS"
+  },
+  {
+    "ident": "KAIA",
+    "name": "Alliance Municipal Airport",
+    "latitude_deg": "42.052543",
+    "longitude_deg": "-102.803965",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Alliance",
+    "iata_code": "AIA"
+  },
+  {
+    "ident": "KALB",
+    "name": "Albany International Airport",
+    "latitude_deg": "42.748299",
+    "longitude_deg": "-73.801697",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Albany",
+    "iata_code": "ALB"
+  },
+  {
+    "ident": "KALO",
+    "name": "Waterloo Regional Airport",
+    "latitude_deg": "42.557098388671875",
+    "longitude_deg": "-92.40029907226562",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Waterloo",
+    "iata_code": "ALO"
+  },
+  {
+    "ident": "KALS",
+    "name": "San Luis Valley Regional Airport/Bergman Field",
+    "latitude_deg": "37.434898",
+    "longitude_deg": "-105.866997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Alamosa",
+    "iata_code": "ALS"
+  },
+  {
+    "ident": "KALW",
+    "name": "Walla Walla Regional Airport",
+    "latitude_deg": "46.09489822",
+    "longitude_deg": "-118.288002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Walla Walla",
+    "iata_code": "ALW"
+  },
+  {
+    "ident": "KAMA",
+    "name": "Rick Husband Amarillo International Airport",
+    "latitude_deg": "35.217857",
+    "longitude_deg": "-101.706444",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Amarillo",
+    "iata_code": "AMA"
+  },
+  {
+    "ident": "KAOO",
+    "name": "Altoona Blair County Airport",
+    "latitude_deg": "40.296398",
+    "longitude_deg": "-78.32",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Altoona",
+    "iata_code": "AOO"
+  },
+  {
+    "ident": "KAPN",
+    "name": "Alpena County Regional Airport",
+    "latitude_deg": "45.0780983",
+    "longitude_deg": "-83.56030273",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Alpena",
+    "iata_code": "APN"
+  },
+  {
+    "ident": "KART",
+    "name": "Watertown International Airport",
+    "latitude_deg": "43.991901",
+    "longitude_deg": "-76.021698",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Watertown",
+    "iata_code": "ART"
+  },
+  {
+    "ident": "KASE",
+    "name": "Aspen-Pitkin County Airport (Sardy Field)",
+    "latitude_deg": "39.223202",
+    "longitude_deg": "-106.869003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Aspen",
+    "iata_code": "ASE"
+  },
+  {
+    "ident": "KATL",
+    "name": "Hartsfield Jackson Atlanta International Airport",
+    "latitude_deg": "33.6367",
+    "longitude_deg": "-84.428101",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Atlanta",
+    "iata_code": "ATL"
+  },
+  {
+    "ident": "KATW",
+    "name": "Appleton International Airport",
+    "latitude_deg": "44.258515",
+    "longitude_deg": "-88.519",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Appleton",
+    "iata_code": "ATW"
+  },
+  {
+    "ident": "KATY",
+    "name": "Watertown Regional Airport",
+    "latitude_deg": "44.91400146",
+    "longitude_deg": "-97.15470123",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Watertown",
+    "iata_code": "ATY"
+  },
+  {
+    "ident": "KAUG",
+    "name": "Augusta State Airport",
+    "latitude_deg": "44.320598602299995",
+    "longitude_deg": "-69.7973022461",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Augusta",
+    "iata_code": "AUG"
+  },
+  {
+    "ident": "KAUS",
+    "name": "Austin Bergstrom International Airport",
+    "latitude_deg": "30.197535",
+    "longitude_deg": "-97.662015",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Austin",
+    "iata_code": "AUS"
+  },
+  {
+    "ident": "KAVL",
+    "name": "Asheville Regional Airport",
+    "latitude_deg": "35.435488",
+    "longitude_deg": "-82.541853",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Asheville",
+    "iata_code": "AVL"
+  },
+  {
+    "ident": "KAVP",
+    "name": "Wilkes-Barre/Scranton International Airport",
+    "latitude_deg": "41.337064",
+    "longitude_deg": "-75.724232",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wilkes-Barre/Scranton",
+    "iata_code": "AVP"
+  },
+  {
+    "ident": "KAWO",
+    "name": "Arlington Municipal Airport",
+    "latitude_deg": "48.161448",
+    "longitude_deg": "-122.158442",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Arlington",
+    "iata_code": ""
+  },
+  {
+    "ident": "KAZO",
+    "name": "Kalamazoo/Battle Creek International Airport",
+    "latitude_deg": "42.232105",
+    "longitude_deg": "-85.549637",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kalamazoo",
+    "iata_code": "AZO"
+  },
+  {
+    "ident": "KBBG",
+    "name": "Branson Airport",
+    "latitude_deg": "36.532082",
+    "longitude_deg": "-93.200544",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Branson",
+    "iata_code": "BKG"
+  },
+  {
+    "ident": "KBDL",
+    "name": "Bradley International Airport",
+    "latitude_deg": "41.938555",
+    "longitude_deg": "-72.688016",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hartford",
+    "iata_code": "BDL"
+  },
+  {
+    "ident": "KBED",
+    "name": "Laurence G Hanscom Field",
+    "latitude_deg": "42.470001",
+    "longitude_deg": "-71.289001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bedford",
+    "iata_code": "BED"
+  },
+  {
+    "ident": "KBFD",
+    "name": "Bradford Regional Airport",
+    "latitude_deg": "41.8031005859375",
+    "longitude_deg": "-78.64009857177734",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bradford",
+    "iata_code": "BFD"
+  },
+  {
+    "ident": "KBFF",
+    "name": "Western Neb. Rgnl/William B. Heilig Airport",
+    "latitude_deg": "41.87400055",
+    "longitude_deg": "-103.5960007",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Scottsbluff",
+    "iata_code": "BFF"
+  },
+  {
+    "ident": "KBFI",
+    "name": "King County International Airport - Boeing Field",
+    "latitude_deg": "47.527042",
+    "longitude_deg": "-122.29995",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Seattle",
+    "iata_code": "BFI"
+  },
+  {
+    "ident": "KBFL",
+    "name": "Meadows Field",
+    "latitude_deg": "35.433601",
+    "longitude_deg": "-119.056999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bakersfield",
+    "iata_code": "BFL"
+  },
+  {
+    "ident": "KBGM",
+    "name": "Greater Binghamton/Edwin A Link field",
+    "latitude_deg": "42.20869827",
+    "longitude_deg": "-75.97979736",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Binghamton",
+    "iata_code": "BGM"
+  },
+  {
+    "ident": "KBGR",
+    "name": "Bangor International Airport",
+    "latitude_deg": "44.806364",
+    "longitude_deg": "-68.826668",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bangor",
+    "iata_code": "BGR"
+  },
+  {
+    "ident": "KBHB",
+    "name": "Hancock County-Bar Harbor Airport",
+    "latitude_deg": "44.45000076",
+    "longitude_deg": "-68.3615036",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bar Harbor",
+    "iata_code": "BHB"
+  },
+  {
+    "ident": "KBHM",
+    "name": "Birmingham-Shuttlesworth International Airport",
+    "latitude_deg": "33.562877",
+    "longitude_deg": "-86.750712",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Birmingham",
+    "iata_code": "BHM"
+  },
+  {
+    "ident": "KBIH",
+    "name": "Eastern Sierra Regional Airport",
+    "latitude_deg": "37.3731",
+    "longitude_deg": "-118.363998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bishop",
+    "iata_code": "BIH"
+  },
+  {
+    "ident": "KBIL",
+    "name": "Billings Logan International Airport",
+    "latitude_deg": "45.808932",
+    "longitude_deg": "-108.541242",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Billings",
+    "iata_code": "BIL"
+  },
+  {
+    "ident": "KBIS",
+    "name": "Bismarck Municipal Airport",
+    "latitude_deg": "46.772734",
+    "longitude_deg": "-100.746874",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bismarck",
+    "iata_code": "BIS"
+  },
+  {
+    "ident": "KBJC",
+    "name": "Rocky Mountain Metropolitan Airport",
+    "latitude_deg": "39.908798",
+    "longitude_deg": "-105.116997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Denver",
+    "iata_code": "BJC"
+  },
+  {
+    "ident": "KBKW",
+    "name": "Raleigh County Memorial Airport",
+    "latitude_deg": "37.7873",
+    "longitude_deg": "-81.124199",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Beaver",
+    "iata_code": "BKW"
+  },
+  {
+    "ident": "KBLI",
+    "name": "Bellingham International Airport",
+    "latitude_deg": "48.79280090332031",
+    "longitude_deg": "-122.53800201416016",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bellingham",
+    "iata_code": "BLI"
+  },
+  {
+    "ident": "KBLV",
+    "name": "Scott AFB/Midamerica Airport",
+    "latitude_deg": "38.5452",
+    "longitude_deg": "-89.835197",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Belleville",
+    "iata_code": "BLV"
+  },
+  {
+    "ident": "KBMI",
+    "name": "Central Illinois Regional Airport at Bloomington-Normal",
+    "latitude_deg": "40.4771",
+    "longitude_deg": "-88.915901",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bloomington/Normal",
+    "iata_code": "BMI"
+  },
+  {
+    "ident": "KBNA",
+    "name": "Nashville International Airport",
+    "latitude_deg": "36.1245",
+    "longitude_deg": "-86.6782",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Nashville",
+    "iata_code": "BNA"
+  },
+  {
+    "ident": "KBOI",
+    "name": "Boise Air Terminal/Gowen Field",
+    "latitude_deg": "43.5644",
+    "longitude_deg": "-116.223",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Boise",
+    "iata_code": "BOI"
+  },
+  {
+    "ident": "KBOS",
+    "name": "Boston Logan International Airport",
+    "latitude_deg": "42.36197",
+    "longitude_deg": "-71.0079",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Boston",
+    "iata_code": "BOS"
+  },
+  {
+    "ident": "KBPT",
+    "name": "Jack Brooks Regional Airport",
+    "latitude_deg": "29.9508",
+    "longitude_deg": "-94.020699",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Beaumont/Port Arthur",
+    "iata_code": "BPT"
+  },
+  {
+    "ident": "KBQK",
+    "name": "Brunswick Golden Isles Airport",
+    "latitude_deg": "31.258801",
+    "longitude_deg": "-81.466499",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Brunswick",
+    "iata_code": "BQK"
+  },
+  {
+    "ident": "KBRD",
+    "name": "Brainerd Lakes Regional Airport",
+    "latitude_deg": "46.402861",
+    "longitude_deg": "-94.129727",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Brainerd",
+    "iata_code": "BRD"
+  },
+  {
+    "ident": "KBRL",
+    "name": "Southeast Iowa Regional Airport",
+    "latitude_deg": "40.783199310302734",
+    "longitude_deg": "-91.12550354003906",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Burlington",
+    "iata_code": "BRL"
+  },
+  {
+    "ident": "KBRO",
+    "name": "Brownsville South Padre Island International Airport",
+    "latitude_deg": "25.907238",
+    "longitude_deg": "-97.425235",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Brownsville",
+    "iata_code": "BRO"
+  },
+  {
+    "ident": "KBTM",
+    "name": "Bert Mooney Airport",
+    "latitude_deg": "45.95479965209961",
+    "longitude_deg": "-112.49700164794922",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Butte",
+    "iata_code": "BTM"
+  },
+  {
+    "ident": "KBTR",
+    "name": "Baton Rouge Metropolitan Airport",
+    "latitude_deg": "30.533199",
+    "longitude_deg": "-91.149597",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Baton Rouge",
+    "iata_code": "BTR"
+  },
+  {
+    "ident": "KBTV",
+    "name": "Patrick Leahy Burlington International Airport",
+    "latitude_deg": "44.471901",
+    "longitude_deg": "-73.153297",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Burlington",
+    "iata_code": "BTV"
+  },
+  {
+    "ident": "KBUF",
+    "name": "Buffalo Niagara International Airport",
+    "latitude_deg": "42.940498",
+    "longitude_deg": "-78.732201",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Buffalo",
+    "iata_code": "BUF"
+  },
+  {
+    "ident": "KBUR",
+    "name": "Hollywood Burbank/Bob Hope Airport",
+    "latitude_deg": "34.202834",
+    "longitude_deg": "-118.35805",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Burbank",
+    "iata_code": "BUR"
+  },
+  {
+    "ident": "KBWI",
+    "name": "Baltimore/Washington International Thurgood Marshall Airport",
+    "latitude_deg": "39.1754",
+    "longitude_deg": "-76.668297",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Baltimore",
+    "iata_code": "BWI"
+  },
+  {
+    "ident": "KBZN",
+    "name": "Bozeman Yellowstone International Airport",
+    "latitude_deg": "45.778853",
+    "longitude_deg": "-111.153711",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bozeman",
+    "iata_code": "BZN"
+  },
+  {
+    "ident": "KCAE",
+    "name": "Columbia Metropolitan Airport",
+    "latitude_deg": "33.938172",
+    "longitude_deg": "-81.123022",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Columbia",
+    "iata_code": "CAE"
+  },
+  {
+    "ident": "KCAK",
+    "name": "Akron Canton Regional Airport",
+    "latitude_deg": "40.916099548339844",
+    "longitude_deg": "-81.44219970703125",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Akron",
+    "iata_code": "CAK"
+  },
+  {
+    "ident": "KCCR",
+    "name": "Buchanan Field",
+    "latitude_deg": "37.9897",
+    "longitude_deg": "-122.056999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Concord",
+    "iata_code": "CCR"
+  },
+  {
+    "ident": "KCDC",
+    "name": "Cedar City Regional Airport",
+    "latitude_deg": "37.70100021362305",
+    "longitude_deg": "-113.0989990234375",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cedar City",
+    "iata_code": "CDC"
+  },
+  {
+    "ident": "KCDR",
+    "name": "Chadron Municipal Airport",
+    "latitude_deg": "42.837601",
+    "longitude_deg": "-103.095001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Chadron",
+    "iata_code": "CDR"
+  },
+  {
+    "ident": "KCEC",
+    "name": "Jack Mc Namara Field Airport",
+    "latitude_deg": "41.778929",
+    "longitude_deg": "-124.236403",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Crescent City",
+    "iata_code": "CEC"
+  },
+  {
+    "ident": "KCEZ",
+    "name": "Cortez Municipal Airport",
+    "latitude_deg": "37.303001",
+    "longitude_deg": "-108.627998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cortez",
+    "iata_code": "CEZ"
+  },
+  {
+    "ident": "KCGI",
+    "name": "Cape Girardeau Regional Airport",
+    "latitude_deg": "37.2253",
+    "longitude_deg": "-89.570801",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cape Girardeau",
+    "iata_code": "CGI"
+  },
+  {
+    "ident": "KCHA",
+    "name": "Chattanooga Metropolitan Airport (Lovell Field)",
+    "latitude_deg": "35.035301",
+    "longitude_deg": "-85.203796",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Chattanooga",
+    "iata_code": "CHA"
+  },
+  {
+    "ident": "KCHO",
+    "name": "Charlottesville Albemarle Airport",
+    "latitude_deg": "38.13859939575195",
+    "longitude_deg": "-78.4529037475586",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Charlottesville",
+    "iata_code": "CHO"
+  },
+  {
+    "ident": "KCHS",
+    "name": "Charleston International Airport",
+    "latitude_deg": "32.896159",
+    "longitude_deg": "-80.038151",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Charleston",
+    "iata_code": "CHS"
+  },
+  {
+    "ident": "KCID",
+    "name": "The Eastern Iowa Airport",
+    "latitude_deg": "41.884701",
+    "longitude_deg": "-91.7108",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cedar Rapids",
+    "iata_code": "CID"
+  },
+  {
+    "ident": "KCIU",
+    "name": "Chippewa County International Airport",
+    "latitude_deg": "46.242038",
+    "longitude_deg": "-84.462082",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kincheloe",
+    "iata_code": "CIU"
+  },
+  {
+    "ident": "KCKB",
+    "name": "North Central West Virginia Airport",
+    "latitude_deg": "39.2966",
+    "longitude_deg": "-80.228104",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bridgeport",
+    "iata_code": "CKB"
+  },
+  {
+    "ident": "KCLE",
+    "name": "Cleveland Hopkins International Airport",
+    "latitude_deg": "41.411701",
+    "longitude_deg": "-81.8498",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cleveland",
+    "iata_code": "CLE"
+  },
+  {
+    "ident": "KCLL",
+    "name": "Easterwood Field",
+    "latitude_deg": "30.5886",
+    "longitude_deg": "-96.3638",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "College Station",
+    "iata_code": "CLL"
+  },
+  {
+    "ident": "KCLT",
+    "name": "Charlotte Douglas International Airport",
+    "latitude_deg": "35.2140007019043",
+    "longitude_deg": "-80.94309997558594",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Charlotte",
+    "iata_code": "CLT"
+  },
+  {
+    "ident": "KCMH",
+    "name": "John Glenn Columbus International Airport",
+    "latitude_deg": "39.998001",
+    "longitude_deg": "-82.891899",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Columbus",
+    "iata_code": "CMH"
+  },
+  {
+    "ident": "KCMI",
+    "name": "University of Illinois Willard Airport",
+    "latitude_deg": "40.039819",
+    "longitude_deg": "-88.276249",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Savoy",
+    "iata_code": "CMI"
+  },
+  {
+    "ident": "KCMX",
+    "name": "Houghton County Memorial Airport",
+    "latitude_deg": "47.168399810791016",
+    "longitude_deg": "-88.48909759521484",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hancock",
+    "iata_code": "CMX"
+  },
+  {
+    "ident": "KCNM",
+    "name": "Cavern City Air Terminal",
+    "latitude_deg": "32.337501525878906",
+    "longitude_deg": "-104.26300048828125",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Carlsbad",
+    "iata_code": "CNM"
+  },
+  {
+    "ident": "KCNY",
+    "name": "Canyonlands Regional Airport",
+    "latitude_deg": "38.755001",
+    "longitude_deg": "-109.754997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Moab",
+    "iata_code": "CNY"
+  },
+  {
+    "ident": "KCOD",
+    "name": "Yellowstone Regional Airport",
+    "latitude_deg": "44.520199",
+    "longitude_deg": "-109.024002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cody",
+    "iata_code": "COD"
+  },
+  {
+    "ident": "KCOS",
+    "name": "City of Colorado Springs Municipal Airport",
+    "latitude_deg": "38.805801",
+    "longitude_deg": "-104.700996",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Colorado Springs",
+    "iata_code": "COS"
+  },
+  {
+    "ident": "KCOU",
+    "name": "Columbia Regional Airport",
+    "latitude_deg": "38.8181",
+    "longitude_deg": "-92.219597",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Columbia",
+    "iata_code": "COU"
+  },
+  {
+    "ident": "KCPR",
+    "name": "Casper-Natrona County International Airport",
+    "latitude_deg": "42.907381",
+    "longitude_deg": "-106.461609",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Casper",
+    "iata_code": "CPR"
+  },
+  {
+    "ident": "KCRP",
+    "name": "Corpus Christi International Airport",
+    "latitude_deg": "27.770399",
+    "longitude_deg": "-97.501198",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Corpus Christi",
+    "iata_code": "CRP"
+  },
+  {
+    "ident": "KCRQ",
+    "name": "McClellan-Palomar Airport",
+    "latitude_deg": "33.1283",
+    "longitude_deg": "-117.279999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Carlsbad",
+    "iata_code": "CLD"
+  },
+  {
+    "ident": "KCRW",
+    "name": "Yeager Airport",
+    "latitude_deg": "38.3731",
+    "longitude_deg": "-81.593201",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Charleston",
+    "iata_code": "CRW"
+  },
+  {
+    "ident": "KCSG",
+    "name": "Columbus Airport",
+    "latitude_deg": "32.516415",
+    "longitude_deg": "-84.939602",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Columbus",
+    "iata_code": "CSG"
+  },
+  {
+    "ident": "KCVG",
+    "name": "Cincinnati Northern Kentucky International Airport",
+    "latitude_deg": "39.048801",
+    "longitude_deg": "-84.667801",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cincinnati / Covington",
+    "iata_code": "CVG"
+  },
+  {
+    "ident": "KCVN",
+    "name": "Clovis Municipal Airport",
+    "latitude_deg": "34.426594",
+    "longitude_deg": "-103.078794",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Clovis",
+    "iata_code": "CVN"
+  },
+  {
+    "ident": "KCWA",
+    "name": "Central Wisconsin Airport",
+    "latitude_deg": "44.777448",
+    "longitude_deg": "-89.670238",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mosinee",
+    "iata_code": "CWA"
+  },
+  {
+    "ident": "KCYS",
+    "name": "Cheyenne Regional Jerry Olson Field",
+    "latitude_deg": "41.155701",
+    "longitude_deg": "-104.811997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cheyenne",
+    "iata_code": "CYS"
+  },
+  {
+    "ident": "KDAB",
+    "name": "Daytona Beach International Airport",
+    "latitude_deg": "29.18255",
+    "longitude_deg": "-81.059464",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Daytona Beach",
+    "iata_code": "DAB"
+  },
+  {
+    "ident": "KDAL",
+    "name": "Dallas Love Field",
+    "latitude_deg": "32.844776",
+    "longitude_deg": "-96.847653",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dallas",
+    "iata_code": "DAL"
+  },
+  {
+    "ident": "KDAY",
+    "name": "James M. Cox Dayton International Airport",
+    "latitude_deg": "39.902401",
+    "longitude_deg": "-84.219398",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dayton",
+    "iata_code": "DAY"
+  },
+  {
+    "ident": "KDBQ",
+    "name": "Dubuque Regional Airport",
+    "latitude_deg": "42.402",
+    "longitude_deg": "-90.709503",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dubuque",
+    "iata_code": "DBQ"
+  },
+  {
+    "ident": "KDCA",
+    "name": "Ronald Reagan Washington National Airport",
+    "latitude_deg": "38.8521",
+    "longitude_deg": "-77.037697",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Washington",
+    "iata_code": "DCA"
+  },
+  {
+    "ident": "KDDC",
+    "name": "Dodge City Regional Airport",
+    "latitude_deg": "37.76340103149414",
+    "longitude_deg": "-99.9655990600586",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dodge City",
+    "iata_code": "DDC"
+  },
+  {
+    "ident": "KDEC",
+    "name": "Decatur Airport",
+    "latitude_deg": "39.834598541259766",
+    "longitude_deg": "-88.8656997680664",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Decatur",
+    "iata_code": "DEC"
+  },
+  {
+    "ident": "KDEN",
+    "name": "Denver International Airport",
+    "latitude_deg": "39.860027",
+    "longitude_deg": "-104.673792",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Denver",
+    "iata_code": "DEN"
+  },
+  {
+    "ident": "KDFW",
+    "name": "Dallas Fort Worth International Airport",
+    "latitude_deg": "32.896801",
+    "longitude_deg": "-97.038002",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dallas-Fort Worth",
+    "iata_code": "DFW"
+  },
+  {
+    "ident": "KDHN",
+    "name": "Dothan Regional Airport",
+    "latitude_deg": "31.321300506591797",
+    "longitude_deg": "-85.44960021972656",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dothan",
+    "iata_code": "DHN"
+  },
+  {
+    "ident": "KDIK",
+    "name": "Dickinson Theodore Roosevelt Regional Airport",
+    "latitude_deg": "46.797533",
+    "longitude_deg": "-102.801905",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dickinson",
+    "iata_code": "DIK"
+  },
+  {
+    "ident": "KDLH",
+    "name": "Duluth International Airport",
+    "latitude_deg": "46.841873",
+    "longitude_deg": "-92.198746",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Duluth",
+    "iata_code": "DLH"
+  },
+  {
+    "ident": "KDOV",
+    "name": "Dover Civil Air Terminal/Dover Air Force Base",
+    "latitude_deg": "39.129501",
+    "longitude_deg": "-75.466003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dover",
+    "iata_code": "DOV"
+  },
+  {
+    "ident": "KDRO",
+    "name": "Durango La Plata County Airport",
+    "latitude_deg": "37.151501",
+    "longitude_deg": "-107.753998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Durango",
+    "iata_code": "DRO"
+  },
+  {
+    "ident": "KDSM",
+    "name": "Des Moines International Airport",
+    "latitude_deg": "41.534027",
+    "longitude_deg": "-93.656719",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Des Moines",
+    "iata_code": "DSM"
+  },
+  {
+    "ident": "KDTS",
+    "name": "Destin Executive Airport",
+    "latitude_deg": "30.400101",
+    "longitude_deg": "-86.471497",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Destin",
+    "iata_code": "DSI"
+  },
+  {
+    "ident": "KDTW",
+    "name": "Detroit Metropolitan Wayne County Airport",
+    "latitude_deg": "42.21377",
+    "longitude_deg": "-83.353786",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Detroit",
+    "iata_code": "DTW"
+  },
+  {
+    "ident": "KDUJ",
+    "name": "DuBois Regional Airport",
+    "latitude_deg": "41.17829895",
+    "longitude_deg": "-78.8986969",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dubois",
+    "iata_code": "DUJ"
+  },
+  {
+    "ident": "KDVL",
+    "name": "Devils Lake Regional Airport",
+    "latitude_deg": "48.115454",
+    "longitude_deg": "-98.908796",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Devils Lake",
+    "iata_code": "DVL"
+  },
+  {
+    "ident": "KEAR",
+    "name": "Kearney Regional Airport",
+    "latitude_deg": "40.727001",
+    "longitude_deg": "-99.006798",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kearney",
+    "iata_code": "EAR"
+  },
+  {
+    "ident": "KEAT",
+    "name": "Pangborn Memorial Airport",
+    "latitude_deg": "47.398899",
+    "longitude_deg": "-120.207001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wenatchee",
+    "iata_code": "EAT"
+  },
+  {
+    "ident": "KEAU",
+    "name": "Chippewa Valley Regional Airport",
+    "latitude_deg": "44.86579895019531",
+    "longitude_deg": "-91.48429870605469",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Eau Claire",
+    "iata_code": "EAU"
+  },
+  {
+    "ident": "KECP",
+    "name": "Northwest Florida Beaches International Airport",
+    "latitude_deg": "30.357106",
+    "longitude_deg": "-85.795414",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Panama City Beach",
+    "iata_code": "ECP"
+  },
+  {
+    "ident": "KEDC",
+    "name": "Austin Executive Airport",
+    "latitude_deg": "30.398049",
+    "longitude_deg": "-97.566909",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pflugerville",
+    "iata_code": ""
+  },
+  {
+    "ident": "KEGE",
+    "name": "Eagle County Regional Airport",
+    "latitude_deg": "39.64260101",
+    "longitude_deg": "-106.9179993",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Eagle",
+    "iata_code": "EGE"
+  },
+  {
+    "ident": "KEKO",
+    "name": "Elko Regional Airport",
+    "latitude_deg": "40.82490158081055",
+    "longitude_deg": "-115.79199981689453",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Elko",
+    "iata_code": "EKO"
+  },
+  {
+    "ident": "KELD",
+    "name": "South Arkansas Regional Airport at Goodwin Field",
+    "latitude_deg": "33.221001",
+    "longitude_deg": "-92.813301",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "El Dorado",
+    "iata_code": "ELD"
+  },
+  {
+    "ident": "KELM",
+    "name": "Elmira Corning Regional Airport",
+    "latitude_deg": "42.1599006652832",
+    "longitude_deg": "-76.8916015625",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Elmira/Corning",
+    "iata_code": "ELM"
+  },
+  {
+    "ident": "KELP",
+    "name": "El Paso International Airport",
+    "latitude_deg": "31.809908",
+    "longitude_deg": "-106.375607",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "El Paso",
+    "iata_code": "ELP"
+  },
+  {
+    "ident": "KERI",
+    "name": "Erie International Tom Ridge Field",
+    "latitude_deg": "42.083127",
+    "longitude_deg": "-80.173867",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Erie",
+    "iata_code": "ERI"
+  },
+  {
+    "ident": "KESC",
+    "name": "Delta County Airport",
+    "latitude_deg": "45.723199",
+    "longitude_deg": "-87.088623",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Escanaba",
+    "iata_code": "ESC"
+  },
+  {
+    "ident": "KEUG",
+    "name": "Eugene Airport",
+    "latitude_deg": "44.124599",
+    "longitude_deg": "-123.211998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Eugene",
+    "iata_code": "EUG"
+  },
+  {
+    "ident": "KEVV",
+    "name": "Evansville Regional Airport",
+    "latitude_deg": "38.0369987488",
+    "longitude_deg": "-87.5324020386",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Evansville",
+    "iata_code": "EVV"
+  },
+  {
+    "ident": "KEWB",
+    "name": "New Bedford Regional Airport",
+    "latitude_deg": "41.67610168457031",
+    "longitude_deg": "-70.95690155029297",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "New Bedford",
+    "iata_code": "EWB"
+  },
+  {
+    "ident": "KEWN",
+    "name": "Coastal Carolina Regional Airport",
+    "latitude_deg": "35.0730018616",
+    "longitude_deg": "-77.04290008539999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "New Bern",
+    "iata_code": "EWN"
+  },
+  {
+    "ident": "KEWR",
+    "name": "Newark Liberty International Airport",
+    "latitude_deg": "40.6894",
+    "longitude_deg": "-74.170545",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Newark",
+    "iata_code": "EWR"
+  },
+  {
+    "ident": "KEYW",
+    "name": "Key West International Airport",
+    "latitude_deg": "24.556119",
+    "longitude_deg": "-81.759579",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Key West",
+    "iata_code": "EYW"
+  },
+  {
+    "ident": "KFAR",
+    "name": "Hector International Airport",
+    "latitude_deg": "46.9207",
+    "longitude_deg": "-96.815804",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fargo",
+    "iata_code": "FAR"
+  },
+  {
+    "ident": "KFAT",
+    "name": "Fresno Yosemite International Airport",
+    "latitude_deg": "36.775767",
+    "longitude_deg": "-119.718018",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fresno",
+    "iata_code": "FAT"
+  },
+  {
+    "ident": "KFAY",
+    "name": "Fayetteville Regional Airport - Grannis Field",
+    "latitude_deg": "34.991199",
+    "longitude_deg": "-78.880302",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fayetteville",
+    "iata_code": "FAY"
+  },
+  {
+    "ident": "KFHR",
+    "name": "Friday Harbor Airport",
+    "latitude_deg": "48.523654",
+    "longitude_deg": "-123.024645",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Friday Harbor",
+    "iata_code": "FRD"
+  },
+  {
+    "ident": "KFLG",
+    "name": "Flagstaff Pulliam Airport",
+    "latitude_deg": "35.139757",
+    "longitude_deg": "-111.669826",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Flagstaff",
+    "iata_code": "FLG"
+  },
+  {
+    "ident": "KFLL",
+    "name": "Fort Lauderdale Hollywood International Airport",
+    "latitude_deg": "26.072599",
+    "longitude_deg": "-80.152702",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Lauderdale",
+    "iata_code": "FLL"
+  },
+  {
+    "ident": "KFLO",
+    "name": "Florence Regional Airport",
+    "latitude_deg": "34.18539810180664",
+    "longitude_deg": "-79.7238998413086",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Florence",
+    "iata_code": "FLO"
+  },
+  {
+    "ident": "KFNT",
+    "name": "Bishop International Airport",
+    "latitude_deg": "42.969294",
+    "longitude_deg": "-83.743355",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Flint",
+    "iata_code": "FNT"
+  },
+  {
+    "ident": "KFOD",
+    "name": "Fort Dodge Regional Airport",
+    "latitude_deg": "42.552624",
+    "longitude_deg": "-94.191237",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Dodge",
+    "iata_code": "FOD"
+  },
+  {
+    "ident": "KFSD",
+    "name": "Sioux Falls Regional Airport",
+    "latitude_deg": "43.585463",
+    "longitude_deg": "-96.741152",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sioux Falls",
+    "iata_code": "FSD"
+  },
+  {
+    "ident": "KFSM",
+    "name": "Fort Smith Regional Airport",
+    "latitude_deg": "35.336601",
+    "longitude_deg": "-94.367401",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Smith",
+    "iata_code": "FSM"
+  },
+  {
+    "ident": "KFTW",
+    "name": "Fort Worth Meacham International Airport",
+    "latitude_deg": "32.819919",
+    "longitude_deg": "-97.360818",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Worth",
+    "iata_code": "FTW"
+  },
+  {
+    "ident": "KFWA",
+    "name": "Fort Wayne International Airport",
+    "latitude_deg": "40.978896",
+    "longitude_deg": "-85.194465",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Wayne",
+    "iata_code": "FWA"
+  },
+  {
+    "ident": "KGCC",
+    "name": "Northeast Wyoming Regional Airport",
+    "latitude_deg": "44.3489",
+    "longitude_deg": "-105.539001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gillette",
+    "iata_code": "GCC"
+  },
+  {
+    "ident": "KGCK",
+    "name": "Garden City Regional Airport",
+    "latitude_deg": "37.9275016785",
+    "longitude_deg": "-100.723999023",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Garden City",
+    "iata_code": "GCK"
+  },
+  {
+    "ident": "KGCN",
+    "name": "Grand Canyon National Park Airport",
+    "latitude_deg": "35.9524",
+    "longitude_deg": "-112.147003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Grand Canyon - Tusayan",
+    "iata_code": "GCN"
+  },
+  {
+    "ident": "KGDV",
+    "name": "Dawson Community Airport",
+    "latitude_deg": "47.137658",
+    "longitude_deg": "-104.80691",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Glendive",
+    "iata_code": "GDV"
+  },
+  {
+    "ident": "KGEG",
+    "name": "Spokane International Airport",
+    "latitude_deg": "47.6199",
+    "longitude_deg": "-117.533997",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Spokane",
+    "iata_code": "GEG"
+  },
+  {
+    "ident": "KGFK",
+    "name": "Grand Forks International Airport",
+    "latitude_deg": "47.949299",
+    "longitude_deg": "-97.176102",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Grand Forks",
+    "iata_code": "GFK"
+  },
+  {
+    "ident": "KGGG",
+    "name": "East Texas Regional Airport",
+    "latitude_deg": "32.38399887084961",
+    "longitude_deg": "-94.71150207519531",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Longview",
+    "iata_code": "GGG"
+  },
+  {
+    "ident": "KGGW",
+    "name": "Glasgow Valley County Airport Wokal Field",
+    "latitude_deg": "48.212502",
+    "longitude_deg": "-106.614998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Glasgow",
+    "iata_code": "GGW"
+  },
+  {
+    "ident": "KGJT",
+    "name": "Grand Junction Regional Airport",
+    "latitude_deg": "39.126663",
+    "longitude_deg": "-108.529387",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Grand Junction",
+    "iata_code": "GJT"
+  },
+  {
+    "ident": "KGLH",
+    "name": "Mid Delta Regional Airport",
+    "latitude_deg": "33.482899",
+    "longitude_deg": "-90.985603",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Greenville",
+    "iata_code": "GLH"
+  },
+  {
+    "ident": "KGNV",
+    "name": "Gainesville Regional Airport",
+    "latitude_deg": "29.6900997162",
+    "longitude_deg": "-82.2717971802",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gainesville",
+    "iata_code": "GNV"
+  },
+  {
+    "ident": "KGPI",
+    "name": "Glacier Park International Airport",
+    "latitude_deg": "48.310501",
+    "longitude_deg": "-114.255997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kalispell",
+    "iata_code": "FCA"
+  },
+  {
+    "ident": "KGPT",
+    "name": "Gulfport Biloxi International Airport",
+    "latitude_deg": "30.405582",
+    "longitude_deg": "-89.069836",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gulfport",
+    "iata_code": "GPT"
+  },
+  {
+    "ident": "KGRB",
+    "name": "Austin Straubel International Airport",
+    "latitude_deg": "44.483459",
+    "longitude_deg": "-88.130805",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Green Bay",
+    "iata_code": "GRB"
+  },
+  {
+    "ident": "KGRI",
+    "name": "Central Nebraska Regional Airport",
+    "latitude_deg": "40.967498779296875",
+    "longitude_deg": "-98.30960083007812",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Grand Island",
+    "iata_code": "GRI"
+  },
+  {
+    "ident": "KGRK",
+    "name": "Killeen Regional Airport / Robert Gray Army Airfield",
+    "latitude_deg": "31.0672",
+    "longitude_deg": "-97.828903",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Cavazos",
+    "iata_code": "GRK"
+  },
+  {
+    "ident": "KGRR",
+    "name": "Gerald R. Ford International Airport",
+    "latitude_deg": "42.880798",
+    "longitude_deg": "-85.522797",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Grand Rapids",
+    "iata_code": "GRR"
+  },
+  {
+    "ident": "KGSO",
+    "name": "Piedmont Triad International Airport",
+    "latitude_deg": "36.09937",
+    "longitude_deg": "-79.937262",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Greensboro",
+    "iata_code": "GSO"
+  },
+  {
+    "ident": "KGSP",
+    "name": "Greenville-Spartanburg International Airport",
+    "latitude_deg": "34.895699",
+    "longitude_deg": "-82.218903",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Greenville/Greer/Spartanburg",
+    "iata_code": "GSP"
+  },
+  {
+    "ident": "KGTF",
+    "name": "Great Falls International Airport",
+    "latitude_deg": "47.481998",
+    "longitude_deg": "-111.371002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Great Falls",
+    "iata_code": "GTF"
+  },
+  {
+    "ident": "KGTR",
+    "name": "Golden Triangle Regional Airport",
+    "latitude_deg": "33.450298",
+    "longitude_deg": "-88.5914",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Columbus/W Point/Starkville",
+    "iata_code": "GTR"
+  },
+  {
+    "ident": "KGUC",
+    "name": "Gunnison Crested Butte Regional Airport",
+    "latitude_deg": "38.534672",
+    "longitude_deg": "-106.934566",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gunnison",
+    "iata_code": "GUC"
+  },
+  {
+    "ident": "KGUP",
+    "name": "Gallup Municipal Airport",
+    "latitude_deg": "35.511653",
+    "longitude_deg": "-108.788166",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gallup",
+    "iata_code": "GUP"
+  },
+  {
+    "ident": "KGYY",
+    "name": "Gary/Chicago International Airport",
+    "latitude_deg": "41.617087",
+    "longitude_deg": "-87.413206",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gary",
+    "iata_code": "GYY"
+  },
+  {
+    "ident": "KHDN",
+    "name": "Yampa Valley Airport",
+    "latitude_deg": "40.481201",
+    "longitude_deg": "-107.218002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hayden",
+    "iata_code": "HDN"
+  },
+  {
+    "ident": "KHGR",
+    "name": "Hagerstown Regional Richard A Henson Field",
+    "latitude_deg": "39.708771",
+    "longitude_deg": "-77.728014",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hagerstown",
+    "iata_code": "HGR"
+  },
+  {
+    "ident": "KHHR",
+    "name": "Jack Northrop Field Hawthorne Municipal Airport",
+    "latitude_deg": "33.922798",
+    "longitude_deg": "-118.334999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hawthorne",
+    "iata_code": "HHR"
+  },
+  {
+    "ident": "KHIB",
+    "name": "Range Regional Airport",
+    "latitude_deg": "47.384831",
+    "longitude_deg": "-92.836905",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hibbing",
+    "iata_code": "HIB"
+  },
+  {
+    "ident": "KHII",
+    "name": "Lake Havasu City Airport",
+    "latitude_deg": "34.570506",
+    "longitude_deg": "-114.357745",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lake Havasu City",
+    "iata_code": "HII"
+  },
+  {
+    "ident": "KHLN",
+    "name": "Helena Regional Airport",
+    "latitude_deg": "46.6068",
+    "longitude_deg": "-111.983002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Helena",
+    "iata_code": "HLN"
+  },
+  {
+    "ident": "KHOB",
+    "name": "Lea County Regional Airport",
+    "latitude_deg": "32.6875",
+    "longitude_deg": "-103.217003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hobbs",
+    "iata_code": "HOB"
+  },
+  {
+    "ident": "KHOT",
+    "name": "Memorial Field Airport",
+    "latitude_deg": "34.4788",
+    "longitude_deg": "-93.096262",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hot Springs",
+    "iata_code": "HOT"
+  },
+  {
+    "ident": "KHOU",
+    "name": "William P. Hobby Airport",
+    "latitude_deg": "29.645336",
+    "longitude_deg": "-95.276812",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Houston",
+    "iata_code": "HOU"
+  },
+  {
+    "ident": "KHPN",
+    "name": "Westchester County Airport",
+    "latitude_deg": "41.06700134277344",
+    "longitude_deg": "-73.70760345458984",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "White Plains",
+    "iata_code": "HPN"
+  },
+  {
+    "ident": "KHRL",
+    "name": "Valley International Airport",
+    "latitude_deg": "26.228500366210938",
+    "longitude_deg": "-97.65440368652344",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Harlingen",
+    "iata_code": "HRL"
+  },
+  {
+    "ident": "KHRO",
+    "name": "Boone County Airport",
+    "latitude_deg": "36.26150131225586",
+    "longitude_deg": "-93.15470123291016",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Harrison",
+    "iata_code": "HRO"
+  },
+  {
+    "ident": "KHSV",
+    "name": "Huntsville International Airport",
+    "latitude_deg": "34.636244",
+    "longitude_deg": "-86.774378",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Huntsville",
+    "iata_code": "HSV"
+  },
+  {
+    "ident": "KHTS",
+    "name": "Tri-State Airport / Milton J. Ferguson Field",
+    "latitude_deg": "38.366699",
+    "longitude_deg": "-82.557999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Huntington",
+    "iata_code": "HTS"
+  },
+  {
+    "ident": "KHVN",
+    "name": "Tweed New Haven Airport",
+    "latitude_deg": "41.262869",
+    "longitude_deg": "-72.887694",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "New Haven",
+    "iata_code": "HVN"
+  },
+  {
+    "ident": "KHVR",
+    "name": "Havre City County Airport",
+    "latitude_deg": "48.541387",
+    "longitude_deg": "-109.762859",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Havre",
+    "iata_code": "HVR"
+  },
+  {
+    "ident": "KHXD",
+    "name": "Hilton Head Airport",
+    "latitude_deg": "32.2244",
+    "longitude_deg": "-80.697502",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hilton Head Island",
+    "iata_code": "HHH"
+  },
+  {
+    "ident": "KHYA",
+    "name": "Cape Cod Gateway Airport",
+    "latitude_deg": "41.6693",
+    "longitude_deg": "-70.280403",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hyannis",
+    "iata_code": "HYA"
+  },
+  {
+    "ident": "KHYS",
+    "name": "Hays Regional Airport",
+    "latitude_deg": "38.844521",
+    "longitude_deg": "-99.273148",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hays",
+    "iata_code": "HYS"
+  },
+  {
+    "ident": "KIAD",
+    "name": "Washington Dulles International Airport",
+    "latitude_deg": "38.9445",
+    "longitude_deg": "-77.455803",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dulles",
+    "iata_code": "IAD"
+  },
+  {
+    "ident": "KIAG",
+    "name": "Niagara Falls International Airport",
+    "latitude_deg": "43.1073",
+    "longitude_deg": "-78.946198",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Niagara Falls",
+    "iata_code": "IAG"
+  },
+  {
+    "ident": "KIAH",
+    "name": "George Bush Intercontinental Airport",
+    "latitude_deg": "29.9844",
+    "longitude_deg": "-95.3414",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Houston",
+    "iata_code": "IAH"
+  },
+  {
+    "ident": "KICT",
+    "name": "Wichita Dwight D. Eisenhower National Airport",
+    "latitude_deg": "37.650314",
+    "longitude_deg": "-97.428583",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wichita",
+    "iata_code": "ICT"
+  },
+  {
+    "ident": "KIDA",
+    "name": "Idaho Falls Regional Airport",
+    "latitude_deg": "43.514599",
+    "longitude_deg": "-112.070999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Idaho Falls",
+    "iata_code": "IDA"
+  },
+  {
+    "ident": "KILG",
+    "name": "Wilmington Airport",
+    "latitude_deg": "39.678699",
+    "longitude_deg": "-75.606499",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wilmington",
+    "iata_code": "ILG"
+  },
+  {
+    "ident": "KILM",
+    "name": "Wilmington International Airport",
+    "latitude_deg": "34.272345",
+    "longitude_deg": "-77.905117",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wilmington",
+    "iata_code": "ILM"
+  },
+  {
+    "ident": "KIMT",
+    "name": "Ford Airport",
+    "latitude_deg": "45.81911",
+    "longitude_deg": "-88.114557",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kingsford",
+    "iata_code": "IMT"
+  },
+  {
+    "ident": "KIND",
+    "name": "Indianapolis International Airport",
+    "latitude_deg": "39.7173",
+    "longitude_deg": "-86.294403",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Indianapolis",
+    "iata_code": "IND"
+  },
+  {
+    "ident": "KINL",
+    "name": "Falls International Airport",
+    "latitude_deg": "48.566200256347656",
+    "longitude_deg": "-93.4030990600586",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "International Falls",
+    "iata_code": "INL"
+  },
+  {
+    "ident": "KIPL",
+    "name": "Imperial County Airport",
+    "latitude_deg": "32.83539",
+    "longitude_deg": "-115.574026",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Imperial",
+    "iata_code": "IPL"
+  },
+  {
+    "ident": "KIPT",
+    "name": "Williamsport Regional Airport",
+    "latitude_deg": "41.242126",
+    "longitude_deg": "-76.92245",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Williamsport",
+    "iata_code": "IPT"
+  },
+  {
+    "ident": "KIRK",
+    "name": "Kirksville Regional Airport",
+    "latitude_deg": "40.09349822998047",
+    "longitude_deg": "-92.5448989868164",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kirksville",
+    "iata_code": "IRK"
+  },
+  {
+    "ident": "KISP",
+    "name": "Long Island MacArthur Airport",
+    "latitude_deg": "40.796324",
+    "longitude_deg": "-73.101703",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Islip",
+    "iata_code": "ISP"
+  },
+  {
+    "ident": "KITH",
+    "name": "Ithaca Tompkins Regional Airport",
+    "latitude_deg": "42.49100112915039",
+    "longitude_deg": "-76.4583969116211",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ithaca",
+    "iata_code": "ITH"
+  },
+  {
+    "ident": "KIWA",
+    "name": "Mesa Gateway Airport",
+    "latitude_deg": "33.3078",
+    "longitude_deg": "-111.654999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mesa",
+    "iata_code": "AZA"
+  },
+  {
+    "ident": "KJAC",
+    "name": "Jackson Hole Airport",
+    "latitude_deg": "43.6073",
+    "longitude_deg": "-110.737999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Jackson",
+    "iata_code": "JAC"
+  },
+  {
+    "ident": "KJAN",
+    "name": "Jackson-Medgar Wiley Evers International Airport",
+    "latitude_deg": "32.311199",
+    "longitude_deg": "-90.075897",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Jackson",
+    "iata_code": "JAN"
+  },
+  {
+    "ident": "KJAX",
+    "name": "Jacksonville International Airport",
+    "latitude_deg": "30.492469",
+    "longitude_deg": "-81.687813",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Jacksonville",
+    "iata_code": "JAX"
+  },
+  {
+    "ident": "KJBR",
+    "name": "Jonesboro Municipal Airport",
+    "latitude_deg": "35.83169937133789",
+    "longitude_deg": "-90.64640045166016",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Jonesboro",
+    "iata_code": "JBR"
+  },
+  {
+    "ident": "KJFK",
+    "name": "John F. Kennedy International Airport",
+    "latitude_deg": "40.639447",
+    "longitude_deg": "-73.779317",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "New York",
+    "iata_code": "JFK"
+  },
+  {
+    "ident": "KJLN",
+    "name": "Joplin Regional Airport",
+    "latitude_deg": "37.151798",
+    "longitude_deg": "-94.498299",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Joplin",
+    "iata_code": "JLN"
+  },
+  {
+    "ident": "KJMS",
+    "name": "Jamestown Regional Airport",
+    "latitude_deg": "46.92969894",
+    "longitude_deg": "-98.67819977",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Jamestown",
+    "iata_code": "JMS"
+  },
+  {
+    "ident": "KJQF",
+    "name": "Concord-Padgett Regional Airport",
+    "latitude_deg": "35.387798",
+    "longitude_deg": "-80.709099",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Concord",
+    "iata_code": "USA"
+  },
+  {
+    "ident": "KJST",
+    "name": "John Murtha Johnstown Cambria County Airport",
+    "latitude_deg": "40.31610107421875",
+    "longitude_deg": "-78.83390045166016",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Johnstown",
+    "iata_code": "JST"
+  },
+  {
+    "ident": "KLAF",
+    "name": "Purdue University Airport",
+    "latitude_deg": "40.412875",
+    "longitude_deg": "-86.939363",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "West Lafayette",
+    "iata_code": "LAF"
+  },
+  {
+    "ident": "KLAL",
+    "name": "Lakeland Linder International Airport",
+    "latitude_deg": "27.989267",
+    "longitude_deg": "-82.020715",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lakeland",
+    "iata_code": "LAL"
+  },
+  {
+    "ident": "KLAN",
+    "name": "Capital Region International Airport",
+    "latitude_deg": "42.777582",
+    "longitude_deg": "-84.585721",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lansing",
+    "iata_code": "LAN"
+  },
+  {
+    "ident": "KLAR",
+    "name": "Laramie Regional Airport",
+    "latitude_deg": "41.31209945678711",
+    "longitude_deg": "-105.67500305175781",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Laramie",
+    "iata_code": "LAR"
+  },
+  {
+    "ident": "KLAS",
+    "name": "Harry Reid International Airport",
+    "latitude_deg": "36.083361",
+    "longitude_deg": "-115.151817",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Las Vegas",
+    "iata_code": "LAS"
+  },
+  {
+    "ident": "KLAW",
+    "name": "Lawton Fort Sill Regional Airport",
+    "latitude_deg": "34.567699",
+    "longitude_deg": "-98.416603",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lawton",
+    "iata_code": "LAW"
+  },
+  {
+    "ident": "KLAX",
+    "name": "Los Angeles International Airport",
+    "latitude_deg": "33.942501",
+    "longitude_deg": "-118.407997",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Los Angeles",
+    "iata_code": "LAX"
+  },
+  {
+    "ident": "KLBB",
+    "name": "Lubbock Preston Smith International Airport",
+    "latitude_deg": "33.663601",
+    "longitude_deg": "-101.822998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lubbock",
+    "iata_code": "LBB"
+  },
+  {
+    "ident": "KLBE",
+    "name": "Arnold Palmer Regional Airport",
+    "latitude_deg": "40.275902",
+    "longitude_deg": "-79.4048",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Latrobe",
+    "iata_code": "LBE"
+  },
+  {
+    "ident": "KLBF",
+    "name": "North Platte Regional Airport Lee Bird Field",
+    "latitude_deg": "41.12620163",
+    "longitude_deg": "-100.6839981",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "North Platte",
+    "iata_code": "LBF"
+  },
+  {
+    "ident": "KLBL",
+    "name": "Liberal Mid-America Regional Airport",
+    "latitude_deg": "37.0442009",
+    "longitude_deg": "-100.9599991",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Liberal",
+    "iata_code": "LBL"
+  },
+  {
+    "ident": "KLCH",
+    "name": "Lake Charles Regional Airport",
+    "latitude_deg": "30.126100540161133",
+    "longitude_deg": "-93.22329711914062",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lake Charles",
+    "iata_code": "LCH"
+  },
+  {
+    "ident": "KLCK",
+    "name": "Rickenbacker International Airport",
+    "latitude_deg": "39.813801",
+    "longitude_deg": "-82.927803",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Columbus",
+    "iata_code": "LCK"
+  },
+  {
+    "ident": "KLEB",
+    "name": "Lebanon Municipal Airport",
+    "latitude_deg": "43.626098632799994",
+    "longitude_deg": "-72.30419921880001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lebanon",
+    "iata_code": "LEB"
+  },
+  {
+    "ident": "KLEX",
+    "name": "Blue Grass Airport",
+    "latitude_deg": "38.035066",
+    "longitude_deg": "-84.606738",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lexington",
+    "iata_code": "LEX"
+  },
+  {
+    "ident": "KLFT",
+    "name": "Lafayette Regional Airport",
+    "latitude_deg": "30.205299",
+    "longitude_deg": "-91.987602",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lafayette",
+    "iata_code": "LFT"
+  },
+  {
+    "ident": "KLGA",
+    "name": "LaGuardia Airport",
+    "latitude_deg": "40.777199",
+    "longitude_deg": "-73.872597",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "New York",
+    "iata_code": "LGA"
+  },
+  {
+    "ident": "KLGB",
+    "name": "Long Beach International Airport",
+    "latitude_deg": "33.816523",
+    "longitude_deg": "-118.149891",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Long Beach",
+    "iata_code": "LGB"
+  },
+  {
+    "ident": "KLIT",
+    "name": "Bill & Hillary Clinton National Airport/Adams Field",
+    "latitude_deg": "34.729222",
+    "longitude_deg": "-92.223591",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Little Rock",
+    "iata_code": "LIT"
+  },
+  {
+    "ident": "KLNK",
+    "name": "Lincoln Airport",
+    "latitude_deg": "40.844882",
+    "longitude_deg": "-96.76178",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lincoln",
+    "iata_code": "LNK"
+  },
+  {
+    "ident": "KLNS",
+    "name": "Lancaster Airport",
+    "latitude_deg": "40.121700286865234",
+    "longitude_deg": "-76.29609680175781",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lancaster",
+    "iata_code": "LNS"
+  },
+  {
+    "ident": "KLRD",
+    "name": "Laredo International Airport",
+    "latitude_deg": "27.5438",
+    "longitude_deg": "-99.461601",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Laredo",
+    "iata_code": "LRD"
+  },
+  {
+    "ident": "KLRU",
+    "name": "Las Cruces International Airport",
+    "latitude_deg": "32.289398",
+    "longitude_deg": "-106.921997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Las Cruces",
+    "iata_code": "LRU"
+  },
+  {
+    "ident": "KLSE",
+    "name": "La Crosse Regional Airport",
+    "latitude_deg": "43.879002",
+    "longitude_deg": "-91.256699",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "La Crosse",
+    "iata_code": "LSE"
+  },
+  {
+    "ident": "KLUK",
+    "name": "Cincinnati Municipal Airport Lunken Field",
+    "latitude_deg": "39.102357",
+    "longitude_deg": "-84.418945",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cincinnati",
+    "iata_code": "LUK"
+  },
+  {
+    "ident": "KLWB",
+    "name": "Greenbrier Valley Airport",
+    "latitude_deg": "37.857914",
+    "longitude_deg": "-80.400438",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lewisburg",
+    "iata_code": "LWB"
+  },
+  {
+    "ident": "KLWS",
+    "name": "Lewiston Nez Perce County Airport",
+    "latitude_deg": "46.3745002746582",
+    "longitude_deg": "-117.01499938964844",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lewiston",
+    "iata_code": "LWS"
+  },
+  {
+    "ident": "KLYH",
+    "name": "Lynchburg Regional Airport - Preston Glenn Field",
+    "latitude_deg": "37.326698",
+    "longitude_deg": "-79.200401",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lynchburg",
+    "iata_code": "LYH"
+  },
+  {
+    "ident": "KMAF",
+    "name": "Midland International Air and Space Port",
+    "latitude_deg": "31.942499",
+    "longitude_deg": "-102.202003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Midland",
+    "iata_code": "MAF"
+  },
+  {
+    "ident": "KMBS",
+    "name": "MBS International Airport",
+    "latitude_deg": "43.533181",
+    "longitude_deg": "-84.083104",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Freeland",
+    "iata_code": "MBS"
+  },
+  {
+    "ident": "KMCE",
+    "name": "Merced Regional Macready Field",
+    "latitude_deg": "37.284698",
+    "longitude_deg": "-120.514",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Merced",
+    "iata_code": "MCE"
+  },
+  {
+    "ident": "KMCI",
+    "name": "Kansas City International Airport",
+    "latitude_deg": "39.301699",
+    "longitude_deg": "-94.713893",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kansas City",
+    "iata_code": "MCI"
+  },
+  {
+    "ident": "KMCK",
+    "name": "McCook Ben Nelson Regional Airport",
+    "latitude_deg": "40.207787",
+    "longitude_deg": "-100.592794",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "McCook",
+    "iata_code": "MCK"
+  },
+  {
+    "ident": "KMCN",
+    "name": "Middle Georgia Regional Airport",
+    "latitude_deg": "32.69279861450195",
+    "longitude_deg": "-83.64920043945312",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Macon",
+    "iata_code": "MCN"
+  },
+  {
+    "ident": "KMCO",
+    "name": "Orlando International Airport",
+    "latitude_deg": "28.429399490356445",
+    "longitude_deg": "-81.30899810791016",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Orlando",
+    "iata_code": "MCO"
+  },
+  {
+    "ident": "KMCW",
+    "name": "Mason City Municipal Airport",
+    "latitude_deg": "43.159801",
+    "longitude_deg": "-93.329716",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mason City",
+    "iata_code": "MCW"
+  },
+  {
+    "ident": "KMDT",
+    "name": "Harrisburg International Airport",
+    "latitude_deg": "40.192838",
+    "longitude_deg": "-76.762333",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Harrisburg",
+    "iata_code": "MDT"
+  },
+  {
+    "ident": "KMDW",
+    "name": "Chicago Midway International Airport",
+    "latitude_deg": "41.785999",
+    "longitude_deg": "-87.752403",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Chicago",
+    "iata_code": "MDW"
+  },
+  {
+    "ident": "KMEI",
+    "name": "Key Field / Meridian Regional Airport",
+    "latitude_deg": "32.3326",
+    "longitude_deg": "-88.7519",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Meridian",
+    "iata_code": "MEI"
+  },
+  {
+    "ident": "KMEM",
+    "name": "Frederick W. Smith International Airport",
+    "latitude_deg": "35.043845",
+    "longitude_deg": "-89.97634",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Memphis",
+    "iata_code": "MEM"
+  },
+  {
+    "ident": "KMFE",
+    "name": "McAllen Miller International Airport",
+    "latitude_deg": "26.176141",
+    "longitude_deg": "-98.237965",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "McAllen",
+    "iata_code": "MFE"
+  },
+  {
+    "ident": "KMFR",
+    "name": "Rogue Valley International-Medford Airport",
+    "latitude_deg": "42.374199",
+    "longitude_deg": "-122.873001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Medford",
+    "iata_code": "MFR"
+  },
+  {
+    "ident": "KMGC",
+    "name": "Michigan City Municipal Airport",
+    "latitude_deg": "41.7033",
+    "longitude_deg": "-86.821198",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Michigan City",
+    "iata_code": "MGC"
+  },
+  {
+    "ident": "KMGM",
+    "name": "Montgomery Regional (Dannelly Field) Airport",
+    "latitude_deg": "32.300598",
+    "longitude_deg": "-86.393997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Montgomery",
+    "iata_code": "MGM"
+  },
+  {
+    "ident": "KMGW",
+    "name": "Morgantown Municipal Airport Walter L. (Bill) Hart Field",
+    "latitude_deg": "39.643305",
+    "longitude_deg": "-79.917598",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Morgantown",
+    "iata_code": "MGW"
+  },
+  {
+    "ident": "KMHK",
+    "name": "Manhattan Regional Airport",
+    "latitude_deg": "39.14099884033203",
+    "longitude_deg": "-96.6707992553711",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Manhattan",
+    "iata_code": "MHK"
+  },
+  {
+    "ident": "KMHT",
+    "name": "Manchester-Boston Regional Airport",
+    "latitude_deg": "42.932598",
+    "longitude_deg": "-71.435699",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Manchester",
+    "iata_code": "MHT"
+  },
+  {
+    "ident": "KMIA",
+    "name": "Miami International Airport",
+    "latitude_deg": "25.796011",
+    "longitude_deg": "-80.289751",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Miami",
+    "iata_code": "MIA"
+  },
+  {
+    "ident": "KMKE",
+    "name": "General Mitchell International Airport",
+    "latitude_deg": "42.947201",
+    "longitude_deg": "-87.896599",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Milwaukee",
+    "iata_code": "MKE"
+  },
+  {
+    "ident": "KMKG",
+    "name": "Muskegon County Airport",
+    "latitude_deg": "43.169498",
+    "longitude_deg": "-86.238197",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Muskegon",
+    "iata_code": "MKG"
+  },
+  {
+    "ident": "KMKL",
+    "name": "McKellar-Sipes Regional Airport",
+    "latitude_deg": "35.599899",
+    "longitude_deg": "-88.915604",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Jackson",
+    "iata_code": "MKL"
+  },
+  {
+    "ident": "KMLB",
+    "name": "Melbourne Orlando International Airport",
+    "latitude_deg": "28.102009",
+    "longitude_deg": "-80.641088",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Melbourne",
+    "iata_code": "MLB"
+  },
+  {
+    "ident": "KMLI",
+    "name": "Quad City International Airport",
+    "latitude_deg": "41.448502",
+    "longitude_deg": "-90.5075",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Moline",
+    "iata_code": "MLI"
+  },
+  {
+    "ident": "KMLU",
+    "name": "Monroe Regional Airport",
+    "latitude_deg": "32.510899",
+    "longitude_deg": "-92.037697",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Monroe",
+    "iata_code": "MLU"
+  },
+  {
+    "ident": "KMMH",
+    "name": "Mammoth Yosemite Airport",
+    "latitude_deg": "37.625381",
+    "longitude_deg": "-118.84306",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mammoth Lakes",
+    "iata_code": "MMH"
+  },
+  {
+    "ident": "KMOB",
+    "name": "Mobile Regional Airport",
+    "latitude_deg": "30.6912",
+    "longitude_deg": "-88.242798",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mobile",
+    "iata_code": "MOB"
+  },
+  {
+    "ident": "KMOT",
+    "name": "Minot International Airport",
+    "latitude_deg": "48.25801",
+    "longitude_deg": "-101.279123",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Minot",
+    "iata_code": "MOT"
+  },
+  {
+    "ident": "KMRY",
+    "name": "Monterey Regional Airport",
+    "latitude_deg": "36.586777",
+    "longitude_deg": "-121.844183",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Monterey",
+    "iata_code": "MRY"
+  },
+  {
+    "ident": "KMSL",
+    "name": "Northwest Alabama Regional Airport",
+    "latitude_deg": "34.745123",
+    "longitude_deg": "-87.612981",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Muscle Shoals",
+    "iata_code": "MSL"
+  },
+  {
+    "ident": "KMSN",
+    "name": "Dane County Regional Truax Field",
+    "latitude_deg": "43.1399",
+    "longitude_deg": "-89.337502",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Madison",
+    "iata_code": "MSN"
+  },
+  {
+    "ident": "KMSO",
+    "name": "Missoula Montana Airport",
+    "latitude_deg": "46.915816",
+    "longitude_deg": "-114.091107",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Missoula",
+    "iata_code": "MSO"
+  },
+  {
+    "ident": "KMSP",
+    "name": "Minneapolis–Saint Paul International Airport / Wold–Chamberlain Field",
+    "latitude_deg": "44.880081",
+    "longitude_deg": "-93.221741",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Minneapolis",
+    "iata_code": "MSP"
+  },
+  {
+    "ident": "KMSS",
+    "name": "Massena International Airport Richards Field",
+    "latitude_deg": "44.936157",
+    "longitude_deg": "-74.844304",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Massena",
+    "iata_code": "MSS"
+  },
+  {
+    "ident": "KMSY",
+    "name": "Louis Armstrong New Orleans International Airport",
+    "latitude_deg": "29.993401",
+    "longitude_deg": "-90.264673",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "New Orleans",
+    "iata_code": "MSY"
+  },
+  {
+    "ident": "KMTJ",
+    "name": "Montrose Regional Airport",
+    "latitude_deg": "38.5098",
+    "longitude_deg": "-107.893997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Montrose",
+    "iata_code": "MTJ"
+  },
+  {
+    "ident": "KMWA",
+    "name": "Veterans Airport of Southern Illinois",
+    "latitude_deg": "37.751208",
+    "longitude_deg": "-89.016568",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Marion",
+    "iata_code": "MWA"
+  },
+  {
+    "ident": "KMWL",
+    "name": "Mineral Wells Regional Airport",
+    "latitude_deg": "32.781601",
+    "longitude_deg": "-98.060204",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mineral Wells",
+    "iata_code": "MWL"
+  },
+  {
+    "ident": "KMYL",
+    "name": "McCall Municipal Airport",
+    "latitude_deg": "44.888837",
+    "longitude_deg": "-116.101112",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "McCall",
+    "iata_code": "MYL"
+  },
+  {
+    "ident": "KMYR",
+    "name": "Myrtle Beach International Airport",
+    "latitude_deg": "33.679699",
+    "longitude_deg": "-78.928299",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Myrtle Beach",
+    "iata_code": "MYR"
+  },
+  {
+    "ident": "KNYL",
+    "name": "Yuma International Airport / Marine Corps Air Station Yuma",
+    "latitude_deg": "32.650938",
+    "longitude_deg": "-114.609375",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Yuma",
+    "iata_code": "YUM"
+  },
+  {
+    "ident": "KOAJ",
+    "name": "Albert J Ellis Airport",
+    "latitude_deg": "34.829201",
+    "longitude_deg": "-77.612099",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Richlands",
+    "iata_code": "OAJ"
+  },
+  {
+    "ident": "KOAK",
+    "name": "Oakland San Francisco Bay Airport",
+    "latitude_deg": "37.720085",
+    "longitude_deg": "-122.221184",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Oakland",
+    "iata_code": "OAK"
+  },
+  {
+    "ident": "KOGD",
+    "name": "Ogden Hinckley Airport",
+    "latitude_deg": "41.195899963379",
+    "longitude_deg": "-112.0120010376",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ogden",
+    "iata_code": "OGD"
+  },
+  {
+    "ident": "KOGS",
+    "name": "Ogdensburg International Airport",
+    "latitude_deg": "44.6819",
+    "longitude_deg": "-75.4655",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ogdensburg",
+    "iata_code": "OGS"
+  },
+  {
+    "ident": "KOKC",
+    "name": "OKC Will Rogers World Airport",
+    "latitude_deg": "35.393388",
+    "longitude_deg": "-97.598248",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Oklahoma City",
+    "iata_code": "OKC"
+  },
+  {
+    "ident": "KOLF",
+    "name": "L M Clayton Airport",
+    "latitude_deg": "48.094501",
+    "longitude_deg": "-105.574997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wolf Point",
+    "iata_code": "OLF"
+  },
+  {
+    "ident": "KOLM",
+    "name": "Olympia Regional Airport",
+    "latitude_deg": "46.969399",
+    "longitude_deg": "-122.903",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Olympia",
+    "iata_code": "OLM"
+  },
+  {
+    "ident": "KOMA",
+    "name": "Eppley Airfield",
+    "latitude_deg": "41.3032",
+    "longitude_deg": "-95.894096",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Omaha",
+    "iata_code": "OMA"
+  },
+  {
+    "ident": "KONT",
+    "name": "Ontario International Airport",
+    "latitude_deg": "34.056",
+    "longitude_deg": "-117.600998",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ontario",
+    "iata_code": "ONT"
+  },
+  {
+    "ident": "KOPF",
+    "name": "Miami-Opa Locka Executive Airport",
+    "latitude_deg": "25.907",
+    "longitude_deg": "-80.278397",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Miami",
+    "iata_code": "OPF"
+  },
+  {
+    "ident": "KORD",
+    "name": "Chicago O'Hare International Airport",
+    "latitude_deg": "41.9786",
+    "longitude_deg": "-87.9048",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Chicago",
+    "iata_code": "ORD"
+  },
+  {
+    "ident": "KORF",
+    "name": "Norfolk International Airport",
+    "latitude_deg": "36.895341",
+    "longitude_deg": "-76.201",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Norfolk",
+    "iata_code": "ORF"
+  },
+  {
+    "ident": "KORH",
+    "name": "Worcester Regional Airport",
+    "latitude_deg": "42.2673",
+    "longitude_deg": "-71.875702",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Worcester",
+    "iata_code": "ORH"
+  },
+  {
+    "ident": "KORS",
+    "name": "Orcas Island Airport",
+    "latitude_deg": "48.708199",
+    "longitude_deg": "-122.910004",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Eastsound",
+    "iata_code": "ESD"
+  },
+  {
+    "ident": "KOTH",
+    "name": "Southwest Oregon Regional Airport",
+    "latitude_deg": "43.41709899902344",
+    "longitude_deg": "-124.24600219726562",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "North Bend",
+    "iata_code": "OTH"
+  },
+  {
+    "ident": "KOWB",
+    "name": "Owensboro Daviess County Airport",
+    "latitude_deg": "37.74010086",
+    "longitude_deg": "-87.16680145",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Owensboro",
+    "iata_code": "OWB"
+  },
+  {
+    "ident": "KOXB",
+    "name": "Ocean City Municipal Airport",
+    "latitude_deg": "38.310398",
+    "longitude_deg": "-75.124001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ocean City",
+    "iata_code": "OCE"
+  },
+  {
+    "ident": "KPAE",
+    "name": "Seattle Paine Field International Airport",
+    "latitude_deg": "47.9063",
+    "longitude_deg": "-122.281998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Everett",
+    "iata_code": "PAE"
+  },
+  {
+    "ident": "KPAH",
+    "name": "Barkley Regional Airport",
+    "latitude_deg": "37.06079864501953",
+    "longitude_deg": "-88.7738037109375",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Paducah",
+    "iata_code": "PAH"
+  },
+  {
+    "ident": "KPBG",
+    "name": "Plattsburgh International Airport",
+    "latitude_deg": "44.650902",
+    "longitude_deg": "-73.468102",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Plattsburgh",
+    "iata_code": "PBG"
+  },
+  {
+    "ident": "KPBI",
+    "name": "President Donald J. Trump International Airport",
+    "latitude_deg": "26.683201",
+    "longitude_deg": "-80.095596",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "West Palm Beach",
+    "iata_code": "DJT"
+  },
+  {
+    "ident": "KPCW",
+    "name": "Erie-Ottawa International Airport",
+    "latitude_deg": "41.515647",
+    "longitude_deg": "-82.868328",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Port Clinton",
+    "iata_code": ""
+  },
+  {
+    "ident": "KPDK",
+    "name": "DeKalb Peachtree Airport",
+    "latitude_deg": "33.87633",
+    "longitude_deg": "-84.30213",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Atlanta",
+    "iata_code": "PDK"
+  },
+  {
+    "ident": "KPDT",
+    "name": "Eastern Oregon Regional Airport at Pendleton",
+    "latitude_deg": "45.695099",
+    "longitude_deg": "-118.841003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pendleton",
+    "iata_code": "PDT"
+  },
+  {
+    "ident": "KPDX",
+    "name": "Portland International Airport",
+    "latitude_deg": "45.588699",
+    "longitude_deg": "-122.598",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Portland",
+    "iata_code": "PDX"
+  },
+  {
+    "ident": "KPGA",
+    "name": "Page Municipal Airport",
+    "latitude_deg": "36.924234",
+    "longitude_deg": "-111.447716",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Page",
+    "iata_code": "PGA"
+  },
+  {
+    "ident": "KPGD",
+    "name": "Punta Gorda Airport",
+    "latitude_deg": "26.9202",
+    "longitude_deg": "-81.990501",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Punta Gorda",
+    "iata_code": "PGD"
+  },
+  {
+    "ident": "KPGV",
+    "name": "Pitt-Greenville Airport",
+    "latitude_deg": "35.635535",
+    "longitude_deg": "-77.384262",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Greenville",
+    "iata_code": "PGV"
+  },
+  {
+    "ident": "KPHF",
+    "name": "Newport News Williamsburg International Airport",
+    "latitude_deg": "37.131901",
+    "longitude_deg": "-76.492996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Newport News",
+    "iata_code": "PHF"
+  },
+  {
+    "ident": "KPHL",
+    "name": "Philadelphia International Airport",
+    "latitude_deg": "39.871899",
+    "longitude_deg": "-75.241096",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Philadelphia",
+    "iata_code": "PHL"
+  },
+  {
+    "ident": "KPHX",
+    "name": "Phoenix Sky Harbor International Airport",
+    "latitude_deg": "33.435302",
+    "longitude_deg": "-112.005905",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Phoenix",
+    "iata_code": "PHX"
+  },
+  {
+    "ident": "KPIA",
+    "name": "General Wayne A. Downing Peoria International Airport",
+    "latitude_deg": "40.663841",
+    "longitude_deg": "-89.692631",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Peoria",
+    "iata_code": "PIA"
+  },
+  {
+    "ident": "KPIB",
+    "name": "Hattiesburg Laurel Regional Airport",
+    "latitude_deg": "31.4671",
+    "longitude_deg": "-89.337097",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Moselle",
+    "iata_code": "PIB"
+  },
+  {
+    "ident": "KPIE",
+    "name": "St. Petersburg Clearwater International Airport",
+    "latitude_deg": "27.9102",
+    "longitude_deg": "-82.687401",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pinellas Park",
+    "iata_code": "PIE"
+  },
+  {
+    "ident": "KPIH",
+    "name": "Pocatello Regional Airport",
+    "latitude_deg": "42.9098014831543",
+    "longitude_deg": "-112.59600067138672",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pocatello",
+    "iata_code": "PIH"
+  },
+  {
+    "ident": "KPIR",
+    "name": "Pierre Regional Airport",
+    "latitude_deg": "44.38270187",
+    "longitude_deg": "-100.2860031",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pierre",
+    "iata_code": "PIR"
+  },
+  {
+    "ident": "KPIT",
+    "name": "Pittsburgh International Airport",
+    "latitude_deg": "40.491501",
+    "longitude_deg": "-80.232903",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pittsburgh",
+    "iata_code": "PIT"
+  },
+  {
+    "ident": "KPKB",
+    "name": "Mid Ohio Valley Regional Airport",
+    "latitude_deg": "39.3451",
+    "longitude_deg": "-81.439201",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Parkersburg (Williamstown)",
+    "iata_code": "PKB"
+  },
+  {
+    "ident": "KPLN",
+    "name": "Pellston Regional Airport of Emmet County Airport",
+    "latitude_deg": "45.57089996",
+    "longitude_deg": "-84.79669952",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pellston",
+    "iata_code": "PLN"
+  },
+  {
+    "ident": "KPNS",
+    "name": "Pensacola International Airport",
+    "latitude_deg": "30.472718",
+    "longitude_deg": "-87.186639",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pensacola",
+    "iata_code": "PNS"
+  },
+  {
+    "ident": "KPQI",
+    "name": "Presque Isle International Airport",
+    "latitude_deg": "46.688999",
+    "longitude_deg": "-68.0448",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Presque Isle",
+    "iata_code": "PQI"
+  },
+  {
+    "ident": "KPRC",
+    "name": "Prescott Regional Airport - Ernest A. Love Field",
+    "latitude_deg": "34.653502",
+    "longitude_deg": "-112.419883",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Prescott",
+    "iata_code": "PRC"
+  },
+  {
+    "ident": "KPSC",
+    "name": "Tri Cities Airport",
+    "latitude_deg": "46.264702",
+    "longitude_deg": "-119.119003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pasco",
+    "iata_code": "PSC"
+  },
+  {
+    "ident": "KPSM",
+    "name": "Portsmouth International Airport at Pease",
+    "latitude_deg": "43.0779",
+    "longitude_deg": "-70.823303",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Portsmouth",
+    "iata_code": "PSM"
+  },
+  {
+    "ident": "KPSP",
+    "name": "Palm Springs International Airport",
+    "latitude_deg": "33.8297",
+    "longitude_deg": "-116.507004",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Palm Springs",
+    "iata_code": "PSP"
+  },
+  {
+    "ident": "KPUB",
+    "name": "Pueblo Memorial Airport",
+    "latitude_deg": "38.289101",
+    "longitude_deg": "-104.497002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pueblo",
+    "iata_code": "PUB"
+  },
+  {
+    "ident": "KPUW",
+    "name": "Pullman-Moscow Regional Airport",
+    "latitude_deg": "46.741601",
+    "longitude_deg": "-117.11163",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Pullman",
+    "iata_code": "PUW"
+  },
+  {
+    "ident": "KPVD",
+    "name": "Rhode Island T. F. Green International Airport",
+    "latitude_deg": "41.725038",
+    "longitude_deg": "-71.425668",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Providence/Warwick",
+    "iata_code": "PVD"
+  },
+  {
+    "ident": "KPVU",
+    "name": "Provo Municipal Airport",
+    "latitude_deg": "40.218894",
+    "longitude_deg": "-111.722445",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Provo",
+    "iata_code": "PVU"
+  },
+  {
+    "ident": "KPWM",
+    "name": "Portland International Jetport",
+    "latitude_deg": "43.646198",
+    "longitude_deg": "-70.309303",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Portland",
+    "iata_code": "PWM"
+  },
+  {
+    "ident": "KRAP",
+    "name": "Rapid City Regional Airport",
+    "latitude_deg": "44.0452995300293",
+    "longitude_deg": "-103.05699920654297",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rapid City",
+    "iata_code": "RAP"
+  },
+  {
+    "ident": "KRDD",
+    "name": "Redding Municipal Airport",
+    "latitude_deg": "40.50899887",
+    "longitude_deg": "-122.2929993",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Redding",
+    "iata_code": "RDD"
+  },
+  {
+    "ident": "KRDM",
+    "name": "Roberts Field",
+    "latitude_deg": "44.254101",
+    "longitude_deg": "-121.150002",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Redmond",
+    "iata_code": "RDM"
+  },
+  {
+    "ident": "KRDU",
+    "name": "Raleigh-Durham International Airport",
+    "latitude_deg": "35.878659",
+    "longitude_deg": "-78.7873",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Raleigh/Durham",
+    "iata_code": "RDU"
+  },
+  {
+    "ident": "KRFD",
+    "name": "Chicago Rockford International Airport",
+    "latitude_deg": "42.1954",
+    "longitude_deg": "-89.097198",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Chicago/Rockford",
+    "iata_code": "RFD"
+  },
+  {
+    "ident": "KRHI",
+    "name": "Rhinelander Oneida County Airport",
+    "latitude_deg": "45.63119888305664",
+    "longitude_deg": "-89.46749877929688",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rhinelander",
+    "iata_code": "RHI"
+  },
+  {
+    "ident": "KRIC",
+    "name": "Richmond International Airport",
+    "latitude_deg": "37.505199",
+    "longitude_deg": "-77.319702",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Richmond",
+    "iata_code": "RIC"
+  },
+  {
+    "ident": "KRIW",
+    "name": "Central Wyoming Regional Airport",
+    "latitude_deg": "43.064201",
+    "longitude_deg": "-108.459999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Riverton",
+    "iata_code": "RIW"
+  },
+  {
+    "ident": "KRKD",
+    "name": "Knox County Regional Airport",
+    "latitude_deg": "44.060101",
+    "longitude_deg": "-69.099197",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rockland",
+    "iata_code": "RKD"
+  },
+  {
+    "ident": "KRKS",
+    "name": "Southwest Wyoming Regional Airport",
+    "latitude_deg": "41.5942",
+    "longitude_deg": "-109.065001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rock Springs",
+    "iata_code": "RKS"
+  },
+  {
+    "ident": "KRNO",
+    "name": "Reno Tahoe International Airport",
+    "latitude_deg": "39.4991",
+    "longitude_deg": "-119.767998",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Reno",
+    "iata_code": "RNO"
+  },
+  {
+    "ident": "KROA",
+    "name": "Roanoke–Blacksburg Regional Airport",
+    "latitude_deg": "37.3255",
+    "longitude_deg": "-79.975403",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Roanoke",
+    "iata_code": "ROA"
+  },
+  {
+    "ident": "KROC",
+    "name": "Frederick Douglass Greater Rochester International Airport",
+    "latitude_deg": "43.1189",
+    "longitude_deg": "-77.672401",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rochester",
+    "iata_code": "ROC"
+  },
+  {
+    "ident": "KROW",
+    "name": "Roswell Air Center Airport",
+    "latitude_deg": "33.301601",
+    "longitude_deg": "-104.530998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Roswell",
+    "iata_code": "ROW"
+  },
+  {
+    "ident": "KRST",
+    "name": "Rochester International Airport",
+    "latitude_deg": "43.908298",
+    "longitude_deg": "-92.5",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rochester",
+    "iata_code": "RST"
+  },
+  {
+    "ident": "KRSW",
+    "name": "Southwest Florida International Airport",
+    "latitude_deg": "26.534685",
+    "longitude_deg": "-81.752816",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Myers",
+    "iata_code": "RSW"
+  },
+  {
+    "ident": "KRUT",
+    "name": "Rutland - Southern Vermont Regional Airport",
+    "latitude_deg": "43.5294",
+    "longitude_deg": "-72.9496",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Rutland",
+    "iata_code": "RUT"
+  },
+  {
+    "ident": "KSAF",
+    "name": "Santa Fe Municipal Airport",
+    "latitude_deg": "35.6171",
+    "longitude_deg": "-106.088997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Santa Fe",
+    "iata_code": "SAF"
+  },
+  {
+    "ident": "KSAN",
+    "name": "San Diego International Airport",
+    "latitude_deg": "32.733601",
+    "longitude_deg": "-117.190002",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Diego",
+    "iata_code": "SAN"
+  },
+  {
+    "ident": "KSAT",
+    "name": "San Antonio International Airport",
+    "latitude_deg": "29.533701",
+    "longitude_deg": "-98.469803",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Antonio",
+    "iata_code": "SAT"
+  },
+  {
+    "ident": "KSAV",
+    "name": "Savannah Hilton Head International Airport",
+    "latitude_deg": "32.126591",
+    "longitude_deg": "-81.19998",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Savannah",
+    "iata_code": "SAV"
+  },
+  {
+    "ident": "KSAW",
+    "name": "Marquette Sawyer Regional Airport",
+    "latitude_deg": "46.351498",
+    "longitude_deg": "-87.395884",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gwinn",
+    "iata_code": "MQT"
+  },
+  {
+    "ident": "KSBA",
+    "name": "Santa Barbara Municipal Airport",
+    "latitude_deg": "34.426201",
+    "longitude_deg": "-119.839996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Santa Barbara",
+    "iata_code": "SBA"
+  },
+  {
+    "ident": "KSBD",
+    "name": "San Bernardino International Airport",
+    "latitude_deg": "34.096717",
+    "longitude_deg": "-117.236596",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Bernardino",
+    "iata_code": "SBD"
+  },
+  {
+    "ident": "KSBN",
+    "name": "South Bend International Airport",
+    "latitude_deg": "41.708304",
+    "longitude_deg": "-86.316922",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "South Bend",
+    "iata_code": "SBN"
+  },
+  {
+    "ident": "KSBP",
+    "name": "San Luis County Regional Airport",
+    "latitude_deg": "35.236801147499996",
+    "longitude_deg": "-120.641998291",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Luis Obispo",
+    "iata_code": "SBP"
+  },
+  {
+    "ident": "KSBY",
+    "name": "Salisbury Ocean City Wicomico Regional Airport",
+    "latitude_deg": "38.34049987792969",
+    "longitude_deg": "-75.51029968261719",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Salisbury",
+    "iata_code": "SBY"
+  },
+  {
+    "ident": "KSCK",
+    "name": "Stockton Metropolitan Airport",
+    "latitude_deg": "37.893279",
+    "longitude_deg": "-121.238079",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Stockton",
+    "iata_code": "SCK"
+  },
+  {
+    "ident": "KSDF",
+    "name": "Louisville Muhammad Ali International Airport",
+    "latitude_deg": "38.1706",
+    "longitude_deg": "-85.735076",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Louisville",
+    "iata_code": "SDF"
+  },
+  {
+    "ident": "KSDY",
+    "name": "Sidney - Richland Regional Airport",
+    "latitude_deg": "47.705141",
+    "longitude_deg": "-104.194422",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sidney",
+    "iata_code": "SDY"
+  },
+  {
+    "ident": "KSEA",
+    "name": "Seattle–Tacoma International Airport",
+    "latitude_deg": "47.447943",
+    "longitude_deg": "-122.310276",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Seattle",
+    "iata_code": "SEA"
+  },
+  {
+    "ident": "KSFB",
+    "name": "Orlando Sanford International Airport",
+    "latitude_deg": "28.774277",
+    "longitude_deg": "-81.234626",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Orlando",
+    "iata_code": "SFB"
+  },
+  {
+    "ident": "KSFO",
+    "name": "San Francisco International Airport",
+    "latitude_deg": "37.619806",
+    "longitude_deg": "-122.374821",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Francisco",
+    "iata_code": "SFO"
+  },
+  {
+    "ident": "KSGF",
+    "name": "Springfield Branson National Airport",
+    "latitude_deg": "37.245047",
+    "longitude_deg": "-93.388596",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Springfield",
+    "iata_code": "SGF"
+  },
+  {
+    "ident": "KSGJ",
+    "name": "Northeast Florida Regional Airport",
+    "latitude_deg": "29.9592",
+    "longitude_deg": "-81.339798",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "St Augustine",
+    "iata_code": "UST"
+  },
+  {
+    "ident": "KSGU",
+    "name": "St George Regional Airport",
+    "latitude_deg": "37.036389",
+    "longitude_deg": "-113.510306",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "St George",
+    "iata_code": "SGU"
+  },
+  {
+    "ident": "KSHD",
+    "name": "Shenandoah Valley Regional Airport",
+    "latitude_deg": "38.263802",
+    "longitude_deg": "-78.8964",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Weyers Cave",
+    "iata_code": "SHD"
+  },
+  {
+    "ident": "KSHR",
+    "name": "Sheridan County Airport",
+    "latitude_deg": "44.76919937133789",
+    "longitude_deg": "-106.9800033569336",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sheridan",
+    "iata_code": "SHR"
+  },
+  {
+    "ident": "KSHV",
+    "name": "Shreveport Regional Airport",
+    "latitude_deg": "32.444747",
+    "longitude_deg": "-93.826741",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Shreveport",
+    "iata_code": "SHV"
+  },
+  {
+    "ident": "KSJC",
+    "name": "Mineta San Jose International Airport",
+    "latitude_deg": "37.362452",
+    "longitude_deg": "-121.929188",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Jose",
+    "iata_code": "SJC"
+  },
+  {
+    "ident": "KSJT",
+    "name": "San Angelo Regional Mathis Field",
+    "latitude_deg": "31.35770034790039",
+    "longitude_deg": "-100.49600219726562",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Angelo",
+    "iata_code": "SJT"
+  },
+  {
+    "ident": "KSKX",
+    "name": "Taos Regional Airport",
+    "latitude_deg": "36.452494",
+    "longitude_deg": "-105.67749",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Taos",
+    "iata_code": "TSM"
+  },
+  {
+    "ident": "KSLC",
+    "name": "Salt Lake City International Airport",
+    "latitude_deg": "40.78886",
+    "longitude_deg": "-111.979866",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Salt Lake City",
+    "iata_code": "SLC"
+  },
+  {
+    "ident": "KSLE",
+    "name": "Salem-Willamette Valley Airport/McNary Field",
+    "latitude_deg": "44.9095",
+    "longitude_deg": "-123.002998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Salem",
+    "iata_code": "SLE"
+  },
+  {
+    "ident": "KSLK",
+    "name": "Adirondack Regional Airport",
+    "latitude_deg": "44.38691",
+    "longitude_deg": "-74.204629",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Saranac Lake",
+    "iata_code": "SLK"
+  },
+  {
+    "ident": "KSLN",
+    "name": "Salina Municipal Airport",
+    "latitude_deg": "38.79100036621094",
+    "longitude_deg": "-97.6521987915039",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Salina",
+    "iata_code": "SLN"
+  },
+  {
+    "ident": "KSMF",
+    "name": "Sacramento International Airport",
+    "latitude_deg": "38.6954",
+    "longitude_deg": "-121.591003",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sacramento",
+    "iata_code": "SMF"
+  },
+  {
+    "ident": "KSMN",
+    "name": "Lemhi County Airport",
+    "latitude_deg": "45.122233",
+    "longitude_deg": "-113.88196",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Salmon",
+    "iata_code": "SMN"
+  },
+  {
+    "ident": "KSMX",
+    "name": "Santa Maria Public Airport Captain G Allan Hancock Field",
+    "latitude_deg": "34.898899",
+    "longitude_deg": "-120.457001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Santa Maria",
+    "iata_code": "SMX"
+  },
+  {
+    "ident": "KSNA",
+    "name": "John Wayne Orange County International Airport",
+    "latitude_deg": "33.675063",
+    "longitude_deg": "-117.869281",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Santa Ana",
+    "iata_code": "SNA"
+  },
+  {
+    "ident": "KSOW",
+    "name": "Show Low Regional Airport",
+    "latitude_deg": "34.264062",
+    "longitude_deg": "-110.007091",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Show Low",
+    "iata_code": "SOW"
+  },
+  {
+    "ident": "KSPI",
+    "name": "Abraham Lincoln Capital Airport",
+    "latitude_deg": "39.844101",
+    "longitude_deg": "-89.677902",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Springfield",
+    "iata_code": "SPI"
+  },
+  {
+    "ident": "KSPS",
+    "name": "Wichita Falls Municipal Airport / Sheppard Air Force Base",
+    "latitude_deg": "33.9888",
+    "longitude_deg": "-98.491898",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wichita Falls",
+    "iata_code": "SPS"
+  },
+  {
+    "ident": "KSQL",
+    "name": "San Carlos Airport",
+    "latitude_deg": "37.51313",
+    "longitude_deg": "-122.250838",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "San Carlos",
+    "iata_code": "SQL"
+  },
+  {
+    "ident": "KSRQ",
+    "name": "Sarasota Bradenton International Airport",
+    "latitude_deg": "27.394631",
+    "longitude_deg": "-82.554359",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sarasota/Bradenton",
+    "iata_code": "SRQ"
+  },
+  {
+    "ident": "KSTC",
+    "name": "Saint Cloud Regional Airport",
+    "latitude_deg": "45.5466",
+    "longitude_deg": "-94.059898",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Saint Cloud",
+    "iata_code": "STC"
+  },
+  {
+    "ident": "KSTL",
+    "name": "St. Louis Lambert International Airport",
+    "latitude_deg": "38.748697",
+    "longitude_deg": "-90.370003",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "St Louis",
+    "iata_code": "STL"
+  },
+  {
+    "ident": "KSTS",
+    "name": "Charles M. Schulz Sonoma County Airport",
+    "latitude_deg": "38.50899887",
+    "longitude_deg": "-122.8130035",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Santa Rosa",
+    "iata_code": "STS"
+  },
+  {
+    "ident": "KSUN",
+    "name": "Friedman Memorial Airport",
+    "latitude_deg": "43.50439835",
+    "longitude_deg": "-114.2959976",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hailey",
+    "iata_code": "SUN"
+  },
+  {
+    "ident": "KSUX",
+    "name": "Sioux Gateway Airport / Brigadier General Bud Day Field",
+    "latitude_deg": "42.397605",
+    "longitude_deg": "-96.382237",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sioux City",
+    "iata_code": "SUX"
+  },
+  {
+    "ident": "KSVC",
+    "name": "Grant County Airport",
+    "latitude_deg": "32.636701",
+    "longitude_deg": "-108.154736",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Silver City",
+    "iata_code": "SVC"
+  },
+  {
+    "ident": "KSWF",
+    "name": "New York Stewart International Airport",
+    "latitude_deg": "41.50421",
+    "longitude_deg": "-74.108901",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Newburgh",
+    "iata_code": "SWF"
+  },
+  {
+    "ident": "KSWO",
+    "name": "Stillwater Regional Airport",
+    "latitude_deg": "36.162132",
+    "longitude_deg": "-97.085581",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Stillwater",
+    "iata_code": "SWO"
+  },
+  {
+    "ident": "KSYR",
+    "name": "Syracuse Hancock International Airport",
+    "latitude_deg": "43.11119842529297",
+    "longitude_deg": "-76.1063003540039",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Syracuse",
+    "iata_code": "SYR"
+  },
+  {
+    "ident": "KTBN",
+    "name": "Waynesville-St. Robert Regional Airport-Forney Field",
+    "latitude_deg": "37.7416",
+    "longitude_deg": "-92.140701",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Leonard Wood",
+    "iata_code": "TBN"
+  },
+  {
+    "ident": "KTEB",
+    "name": "Teterboro Airport",
+    "latitude_deg": "40.850101",
+    "longitude_deg": "-74.060799",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Teterboro",
+    "iata_code": "TEB"
+  },
+  {
+    "ident": "KTEX",
+    "name": "Telluride Regional Airport",
+    "latitude_deg": "37.9538",
+    "longitude_deg": "-107.907997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Telluride",
+    "iata_code": "TEX"
+  },
+  {
+    "ident": "KTIW",
+    "name": "Tacoma Narrows Airport",
+    "latitude_deg": "47.267407",
+    "longitude_deg": "-122.577295",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tacoma",
+    "iata_code": "TIW"
+  },
+  {
+    "ident": "KTLH",
+    "name": "Tallahassee International Airport",
+    "latitude_deg": "30.401209",
+    "longitude_deg": "-84.35433",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tallahassee",
+    "iata_code": "TLH"
+  },
+  {
+    "ident": "KTOL",
+    "name": "Eugene F. Kranz Toledo Express Airport",
+    "latitude_deg": "41.5868",
+    "longitude_deg": "-83.8078",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Toledo",
+    "iata_code": "TOL"
+  },
+  {
+    "ident": "KTPA",
+    "name": "Tampa International Airport",
+    "latitude_deg": "27.9755",
+    "longitude_deg": "-82.533203",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tampa",
+    "iata_code": "TPA"
+  },
+  {
+    "ident": "KTRI",
+    "name": "Tri-Cities Regional TN/VA Airport",
+    "latitude_deg": "36.475201",
+    "longitude_deg": "-82.407401",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Blountville",
+    "iata_code": "TRI"
+  },
+  {
+    "ident": "KTRK",
+    "name": "Truckee Tahoe Airport",
+    "latitude_deg": "39.318628",
+    "longitude_deg": "-120.140562",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Truckee",
+    "iata_code": "TKF"
+  },
+  {
+    "ident": "KTTN",
+    "name": "Trenton Mercer Airport",
+    "latitude_deg": "40.276699",
+    "longitude_deg": "-74.813499",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ewing Township",
+    "iata_code": "TTN"
+  },
+  {
+    "ident": "KTUL",
+    "name": "Tulsa International Airport",
+    "latitude_deg": "36.197084",
+    "longitude_deg": "-95.886225",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tulsa",
+    "iata_code": "TUL"
+  },
+  {
+    "ident": "KTUP",
+    "name": "Tupelo Regional Airport",
+    "latitude_deg": "34.26810073852539",
+    "longitude_deg": "-88.7698974609375",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tupelo",
+    "iata_code": "TUP"
+  },
+  {
+    "ident": "KTUS",
+    "name": "Tucson International Airport",
+    "latitude_deg": "32.115004",
+    "longitude_deg": "-110.938053",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tucson",
+    "iata_code": "TUS"
+  },
+  {
+    "ident": "KTVC",
+    "name": "Cherry Capital Airport",
+    "latitude_deg": "44.741402",
+    "longitude_deg": "-85.582199",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Traverse City",
+    "iata_code": "TVC"
+  },
+  {
+    "ident": "KTVF",
+    "name": "Thief River Falls Regional Airport",
+    "latitude_deg": "48.065701",
+    "longitude_deg": "-96.184998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Thief River Falls",
+    "iata_code": "TVF"
+  },
+  {
+    "ident": "KTWF",
+    "name": "Joslin Field Magic Valley Regional Airport",
+    "latitude_deg": "42.4818",
+    "longitude_deg": "-114.487999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Twin Falls",
+    "iata_code": "TWF"
+  },
+  {
+    "ident": "KTXK",
+    "name": "Texarkana Regional Airport (Webb Field)",
+    "latitude_deg": "33.453701",
+    "longitude_deg": "-93.990997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Texarkana",
+    "iata_code": "TXK"
+  },
+  {
+    "ident": "KTYR",
+    "name": "Tyler Pounds Regional Airport",
+    "latitude_deg": "32.35409927368164",
+    "longitude_deg": "-95.40239715576172",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Tyler",
+    "iata_code": "TYR"
+  },
+  {
+    "ident": "KTYS",
+    "name": "McGhee Tyson Airport",
+    "latitude_deg": "35.811001",
+    "longitude_deg": "-83.994003",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Knoxville/Maryville",
+    "iata_code": "TYS"
+  },
+  {
+    "ident": "KUIN",
+    "name": "Quincy Regional Airport Baldwin Field",
+    "latitude_deg": "39.942699",
+    "longitude_deg": "-91.194603",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Quincy",
+    "iata_code": "UIN"
+  },
+  {
+    "ident": "KUNV",
+    "name": "State College Regional Airport",
+    "latitude_deg": "40.849374",
+    "longitude_deg": "-77.84852",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "State College",
+    "iata_code": "SCE"
+  },
+  {
+    "ident": "KUUU",
+    "name": "Newport State Airport",
+    "latitude_deg": "41.532207",
+    "longitude_deg": "-71.281039",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Newport",
+    "iata_code": "NPT"
+  },
+  {
+    "ident": "KVCT",
+    "name": "Victoria Regional Airport",
+    "latitude_deg": "28.85260009765625",
+    "longitude_deg": "-96.91850280761719",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Victoria",
+    "iata_code": "VCT"
+  },
+  {
+    "ident": "KVEL",
+    "name": "Vernal Regional Airport",
+    "latitude_deg": "40.436214",
+    "longitude_deg": "-109.511661",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Vernal",
+    "iata_code": "VEL"
+  },
+  {
+    "ident": "KVLD",
+    "name": "Valdosta Regional Airport",
+    "latitude_deg": "30.782499313354492",
+    "longitude_deg": "-83.27670288085938",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Valdosta",
+    "iata_code": "VLD"
+  },
+  {
+    "ident": "KVPS",
+    "name": "Destin-Fort Walton Beach Airport",
+    "latitude_deg": "30.481315",
+    "longitude_deg": "-86.515839",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Valparaiso",
+    "iata_code": "VPS"
+  },
+  {
+    "ident": "KVRB",
+    "name": "Vero Beach Regional Airport",
+    "latitude_deg": "27.6556",
+    "longitude_deg": "-80.417901",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Vero Beach",
+    "iata_code": "VRB"
+  },
+  {
+    "ident": "KWST",
+    "name": "Westerly State Airport",
+    "latitude_deg": "41.349602",
+    "longitude_deg": "-71.803398",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Westerly",
+    "iata_code": "WST"
+  },
+  {
+    "ident": "KWYS",
+    "name": "Yellowstone Airport",
+    "latitude_deg": "44.6884",
+    "longitude_deg": "-111.117996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "West Yellowstone",
+    "iata_code": "WYS"
+  },
+  {
+    "ident": "KXNA",
+    "name": "Northwest Arkansas National Airport",
+    "latitude_deg": "36.281898",
+    "longitude_deg": "-94.306801",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fayetteville/Springdale/Rogers",
+    "iata_code": "XNA"
+  },
+  {
+    "ident": "KXWA",
+    "name": "Williston Basin International Airport",
+    "latitude_deg": "48.260863",
+    "longitude_deg": "-103.75116",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Williston",
+    "iata_code": "XWA"
+  },
+  {
+    "ident": "KYKM",
+    "name": "Yakima Air Terminal McAllister Field",
+    "latitude_deg": "46.56819916",
+    "longitude_deg": "-120.5439987",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Yakima",
+    "iata_code": "YKM"
+  },
+  {
+    "ident": "PABA",
+    "name": "Barter Island Long Range Radar Station Airport",
+    "latitude_deg": "70.134003",
+    "longitude_deg": "-143.582001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Barter Island",
+    "iata_code": "BTI"
+  },
+  {
+    "ident": "PABE",
+    "name": "Bethel Airport",
+    "latitude_deg": "60.77980042",
+    "longitude_deg": "-161.8379974",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Bethel",
+    "iata_code": "BET"
+  },
+  {
+    "ident": "PABR",
+    "name": "Wiley Post Will Rogers Memorial Airport",
+    "latitude_deg": "71.285402",
+    "longitude_deg": "-156.766008",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Utqiaġvik",
+    "iata_code": "BRW"
+  },
+  {
+    "ident": "PACD",
+    "name": "Cold Bay Airport",
+    "latitude_deg": "55.207871",
+    "longitude_deg": "-162.725029",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cold Bay",
+    "iata_code": "CDB"
+  },
+  {
+    "ident": "PACV",
+    "name": "Merle K (Mudhole) Smith Airport",
+    "latitude_deg": "60.491798",
+    "longitude_deg": "-145.477997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cordova",
+    "iata_code": "CDV"
+  },
+  {
+    "ident": "PADE",
+    "name": "Deering Airport",
+    "latitude_deg": "66.068901",
+    "longitude_deg": "-162.766914",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Deering",
+    "iata_code": "DRG"
+  },
+  {
+    "ident": "PADK",
+    "name": "Adak Airport",
+    "latitude_deg": "51.883564",
+    "longitude_deg": "-176.642783",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Adak",
+    "iata_code": "ADK"
+  },
+  {
+    "ident": "PADL",
+    "name": "Dillingham Airport",
+    "latitude_deg": "59.04470062",
+    "longitude_deg": "-158.5050049",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Dillingham",
+    "iata_code": "DLG"
+  },
+  {
+    "ident": "PADQ",
+    "name": "Kodiak Airport",
+    "latitude_deg": "57.75",
+    "longitude_deg": "-152.4940033",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kodiak",
+    "iata_code": "ADQ"
+  },
+  {
+    "ident": "PADU",
+    "name": "Tom Madsen (Dutch Harbor) Airport",
+    "latitude_deg": "53.89881",
+    "longitude_deg": "-166.544996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Unalaska",
+    "iata_code": "DUT"
+  },
+  {
+    "ident": "PAEM",
+    "name": "Emmonak Airport",
+    "latitude_deg": "62.78609848",
+    "longitude_deg": "-164.4909973",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Emmonak",
+    "iata_code": "EMK"
+  },
+  {
+    "ident": "PAEN",
+    "name": "Kenai Municipal Airport",
+    "latitude_deg": "60.570946",
+    "longitude_deg": "-151.245174",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kenai",
+    "iata_code": "ENA"
+  },
+  {
+    "ident": "PAFA",
+    "name": "Fairbanks International Airport",
+    "latitude_deg": "64.815102",
+    "longitude_deg": "-147.856003",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fairbanks",
+    "iata_code": "FAI"
+  },
+  {
+    "ident": "PAFM",
+    "name": "Ambler Airport",
+    "latitude_deg": "67.105529",
+    "longitude_deg": "-157.855339",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ambler",
+    "iata_code": "ABL"
+  },
+  {
+    "ident": "PAGA",
+    "name": "Edward G. Pitka Sr Airport",
+    "latitude_deg": "64.736198",
+    "longitude_deg": "-156.936997",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Galena",
+    "iata_code": "GAL"
+  },
+  {
+    "ident": "PAGK",
+    "name": "Gulkana Airport",
+    "latitude_deg": "62.155859",
+    "longitude_deg": "-145.454662",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gulkana",
+    "iata_code": "GKN"
+  },
+  {
+    "ident": "PAGM",
+    "name": "Gambell Airport",
+    "latitude_deg": "63.767694",
+    "longitude_deg": "-171.733303",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gambell",
+    "iata_code": "GAM"
+  },
+  {
+    "ident": "PAGS",
+    "name": "Gustavus Airport",
+    "latitude_deg": "58.4253006",
+    "longitude_deg": "-135.7070007",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Gustavus",
+    "iata_code": "GST"
+  },
+  {
+    "ident": "PAHC",
+    "name": "Holy Cross Airport",
+    "latitude_deg": "62.18830108642578",
+    "longitude_deg": "-159.77499389648438",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Holy Cross",
+    "iata_code": "HCR"
+  },
+  {
+    "ident": "PAHL",
+    "name": "Huslia Airport",
+    "latitude_deg": "65.697899",
+    "longitude_deg": "-156.350998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Huslia",
+    "iata_code": "HSL"
+  },
+  {
+    "ident": "PAHN",
+    "name": "Haines Airport",
+    "latitude_deg": "59.243921",
+    "longitude_deg": "-135.523925",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Haines",
+    "iata_code": "HNS"
+  },
+  {
+    "ident": "PAHO",
+    "name": "Homer Airport",
+    "latitude_deg": "59.644456",
+    "longitude_deg": "-151.479235",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Homer",
+    "iata_code": "HOM"
+  },
+  {
+    "ident": "PAII",
+    "name": "Egegik Airport",
+    "latitude_deg": "58.184386",
+    "longitude_deg": "-157.374873",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Egegik",
+    "iata_code": "EGX"
+  },
+  {
+    "ident": "PAIK",
+    "name": "Bob Baker Memorial Airport",
+    "latitude_deg": "66.976128",
+    "longitude_deg": "-160.439014",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kiana",
+    "iata_code": "IAN"
+  },
+  {
+    "ident": "PAIL",
+    "name": "Iliamna Airport",
+    "latitude_deg": "59.754398",
+    "longitude_deg": "-154.910996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Iliamna",
+    "iata_code": "ILI"
+  },
+  {
+    "ident": "PAIM",
+    "name": "Indian Mountain LRRS Airport",
+    "latitude_deg": "65.992798",
+    "longitude_deg": "-153.703995",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Utopia Creek",
+    "iata_code": "UTO"
+  },
+  {
+    "ident": "PAJN",
+    "name": "Juneau International Airport",
+    "latitude_deg": "58.354935",
+    "longitude_deg": "-134.574416",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Juneau",
+    "iata_code": "JNU"
+  },
+  {
+    "ident": "PAKN",
+    "name": "King Salmon Airport",
+    "latitude_deg": "58.677845",
+    "longitude_deg": "-156.651965",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "King Salmon",
+    "iata_code": "AKN"
+  },
+  {
+    "ident": "PAKP",
+    "name": "Anaktuvuk Pass Airport",
+    "latitude_deg": "68.133598",
+    "longitude_deg": "-151.742996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Anaktuvuk Pass",
+    "iata_code": "AKP"
+  },
+  {
+    "ident": "PAKT",
+    "name": "Ketchikan International Airport",
+    "latitude_deg": "55.35559845",
+    "longitude_deg": "-131.7140045",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ketchikan",
+    "iata_code": "KTN"
+  },
+  {
+    "ident": "PAKW",
+    "name": "Klawock Airport",
+    "latitude_deg": "55.579201",
+    "longitude_deg": "-133.076004",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Klawock",
+    "iata_code": "KLW"
+  },
+  {
+    "ident": "PALU",
+    "name": "Cape Lisburne LRRS Airport",
+    "latitude_deg": "68.875099",
+    "longitude_deg": "-166.110001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Cape Lisburne",
+    "iata_code": "LUR"
+  },
+  {
+    "ident": "PAMC",
+    "name": "McGrath Airport",
+    "latitude_deg": "62.95289993",
+    "longitude_deg": "-155.6060028",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "McGrath",
+    "iata_code": "MCG"
+  },
+  {
+    "ident": "PAMR",
+    "name": "Merrill Field",
+    "latitude_deg": "61.212792",
+    "longitude_deg": "-149.843988",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Anchorage",
+    "iata_code": "MRI"
+  },
+  {
+    "ident": "PAMY",
+    "name": "Mekoryuk Airport",
+    "latitude_deg": "60.372338",
+    "longitude_deg": "-166.269751",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Mekoryuk",
+    "iata_code": "MYU"
+  },
+  {
+    "ident": "PANC",
+    "name": "Ted Stevens Anchorage International Airport",
+    "latitude_deg": "61.179004",
+    "longitude_deg": "-149.992561",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Anchorage",
+    "iata_code": "ANC"
+  },
+  {
+    "ident": "PANI",
+    "name": "Aniak Airport",
+    "latitude_deg": "61.581600189208984",
+    "longitude_deg": "-159.54299926757812",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Aniak",
+    "iata_code": "ANI"
+  },
+  {
+    "ident": "PANV",
+    "name": "Anvik Airport",
+    "latitude_deg": "62.646702",
+    "longitude_deg": "-160.190994",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Anvik",
+    "iata_code": "ANV"
+  },
+  {
+    "ident": "PAOM",
+    "name": "Nome Airport",
+    "latitude_deg": "64.51219940185547",
+    "longitude_deg": "-165.44500732421875",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Nome",
+    "iata_code": "OME"
+  },
+  {
+    "ident": "PAOR",
+    "name": "Northway Airport",
+    "latitude_deg": "62.9613",
+    "longitude_deg": "-141.929001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Northway",
+    "iata_code": "ORT"
+  },
+  {
+    "ident": "PAOT",
+    "name": "Ralph Wien Memorial Airport",
+    "latitude_deg": "66.88469696",
+    "longitude_deg": "-162.598999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kotzebue",
+    "iata_code": "OTZ"
+  },
+  {
+    "ident": "PAPB",
+    "name": "St George Airport",
+    "latitude_deg": "56.577345",
+    "longitude_deg": "-169.663823",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "St George",
+    "iata_code": "STG"
+  },
+  {
+    "ident": "PAPG",
+    "name": "Petersburg James A Johnson Airport",
+    "latitude_deg": "56.80170059",
+    "longitude_deg": "-132.9450073",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Petersburg",
+    "iata_code": "PSG"
+  },
+  {
+    "ident": "PAPH",
+    "name": "Port Heiden Airport",
+    "latitude_deg": "56.957893",
+    "longitude_deg": "-158.630219",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Port Heiden",
+    "iata_code": "PTH"
+  },
+  {
+    "ident": "PAPM",
+    "name": "Platinum Airport",
+    "latitude_deg": "59.017675",
+    "longitude_deg": "-161.827927",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Platinum",
+    "iata_code": "PTU"
+  },
+  {
+    "ident": "PAQT",
+    "name": "Nuiqsut Airport",
+    "latitude_deg": "70.209999",
+    "longitude_deg": "-151.005998",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Nuiqsut",
+    "iata_code": "NUI"
+  },
+  {
+    "ident": "PARC",
+    "name": "Arctic Village Airport",
+    "latitude_deg": "68.1147",
+    "longitude_deg": "-145.578995",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Arctic Village",
+    "iata_code": "ARC"
+  },
+  {
+    "ident": "PARY",
+    "name": "Ruby Airport",
+    "latitude_deg": "64.727203",
+    "longitude_deg": "-155.470001",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Ruby",
+    "iata_code": "RBY"
+  },
+  {
+    "ident": "PASA",
+    "name": "Savoonga Airport",
+    "latitude_deg": "63.686401",
+    "longitude_deg": "-170.492996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Savoonga",
+    "iata_code": "SVA"
+  },
+  {
+    "ident": "PASC",
+    "name": "Deadhorse Airport",
+    "latitude_deg": "70.19470215",
+    "longitude_deg": "-148.4649963",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Deadhorse",
+    "iata_code": "SCC"
+  },
+  {
+    "ident": "PASD",
+    "name": "Sand Point Airport",
+    "latitude_deg": "55.313908",
+    "longitude_deg": "-160.522099",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sand Point",
+    "iata_code": "SDP"
+  },
+  {
+    "ident": "PASI",
+    "name": "Sitka Rocky Gutierrez Airport",
+    "latitude_deg": "57.04710006713867",
+    "longitude_deg": "-135.36199951171875",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Sitka",
+    "iata_code": "SIT"
+  },
+  {
+    "ident": "PASN",
+    "name": "St Paul Island Airport",
+    "latitude_deg": "57.166311",
+    "longitude_deg": "-170.222555",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "St Paul Island",
+    "iata_code": "SNP"
+  },
+  {
+    "ident": "PATQ",
+    "name": "Atqasuk Edward Burnell Sr Memorial Airport",
+    "latitude_deg": "70.46704",
+    "longitude_deg": "-157.436013",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Atqasuk",
+    "iata_code": "ATK"
+  },
+  {
+    "ident": "PAUN",
+    "name": "Unalakleet Airport",
+    "latitude_deg": "63.888401",
+    "longitude_deg": "-160.798996",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Unalakleet",
+    "iata_code": "UNK"
+  },
+  {
+    "ident": "PAVD",
+    "name": "Valdez Pioneer Field",
+    "latitude_deg": "61.132712",
+    "longitude_deg": "-146.246567",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Valdez",
+    "iata_code": "VDZ"
+  },
+  {
+    "ident": "PAWG",
+    "name": "Wrangell Airport",
+    "latitude_deg": "56.48429871",
+    "longitude_deg": "-132.3699951",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wrangell",
+    "iata_code": "WRG"
+  },
+  {
+    "ident": "PAWI",
+    "name": "Wainwright Airport",
+    "latitude_deg": "70.638",
+    "longitude_deg": "-159.994995",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Wainwright",
+    "iata_code": "AIN"
+  },
+  {
+    "ident": "PAYA",
+    "name": "Yakutat Airport",
+    "latitude_deg": "59.508717",
+    "longitude_deg": "-139.660435",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Yakutat",
+    "iata_code": "YAK"
+  },
+  {
+    "ident": "PFYU",
+    "name": "Fort Yukon Airport",
+    "latitude_deg": "66.571651",
+    "longitude_deg": "-145.249987",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Fort Yukon",
+    "iata_code": "FYU"
+  },
+  {
+    "ident": "PHHN",
+    "name": "Hana Airport",
+    "latitude_deg": "20.795601",
+    "longitude_deg": "-156.014008",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hana",
+    "iata_code": "HNM"
+  },
+  {
+    "ident": "PHJH",
+    "name": "Kapalua Airport",
+    "latitude_deg": "20.9629",
+    "longitude_deg": "-156.673004",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lahaina",
+    "iata_code": "JHM"
+  },
+  {
+    "ident": "PHKO",
+    "name": "Ellison Onizuka Kona International Airport at Keāhole",
+    "latitude_deg": "19.738783",
+    "longitude_deg": "-156.045603",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kailua-Kona",
+    "iata_code": "KOA"
+  },
+  {
+    "ident": "PHLI",
+    "name": "Lihue Airport",
+    "latitude_deg": "21.974393",
+    "longitude_deg": "-159.337146",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lihue, Kauai",
+    "iata_code": "LIH"
+  },
+  {
+    "ident": "PHMK",
+    "name": "Molokai Airport",
+    "latitude_deg": "21.152901",
+    "longitude_deg": "-157.095993",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kaunakakai",
+    "iata_code": "MKK"
+  },
+  {
+    "ident": "PHMU",
+    "name": "Waimea Kohala Airport",
+    "latitude_deg": "20.001301",
+    "longitude_deg": "-155.667999",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Waimea (Kamuela)",
+    "iata_code": "MUE"
+  },
+  {
+    "ident": "PHNL",
+    "name": "Daniel K. Inouye International Airport",
+    "latitude_deg": "21.318387",
+    "longitude_deg": "-157.92567",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Honolulu, Oahu",
+    "iata_code": "HNL"
+  },
+  {
+    "ident": "PHNY",
+    "name": "Lanai Airport",
+    "latitude_deg": "20.785675",
+    "longitude_deg": "-156.951324",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Lanai City",
+    "iata_code": "LNY"
+  },
+  {
+    "ident": "PHOG",
+    "name": "Kahului International Airport",
+    "latitude_deg": "20.896263",
+    "longitude_deg": "-156.431837",
+    "type": "large_airport",
+    "scheduled_service": "yes",
+    "municipality": "Kahului",
+    "iata_code": "OGG"
+  },
+  {
+    "ident": "PHTO",
+    "name": "Hilo International Airport",
+    "latitude_deg": "19.72135",
+    "longitude_deg": "-155.045428",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Hilo",
+    "iata_code": "ITO"
+  },
+  {
+    "ident": "PPIZ",
+    "name": "Point Lay LRRS Airport",
+    "latitude_deg": "69.732903",
+    "longitude_deg": "-163.005005",
+    "type": "medium_airport",
+    "scheduled_service": "yes",
+    "municipality": "Point Lay",
+    "iata_code": "PIZ"
+  }
+]
