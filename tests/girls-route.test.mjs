@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+const root=resolve(import.meta.dirname,'..');
+const html=readFileSync(resolve(root,'fomo/girls/index.html'),'utf8');
+const config=JSON.parse(readFileSync(resolve(root,'vercel.json'),'utf8'));
+test('both public girls URLs resolve to the portal',()=>{for(const url of ['/girls','/girls/'])assert.equal(config.rewrites.find(r=>r.source===url)?.destination,'/fomo/girls/index.html');});
+test('assets load at the extensionless public route and exist in the release',()=>{for(const match of html.matchAll(/(?:src|href)="([^"]+)"/g)){const path=match[1];if(path.startsWith('https:')||path==='/girls')continue;assert.ok(path.startsWith('/'),path);assert.ok(existsSync(resolve(root,'.'+path.split('?')[0])),path);}});
+test('canonical and shared links use /girls',()=>{assert.match(html,/rel="canonical" href="https:\/\/milomessina.com\/girls"/);const script=readFileSync(resolve(root,'fomo/girls/girls.js'),'utf8');assert.match(script,/new URL\('\/girls',location.origin\)/);});

@@ -155,6 +155,9 @@ function internalPost(body) {
        Everything else in it is money and is operator-only. */
     if (body._api === 'refer') return referApi(body);
 
+    // Public, write-only FOMO Girls mission signup.
+    if (body._api === 'girls') return girlsApi(body);
+
     /* The hours each of them is already spoken for in a normal week,
        so /internal can work out when they could all be in the office at
        once. Recurring blocks, not dated events — the tab is small and
@@ -208,6 +211,8 @@ function doGet() {
     campus: typeof campusApi === 'function',
     posts: typeof postsApi === 'function',
     forms: typeof formsApi === 'function',
+    girls: typeof girlsApi === 'function',
+    girlsMissions: true,
     /* Whether this deployment can mint a referral code. /fomo/refer reads
        it before it lets somebody claim one, so a page in front of an older
        script says so instead of taking a claim it cannot register. */
@@ -4617,4 +4622,98 @@ function visitAllowAddress(key) {
 function visitText(value){
   var text=String(value==null?'':value);
   return '\u200b'+text;
+}
+
+/* ── FOMO Girls: public, write-only signup receiver ──
+   doPost holds the script lock across validation, duplicate lookup and write.
+   Keep this in the complete shared deployment so the main spreadsheet and
+   existing Script Properties remain authoritative. No public read action. */
+var GIRLS_COLS = ['received','id','name','email','instagram','city','interests','college','school','graduation year','sorority','sorority chapter','creator','platform','audience','fraternity connections','fraternity chapter','dinner interest','dinner style','segments','consent','consent version','status','source','flow','missions','referral university','dinner role','internship role','fraternity reward','reward status','dinner reward status','mission states','verified earned amount'];
+function girlsApi(body) {
+  if (body.action !== 'join') return reply(false, 'Unknown signup action.');
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(String(body.id || ''))) return reply(false, 'Please reload the page and try again.');
+  var missionFlow=body.flow==='missions-v2';
+  var receipt=missionFlow?{id:body.id,flow:'missions-v2'}:{id:body.id};
+  if(body.flow && !missionFlow)return reply(false,'Please reload the mission board.');
+  if (body._hp) return reply(true, null, receipt);
+  var missions=missionFlow?body.missions:[];
+  if(missionFlow && (!Array.isArray(missions)||!missions.length||missions.length>5||missions.some(function(id,i){return ['frat','creator','circle','dinner','internship'].indexOf(id)<0||missions.indexOf(id)!==i;})))return reply(false,'Please pin at least one available mission.');
+  var fratMission=missions.indexOf('frat')>=0;
+  var a = body.answers;
+  if (!a || typeof a !== 'object' || Array.isArray(a)) return reply(false, 'Please add your profile.');
+  var choices = {
+    college:['student','graduate','other'],
+    sorority:['member','alumna','friends','none','skip'],
+    creator:['active','starting','casual','none','skip'],
+    connections:['leader','connected','friends','none','skip'],
+    dinners:['yes','friend','maybe','no','skip']
+  };
+  var keys = Object.keys(choices);
+  for (var i=0;i<keys.length;i++) if (choices[keys[i]].indexOf(a[keys[i]])<0) return reply(false, 'Please check your mission details and home base.');
+  if (!Array.isArray(a.interests) || !a.interests.length || a.interests.length>4 || a.interests.some(function(v){return ['people','dinners','creator','campus'].indexOf(v)<0;}) || a.interests.some(function(v,i){return a.interests.indexOf(v)!==i;})) return reply(false, 'Please choose your interests.');
+  var strings=['name','email','instagram','city','school','grad_year','chapter','platform','audience','connection_chapter','dinner_style','referral_school','dinner_role','internship_role'];
+  var clean={};
+  for(var j=0;j<strings.length;j++){
+    var k=strings[j], value=a[k];
+    if(value!==undefined && typeof value!=='string')return reply(false,'Please check your contact details.');
+    value=String(value||'').trim();
+    if(value.length>(k==='email'?160:100) || /[\u0000-\u001f\u007f]/.test(value))return reply(false,'Please shorten your answer for '+k.replace(/_/g,' ')+'.');
+    clean[k]=value;
+  }
+  if(!clean.name || !clean.city || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email))return reply(false,'Please add your name, city, and a valid email.');
+  if(a.consent!==true)return reply(false,'Please agree to saving your answers and being contacted.');
+  if(a.college==='student'&&!clean.school)return reply(false,'Please add your college or university.');
+  if(a.college==='other'){clean.school='';clean.grad_year='';}
+  if(clean.grad_year&&!/^(19|20)\d{2}$/.test(clean.grad_year))return reply(false,'Please enter a four-digit graduation year.');
+  if(['member','alumna','friends'].indexOf(a.sorority)<0)clean.chapter='';
+  if(['active','starting','casual'].indexOf(a.creator)<0){clean.platform='';clean.audience='';}
+  if(!fratMission && ['leader','connected','friends'].indexOf(a.connections)<0)clean.connection_chapter='';
+  if(['yes','friend','maybe'].indexOf(a.dinners)<0)clean.dinner_style='';
+  var enums={platform:['Instagram','TikTok','YouTube','Other'],audience:['Just starting','Under 1k','1k–5k','5k–10k','10k–50k','50k+'],dinner_style:['A small, cozy group','Creators & collaborators','Girls’ night','Surprise me']};
+  for(var e in enums)if(clean[e]&&enums[e].indexOf(clean[e])<0)return reply(false,'Please choose one of the available options.');
+  if(missionFlow){
+    var keyByMission={frat:'connections',creator:'creator',circle:'sorority',dinner:'dinners'};
+    for(var mi=0;mi<missions.length;mi++){
+      var mk=keyByMission[missions[mi]];
+      if(mk && a[mk]==='skip')return reply(false,'Please add details for each pinned mission.');
+    }
+    if(fratMission&&(!clean.connection_chapter||!clean.referral_school))return reply(false,'Choose the fraternity and its university for your referral mission.');
+    if(missions.indexOf('dinner')>=0&&['content','attend','bring','host'].indexOf(clean.dinner_role)<0)return reply(false,'Choose your dinner contribution.');
+    if(missions.indexOf('dinner')>=0&&clean.dinner_role==='content'&&['yes','friend','maybe'].indexOf(a.dinners)<0)return reply(false,'Choose a dinner interest for the content mission.');
+    if(missions.indexOf('internship')>=0&&['president','growth','partnerships','content','culture'].indexOf(clean.internship_role)<0)return reply(false,'Choose the internship role you want to pursue.');
+    // Unselected paths mean not explored, never a negative qualification.
+    Object.keys(keyByMission).forEach(function(id){if(missions.indexOf(id)<0)a[keyByMission[id]]='skip';});
+    if(!fratMission){clean.connection_chapter='';clean.referral_school='';}
+    if(missions.indexOf('creator')<0){clean.platform='';clean.audience='';}
+    if(missions.indexOf('circle')<0)clean.chapter='';
+    if(missions.indexOf('dinner')<0){clean.dinner_role='';clean.dinner_style='';}
+    if(missions.indexOf('internship')<0)clean.internship_role='';
+    var interestByMission={frat:'campus',creator:'creator',circle:'people',dinner:'dinners',internship:'campus'};
+    a.interests=[];missions.forEach(function(id){var interest=interestByMission[id];if(a.interests.indexOf(interest)<0)a.interests.push(interest);});
+  }
+  var segments=[];
+  if(a.college==='student')segments.push('Campus girl');
+  if(['member','alumna'].indexOf(a.sorority)>=0)segments.push('Sisterhood');
+  if(['active','starting'].indexOf(a.creator)>=0)segments.push(a.creator==='active'?'Creator':'Future creator');
+  if(['leader','connected'].indexOf(a.connections)>=0)segments.push('Connector');
+  if(['yes','friend','maybe'].indexOf(a.dinners)>=0)segments.push('Dinner circle');
+  if(!segments.length)segments.push('Social explorer');
+  var ss=CONFIG.SHEET_ID?SpreadsheetApp.openById(CONFIG.SHEET_ID):SpreadsheetApp.getActiveSpreadsheet();
+  if(!ss)throw new Error('The signup list is not connected yet. Please try again later.');
+  var sheet=ss.getSheetByName('girls');
+  if(!sheet){sheet=ss.insertSheet('girls');}
+  if(sheet.getMaxColumns()<GIRLS_COLS.length)sheet.insertColumnsAfter(sheet.getMaxColumns(),GIRLS_COLS.length-sheet.getMaxColumns());
+  if(sheet.getLastRow()===0){sheet.getRange(1,1,1,GIRLS_COLS.length).setValues([GIRLS_COLS]).setFontWeight('bold');sheet.setFrozenRows(1);}
+  var headers=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+  if(headers.some(function(c,i){return GIRLS_COLS[i]!==c;}))throw new Error('The signup list needs a setup update. Please try again later.');
+  if(headers.length<GIRLS_COLS.length)sheet.getRange(1,headers.length+1,1,GIRLS_COLS.length-headers.length).setValues([GIRLS_COLS.slice(headers.length)]).setFontWeight('bold');
+  if(sheet.getLastRow()>1){
+    var ids=sheet.getRange(2,2,sheet.getLastRow()-1,1).getValues();
+    if(ids.some(function(row){return row[0]===body.id;}))return reply(true,null,receipt);
+  }
+  var values=[new Date(),body.id,clean.name,clean.email.toLowerCase(),clean.instagram,clean.city,a.interests.join(', '),a.college,clean.school,clean.grad_year,a.sorority,clean.chapter,a.creator,clean.platform,clean.audience,a.connections,clean.connection_chapter,a.dinners,clean.dinner_style,segments.join(', '),'yes',missionFlow?'girls-missions-v2':'girls-v1','new','/girls',missionFlow?'missions-v2':'quiz-v1',missions.join(', '),clean.referral_school,clean.dinner_role,clean.internship_role,fratMission?100:0,fratMission?'onboarding pending':'not applicable',missions.indexOf('dinner')>=0&&clean.dinner_role==='content'?'attendance and content pending':'not applicable',JSON.stringify(missions.map(function(id){return {mission:id,status:'planned'};})),0];
+  // Escape formula prefixes even for fields that start with whitespace.
+  values=values.map(function(v){return typeof v==='string'&&/^[\s]*[=+\-@]/.test(v)?"'"+v:v;});
+  sheet.appendRow(values);
+  return reply(true,null,receipt);
 }

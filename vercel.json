@@ -75,6 +75,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/girls", "destination": "/fomo/girls/index.html" },
+    { "source": "/girls/", "destination": "/fomo/girls/index.html" },
     { "source": "/campus", "destination": "/campus/index.html" },
     { "source": "/campus/", "destination": "/campus/index.html" },
     { "source": "/video", "destination": "/video/index.html" },
