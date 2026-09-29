@@ -4637,7 +4637,7 @@ function girlsApi(body) {
   if(body.flow && !missionFlow)return reply(false,'Please reload the mission board.');
   if (body._hp) return reply(true, null, receipt);
   var missions=missionFlow?body.missions:[];
-  if(missionFlow && (!Array.isArray(missions)||!missions.length||missions.length>5||missions.some(function(id,i){return ['frat','creator','circle','dinner','internship'].indexOf(id)<0||missions.indexOf(id)!==i;})))return reply(false,'Please pin at least one available mission.');
+  if(missionFlow && (!Array.isArray(missions)||!missions.length||missions.length>5||missions.some(function(id,i){return ['frat','creator','stories','circle','dinner','internship'].indexOf(id)<0||missions.indexOf(id)!==i;})))return reply(false,'Please pin at least one available mission.');
   var fratMission=missions.indexOf('frat')>=0;
   var a = body.answers;
   if (!a || typeof a !== 'object' || Array.isArray(a)) return reply(false, 'Please add your profile.');
@@ -4672,7 +4672,7 @@ function girlsApi(body) {
   var enums={platform:['Instagram','TikTok','YouTube','Other'],audience:['Just starting','Under 1k','1k–5k','5k–10k','10k–50k','50k+'],dinner_style:['A small, cozy group','Creators & collaborators','Girls’ night','Surprise me']};
   for(var e in enums)if(clean[e]&&enums[e].indexOf(clean[e])<0)return reply(false,'Please choose one of the available options.');
   if(missionFlow){
-    var keyByMission={frat:'connections',creator:'creator',circle:'sorority',dinner:'dinners'};
+    var keyByMission={frat:'connections',creator:'creator',stories:'creator',circle:'sorority',dinner:'dinners'};
     for(var mi=0;mi<missions.length;mi++){
       var mk=keyByMission[missions[mi]];
       if(mk && a[mk]==='skip')return reply(false,'Please add details for each pinned mission.');
@@ -4682,13 +4682,13 @@ function girlsApi(body) {
     if(missions.indexOf('dinner')>=0&&clean.dinner_role==='content'&&['yes','friend','maybe'].indexOf(a.dinners)<0)return reply(false,'Choose a dinner interest for the content mission.');
     if(missions.indexOf('internship')>=0&&['president','growth','partnerships','content','culture'].indexOf(clean.internship_role)<0)return reply(false,'Choose the internship role you want to pursue.');
     // Unselected paths mean not explored, never a negative qualification.
-    Object.keys(keyByMission).forEach(function(id){if(missions.indexOf(id)<0)a[keyByMission[id]]='skip';});
+    Object.keys(keyByMission).forEach(function(id){if(!missions.some(function(selected){return keyByMission[selected]===keyByMission[id];}))a[keyByMission[id]]='skip';});
     if(!fratMission){clean.connection_chapter='';clean.referral_school='';}
-    if(missions.indexOf('creator')<0){clean.platform='';clean.audience='';}
+    if(missions.indexOf('creator')<0&&missions.indexOf('stories')<0){clean.platform='';clean.audience='';}
     if(missions.indexOf('circle')<0)clean.chapter='';
     if(missions.indexOf('dinner')<0){clean.dinner_role='';clean.dinner_style='';}
     if(missions.indexOf('internship')<0)clean.internship_role='';
-    var interestByMission={frat:'campus',creator:'creator',circle:'people',dinner:'dinners',internship:'campus'};
+    var interestByMission={frat:'campus',creator:'creator',stories:'creator',circle:'people',dinner:'dinners',internship:'campus'};
     a.interests=[];missions.forEach(function(id){var interest=interestByMission[id];if(a.interests.indexOf(interest)<0)a.interests.push(interest);});
   }
   var segments=[];

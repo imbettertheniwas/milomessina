@@ -1,29 +1,30 @@
 # FOMO Girls — mission board
 
 Public portal at `/girls` (also `/girls/`), with assets under `/fomo/girls/`. Visitors explore contribution missions in any
-order, pin a personal playbook, and provide one profile when ready to save.
-There is no sequential quiz. A featured $100 mission leads the board; compact cards, tap choices, an optional random picker, and an editable list
+order, select their interests, and provide one profile when ready to save.
+There is no sequential quiz. A featured $100 mission leads the board; compact cards, tap choices, an optional random picker, and a views-to-earnings slider
 provide the interaction. Cards react to pointer position on desktop; added
-items animate into the list. Reduced-motion preferences disable animation.
-Reward terms and steps sit inside expandable details. Mobile has a save shortcut
+items animate toward the compact Continue button. The old list sidebar is removed. Reduced-motion preferences disable animation.
+Reward terms and steps sit inside expandable details. Every screen has a Continue shortcut
 once an option is added.
 
 ## Contributions and incentives
 
 - **Fraternity referral:** $100 when the referred fraternity completes onboarding
   and FOMO verifies attribution. Pinning or submitting never earns a payout.
-- **Creators:** paid for qualifying views. Rates, eligible views, and the brief
-  are confirmed before work; no invented rate is advertised.
+- **Videos:** the slider uses the existing `/fomo/submit/` calculator: $2 per
+  1,000 qualifying views, capped at $5,000 per approved video. The one-time
+  $25 creator approval bonus is separate. Defaults to 100K views / $200.
+- **Stories:** $20 per approved story, with the brief confirmed before posting.
+  Stored as `stories`, separately from `creator`; both share creator-profile fields.
 - **Dinner content:** dinner comped after attendance and agreed content are
   completed. The invitation, deliverables, and comp details are confirmed first.
   Just attending or bringing friends does not claim the content comp.
 - **Internship:** selection for campus leadership, with responsibility and
   decision-making scope defined by the assigned role. The five existing campus
   roles are offered as interests; submitting does not confer a role.
-- **Sorority/community:** chapter collaboration interest, without an invented
-  cash reward.
 
-Mission details capture creator activity/platform/audience, sorority connections,
+Mission details capture creator activity/platform/audience,
 fraternity reach plus target chapter/university, dinner interest/contribution,
 and internship role. The final profile captures college status, student school,
 name, email, city, optional Instagram, and contact consent. Unexplored missions
@@ -71,12 +72,12 @@ Live Google Sheet writes and payments have not been tested or activated here.
 
 - Preview: `node server/campuswars-preview.mjs`, then
   `http://127.0.0.1:4179/fomo/girls/`.
-- Tests: `node --test tests/girls-input.test.mjs tests/girls-route.test.mjs tests/girls-portal.test.mjs tests/portals-sheet.test.mjs tests/referrals-sheet.test.mjs`.
+- Tests: `node --test tests/girls-earnings.test.mjs tests/girls-input.test.mjs tests/girls-route.test.mjs tests/girls-portal.test.mjs tests/portals-sheet.test.mjs tests/referrals-sheet.test.mjs`.
 - Isolated end-to-end QA: `node tests/preview-girls.mjs`, port 4181. The first
   request simulates an outdated receiver; retry runs the real backend in a VM
   against an in-memory sheet. No Google writes. Restarting clears test rows.
 
-69 tests pass, covering all five mission types, existing profile validation,
+72 tests pass, covering all five mission types, existing profile validation,
 reward tampering, conditional dinner comps, v1 schema migration, stale-field
 cleanup, idempotency, and existing form/referral regressions. Browser checks
 cover pinning every mission, reload recovery, the one-profile save, failed save
@@ -85,3 +86,7 @@ and retry, and desktop/mobile layouts.
 The compact UI was checked at desktop, 390px, and 320px widths, including tap
 choice capture, list recovery after reload, random exploration, and failed-save
 retry against the local receiver. No browser console errors were observed.
+
+The updated cover art is CSS-rendered: a story preview, an influencer-dinner receipt,
+and a campus internship pass. Mobile uses one card per row. Slider input does not
+open the video dialog. Estimates never enter the payout or signup payload.
