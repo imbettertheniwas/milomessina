@@ -2,9 +2,11 @@
 
 Public portal at `/girls` (also `/girls/`), with assets under `/fomo/girls/`. Visitors explore contribution missions in any
 order, pin a personal playbook, and provide one profile when ready to save.
-There is no sequential quiz. A featured $100 mission leads the board; cards,
-filled mission slots, a persistent playbook, and concrete next steps provide the
-game structure. Mobile has a save shortcut once a mission is pinned.
+There is no sequential quiz. A featured $100 mission leads the board; compact cards, tap choices, an optional random picker, and an editable list
+provide the interaction. Cards react to pointer position on desktop; added
+items animate into the list. Reduced-motion preferences disable animation.
+Reward terms and steps sit inside expandable details. Mobile has a save shortcut
+once an option is added.
 
 ## Contributions and incentives
 
@@ -69,13 +71,17 @@ Live Google Sheet writes and payments have not been tested or activated here.
 
 - Preview: `node server/campuswars-preview.mjs`, then
   `http://127.0.0.1:4179/fomo/girls/`.
-- Tests: `node --test tests/girls-route.test.mjs tests/girls-portal.test.mjs tests/portals-sheet.test.mjs tests/referrals-sheet.test.mjs`.
+- Tests: `node --test tests/girls-input.test.mjs tests/girls-route.test.mjs tests/girls-portal.test.mjs tests/portals-sheet.test.mjs tests/referrals-sheet.test.mjs`.
 - Isolated end-to-end QA: `node tests/preview-girls.mjs`, port 4181. The first
   request simulates an outdated receiver; retry runs the real backend in a VM
   against an in-memory sheet. No Google writes. Restarting clears test rows.
 
-67 tests pass, covering all five mission types, existing profile validation,
+69 tests pass, covering all five mission types, existing profile validation,
 reward tampering, conditional dinner comps, v1 schema migration, stale-field
 cleanup, idempotency, and existing form/referral regressions. Browser checks
 cover pinning every mission, reload recovery, the one-profile save, failed save
 and retry, and desktop/mobile layouts.
+
+The compact UI was checked at desktop, 390px, and 320px widths, including tap
+choice capture, list recovery after reload, random exploration, and failed-save
+retry against the local receiver. No browser console errors were observed.
