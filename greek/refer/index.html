@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Refer a frat — fomo</title>
+  <meta name="description" content="Get your personal link to refer a fraternity to fomo.">
+  <link rel="icon" href="/greek/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/greek/styles.css?v=refer-1">
+  <script src="/greek/referral.js?v=1" defer></script>
+</head>
+<body>
+  <header class="header"><div class="wrap nav"><a class="brand" href="/greek" data-referral-nav aria-label="fomo campus home"><img src="/greek/assets/favicon.svg" width="40" height="40" alt=""><span>fomo</span><span class="brand-divider"></span><span class="brand-campus">campus</span></a><a class="back-to-greek" href="/greek" data-referral-nav>← Back</a></div></header>
+  <main class="refer-page">
+    <p class="eyebrow">know someone in another frat?</p>
+    <h1>refer a frat.<br><span>get your link.</span></h1>
+    <p class="refer-lede">Enter your fomo username. Copy your link.<br>Send it to the brother who’ll register their frat.</p>
+    <form id="referral-form" class="refer-form">
+      <label for="referral-username">Your fomo username</label>
+      <input id="referral-username" name="username" type="text" placeholder="@yourusername" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="65" required aria-describedby="username-help">
+      <p id="username-help">Use the username on your fomo profile.</p>
+      <button type="submit" class="button">Get my referral link ↗</button>
+    </form>
+    <section id="referral-result" class="refer-result" hidden aria-label="Your personal referral link">
+      <label for="referral-link">Your link. Ready to send.</label>
+      <input id="referral-link" type="text" readonly aria-describedby="copy-status">
+      <button id="copy-referral" type="button" class="button">Copy link</button>
+      <p class="referral-link-note">Your username is included in the link.</p>
+    </section>
+    <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+    <div class="refer-tiers" aria-label="Referral reward by chapter size"><div><strong>$50</strong><span>Under 60 members</span></div><div><strong>$75</strong><span>60–110 members</span></div><div><strong>$100</strong><span>Over 110 members</span></div></div>
+    <p class="refer-foot">Paid when the referred frat onboards. Their organizer keeps the full $6.25 per member.</p>
+  </main>
+</body>
+</html>

@@ -8,18 +8,20 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="/greek/assets/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/greek/assets/aeonik-500.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/greek/styles.css">
+  <link rel="stylesheet" href="/greek/styles.css?v=refer-1">
   <script src="/greek/app.js" defer></script>
+  <script src="/greek/referral.js?v=1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="header">
     <div class="wrap nav">
       <a class="brand" href="#" aria-label="fomo home"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M36.97 24.36c7.13 0 12.82 3.59 15.97 9.24-4.19 4.44-7.29 10.16-8.48 16.4-1.19 6.24-.28 11.96 2.21 16.4-5.32 5.65-12.38 9.24-19.51 9.24-8.73 0-15.3-5.38-17.7-13.32h17.39c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H14.18c5.44-7.94 14.07-13.32 22.79-13.32Z"/><path d="M72.33 24.36c12.75 0 20.89 11.48 18.18 25.64-2.71 14.16-15.24 25.64-27.99 25.64-8.73 0-15.3-5.38-17.7-13.32h19.34c.57 0 1.16-.46 1.32-1.03l6.48-22.59c.16-.57-.17-1.03-.73-1.03H49.53c5.44-7.94 14.07-13.32 22.8-13.32Z"/></svg><span>fomo</span><span class="brand-divider"></span><span class="brand-campus">campus</span></a>
-      <nav aria-label="Main navigation"><a class="nav-text" href="#how-it-works">How it works</a><a class="nav-text" href="#get-the-app">Get the app</a><a class="button button-small" data-onboard href="https://www.aryatoufanian.com/fomo/onboard/">Get my link <span aria-hidden="true">↗</span></a></nav>
+      <nav aria-label="Main navigation"><a class="nav-text" href="#how-it-works">How it works</a><a class="nav-text" href="#get-the-app">Get the app</a><a class="refer-nav" href="/greek/refer" data-referral-nav>Refer someone</a><a class="button button-small" data-onboard href="https://www.aryatoufanian.com/fomo/onboard/">Get my link <span aria-hidden="true">↗</span></a></nav>
     </div>
   </header>
   <main id="main">
+    <p class="referral-banner wrap" data-referral-banner hidden>Referred by <strong data-referral-name></strong></p>
     <section class="hero wrap" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow"><span class="brand-dot" aria-hidden="true"></span> for the one who gets everyone in</p>
@@ -92,7 +94,7 @@
     </section>
 
     <section class="referral-section wrap" id="referrals" aria-labelledby="referral-title">
-      <div class="referral-copy"><p class="eyebrow">know someone in another frat?</p><h2 id="referral-title">refer a frat.<br>get <span>$50–$100.</span></h2><p>Refer the brother who registers and onboards another frat. <strong>You get paid when that frat onboards.</strong></p><p>They keep their full $6.25 per member. Your referral reward is extra, paid by fomo.</p></div>
+      <div class="referral-copy"><p class="eyebrow">know someone in another frat?</p><h2 id="referral-title">refer a frat.<br>get <span>$50–$100.</span></h2><p>Refer the brother who registers and onboards another frat. <strong>You get paid when that frat onboards.</strong></p><p>They keep their full $6.25 per member. Your referral reward is extra, paid by fomo.</p><a class="button referral-cta" href="/greek/refer" data-referral-nav>Refer someone <span aria-hidden="true">↗</span></a></div>
       <div class="referral-example"><p class="example-label">your reward by chapter size</p><div class="example-row"><span>Under 60 members</span><strong class="accent">$50</strong></div><div class="example-row"><span>60–110 members</span><strong class="accent">$75</strong></div><div class="example-row"><span>Over 110 members</span><strong class="accent">$100</strong></div><p>One referral reward per chapter. Separate from the organizer’s payout.</p></div>
     </section>
 

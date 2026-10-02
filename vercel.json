@@ -75,6 +75,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/greek/refer", "destination": "/greek/refer/index.html" },
+    { "source": "/greek/refer/", "destination": "/greek/refer/index.html" },
     { "source": "/greek", "destination": "/greek/index.html" },
     { "source": "/greek/", "destination": "/greek/index.html" },
     { "source": "/girls", "destination": "/fomo/girls/index.html" },
