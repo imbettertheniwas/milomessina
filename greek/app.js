@@ -26,8 +26,8 @@
   const screens = [
     {file:'IMG_6502.PNG', title:'profile → Rewards.', instruction:'Open your profile using the bottom-right icon. Tap Rewards.', tip:'This is your personal fomo referral link.', alt:'fomo profile with Rewards button at the upper right', highlight:[69,17,28,5]},
     {file:'IMG_6503.PNG', title:'tap the share icon.', instruction:'Tap the share icon beside your fomo.family/r/ link.', tip:'Use your own Rewards link. This example belongs to the person in the screenshot.', alt:'Rewards screen showing the personal fomo.family/r/ link and share icon', highlight:[4,35,93,6.5]},
-    {file:'IMG_6504.PNG', title:'put it in a text.', instruction:'Add your Rewards link to a message for your chapter’s group chat, like this.', tip:'Every brother joins fomo through this link.', alt:'Text message draft containing a fomo Rewards referral link preview', highlight:[20,35.5,62,23]},
-    {file:'IMG_6505.PNG', title:'send both links.', instruction:'Put your tracker link and your Rewards link in the same chat. Tell every brother: fill out the tracker, then join fomo through my Rewards link.', tip:'We match both, add members to your clan, and pay you $6.25 per matched member.', alt:'Text message draft with both the fomo Rewards link and chapter tracker link', highlight:[20,25,62,34]}
+    {file:'IMG_6504.PNG', title:'put it in a text.', instruction:'Add your Rewards link to a message for your chapter’s group chat, like this.', tip:'Members who join use this link. You can start with a batch.', alt:'Text message draft containing a fomo Rewards referral link preview', highlight:[20,35.5,62,23]},
+    {file:'IMG_6505.PNG', title:'send both links.', instruction:'Put your tracker link and your Rewards link in the same chat. Tell members who want to join: fill out the tracker, then join fomo through my Rewards link.', tip:'We match both, add members to your clan, and pay you $6.25 per matched member.', alt:'Text message draft with both the fomo Rewards link and chapter tracker link', highlight:[20,25,62,34]}
   ];
   let screenIndex = 0;
   const screenImage = document.getElementById('guide-screen');
