@@ -1,7 +1,7 @@
 (() => {
   const clean = value => {
-    const name = (value || '').trim().replace(/^@/, '');
-    return /^[A-Za-z0-9_.-]{1,64}$/.test(name) ? name : '';
+    const name = (value || '').trim().replace(/^@/, '').replace(/\s+/g, ' ');
+    return name.length <= 100 && /^[\p{L}\p{M}\p{N} ._'’\-]+$/u.test(name) ? name : '';
   };
   const incoming = clean(new URLSearchParams(location.search).get('ref'));
   if (incoming) {
@@ -10,7 +10,7 @@
       url.searchParams.set('ref', incoming);
       link.href = url.href;
     });
-    document.querySelectorAll('[data-referral-name]').forEach(label => label.textContent = '@' + incoming);
+    document.querySelectorAll('[data-referral-name]').forEach(label => label.textContent = incoming);
     document.querySelectorAll('[data-referral-banner]').forEach(banner => banner.hidden = false);
     document.querySelectorAll('[data-referral-nav]').forEach(link => {
       const url = new URL(link.href);
@@ -20,25 +20,25 @@
   }
   const form = document.getElementById('referral-form');
   if (!form) return;
-  const username = document.getElementById('referral-username');
+  const referrerName = document.getElementById('referral-name');
   const result = document.getElementById('referral-result');
   const output = document.getElementById('referral-link');
   const status = document.getElementById('copy-status');
   const copy = document.getElementById('copy-referral');
-  username.addEventListener('input', () => {
-    username.setCustomValidity('');
+  referrerName.addEventListener('input', () => {
+    referrerName.setCustomValidity('');
     result.hidden = true;
     status.textContent = '';
   });
   form.addEventListener('submit', event => {
     event.preventDefault();
-    const name = clean(username.value);
+    const name = clean(referrerName.value);
     if (!name) {
-      username.setCustomValidity('Enter your fomo username using letters, numbers, dots, dashes or underscores.');
-      username.reportValidity();
+      referrerName.setCustomValidity('Enter your name (up to 100 characters).');
+      referrerName.reportValidity();
       return;
     }
-    username.setCustomValidity('');
+    referrerName.setCustomValidity('');
     const url = new URL('https://milomessina.com/greek');
     url.searchParams.set('ref', name);
     output.value = url.href;
