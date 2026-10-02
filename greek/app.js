@@ -24,12 +24,10 @@
   document.querySelectorAll('[data-guide-choice]').forEach(button => button.addEventListener('click', () => selectGuide(button.dataset.guideChoice)));
   document.querySelectorAll('[data-guide]').forEach(link => link.addEventListener('click', () => selectGuide(link.dataset.guide)));
   const screens = [
-    {file:'IMG_6490.PNG', title:'open the leaderboard.', instruction:'Tap the people icon → Leaderboard → View all next to Clans.', tip:'You’re setting up one clan for your chapter.', alt:'fomo Leaderboard showing Clans and View all', highlight:[77,14,20,3.5]},
-    {file:'IMG_6491.PNG', title:'tap “Create a clan.”', instruction:'It’s at the bottom of the Clans screen.', tip:'Create your chapter’s own clan.', alt:'Clans list with Create a clan at the bottom', highlight:[35,93.5,31,4]},
-    {file:'IMG_6499.PNG', title:'name it. invite four.', instruction:'Use your school and chapter name. Tap Invite members and add 4 people by their fomo usernames.', tip:'Those four need fomo accounts so you can find their usernames.', alt:'Clan name and description fields with Invite members showing zero and the four-member requirement', highlight:[3,65,94,7]},
-    {file:'IMG_6500.PNG', title:'tap “Create a clan.”', instruction:'Once Invite members shows 4, tap the blue Create a clan button.', tip:'Your clan is set up. Next, get your Rewards link.', alt:'Invite members shows four and the Create a clan button is enabled', highlight:[3,90,94,7]},
-    {file:'IMG_6502.PNG', title:'profile → Rewards.', instruction:'Open your profile using the bottom-right icon. Tap Rewards.', tip:'Your personal Rewards link is here.', alt:'fomo profile with Rewards button at the upper right', highlight:[69,17,28,5]},
-    {file:'IMG_6503.PNG', title:'share your Rewards link.', instruction:'Tap the share icon beside your fomo.family/r/ link. Send that link AND your chapter tracker to the group chat.', tip:'Rewards link + tracker link. Not the clan invite.', alt:'Rewards screen showing the personal fomo.family/r/ link and share icon', highlight:[4,35,93,6.5]}
+    {file:'IMG_6502.PNG', title:'profile → Rewards.', instruction:'Open your profile using the bottom-right icon. Tap Rewards.', tip:'This is your personal fomo referral link.', alt:'fomo profile with Rewards button at the upper right', highlight:[69,17,28,5]},
+    {file:'IMG_6503.PNG', title:'tap the share icon.', instruction:'Tap the share icon beside your fomo.family/r/ link.', tip:'Use your own Rewards link. This example belongs to the person in the screenshot.', alt:'Rewards screen showing the personal fomo.family/r/ link and share icon', highlight:[4,35,93,6.5]},
+    {file:'IMG_6504.PNG', title:'put it in a text.', instruction:'Add your Rewards link to a message for your chapter’s group chat, like this.', tip:'Every brother joins fomo through this link.', alt:'Text message draft containing a fomo Rewards referral link preview', highlight:[20,35.5,62,23]},
+    {file:'IMG_6505.PNG', title:'send both links.', instruction:'Put your tracker link and your Rewards link in the same chat. Tell every brother: fill out the tracker, then join fomo through my Rewards link.', tip:'We match both, add members to your clan, and pay you $6.25 per matched member.', alt:'Text message draft with both the fomo Rewards link and chapter tracker link', highlight:[20,25,62,34]}
   ];
   let screenIndex = 0;
   const screenImage = document.getElementById('guide-screen');
@@ -39,7 +37,7 @@
     const screen = screens[screenIndex];
     screenImage.src = '/greek/assets/screens/' + screen.file;
     screenImage.alt = screen.alt;
-    document.getElementById('screen-count').textContent = `screen ${screenIndex+1} of ${screens.length} · ${screenIndex<4?'make your clan':'get your Rewards link'}`;
+    document.getElementById('screen-count').textContent = `screen ${screenIndex+1} of ${screens.length} · ${screenIndex<2?'get your Rewards link':'send both links'}`;
     document.getElementById('screen-title').textContent = screen.title;
     document.getElementById('screen-instruction').textContent = screen.instruction;
     document.getElementById('screen-tip').textContent = screen.tip;

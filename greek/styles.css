@@ -49,3 +49,5 @@ input[type=range]{display:block;appearance:none;-webkit-appearance:none;box-sizi
 @media(max-width:760px){.hero h1{font-size:clamp(45px,9.4vw,66px)}.campus-future{grid-template-columns:1fr;gap:23px;padding:29px 24px;margin-bottom:42px}.campus-future h2{font-size:34px}.campus-future-copy p{font-size:16px}.guide-switch button{padding-inline:14px}}
 @media(max-width:420px){.guide-switch button{padding-inline:7px;font-size:11px}.calculator-top h2{font-size:17px}.calculator-tag{font-size:9px;padding:5px 7px}.campus-future h2{font-size:31px}.closing h2{font-size:39px}}
 @media(max-width:420px){.nav{gap:8px}.nav nav{gap:8px}.nav .button-small{white-space:nowrap;padding-inline:11px}.nav .button-small span{display:none}.refer-nav{font-size:11px}}
+
+.calculator-match{font-size:12px;line-height:1.5;color:var(--muted);margin-top:16px;text-align:center}
