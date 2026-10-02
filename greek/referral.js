@@ -43,7 +43,7 @@
     url.searchParams.set('ref', name);
     output.value = url.href;
     result.hidden = false;
-    status.textContent = 'Your link is ready. Copy it and send it to another frat’s organizer.';
+    status.textContent = 'Your link is ready. Copy it and send it to another chapter’s organizer.';
     copy.textContent = 'Copy link';
     copy.focus();
   });
@@ -51,7 +51,7 @@
     try {
       await navigator.clipboard.writeText(output.value);
       copy.textContent = 'Copied ✓';
-      status.textContent = 'Copied. Send it to the brother who will register their frat.';
+      status.textContent = 'Copied. Send it to the brother who will register their chapter.';
     } catch {
       output.focus();
       output.select();
