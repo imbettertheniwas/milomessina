@@ -75,6 +75,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/greek", "destination": "/greek/index.html" },
+    { "source": "/greek/", "destination": "/greek/index.html" },
     { "source": "/girls", "destination": "/fomo/girls/index.html" },
     { "source": "/girls/", "destination": "/fomo/girls/index.html" },
     { "source": "/campus", "destination": "/campus/index.html" },
