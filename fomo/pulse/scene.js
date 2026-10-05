@@ -6,6 +6,18 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
  const renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));container.append(renderer.domElement);
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,1,.1,200),root=new T.Group();scene.add(root);
+ // Additive glows accumulate alpha into gray on a white page. Use colored
+ // transparency in light mode; keep the original luminous blend in dark mode.
+ const originalBlending=new WeakMap();
+ function syncTheme(){
+  const light=document.documentElement.dataset.theme==='light';
+  scene.traverse(object=>{for(const material of object.material?(Array.isArray(object.material)?object.material:[object.material]):[]){
+   if(!originalBlending.has(material))originalBlending.set(material,material.blending);
+   const original=originalBlending.get(material),blend=light&&original===T.AdditiveBlending?T.NormalBlending:original;
+   if(material.blending!==blend){material.blending=blend;material.needsUpdate=true;}
+  }});
+ }
+ const themeObserver=new MutationObserver(syncTheme);themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
  let width=1,height=1,chapters=[],nodes=[],particles=null,filaments=null,mode='eyes',paused=reduced,time=0,last=performance.now(),yaw=.1,pitch=.23,zoom=24,drag=null,selected=null,hover=-1,frame,disposed=false,arrivals=[];
  const raycaster=new T.Raycaster(),pointer=new T.Vector2(),temp=new T.Object3D(),v=new T.Vector3(),color=new T.Color();
  let nuclei=null,halos=null,particleInfo=[],labelItems=[];
@@ -55,11 +67,11 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
   particles=new T.Points(geo,new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,vertexColors:true,uniforms:{pixelRatio:{value:renderer.getPixelRatio()}},vertexShader:'attribute float alpha; varying float vAlpha; varying vec3 vColor; uniform float pixelRatio; void main(){vColor=color;vAlpha=alpha; vec4 p=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*p;gl_PointSize=clamp(65./-p.z,1.8,5.)*pixelRatio;}',fragmentShader:'varying float vAlpha; varying vec3 vColor; void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;float a=pow(1.-d*2.,1.6);gl_FragColor=vec4(vColor*1.3,a*vAlpha);}' }));root.add(particles);
   const linePos=new Float32Array(nodes.length*24*6),lineColors=new Float32Array(linePos.length);nodes.forEach((n,i)=>{for(let j=0;j<48;j++)n.color.clone().multiplyScalar(.72).toArray(lineColors,i*144+j*3);});const lg=new T.BufferGeometry();lg.setAttribute('position',new T.BufferAttribute(linePos,3).setUsage(T.DynamicDrawUsage));lg.setAttribute('color',new T.BufferAttribute(lineColors,3));filaments=new T.LineSegments(lg,new T.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.36,blending:T.AdditiveBlending,depthWrite:false}));root.add(filaments);
   labels.replaceChildren();labelItems=[];const top=[...nodes].sort((a,b)=>b.chapter.joined-a.chapter.joined).slice(0,6);top.forEach(n=>{const el=document.createElement('span');el.className='scene-label';el.textContent=n.chapter.letters+' / '+n.chapter.joined;labels.append(el);labelItems.push({id:n.chapter.id,el});});
-  if(selected)select(selected);return {particleStep:step};
+  if(selected)select(selected);syncTheme();return {particleStep:step};
  }
  function select(id){selected=id;const n=nodes.find(n=>n.chapter.id===id);if(n){reticle.visible=true;labelItems.forEach(l=>l.el.classList.toggle('selected',l.id===id));}}
  function setMode(value){mode=value;eyes.group.visible=mode==='eyes';targets();core.visible=mode==='organism';orbitLines.visible=mode!=='helix';helixRails.visible=mode==='helix';}
- function pulse(id,count=1){const n=nodes.find(n=>n.chapter.id===id);if(!n)return;const material=new T.MeshBasicMaterial({color:n.color,transparent:true,opacity:1,blending:T.AdditiveBlending,depthWrite:false});const comet=new T.Mesh(new T.SphereGeometry(.12,12,8),material);const ring=new T.Mesh(new T.TorusGeometry(1,.02,6,80),material.clone());root.add(comet,ring);arrivals.push({id,count,age:0,comet,ring,from:new T.Vector3(12,8,-5)});}
+ function pulse(id,count=1){const n=nodes.find(n=>n.chapter.id===id);if(!n)return;const material=new T.MeshBasicMaterial({color:n.color,transparent:true,opacity:1,blending:T.AdditiveBlending,depthWrite:false});const comet=new T.Mesh(new T.SphereGeometry(.12,12,8),material);const ring=new T.Mesh(new T.TorusGeometry(1,.02,6,80),material.clone());root.add(comet,ring);syncTheme();arrivals.push({id,count,age:0,comet,ring,from:new T.Vector3(12,8,-5)});}
  function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);return nuclei?raycaster.intersectObject(nuclei)[0]?.instanceId:undefined;}
  const canvas=renderer.domElement;
  canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};canvas.setPointerCapture(e.pointerId);});
@@ -81,6 +93,6 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
   root.updateMatrixWorld();const occupied=[];[...labelItems].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected)).forEach(l=>{const n=nodes.find(n=>n.chapter.id===l.id);if(!n)return;v.copy(n.position).applyMatrix4(root.matrixWorld).project(camera);const x=(v.x*.5+.5)*width,y=(-v.y*.5+.5)*height;l.el.style.transform=`translate(${x+9}px,${y-12}px)`;const collides=occupied.some(p=>Math.abs(p.x-x)<88&&Math.abs(p.y-y)<20);const hidden=v.z>1||x<0||x>width-90||y<72||y>height-108||collides;l.el.style.display=hidden?'none':'';if(!hidden)occupied.push({x,y});});
   renderer.render(scene,camera);
  }
- frame=requestAnimationFrame(animate);
- return {update,select,setMode,pulse,setFocus(v){focus=v;},setSpread(v){spread=v;targets();},setDrift(v){drift=v;},setPaused(v){paused=v;},reset(){yaw=.1;pitch=.23;zoom=24;},dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();renderer.dispose();}};
+ syncTheme();frame=requestAnimationFrame(animate);
+ return {update,select,setMode,pulse,setFocus(v){focus=v;},setSpread(v){spread=v;targets();},setDrift(v){drift=v;},setPaused(v){paused=v;},reset(){yaw=.1;pitch=.23;zoom=24;},dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();themeObserver.disconnect();renderer.dispose();}};
 }

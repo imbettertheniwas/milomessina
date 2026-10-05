@@ -14,7 +14,7 @@
 [data-theme=light] .signal-strip button:last-child strong{color:var(--up)}
 [data-theme=light] :is(.workspace,.bottom-grid,.market-section){background:#ffffffc9;box-shadow:0 9px 40px #4c2b7406}
 [data-theme=light] .stage{background:radial-gradient(ellipse at 50% 48%,#dacafa70,transparent 68%),linear-gradient(#7751b909 1px,transparent 1px),linear-gradient(90deg,#7751b909 1px,transparent 1px);background-size:auto,30px 30px,30px 30px}
-[data-theme=light] #scene canvas{filter:brightness(.53) saturate(1.5)}
+[data-theme=light] #scene canvas{filter:none}
 [data-theme=light] :is(.watch-tabs,.mode-switch){background:#ece6f6e8}
 [data-theme=light] :is(.watch-tabs button.active,.chart-toolbar button.active,.filter-row button.active){background:#ded3f6;color:#593796}
 [data-theme=light] .scene-tools button{background:#faf7ffdd;color:#674a84}
