@@ -1,4 +1,4 @@
-import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=111';
+import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=134';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){
@@ -15,9 +15,9 @@ function canvasTexture(T,w,h,paint){
   if(document.fonts)document.fonts.load('700 80px Aeonik').then(()=>{paint(ctx,w,h);map.needsUpdate=true;document.dispatchEvent(new Event('village:artwork'));});
   return map;
 }
-export function createCompetition(T,chapters,anchors,lightAnchors=anchors){
+export function createCompetition(T,chapters,anchors,lightAnchors=anchors,metric='progress'){
   const root=new T.Group();root.name='village-competition';
-  const standings=houseStandings(chapters),leader=standings[0]?.joined>0?standings[0]:null,badges=[];
+  const standings=houseStandings(chapters,metric),leader=standings[0]?.joined>0?standings[0]:null,badges=[];
   for(const row of standings){
     const anchor=anchors.find(a=>a.id===row.id);if(!anchor)continue;
     const first=row.id===leader?.id,medal=row.rank===1?'#F1CA70':row.rank===2?'#D7E0E8':row.rank===3?'#D3A37A':'#AABCD3';
@@ -25,10 +25,10 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors){
       ctx.clearRect(0,0,w,h);ctx.fillStyle=first?'#F1CA70':'#142331';ctx.beginPath();ctx.roundRect(16,18,w-32,h-36,44);ctx.fill();
       ctx.strokeStyle=medal;ctx.lineWidth=7;ctx.stroke();ctx.fillStyle=first?'#172331':'#FFFFFF';ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.font='700 119px Aeonik, Arial, sans-serif';ctx.fillText(`#${row.rank}`,w*.5,h*.43);
-      ctx.font='700 28px Aeonik, Arial, sans-serif';ctx.fillText(first?'ROW LEADER':`${Math.round(row.progress*100)}% ONBOARDED`,w*.5,h*.80);
+      ctx.font='700 28px Aeonik, Arial, sans-serif';ctx.fillText(first?'ROW LEADER':metric==='members'?`${row.joined} MEMBERS`:`${Math.round(row.progress*100)}% ONBOARDED`,w*.5,h*.80);
     });
     const badge=new T.Sprite(new T.SpriteMaterial({map,color:map?0xffffff:medal,transparent:true,depthWrite:false,toneMapped:false}));
-    badge.name=`house-rank-${row.id}`;badge.position.set(anchor.lot.x,anchor.point.y+1.9,anchor.lot.z);badge.scale.set(first?4.5:3.7,first?2.25:1.85,1);badge.userData={chapter:row.id,rank:row.rank,metric:'onboarding-progress',width:first?4.5:3.7};root.add(badge);badges.push(badge);
+    badge.name=`house-rank-${row.id}`;badge.position.set(anchor.lot.x,anchor.point.y+1.9,anchor.lot.z);badge.scale.set(first?4.5:3.7,first?2.25:1.85,1);badge.userData={chapter:row.id,rank:row.rank,metric:metric==='members'?'members':'onboarding-progress',width:first?4.5:3.7};root.add(badge);badges.push(badge);
   }
   let spotlight=null;
   if(leader){
@@ -47,11 +47,11 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors){
   for(const x of [-4.5,4.5])box(x,3.7,-.08,.3,7.3,.35);
   box(0,5.0,0,11.4,7.8,.40);box(0,9.01,0,11.7,.20,.65);
   const topChapters=standings.slice(0,LEADERBOARD_LIMIT);
-  const map=canvasTexture(T,2048,1376,(ctx,w,h)=>paintLeaderboardFrame(ctx,w,h,standings.length));
+  const map=canvasTexture(T,2048,1376,(ctx,w,h)=>paintLeaderboardFrame(ctx,w,h,standings.length,metric));
   const face=new T.Mesh(new T.PlaneGeometry(11,7.4),new T.MeshStandardMaterial({color:map?0xffffff:0x152632,map,roughness:.8,emissive:0xffffff,emissiveMap:map,emissiveIntensity:map?.4:0}));
   face.name='leaderboard-display';face.position.set(0,5,.215);face.userData.ownedTexture=true;board.add(face);
   // Scroll UV coordinates on a prepainted strip, avoiding canvas uploads per frame.
-  const rowMap=topChapters.length?canvasTexture(T,2048,topChapters.length*ROW_HEIGHT,(ctx,w,h)=>paintLeaderboardRows(ctx,w,h,topChapters)):null;
+  const rowMap=topChapters.length?canvasTexture(T,2048,topChapters.length*ROW_HEIGHT,(ctx,w,h)=>paintLeaderboardRows(ctx,w,h,topChapters,metric)):null;
   if(rowMap){rowMap.wrapT=T.RepeatWrapping;rowMap.generateMipmaps=false;rowMap.minFilter=T.LinearFilter;}
   const rowFace=new T.Mesh(new T.PlaneGeometry(11,7.4*ROWS_HEIGHT/1376),new T.MeshStandardMaterial({color:rowMap?0xffffff:0x101d29,map:rowMap,roughness:.8,emissive:0xffffff,emissiveMap:rowMap,emissiveIntensity:rowMap?.4:0}));
   rowFace.name='leaderboard-scrolling-rows';rowFace.position.set(0,5+7.4*(.5-(ROWS_TOP+ROWS_HEIGHT/2)/1376),.222);rowFace.userData.ownedTexture=true;rowFace.visible=topChapters.length>0;board.add(rowFace);

@@ -1,3 +1,6 @@
+import {destinationChapters,schoolStandings,routeFromHash,resolveDestination,destinationHash} from '../village-destinations.js';
+import {schoolTheme,createSchoolDistricts} from '../village-school-theme.js';
+import {createSchoolDrop,SCHOOL_DROP_DURATION} from '../village-school-drop.js';
 import {createVillagePopulation} from '../village-population.js';
 import {chapterSceneKey} from '../village-startup.js';
 import {backyardUnlocked} from '../village-backyards.js';
@@ -28,11 +31,11 @@ async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobi
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={yieldVillageBuild:()=>Promise.resolve(),chapterSceneKey,createResolutionBudget,createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:(...args)=>(warmups.push(args),{then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={destinationChapters,schoolStandings,routeFromHash,resolveDestination,destinationHash,schoolTheme,createSchoolDistricts,createSchoolDrop,SCHOOL_DROP_DURATION,loadSchoolCatalog:async()=>[],yieldVillageBuild:()=>Promise.resolve(),chapterSceneKey,createResolutionBudget,createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(...args)=>createPointerHover(...args,{schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:(...args)=>(warmups.push(args),{then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select')selections.push(event.detail.id);},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
   sandbox.createVillageRendererAsync=async (...args)=>{const result=sandbox.createVillage(...args);if(builds.length===1)duringBuild?.(event=>events.get('document:chapters:update')(event));return result;};
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
-  for(let i=0;i<12;i++)await Promise.resolve();
+  for(let i=0;i<24;i++)await Promise.resolve();
   let now=100;
   return {warmups,helipad:()=>helipad,village:()=>mockVillage,blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,lighting,lens:()=>camera.fov,element,fire(name,event){events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
 }
@@ -73,7 +76,7 @@ test('captions follow the tour, clear at 13.6 seconds, and replay on request',as
   assert.equal(h.element('village-intro').hidden,false);
   assert.equal(h.element('intro-title').textContent,'GREEK WARS.');
   h.step(2.8);assert.equal(h.element('intro-title').textContent,"IF YOU'RE IN A FRAT.");
-  h.step(3.25);assert.equal(h.element('intro-title').textContent,'$500 ONCE ONBOARDED');
+  h.step(3.25);assert.equal(h.element('intro-title').textContent,'$6.25 PER BROTHER ONBOARDED');
   h.step(4.25);assert.equal(h.element('intro-title').textContent,'YOUR CHAPTER. NEXT.');
   h.step(3.4);assert.equal(h.element('village-intro').hidden,true);
   h.fire('document:village:replay');h.step(.02);
@@ -267,7 +270,7 @@ test('live rosters arriving during compilation refresh the usable village withou
   h.fire('document:chapters:update',{detail:{chapters}});
   assert.equal(h.builds.length,1,'the compiling world must remain intact');
   await h.finishWarmup();
-  assert.equal(h.builds.length,2);assert.equal(h.builds[1],chapters);
+  assert.equal(h.builds.length,2);assert.deepEqual(h.builds[1],chapters);
   assert.equal(h.element('village-loading').hidden,true,'the complete warmed village remains usable during its live refresh');
   assert.equal(h.warmups.length,1,'a late feed response never replays the whole loading sequence');
   assert(h.step(.02).y>75);
@@ -280,7 +283,7 @@ test('live rosters received during construction replace the saved world before a
     fire({detail:{chapters}});
   });
   assert.equal(h.builds.length,2);
-  assert.equal(h.builds[1],chapters);
+  assert.deepEqual(h.builds[1],chapters);
   assert.equal(h.warmups.length,1,'never compile the obsolete saved world');
   h.finishWarmup();assert.equal(h.element('village-loading').hidden,true);
 });

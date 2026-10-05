@@ -14,7 +14,7 @@
     document.dispatchEvent(new CustomEvent('chapter:backyard',{detail:{id:selectedId}}));setDrawer(false);
   });
   const panelClaim = document.getElementById('panel-claim');
-  const canonicalUrl = 'https://milomessina.com/fomo/campuswars/';
+  const canonicalUrl = new URL(location.pathname, location.origin).href;
   const drawer = document.getElementById('village-drawer');
   const drawerToggle = document.getElementById('village-chapters');
   function setDrawer(open) {
@@ -105,7 +105,7 @@
       text('panel-target', 'Claim your place on the row.');
       text('panel-detail', 'Get your invite link. Bring your people. Build your house.');
     }
-    if (writeHash) history.replaceState(null, '', `${location.pathname}${location.search}#chapter=${encodeURIComponent(id)}`);
+    if (writeHash) {const route=new URLSearchParams(location.hash.slice(1));route.set('chapter',id);history.replaceState(null,'',location.pathname+location.search+'#'+route);}
     if (emit) document.dispatchEvent(new CustomEvent('chapter:select', {detail: {id, focus: true}}));
   }
 
@@ -201,17 +201,25 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village.js?v=130').catch(error => {
+  import('./village-national.js?v=133').then(m=>m.createNationalNavigation());
+  import('./village.js?v=134').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
     document.getElementById('village-intro').hidden = true;
     document.getElementById('village').classList.add('village-unavailable');
   });
+  let activeSchoolId='';
+  document.addEventListener('destination:changed',event=>{
+    activeSchoolId=event.detail.school?.id||'';const visible=new Set(event.detail.chapters.map(c=>c.id));
+    const localRanks=new Map((rankChapters?.(event.detail.chapters)||[]).map(c=>[c.id,c.rank]));
+    cards.forEach(card=>{card.hidden=Boolean(activeSchoolId&&card.dataset.chapter!=='empty'&&!visible.has(card.dataset.chapter));const badge=card.querySelector('.house-rank');if(badge)badge.textContent='#'+(activeSchoolId?localRanks.get(card.dataset.chapter):byId.get(card.dataset.chapter)?.rank);});
+    const heading=document.querySelector('#village-drawer h2');if(heading)heading.textContent=event.detail.school?'Your campus chapters':'All chapters';
+  });
   let lastUpdated=savedSnapshot.updatedAt;
   function updateChapters(snapshot) {
     const focusedChapter = document.activeElement?.closest('.house-card')?.dataset.chapter;
-    // Match the displayed house ranks, including identical progress ties.
+    // Match the displayed house ranks, including identical member-count ties.
     chapters = rankChapters(snapshot.chapters);
     byId.clear();chapters.forEach(c => byId.set(c.id,c));
     const track = document.getElementById('house-track'), empty = cards.find(c => c.dataset.chapter === 'empty');
@@ -242,8 +250,8 @@
     selectChapter(selectedId,{writeHash:false,emit:false});
     if (focusedChapter) cards.find(card => card.dataset.chapter === focusedChapter)?.focus({preventScroll:true});
   }
-  Promise.all([import('./chapter-feed.js?v=120'),import('./village-competition.js?v=111'),import('./village-backyards.js?v=112')]).then(([{startChapterFeed},{houseStandings},houses]) => {
-    rankChapters=houseStandings;
+  Promise.all([import('./chapter-feed.js?v=134'),import('./village-competition.js?v=134'),import('./village-backyards.js?v=112')]).then(([{startChapterFeed},{houseStandings},houses]) => {
+    rankChapters=chapters=>houseStandings(chapters,'members');
     backyardStatus=houses.backyardStatus;
     updateChapters(savedSnapshot);
     chapterFeed=startChapterFeed({

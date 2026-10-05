@@ -159,3 +159,9 @@ test('a quick hide and return refreshes immediately after the cancelled request 
   assert.equal(statuses.length,0,'An intentional cancellation is not an outage');
   assert.equal([...timers.values()][0].delay,0);feed.stop();
 });
+test('a rate tier after the chapter type stays out of the school and the type',()=>{
+  const tiered=row({school:'Columbia University'}).replace('Columbia University · Fraternity','Columbia University · Professional fraternity · half rate');
+  const [chapter]=parseChapterAdmin(table(tiered));
+  assert.equal(chapter.school,'Columbia University');assert.equal(chapter.shortSchool,'Columbia University');
+  assert.equal(chapter.type,'Professional fraternity');
+});

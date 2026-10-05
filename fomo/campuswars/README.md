@@ -1,5 +1,70 @@
 # fomo Campus Wars
 
+## Public-site detail sync — October 5, 2026
+
+Compared the HTML, 65 unique JavaScript/CSS files, and referenced local artwork
+from `https://fomocampus.com/greekvillage/` with this working version. Adopted:
+
+- The live banner's earned amount: joined members × $6.25 for Greek chapters,
+  half that rate for professional/business chapters, and one-third for clubs and
+  student organizations, rounded to cents for display. The 80% target still
+  controls the backyard and GOAL REACHED presentation.
+- The national intro's "$6.25 PER BROTHER ONBOARDED" caption and its description.
+- The live pale-green Join button, current onboarding/program destinations,
+  public canonical URL, current-origin share URLs, and feed URL trailing slash.
+
+The national map, school environments, school parachute track, member-count
+ranking/sizing, updated helipad models and rendering optimizations are retained.
+The live page's optional hunt/experiment hooks are inactive on Greek Village and
+were not imported. Fonts and visible artwork match; FIU SVG differs only in
+whitespace. Hosting-specific telemetry is not part of this UI sync.
+
+Two source inconsistencies are recorded rather than silently copied or invented:
+the live Greek Village FAQ still describes the old fixed-$500 payment despite
+the earnings banner and current onboarding page using per-member rates; the FAQ
+remains unchanged. Its All programs `/landing/` destination returned 404, so this
+version retains its working `/landingpage/` overview link.
+
+## National map and school destinations
+
+The national home renders the top 19 chapters by joined members plus the claim
+lot on the existing main street. All other chapter blocks are excluded from its
+scene. Explore US opens a lazy-loaded, rotatable 3D state map with campus markers,
+school/chapter search, and the top ten schools by total joined members. The main
+world pauses while the dialog is open; the map renders only when its view changes.
+
+The map uses an Albers-projected, raised state model with school-house markers,
+selected-campus labels and screen-space clustering. Selecting a cluster zooms
+toward its campuses and exposes nearby school choices. Drag tilts the national
+view and pans when zoomed in; wheel, pinch and buttons control zoom. On phones,
+search stays at the top and Map / Schools & rankings views share the same full-screen
+dialog. The selected destination and parachute action remain below the map.
+
+Choosing a school or chapter disposes the previous district and builds only that
+school's chapters. Both chapter rank and house size use joined-member counts
+within that school. Existing construction and backyard qualification rules still
+apply. Each destination has deterministic campus-inspired architecture, terrain,
+vegetation and sky, using verified campus location metadata. School views do not
+construct the national helipad. Return to National Home restores the original
+national surroundings and its top 19 chapters.
+
+Travel uses a 6.4-second parachute sequence adapted from the v13 cinematic's
+canopy and camera motion, rendered over the selected school world. It supports
+skip, pause and reduced motion. School and chapter URL hashes support direct
+entry and browser Back/Forward. Live feed updates preserve the current destination
+and refresh member standings, sizes, school totals and the national top ten.
+
+The catalog currently maps 93 canonical schools from the 201-chapter feed;
+organization-type suffixes and institution aliases are consolidated. Unknown
+schools remain available in search without invented coordinates. See
+[geography sources and catalog maintenance](data/ATTRIBUTION.md).
+
+Validation: 264 village tests pass, including destination isolation, local member
+rank/size, deep links, regional geometry, disposal, and parachute handoff. Browser
+verification covers desktop and simulated 320/390-pixel phones. This does not
+establish physical-device frame rates. The local preview runs with
+`CAMPUS_PREVIEW_PORT=4183 node server/campuswars-preview.mjs`.
+
 ## Startup without reducing graphics quality
 
 The page preloads its complete module graph, with one URL per module so shared

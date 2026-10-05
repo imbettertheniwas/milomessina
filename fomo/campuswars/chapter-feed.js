@@ -37,7 +37,7 @@ export function startChapterFeed({initialSnapshot,storageRef=browserStorage(),on
     try {
       // Use the public HTTP cache so the CDN can serve shared snapshots and the
       // browser can validate ETags without downloading an unchanged response.
-      const response=await fetchImpl('/api/campuswars',{signal:controller.signal});
+      const response=await fetchImpl('/api/campuswars/',{signal:controller.signal});
       retryAfter=Math.min(300000,Math.max(0,Number(response.headers?.get('retry-after'))*1000||0));
       if (!response.ok) throw new Error('Chapter update unavailable');
       const snapshot=validateSnapshot(await response.json());

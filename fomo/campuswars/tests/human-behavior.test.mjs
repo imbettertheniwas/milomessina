@@ -58,3 +58,13 @@ test('destination turns remain continuous through stops and cycle boundaries',()
     assert(Math.abs(Math.atan2(Math.sin(b.angle-a.angle),Math.cos(b.angle-a.angle)))<.002);
   }
 });
+
+test('cached conversation turns survive reverse seeks and changes to group timing and membership',()=>{
+  const p={...appearance('changing-group',0),groupPhase:19,groupSize:5,seat:2};
+  for(const change of [{},{groupSize:2},{turnDuration:3},{groupPhase:7},{seat:0},{turnDuration:undefined}]){
+    Object.assign(p,change);
+    for(const time of [0,1,7,7.01,90,4000,2,-8,0]){
+      assert.deepEqual(conversation(p,time),conversation({...p},time),'cached and newly sampled groups agree');
+    }
+  }
+});

@@ -1,4 +1,4 @@
-import {bannerIdentity} from './village-banner-art.js?v=105';
+import {bannerIdentity} from './village-banner-art.js?v=134';
 import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
 
 export const LEADERBOARD_LIMIT=10;
@@ -6,7 +6,7 @@ export const ROW_HEIGHT=166;
 export const ROWS_TOP=382;
 export const ROWS_HEIGHT=830;
 
-export function paintLeaderboardFrame(ctx,w,h,count){
+export function paintLeaderboardFrame(ctx,w,h,count,metric='progress'){
   ctx.fillStyle='#101D29';ctx.fillRect(0,0,w,h);ctx.textBaseline='middle';ctx.textAlign='left';
   ctx.fillStyle='#E9C873';ctx.fillRect(0,0,w,12);ctx.font='700 47px Aeonik, Arial, sans-serif';ctx.fillText('FOMO / GREEK WARS',100,91);
   ctx.fillStyle='#FFFFFF';ctx.font='700 121px Aeonik, Arial, sans-serif';ctx.fillText('LEADERBOARD',100,211);
@@ -15,7 +15,7 @@ export function paintLeaderboardFrame(ctx,w,h,count){
   if(!count){ctx.textAlign='center';ctx.font='700 58px Aeonik, Arial, sans-serif';ctx.fillText('YOUR CHAPTER COULD BE FIRST',w/2,740);}
   ctx.textAlign='left';ctx.fillStyle='#AFC0CD';ctx.font='500 32px Aeonik, Arial, sans-serif';
   ctx.fillText(`TOP ${Math.min(LEADERBOARD_LIMIT,count)} OF ${count} CHAPTERS · ONBOARDING STANDINGS`,100,h-74);
-  ctx.font='500 27px Aeonik, Arial, sans-serif';ctx.fillText('RANKED BY % ACTIVE · TIES BY MEMBERS',100,h-27);
+  ctx.font='500 27px Aeonik, Arial, sans-serif';ctx.fillText(metric==='members'?'RANKED BY MEMBERS ONBOARDED':'RANKED BY % ACTIVE · TIES BY MEMBERS',100,h-27);
   ctx.fillStyle='#E9C873';ctx.font='700 27px Aeonik, Arial, sans-serif';ctx.textAlign='right';ctx.fillText('80% TO QUALIFY',w-100,h-27);
 }
 

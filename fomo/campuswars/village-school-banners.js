@@ -1,6 +1,6 @@
 import {resolveSchoolArtwork,artworkPalette} from './school-artwork.js?v=51';
 import {hash} from './village-district-layout.js?v=80';
-import {createClothBanner} from './village-banners.js?v=128';
+import {createClothBanner} from './village-banners.js?v=134';
 
 // Official logo files and palette provenance: school-banner-references.md.
 const identities=[

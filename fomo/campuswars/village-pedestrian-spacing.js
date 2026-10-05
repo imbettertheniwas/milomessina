@@ -20,10 +20,29 @@ export function sweptDistanceSquared(ax,az,bx,bz,cx,cz,dx,dz){
 export function createPedestrianSpacing(){
   let agents=[],groups=[],lastTime=NaN,revision=0,groupVersions='',result=new Map();
   const grid=new Map();
-  const key=(x,z)=>`${Math.floor(x/CELL)},${Math.floor(z/CELL)}`;
-  function insert(a){const k=key(a.x,a.z);if(!grid.has(k))grid.set(k,new Set());grid.get(k).add(a);a.cell=k;}
-  function moveCell(a){const k=key(a.x,a.z);if(k!==a.cell){grid.get(a.cell)?.delete(a);insert(a);}}
-  function nearby(x,z,r=2){const found=[];for(let gx=Math.floor((x-r)/CELL);gx<=Math.floor((x+r)/CELL);gx++)for(let gz=Math.floor((z-r)/CELL);gz<=Math.floor((z+r)/CELL);gz++)for(const a of grid.get(`${gx},${gz}`)||[])found.push(a);return found;}
+  // Numeric columns avoid allocating a string for every neighbour-cell lookup.
+  // Preserve cell and insertion order: steering ties must resolve identically.
+  function insert(a){
+    const x=Math.floor(a.x/CELL),z=Math.floor(a.z/CELL);
+    let column=grid.get(x);if(!column){column=new Map();grid.set(x,column);}
+    let cell=column.get(z);if(!cell){cell=new Set();column.set(z,cell);}
+    cell.add(a);a.cell=cell;a.cellX=x;a.cellZ=z;
+  }
+  function remove(a){
+    if(!a.cell)return;
+    a.cell.delete(a);
+    if(!a.cell.size){const column=grid.get(a.cellX);column?.delete(a.cellZ);if(!column?.size)grid.delete(a.cellX);}
+    a.cell=null;
+  }
+  function moveCell(a){if(Math.floor(a.x/CELL)!==a.cellX||Math.floor(a.z/CELL)!==a.cellZ){remove(a);insert(a);}}
+  function nearby(x,z,r=2){
+    const found=[],minZ=Math.floor((z-r)/CELL),maxZ=Math.floor((z+r)/CELL);
+    for(let gx=Math.floor((x-r)/CELL),maxX=Math.floor((x+r)/CELL);gx<=maxX;gx++){
+      const column=grid.get(gx);if(!column)continue;
+      for(let gz=minZ;gz<=maxZ;gz++){const cell=column.get(gz);if(cell)for(const a of cell)found.push(a);}
+    }
+    return found;
+  }
   function sample(a,time){
     const s=a.group.sample(a.person,time,a.index);a.pose=s;
     a.ground=a.group.ground(s,a.person);a.hidden=Boolean(s.hidden);
@@ -59,6 +78,7 @@ export function createPedestrianSpacing(){
   }
   function reset(time,preserve=false){
     grid.clear();
+    for(const a of agents)a.cell=null;
     // New streamed neighbours and night visitors take the remaining space;
     // existing people retain their progress and do not jump back to a route.
     const placements=agents.map(a=>{
@@ -86,7 +106,7 @@ export function createPedestrianSpacing(){
     for(const a of agents){a.oldX=a.x;a.oldZ=a.z;}
     for(const a of agents){
       const wasHidden=a.hidden,target=sample(a,time-a.delay);
-      if(a.hidden){grid.get(a.cell)?.delete(a);a.x=target.x;a.z=target.z;continue;}
+      if(a.hidden){remove(a);a.x=target.x;a.z=target.z;continue;}
       if(wasHidden){place(a,target);a.oldX=a.x;a.oldZ=a.z;a.gaitOrigin=a.pose.gait||0;a.heading=a.pose.rotation??a.pose.angle??0;}
       if(!a.mobile){a.vx=a.vz=0;continue;}
       const future=a.group.sample(a.person,time-a.delay+.55,a.index),fx=(future.x-a.pose.x)/.55,fz=(future.z-a.pose.z)/.55,routeSpeed=Math.hypot(fx,fz);

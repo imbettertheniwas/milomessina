@@ -10,6 +10,10 @@ const identities={
   'tau-kappa-epsilon-tampa':{key:'cherry-varsity',primary:'#AD2624',secondary:'#919194',ink:'#FFFFFF',paper:'#FFFFFF'}
 };
 const fallback={key:'chapter-classic',primary:'#252A51',secondary:'#C6BD9F',ink:'#FFFFFF',paper:'#FFFFFF'};
+// The per-member rate by organisation type, as fomocampus.com pays it:
+// $6.25 for Greek chapters, half for professional ones, a third for clubs.
+function rateFor(type){const t=String(type||'');if(/professional|business/i.test(t))return 6.25/2;if(/student org|\bclub\b|organi[sz]ation/i.test(t))return 6.25/3;return 6.25;}
+function money(n){const r=Math.round(n*100)/100;return '$'+(Number.isInteger(r)?r.toLocaleString('en-US'):r.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));}
 export function bannerIdentity(chapter){return identities[chapter.id]||Object.entries(identities).find(([id])=>id.startsWith(chapter.name.toLowerCase().replaceAll(" ","-")+"-"))?.[1]||fallback;}
 
 // Shared FOMO campaign layout in each fraternity’s own colors.
@@ -48,12 +52,12 @@ export function paintChapterBanner(ctx,chapter,w,h){
   text('GREEK WARS',.45,.135,.068,muted,.24);
   if(reached){
     text('GOAL REACHED',.955,.135,.055,muted,.23,'right');
-    text('$500 PAID',.45,.405,.255,'#626CF3',.505);
+    text(`${money(chapter.joined*rateFor(chapter.type))} EARNED`,.45,.405,.20,'#626CF3',.505);
     text(`${chapter.joined} / ${target}`,.45,.68,.165,white,.50);
     text('MEMBERS ONBOARDED',.453,.842,.059,muted,.49);
   }else{
     rect(.744,.075,.211,.12,'#29273D');
-    text('ROAD TO $500',.8495,.138,.060,'#DAD9FF',.19,'center');
+    text(`${money(chapter.joined*rateFor(chapter.type))} EARNED`,.8495,.138,.060,'#DAD9FF',.19,'center');
     text(`${chapter.joined} / ${target}`,.45,.455,.32,white,.50);
     text('MEMBERS ONBOARDED',.453,.685,.059,muted,.49);
     text('80% MEMBER TARGET',.45,.862,.054,muted,.32);

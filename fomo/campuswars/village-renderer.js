@@ -1,24 +1,24 @@
 import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
 import {villageQuality} from './village-quality.js?v=127';
-import {createVillage,buildVillageSteps} from './village-world.js?v=128';
-import {houseStandings} from './village-competition.js?v=111';
-import {rankedHouseSizes} from './village-house-sizing.js?v=112';
+import {createVillage,buildVillageSteps} from './village-world.js?v=134';
+import {houseStandings} from './village-competition.js?v=134';
+import {rankedHouseSizes} from './village-house-sizing.js?v=134';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=128';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=134';
 import {unoccludedHouses} from './village-occlusion.js?v=112';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
 
 export const STREAMING_THRESHOLD=80;
-export function villageRenderLayout(T,input,previousFinishes){
-  const ranked=houseStandings(input),rankedIds=new Set(ranked.map(c=>c.id));
+export function villageRenderLayout(T,input,previousFinishes,metric='progress',theme=null){
+  const ranked=houseStandings(input,metric),rankedIds=new Set(ranked.map(c=>c.id));
   const chapters=[...ranked,...input.filter(c=>!rankedIds.has(c.id)).sort((a,b)=>a.id.localeCompare(b.id))];
   const lots=createLots(chapters.length).map((lot,sourceIndex)=>({...lot,sourceIndex}));
-  const houseSizes=rankedHouseSizes(chapters),houseFinishes=assignHouseFinishes(chapters,previousFinishes);
+  const houseSizes=rankedHouseSizes(chapters,metric),houseFinishes=assignHouseFinishes(chapters,previousFinishes);
   const anchors=lots.map((lot,index)=>{
     const chapter=chapters[index],size=chapter&&houseSizes.get(chapter.id),finished=hasChapterHouse(chapter);
     return {id:chapter?.id||'empty',lot,point:new T.Vector3(lot.x,chapter?(finished?size.roofline+1:6):4,lot.z),...(finished?{house:{halfWidth:size.footprint/2,front:size.offsetZ+7.5*size.depthScale/2}}:{})};
   });
-  return {chapters,lots,houseSizes,houseFinishes,anchors,extension:rowExtension(chapters.length),streetTotal:streetCount(chapters.length)};
+  return {metric,theme,chapters,lots,houseSizes,houseFinishes,anchors,extension:rowExtension(chapters.length),streetTotal:streetCount(chapters.length)};
 }
 export function visibleHouseIndices(T,layout,camera,margin=0){
   const frustum=new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
@@ -38,13 +38,13 @@ function startingIndices(T,layout,options){
 }
 export function createVillageRenderer(T,chapters,options={}){
   if(chapters.length<=STREAMING_THRESHOLD)return createVillage(T,chapters,{compactCrowd:villageQuality().mobile,...options});
-  const layout=villageRenderLayout(T,chapters,options.houseFinishes),indices=startingIndices(T,layout,options);
+  const layout=villageRenderLayout(T,chapters,options.houseFinishes,options.metric,options.theme),indices=startingIndices(T,layout,options);
   const active=createVillage(T,layout.chapters,{...options,layout,indices,compactCrowd:true});
   return streamedRenderer(T,layout,active,indices,true,options.arrivals);
 }
 export async function createVillageRendererAsync(T,chapters,options={}){
   const streaming=chapters.length>STREAMING_THRESHOLD;
-  const layout=streaming?villageRenderLayout(T,chapters,options.houseFinishes):null;
+  const layout=streaming?villageRenderLayout(T,chapters,options.houseFinishes,options.metric,options.theme):null;
   const indices=streaming?startingIndices(T,layout,options):null;
   const steps=buildVillageSteps(T,layout?.chapters||chapters,{...options,layout,indices,attachStreet:!streaming&&(options.attachStreet??false),compactCrowd:streaming||villageQuality().mobile});
   let result;

@@ -1,4 +1,4 @@
-import {campusGroundHeight} from './village-campus-hill.js?v=128';
+import {campusGroundHeight} from './village-campus-hill.js?v=134';
 
 // This is the sum of chapter registrations, never the decorative campus crowd
 // or the full active-roster/qualification denominators.

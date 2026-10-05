@@ -1,5 +1,5 @@
 import {villageQuality} from './village-quality.js?v=127';
-import {createGrassMaterial} from './village-grass.js?v=128';
+import {createGrassMaterial} from './village-grass.js?v=134';
 import {hash} from './village-district-layout.js?v=80';
 import {campusBounds} from './village-campus-bounds.js?v=1';
 // Insert road sections in the one opaque floor. UVs repeat the straight part
@@ -24,7 +24,7 @@ export function setStreetExtension(T,streets,extension=0,streetTotal=1) {
 }
 // A single opaque floor carries all roads, grass, paths and paint. Its larger
 // campus pattern includes pedestrian districts instead of one road per block.
-export function createStreetNetwork(T){
+export function createStreetNetwork(T,theme=null){
   let map,grassMask;
   if(typeof document!=='undefined'){
     const canvas=document.createElement('canvas');canvas.width=canvas.height=villageQuality().terrainResolution;
@@ -107,5 +107,10 @@ export function createStreetNetwork(T){
     map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;
   }
   const bounds=new T.Vector4(),material=createGrassMaterial(T,map,grassMask,bounds);material.userData.campusBounds=bounds;
+  if(theme){
+    const compile=material.onBeforeCompile,cacheKey=material.customProgramCacheKey;
+    material.customProgramCacheKey=()=>cacheKey()+'-school-'+theme.ground;
+    material.onBeforeCompile=shader=>{compile(shader);shader.uniforms.schoolGround={value:new T.Color(theme.ground)};shader.fragmentShader='uniform vec3 schoolGround;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('grassAmount);','grassAmount); diffuseColor.rgb=mix(diffuseColor.rgb,schoolGround*(.85+.15*meadow)*(.8+.2*grassSample.g),grassAmount*'+(theme.tree==='cactus'||theme.land==='city'?'.94':'.32')+');');};
+  }
   const streets=new T.Mesh(new T.BufferGeometry(),material);streets.name='continuous-village-floor';streets.rotation.x=-Math.PI/2;streets.position.y=.045;streets.receiveShadow=true;setStreetExtension(T,streets);return streets;
 }

@@ -31,22 +31,24 @@ export function createDistantCrowd(T,capacity){
   for(const name of ['skin','pants','hair'])geometry.setAttribute(name,new T.InstancedBufferAttribute(new Float32Array(capacity*3),3).setUsage(T.DynamicDrawUsage));
   geometry.setAttribute('motion',new T.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(T.DynamicDrawUsage));
   geometry.setAttribute('poolRole',new T.InstancedBufferAttribute(new Float32Array(capacity),1).setUsage(T.DynamicDrawUsage));
-  const clock={value:0},material=new T.MeshStandardMaterial({color:0xffffff,roughness:.84});
+  const material=new T.MeshStandardMaterial({color:0xffffff,roughness:.84});
   material.onBeforeCompile=shader=>{
-    shader.uniforms.crowdTime=clock;
-    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float region; attribute float poolRole; attribute vec2 swing; attribute vec3 skin; attribute vec3 pants; attribute vec3 hair; attribute vec2 motion; uniform float crowdTime;');
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float region; attribute float poolRole; attribute vec2 swing; attribute vec3 skin; attribute vec3 pants; attribute vec3 hair; attribute vec2 motion;');
     shader.vertexShader=shader.vertexShader.replace('#include <color_vertex>','#include <color_vertex>\nif(region>.5&&region<1.5)vColor=skin; else if(region>1.5&&region<2.5)vColor=pants; else if(region>2.5&&region<3.5)vColor=hair; else if(region>3.5)vColor=vec3(.07); if(poolRole>.5&&((region>1.5&&region<2.5&&position.y<.7)||region>3.5))vColor=skin;');
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-      float gait=sin(crowdTime*(motion.y>.5?7.5:2.0)+motion.x)*swing.y*(motion.y>.5?.48:.055);
+      float gait=sin(motion.x)*swing.y*motion.y;
       if(swing.x>0.){float y=transformed.y-swing.x; transformed.y=swing.x+y*cos(gait)-transformed.z*sin(gait); transformed.z=y*sin(gait)+transformed.z*cos(gait);}
       if(poolRole>.5&&poolRole<1.5)transformed=vec3(transformed.x,-transformed.z+.04,transformed.y-.9);
       else if(poolRole>1.5&&poolRole<2.5)transformed=vec3(transformed.x,.57+max(0.,transformed.y-.85)*.55+transformed.z*.84, .05-(transformed.y-.85)*.84+transformed.z*.55);`);
-    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nif(poolRole>.5&&poolRole<1.5)objectNormal=vec3(objectNormal.x,-objectNormal.z,objectNormal.y); else if(poolRole>1.5&&poolRole<2.5)objectNormal=vec3(objectNormal.x,objectNormal.y*.55+objectNormal.z*.84,-objectNormal.y*.84+objectNormal.z*.55);');
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      float normalGait=sin(motion.x)*swing.y*motion.y;
+      if(swing.x>0.)objectNormal.yz=mat2(cos(normalGait),sin(normalGait),-sin(normalGait),cos(normalGait))*objectNormal.yz;
+      if(poolRole>.5&&poolRole<1.5)objectNormal=vec3(objectNormal.x,-objectNormal.z,objectNormal.y); else if(poolRole>1.5&&poolRole<2.5)objectNormal=vec3(objectNormal.x,objectNormal.y*.55+objectNormal.z*.84,-objectNormal.y*.84+objectNormal.z*.55);`);
   };
-  material.customProgramCacheKey=()=> 'distant-members-pool-2';
+  material.customProgramCacheKey=()=> 'distant-members-gait-3';
   const mesh=new T.InstancedMesh(geometry,material,capacity);mesh.name='distant-chapter-members';mesh.count=0;mesh.instanceColor=new T.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(T.DynamicDrawUsage);mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.instanceMatrix.needsUpdate=true;mesh.boundingSphere=new T.Sphere(new T.Vector3(0,2,0),66);
-  const dummy=new T.Object3D(),color=new T.Color(),slots=[];let count=0,pixelHeight=1440,colorsChanged=false;
-  mesh.onBeforeRender=renderer=>{pixelHeight=renderer.getSize(new T.Vector2()).y;};
+  const dummy=new T.Object3D(),color=new T.Color(),slots=[],size=new T.Vector2();let count=0,pixelHeight=1440,colorsChanged=false,time=0;
+  mesh.onBeforeRender=renderer=>{pixelHeight=renderer.getSize(size).y;};
   const view=new T.Vector3();
   function distant(batch,camera,matrixWorld){
     if(!camera)return false;
@@ -54,17 +56,26 @@ export function createDistantCrowd(T,capacity){
     const depth=Math.max(1,-view.z-batch.bounds.radius),height=1.9*camera.projectionMatrix.elements[5]*pixelHeight/(2*depth);
     batch.distant=height<(batch.distant?28:22);return batch.distant;
   }
-  function begin(time){clock.value=time;count=0;colorsChanged=false;}
+  function begin(now){time=now;count=0;colorsChanged=false;}
   function add(member,state){
     dummy.position.set(state.x,state.ground??member.ground??0,state.z);dummy.rotation.set(0,state.rotation,0);dummy.scale.set(member.height*(member.build??1),member.height,member.height);dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);
     if(slots[count]!==member){slots[count]=member;colorsChanged=true;
     color.set(member.poolRole?(member.swimsuit==='one-piece'?member.swimColor:palettes.skin[member.skin]):member.action==='build'?0xe5a13f:palettes.shirts[member.shirt]);mesh.setColorAt(count,color);
     for(const [name,value] of [['skin',palettes.skin[member.skin]],['pants',member.poolRole?member.swimColor:palettes.pants[member.pants]],['hair',member.cap?palettes.shirts[member.shirt]:palettes.hair[member.hair]]]){color.set(value);geometry.attributes[name].setXYZ(count,color.r,color.g,color.b);}
     geometry.attributes.poolRole.setX(count,member.poolRole==='swim'?1:member.poolRole==='lounge'?2:member.poolRole?3:0);
-    geometry.attributes.motion.setX(count,member.phase??hash(member.chapter,member.member,'distant-gait')*Math.PI*2);
     }
-    geometry.attributes.motion.setY(count,state.walking?1:0);count++;
+    // Use the same distance-based gait as nearby bodies. A slowing or waiting
+    // walker must not keep marching at the old fixed shader-clock speed.
+    const phase=member.phase??hash(member.chapter,member.member,'distant-gait')*Math.PI*2;
+    geometry.attributes.motion.setXY(count,state.walking?(state.gait??time*7.5+phase):time*2+phase,state.walking?.48*(state.motion??1):.055);count++;
   }
-  function finish(){mesh.count=count;mesh.instanceMatrix.needsUpdate=true;if(colorsChanged){mesh.instanceColor.needsUpdate=true;for(const name of ['skin','pants','hair','poolRole'])geometry.attributes[name].needsUpdate=true;}geometry.attributes.motion.needsUpdate=true;}
+  function upload(attribute){attribute.addUpdateRange(0,count*attribute.itemSize);attribute.needsUpdate=true;}
+  function finish(){
+    mesh.count=count;if(!count)return;
+    // Capacity includes every resident. Upload only the populated prefix while
+    // retaining pending ranges until the renderer consumes them.
+    upload(mesh.instanceMatrix);upload(geometry.attributes.motion);
+    if(colorsChanged){upload(mesh.instanceColor);for(const name of ['skin','pants','hair','poolRole'])upload(geometry.attributes[name]);}
+  }
   return {mesh,distant,begin,add,finish,dispose(){mesh.dispose();geometry.dispose();material.dispose();}};
 }

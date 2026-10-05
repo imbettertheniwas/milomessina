@@ -2,6 +2,7 @@ import {hash} from './village-district-layout.js?v=80';
 import {smooth} from './village-human-motion.js?v=106';
 
 const clockCache=new WeakMap();
+const conversationCache=new WeakMap();
 
 // Integrate a smooth stop/start envelope. Absolute time makes streaming, paused
 // camera changes and different frame rates produce exactly the same person.
@@ -31,11 +32,17 @@ export function personalClock(person,time){
 }
 
 export function conversation(person,time){
-  const duration=person.turnDuration??(4.4+hash(person.groupPhase,'cadence')*3.8);
+  let cached=conversationCache.get(person);
+  if(!cached||cached.phase!==person.groupPhase||cached.duration!==person.turnDuration){
+    cached={phase:person.groupPhase,duration:person.turnDuration,cadence:person.turnDuration??(4.4+hash(person.groupPhase,'cadence')*3.8)};
+    conversationCache.set(person,cached);
+  }
+  const duration=cached.cadence;
   const turn=(time+(person.groupPhase||0))/duration,index=Math.floor(turn),u=turn-index;
   const size=person.groupSize||3;
   // Shared group seed gives one speaker, occasional silence and uneven turns.
-  const seat=Math.floor(hash(person.groupPhase,index,'speaker')*size);
+  if(cached.index!==index||cached.size!==size){cached.index=index;cached.size=size;cached.seat=Math.floor(hash(person.groupPhase,index,'speaker')*size);}
+  const seat=cached.seat;
   const speaking=seat===person.seat&&u>.08&&u<.85;
   return {speaking,gesture:speaking?smooth((u-.08)/.2)*smooth((.85-u)/.24)*(.25+.24*Math.sin(time*2+person.phase)**2):0};
 }

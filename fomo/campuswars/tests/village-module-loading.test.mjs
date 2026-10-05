@@ -30,9 +30,9 @@ const preloads=[...html.matchAll(/<link\b[^>]*\brel="modulepreload"[^>]*>/g)].ma
   return resolve(href,root).href;
 });
 
-test('the page starts every production module immediately without a discovery waterfall',()=>{
+test('the page preloads the village while deferring the interactive map until opened',()=>{
   assert(graph.size>1,'the test follows the entry module dependencies');
-  assert.deepEqual(new Set(preloads),new Set(graph.keys()),'preloads must exactly match production imports, including their cache versions; do not preload unused galleries');
+  assert.deepEqual(new Set(preloads),new Set([...graph.keys()].filter(url=>!url.includes('/village-national-map.js'))),'preloads must exactly match production imports, including their cache versions; do not preload unused galleries');
   assert.equal(preloads.length,new Set(preloads).size,'each module is preloaded once');
 });
 

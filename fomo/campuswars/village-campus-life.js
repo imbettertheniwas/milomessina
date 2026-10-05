@@ -1,8 +1,8 @@
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=128';
-import {createDistantCrowd} from './village-distant-crowd.js?v=113';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=131';
+import {createDistantCrowd} from './village-distant-crowd.js?v=131';
 import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
-import {personalClock,conversation} from './village-human-behavior.js?v=128';
-import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=128';
+import {personalClock,conversation} from './village-human-behavior.js?v=131';
+import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=134';
 import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=128';
 import {gaitPhase,humanPose,smooth} from './village-human-motion.js?v=106';
 import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=80';
@@ -85,7 +85,7 @@ const maintenanceRoute=roundedLoop(-51,-29.6,-45,-28.4,.6);
 export function campusPose(person,time,night=false){
   let {x,z,angle}=person,gait=0,walking=false,look=0,motion=1,hidden=false;
   let carrying=false;
-  const clock=personalClock(person,time);
+  const clock=person.action==='journey'||person.action==='walk'?personalClock(person,time):null;
   if(person.action==='journey'){
     const s=journeyPose(person.points,clock.time,person.speed,person.offset);x=s.x;z=s.z;angle=s.angle;walking=s.walking;motion=s.motion*clock.motion;walking=walking&&motion>.001;look=clock.attention;gait=gaitPhase(s.distance,person);carrying=Boolean(person.carry);
     if(person.pickupIndex!==undefined)carrying=carrying&&(s.pointIndex>person.pickupIndex||s.pointIndex===person.pickupIndex&&walking);
@@ -108,7 +108,7 @@ export function campusPose(person,time,night=false){
   }else if(person.action==='groundskeeper'){
     const distance=time*.39,s=maintenanceRoute.sample(distance);x=s.x;z=s.z;angle=s.angle;gait=gaitPhase(distance,person);walking=true;
   }
-  const chat=conversation(person,time),speaking=person.action==='talk'&&chat.speaking;
+  const chat=person.action==='talk'?conversation(person,time):null,speaking=Boolean(chat?.speaking);
   const gesture=speaking?chat.gesture:person.action==='frisbee'?.2*(1+Math.sin(time*.8+person.phase)):0;
   hidden=hidden||Boolean(person.dayOnly&&night)||Boolean(person.nightOnly&&!night);
   return {x,z,angle,gait,hidden,walking,motion,look,speaking,gesture,carrying};

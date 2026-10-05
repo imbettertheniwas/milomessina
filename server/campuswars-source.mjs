@@ -39,10 +39,10 @@ export function parseChapterAdmin(html) {
     const uuid = row.match(/data-del=["']([\da-f-]{36})["']/i)?.[1];
     if (cells.length !== headers.length || !uuid) throw new Error('Incomplete chapter row');
     const name = field(cells[0], 'ch');
-    const schoolType = field(cells[0], 'sc');
-    const separator = schoolType.lastIndexOf(' · ');
-    if (separator < 0) throw new Error('Missing chapter school');
-    const school = schoolType.slice(0,separator), type = schoolType.slice(separator + 3);
+    // "School · Type", optionally followed by a rate tier ("· half rate"),
+    // which is billing detail and never part of the school or the type.
+    const [school = '', type = ''] = field(cells[0], 'sc').split(' · ');
+    if (!type) throw new Error('Missing chapter school');
     const progress = field(cells[3], 'prog').match(/^([\d,]+)\s*\/\s*([\d,]+)$/);
     const activeMatch = text(cells[3]).match(/([\d,]+)\s+actives\b/);
     if (!progress || !activeMatch) throw new Error('Missing chapter totals');

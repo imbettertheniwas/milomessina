@@ -1,35 +1,35 @@
 import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=113';
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=128';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=131';
 import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
-import {rankedHouseSizes} from './village-house-sizing.js?v=112';
+import {rankedHouseSizes} from './village-house-sizing.js?v=134';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
 import {createVillageEntrance} from './village-entrance.js?v=128';
-import {createPongGames} from './village-pong.js?v=128';
-import {createDieGames} from './village-die.js?v=128';
-import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=111';
-import {createCompetition,houseStandings} from './village-competition.js?v=111';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=128';
+import {createPongGames} from './village-pong.js?v=134';
+import {createDieGames} from './village-die.js?v=134';
+import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=134';
+import {createCompetition,houseStandings} from './village-competition.js?v=134';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=134';
 import {humanPose} from './village-human-motion.js?v=106';
-import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=128';
+import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=134';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=128';
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=128';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=128';
-import {createChapterBanner,bannerIdentity} from './village-banners.js?v=128';
-import {createSchoolBanner} from './village-school-banners.js?v=128';
-import {createDistantCrowd} from './village-distant-crowd.js?v=113';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=134';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=134';
+import {createChapterBanner,bannerIdentity} from './village-banners.js?v=134';
+import {createSchoolBanner} from './village-school-banners.js?v=134';
+import {createDistantCrowd} from './village-distant-crowd.js?v=131';
 import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
 import {createBackyards,hasChapterHouse} from './village-backyards.js?v=112';
 
 export function createVillage(THREE,chapters,options={}){
   const steps=buildVillageSteps(THREE,chapters,options);let result;do{result=steps.next();}while(!result.done);return result.value;
 }
-export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={},arrivals=null}={}){
+export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={},arrivals=null,metric='progress',theme=null}={}){
   // Physical addresses follow the same percentage standings as the rank badges.
-  if(layout)chapters=layout.chapters;
-  else {const ranked=houseStandings(chapters),rankedIds=new Set(ranked.map(c=>c.id));chapters=[...ranked,...chapters.filter(c=>!rankedIds.has(c.id)).sort((a,b)=>a.id.localeCompare(b.id))];}
-  const houseFinishes=layout?.houseFinishes||assignHouseFinishes(chapters,previousFinishes),houseSizes=layout?.houseSizes||rankedHouseSizes(chapters);
+  if(layout){chapters=layout.chapters;metric=layout.metric??metric;theme=layout.theme??theme;}
+  else {const ranked=houseStandings(chapters,metric),rankedIds=new Set(ranked.map(c=>c.id));chapters=[...ranked,...chapters.filter(c=>!rankedIds.has(c.id)).sort((a,b)=>a.id.localeCompare(b.id))];}
+  const houseFinishes=layout?.houseFinishes||assignHouseFinishes(chapters,previousFinishes),houseSizes=layout?.houseSizes||rankedHouseSizes(chapters,metric);
   const lots=layout?.lots||createLots(chapters.length),extension=layout?.extension??rowExtension(chapters.length),streetTotal=layout?.streetTotal??streetCount(chapters.length);
   const selected=indices?[...indices].sort((a,b)=>a-b):lots.map((_,i)=>i),selectedLots=selected.map(i=>lots[i]);
   const selectedHouseIndices=selected.filter(i=>i<chapters.length),selectedChapters=selectedHouseIndices.map(i=>chapters[i]),houseLots=selectedHouseIndices.map(i=>lots[i]);
@@ -77,7 +77,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
 
 
 
-  const streets=existingStreet||createStreetNetwork(THREE);setStreetExtension(THREE,streets,extension,streetTotal);if(attachStreet)world.add(streets);
+  const streets=existingStreet||createStreetNetwork(THREE,theme);setStreetExtension(THREE,streets,extension,streetTotal);if(attachStreet)world.add(streets);
 
 
   // Street lamps, paths, trees and furniture give the village a lived-in scale.
@@ -124,10 +124,10 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     const house=new THREE.Group();house.name=`chapter-house-${id}`;group.add(house);
     const size=houseSizes.get(id),{style,width,height,footprint,roofline,depthScale}=size;
     const finish=houseFinishes.get(id);house.userData.exterior=finish;
-    const wall=finish.brick?facade(finish.color):mat(finish.color);const depth=7.5;
+    const color=theme?new THREE.Color(theme.wall).multiplyScalar(.90+hash(id,'school-wall')*.20):finish.color;const wall=theme?(theme.tree==='palm'||theme.tree==='cactus'?mat(color.getHex()):facade(color)):finish.brick?facade(finish.color):mat(finish.color);const depth=7.5;
     box(house,0,.38,0,width+1,.6,depth+1,0xc1b5a0);box(house,0,height/2+.6,0,width,height,depth,wall);
     box(house,0,height+.65,0,width+.5,.3,depth+.5,0xe4ddca);box(house,0,4.1,3.85,width+.25,.18,.22,0xcbbb9f);
-    roof(house,0,height+.82,0,width+.8,depth+1.1,2.0,0x343846,style!==4);
+    roof(house,0,height+.82,0,width+.8,depth+1.1,2.0,theme?.roof??0x343846,style!==4);
     box(house,-width*.3,height+1.4,-1.8,.85,2,.9,wall);box(house,-width*.3,height+2.45,-1.8,1,.16,1.05,0x76665e);
     for(let floor=0;floor<(style===4?3:2);floor++)for(let col=0;col<5;col++){
       const x=(col-2)*(width/5.8);if(floor===0&&col===2)continue;
@@ -296,7 +296,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     return updated;
   }
   animateCrowd(0);
-  const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors);world.add(competition.root);competition.board.position.z+=extension;
+  const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors,metric);world.add(competition.root);competition.board.position.z+=extension;
   const entrance=createVillageEntrance(THREE,extension);world.add(entrance);
   // Batch repeated architectural parts so phones draw whole sets at once.
   world.updateMatrixWorld(true);

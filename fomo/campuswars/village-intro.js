@@ -5,7 +5,7 @@ export const openingView = {target:[1.808,2,-8.101],theta:2.956047,phi:.224457,r
 export const introStages = [
   {start:0,end:2.72,title:'GREEK WARS.',description:'Your chapter. Your team. A trading competition on fomo.'},
   {start:2.72,end:5.95,title:"IF YOU'RE IN A FRAT.",description:'fomo has committed $500,000'},
-  {start:5.95,end:10.2,title:'$500 ONCE ONBOARDED',description:'Rally your chapter. Compete on campus and nationally.'},
+  {start:5.95,end:10.2,title:'$6.25 PER BROTHER ONBOARDED',description:'Every member who joins pays the chapter. Rally yours.'},
   {start:10.2,end:13.6,title:'YOUR CHAPTER. NEXT.',description:'Bring your people to Greek Wars.'}
 ];
 const home=[openingView.target[0]+Math.sin(openingView.theta)*Math.cos(openingView.phi)*openingView.radius,openingView.target[1]+Math.sin(openingView.phi)*openingView.radius,openingView.target[2]+Math.cos(openingView.theta)*Math.cos(openingView.phi)*openingView.radius];
