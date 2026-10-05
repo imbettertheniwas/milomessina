@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>PULSE sound verification</title><style>body{font:16px system-ui;background:#100b20;color:#eee;padding:40px}pre{white-space:pre-wrap}</style><h1>PULSE audio verification</h1><p>Offline render: no sound is played.</p><pre id="result">Rendering…</pre><script type="module">
+import {playChime} from '../sound.js';
+const results={};
+for(const kind of ['arrival','goal']){const ctx=new OfflineAudioContext(1,24000*4,24000);playChime(ctx,kind);const buffer=await ctx.startRendering(),samples=buffer.getChannelData(0);let peak=0,last=0,energy=0;for(let i=0;i<samples.length;i++){peak=Math.max(peak,Math.abs(samples[i]));energy+=samples[i]**2;if(Math.abs(samples[i])>.0002)last=i;}results[kind]={durationSeconds:last/24000,peak,rms:Math.sqrt(energy/samples.length)};}
+const passed=results.arrival.durationSeconds<1&&results.arrival.durationSeconds>.5&&results.goal.durationSeconds>3&&results.goal.peak>results.arrival.peak*1.5&&results.goal.peak<.5;
+document.getElementById('result').textContent=(passed?'PASS':'FAIL')+'\n'+JSON.stringify(results,null,2);document.title=(passed?'PASS':'FAIL')+' · PULSE audio';
+</script></html>

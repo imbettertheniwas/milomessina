@@ -75,6 +75,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/eyes", "destination": "/fomo/pulse/index.html" },
+    { "source": "/eyes/", "destination": "/fomo/pulse/index.html" },
     { "source": "/greek/refer", "destination": "/greek/refer/index.html" },
     { "source": "/greek/refer/", "destination": "/greek/refer/index.html" },
     { "source": "/greek", "destination": "/greek/index.html" },
