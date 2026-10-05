@@ -35,8 +35,10 @@ world pauses while the dialog is open; the map renders only when its view change
 
 The map uses an Albers-projected, raised state model with school-house markers,
 selected-campus labels and screen-space clustering. Selecting a cluster zooms
-toward its campuses and exposes nearby school choices. Drag tilts the national
-view and pans when zoomed in; wheel, pinch and buttons control zoom. On phones,
+toward its campuses and opens a nearby-campus list (including on phones). Drag
+always pans; wheel zoom follows the pointer, and pinch/buttons also control zoom.
+Retina drawing buffers retain explicit CSS dimensions so the state geometry and
+clickable pins share a coordinate system, including after viewport changes. On phones,
 search stays at the top and Map / Schools & rankings views share the same full-screen
 dialog. The selected destination and parachute action remain below the map.
 
