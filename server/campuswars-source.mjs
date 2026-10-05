@@ -25,15 +25,19 @@ export function parseChapterAdmin(html) {
   const tables = [...html.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)];
   const table = tables.find(([, value]) => {
     const headers = [...value.matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)].map(m => text(m[1]));
-    return headers[0] === 'Chapter' && headers[3] === 'Progress' && headers[5] === 'Registered';
+    return headers[0] === 'Chapter' && headers[3] === 'Progress' && headers.includes('Registered') && headers.includes('Contact');
   });
   if (!table) throw new Error('Chapter table unavailable');
+  // Resolve by header: FOMO Campus removed the old nomination column and
+  // added a download portal. Never interpret a private column as public data.
+  const headers = [...table[1].matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)].map(m => text(m[1]));
+  const registeredColumn = headers.indexOf('Registered');
   const ids = new Set();
   const chapters = [...table[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap(([, row]) => {
     const cells = [...row.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map(m => m[1]);
     if (!cells.length) return [];
     const uuid = row.match(/data-del=["']([\da-f-]{36})["']/i)?.[1];
-    if (cells.length < 7 || !uuid) throw new Error('Incomplete chapter row');
+    if (cells.length !== headers.length || !uuid) throw new Error('Incomplete chapter row');
     const name = field(cells[0], 'ch');
     const schoolType = field(cells[0], 'sc');
     const separator = schoolType.lastIndexOf(' · ');
@@ -43,7 +47,7 @@ export function parseChapterAdmin(html) {
     const activeMatch = text(cells[3]).match(/([\d,]+)\s+actives\b/);
     if (!progress || !activeMatch) throw new Error('Missing chapter totals');
     const joined = Number(progress[1].replaceAll(',','')), active = Number(activeMatch[1].replaceAll(',',''));
-    const date = new Date(text(cells[5]) + ' 00:00:00 GMT');
+    const date = new Date(text(cells[registeredColumn]) + ' 00:00:00 GMT');
     if (!name || !school || !Number.isSafeInteger(joined) || joined < 0 || !Number.isSafeInteger(active) || active <= 0 || !Number.isFinite(date.getTime())) throw new Error('Invalid chapter totals');
     // The admin denominator is the 80% target, not the full active roster.
     const known = legacy.find(c => c[0] === name && c[1] === school);
@@ -82,7 +86,7 @@ export async function readChapterSource(response,maxBytes=8*1024*1024){
 
 export async function fetchChapterSnapshot({password, username='village', fetchImpl=fetch, now=()=>new Date()}={}) {
   if (!password) throw new Error('Chapter source is not configured');
-  const response = await fetchImpl('https://www.aryatoufanian.com/admin/', {
+  const response = await fetchImpl('https://fomocampus.com/admin/', {
     headers:{Authorization:`Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`, Accept:'text/html', 'Cache-Control':'no-cache'},
     redirect:'error', signal:AbortSignal.timeout(8000), cache:'no-store'
   });

@@ -15,6 +15,17 @@ test('admin adapter uses full rosters and exposes only approved chapter aggregat
   assert.deepEqual(Object.keys(chapters[0]).sort(),['id','name','letters','school','shortSchool','type','joined','active','registered','house'].sort());
   assert(!/PRIVATE|private@example|INVITE/.test(JSON.stringify(chapters)));
 });
+test('FOMO Campus registration table is selected among analytics tables and uses its shifted date column',()=>{
+  const headers=['Chapter','Who registered','Contact','Progress','Registered','Join link','Download portal',''];
+  const current=row().replace('<td>PRIVATE NOMINATION</td>','').replace('</tr>','<td>PRIVATE PORTAL</td><td>PRIVATE ACTION</td></tr>');
+  const analytics='<table><tr><th>Chapter</th><th>Today</th><th>Last 7 days</th><th>Progress</th><th>Last join</th><th></th></tr></table>';
+  const html=analytics+`<table><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>${current}</table>`;
+  const chapters=parseChapterAdmin(html);
+  assert.equal(chapters.length,1);assert.equal(chapters[0].registered,'2026-09-09');
+  assert.equal(chapters[0].joined,1);assert.equal(chapters[0].active,55);
+  assert(!/PRIVATE|private@example|INVITE|PORTAL/.test(JSON.stringify(chapters)));
+  assert.throws(()=>parseChapterAdmin(html.replace('<td>PRIVATE PORTAL</td>','')));
+});
 test('different schools keep distinct chapter identities and old share links survive',()=>{
   const chapters=parseChapterAdmin(table(row()+row({id:'22345678-abcd-abcd-abcd-123456789012',school:'University of Tampa'})));
   assert.equal(chapters[0].id,'phi-delta-theta-tampa');assert.notEqual(chapters[0].id,chapters[1].id);
@@ -26,7 +37,7 @@ test('login pages, incomplete rows, duplicate identities and invalid totals fail
 });
 test('server reads the fixed authenticated source without following redirects or leaking credentials',async()=>{
   const result=await fetchChapterSnapshot({password:'test-only-password',fetchImpl:async(url,options)=>{
-    assert.equal(url,'https://www.aryatoufanian.com/admin/');assert.equal(options.redirect,'error');assert.equal(options.cache,'no-store');
+    assert.equal(url,'https://fomocampus.com/admin/');assert.equal(options.redirect,'error');assert.equal(options.cache,'no-store');
     assert(options.headers.Authorization.startsWith('Basic '));return {ok:true,text:async()=>table(row())};
   }});
   assert.equal(result.live,true);assert.equal(result.chapters.length,1);assert(!JSON.stringify(result).includes('password'));
