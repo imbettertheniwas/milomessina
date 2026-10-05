@@ -127,3 +127,21 @@ test('a live roster expanding the village keeps every person on the rebuilt camp
     }
   }finally{before.dispose();after.dispose();oldDistricts.dispose();newDistricts.dispose();}
 });
+
+
+test('the nineteen-house live home stays navigable when crowds fill the extended sidewalk',()=>{
+  const roster=[{"id":"chapter-31812ac6-ebf1-4fb6-83c1-87aa02b7b680","joined":166,"active":40},{"id":"chapter-d1900f8d-a0ca-43e2-aba7-1f80f48501b3","joined":100,"active":160},{"id":"sigma-chi-sdsu","joined":85,"active":100},{"id":"chapter-289c003f-ee64-480a-b8a8-dae00b2c05e7","joined":80,"active":100},{"id":"chapter-2aa21571-a882-422d-b889-d875bed88e97","joined":75,"active":150},{"id":"chapter-2b1f7c16-8c3b-473b-a187-8708c4464073","joined":75,"active":200},{"id":"chapter-3930aab9-2b51-4136-b971-48cbbdc8d2a5","joined":74,"active":250},{"id":"chapter-71d19f0c-fd77-429e-a2dd-d5697449e6a4","joined":72,"active":175},{"id":"chapter-b767e4c0-8f44-466b-8afd-7feb38ddcdc5","joined":69,"active":160},{"id":"chapter-a0ea31d2-d9b5-4e93-9366-3012fd4e1ca0","joined":64,"active":150},{"id":"chapter-9194fe18-2348-4805-85c5-2b5a9cce6835","joined":59,"active":160},{"id":"chapter-9f8d8564-4c0b-4fa7-97fd-8787c3837dc6","joined":59,"active":140},{"id":"chapter-e064bc9a-7d5c-41af-877a-dcf396897f22","joined":56,"active":70},{"id":"chapter-0ed5301b-688a-48e7-8b11-e50041fbe940","joined":51,"active":167},{"id":"chapter-967ecd91-843e-4047-9811-fbed0bde0ade","joined":50,"active":150},{"id":"chapter-757d5496-5e04-4f23-872d-13b73a7cf808","joined":47,"active":200},{"id":"chapter-6067f5f4-0eee-4d48-a4cd-68fc9a3862f8","joined":46,"active":200},{"id":"phi-delta-theta-tampa","joined":43,"active":50},{"id":"chapter-7b22dbbb-c5e1-4283-89c4-e8504545a59b","joined":40,"active":105}];
+  const chapters=roster.map(c=>({...c,name:'Test chapter',letters:'ΑΒ',school:'Test University'}));
+  const village=createVillage(T,chapters,{metric:'members'}),districts=createDistricts(T,village.extension,village.streetTotal),spacing=createPedestrianSpacing();
+  try{
+    assert.equal(village.extension,133);
+    const groups=[...village.pedestrians,...districts.pedestrians];
+    // Camera return, streaming and live roster rebuilds can place pedestrians
+    // at any clock time, including an occupied section of the sidewalk.
+    for(const time of [0,.03,.1,1,2,5,10,15,23,60,180]){
+      const poses=spacing.update(time,groups);check(spacing.agents);
+      assert.equal([...poses.values()].reduce((sum,p)=>sum+p.length,0),groups.reduce((sum,g)=>sum+g.people.length,0));
+      for(const a of spacing.agents)assert(a.hidden||a.group.allowed(a.x-a.group.offsetX,a.z-a.group.offsetZ,a.pose,a.person),a.id);
+    }
+  }finally{village.dispose();districts.dispose();}
+});

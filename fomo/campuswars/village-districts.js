@@ -3,7 +3,7 @@ import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus
 import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=128';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=134';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=136';
 import {dressNeighborhood} from './village-places.js?v=80';
 import {createStadium,STADIUM_SITE} from './village-stadium.js?v=128';
 import {campusDistrictExists} from './village-campus-bounds.js?v=1';

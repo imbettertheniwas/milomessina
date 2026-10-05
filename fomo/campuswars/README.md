@@ -42,6 +42,10 @@ clickable pins share a coordinate system, including after viewport changes. On p
 search stays at the top and Map / Schools & rankings views share the same full-screen
 dialog. The selected destination and parachute action remain below the map.
 
+Campus pedestrian collision bounds follow the extended block positions. When a
+chapter fills a sidewalk section, visitors can start farther along the same
+sidewalk without reducing the crowd or aborting the animation.
+
 Choosing a school or chapter disposes the previous district and builds only that
 school's chapters. Both chapter rank and house size use joined-member counts
 within that school. Existing construction and backyard qualification rules still

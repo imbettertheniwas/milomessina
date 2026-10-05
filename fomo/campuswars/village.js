@@ -10,7 +10,7 @@ import * as THREE from './vendor/three.module.min.js';
 import {createVillageRendererAsync} from './village-renderer.js?v=134';
 import {chapterSceneKey} from './village-startup.js?v=128';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
-import {createDistricts} from './village-districts.js?v=134';
+import {createDistricts} from './village-districts.js?v=136';
 import {clampCampusTarget} from './village-campus-bounds.js?v=1';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=134';
 import {createMoneyRain} from './village-money-rain.js?v=134';

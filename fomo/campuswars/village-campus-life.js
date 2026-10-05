@@ -142,14 +142,18 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1,extension=0){
   const distant=core?null:createDistantCrowd(T,n),detailMeshes=[body,heads,hair,gear,shoes,balls],viewBounds={bounds:new T.Sphere(new T.Vector3(0,2,core?extension/2:0),activityRadius)};
   if(distant)root.add(distant.mesh);
   const obstacles=[];
-  for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)obstacles.push(...districtSpecs(x,z,streets).map(b=>({...b,cos:Math.cos(b.rotation),sin:Math.sin(b.rotation)})));
+  for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)obstacles.push(...districtSpecs(x,z,streets).map(b=>({...b,z:b.z+(z>0||z===0&&b.z>=30?extension:0),cos:Math.cos(b.rotation),sin:Math.sin(b.rotation)})));
   const ground=(s,p)=>campusGroundHeight(s.x+cx*100,s.z+cz*100)+(p.ground??(p.action==='basketball'?.33:p.action==='skate'?.14:p.action==='doorway'?.27:p.action==='journey'?.17:.045));
   const pedestrian=pedestrianGroup(`campus:${cx},${cz}`,people,(p,time)=>campusPose(p,time,night),{
     offsetX:cx*100,offsetZ:cz*100+(cz>0?extension:0),ground,
     allowed:(x,z,s,p)=>{
-      if(Math.hypot(x-s.x,z-s.z)>2.4)return false;
+      // A crowded lawn can occupy an entire short section of sidewalk. Keep
+      // transit visitors on that same sidewalk, but allow a free position farther
+      // along it when a district appears or the live roster is rebuilt.
+      const transit=core&&['walk','jog','dogwalk','skate'].includes(p.action);
+      if(Math.hypot(x-s.x,z-s.z)>2.4&&!(transit&&Math.abs(x-s.x)<=1.2&&Math.abs(z-s.z)<=16))return false;
       if(core&&Math.abs(x)>25.1&&Math.abs(x)<37.6&&z>-27&&z<27+extension)return false;
-      for(const b of obstacles){const dx=x+cx*100-b.x,dz=z+cz*100-b.z,c=b.cos,a=b.sin;if(Math.abs(dx*c-dz*a)<b.width/2+.2&&Math.abs(dx*a+dz*c)<b.depth/2+.2)return false;}
+      for(const b of obstacles){const dx=x+cx*100-b.x,dz=z+cz*100+(cz>0?extension:0)-b.z,c=b.cos,a=b.sin;if(Math.abs(dx*c-dz*a)<b.width/2+.2&&Math.abs(dx*a+dz*c)<b.depth/2+.2)return false;}
       return true;
     }
   });
