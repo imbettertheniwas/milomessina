@@ -246,6 +246,11 @@
 
 /* Chapter explorer: a compact atlas, campus collection and focused directory. */
 .chapters [hidden]{display:none!important}
+.chapters{--atlas-bg:#111324;--atlas-text:#eaeaff;--atlas-line:#303046;--atlas-muted:#a4a5bd;
+  --atlas-control:#29263e;--atlas-control-text:#cfc5ff;--atlas-glow:#282440;--atlas-grid:#ffffff05;
+  --atlas-label:#777a98;--atlas-base:#080a16;--atlas-shadow:#0008;--atlas-land:#1C1B29;
+  --atlas-land-active:#242334;--atlas-coast:rgba(203,208,235,.17);--atlas-hover:#2C2B40;--atlas-selected:#2F2E47;
+  --atlas-idle:#758099;--atlas-progress:#b29aff;--atlas-goal:#89ebc3;--atlas-pin-edge:#0A0913;--atlas-stem:#727095;--atlas-focus:#fff;}
 .chapters{--cx-accent:#ad9aff;--cx-mint:#81e9c2}
 .chapters .cx-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:8px 0}
 .chapters .cx-eyebrow{font:10px var(--mono);letter-spacing:.15em;color:var(--violet-hi,#ad9aff)}
@@ -269,33 +274,33 @@
 .chapters .seg button{border:1px solid var(--line);padding:8px 12px}
 .chapters .seg button.on{border-color:var(--violet-hi);background:var(--violet-soft)}
 .chapters .cx-explore{display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:16px;align-items:stretch}
-.chapters .cx-map-panel{background:#111324;color:#eaeaff;border-color:#303046;border-radius:20px}
-.chapters .cx-map-panel .panel-h{border-color:#303046;align-items:center}
-.chapters .cx-map-panel .panel-h h2{font-size:16px;color:#eaeaff}
-.chapters .cx-map-panel .panel-h .note{font:10px var(--mono);color:#a4a5bd}
-.chapters .cx-map-panel .panel-h>button{background:#29263e;color:#cfc5ff;padding:7px 9px}
-.chapters .cx-map-stage{perspective:950px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#282440 0,transparent 68%),linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:auto,30px 30px,30px 30px;min-height:320px;display:flex;align-items:center}
-.chapters .cx-map-label{position:absolute;left:20px;top:20px;font:8px var(--mono);letter-spacing:.14em;color:#777a98;z-index:1;pointer-events:none}
+.chapters .cx-map-panel{background:var(--atlas-bg);color:var(--atlas-text);border-color:var(--atlas-line);border-radius:20px}
+.chapters .cx-map-panel .panel-h{border-color:var(--atlas-line);align-items:center}
+.chapters .cx-map-panel .panel-h h2{font-size:16px;color:var(--atlas-text)}
+.chapters .cx-map-panel .panel-h .note{font:10px var(--mono);color:var(--atlas-muted)}
+.chapters .cx-map-panel .panel-h>button{background:var(--atlas-control);color:var(--atlas-control-text);padding:7px 9px}
+.chapters .cx-map-stage{perspective:950px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,var(--atlas-glow) 0,transparent 68%),linear-gradient(var(--atlas-grid) 1px,transparent 1px),linear-gradient(90deg,var(--atlas-grid) 1px,transparent 1px);background-size:auto,30px 30px,30px 30px;min-height:320px;display:flex;align-items:center}
+.chapters .cx-map-label{position:absolute;left:20px;top:20px;font:8px var(--mono);letter-spacing:.14em;color:var(--atlas-label);z-index:1;pointer-events:none}
 .chapters .cx-map-stage .mapwrap{width:100%;background:none;overflow:visible;transition:transform .5s;transform-origin:center 65%;margin:15px 0 5px;padding:15px 0;}
-.chapters .cx-map-stage .mapwrap.depth{transform:rotateX(24deg) rotateZ(-3deg) scale(.96);filter:drop-shadow(0 17px 0 #080a16) drop-shadow(0 25px 20px #0008)}
+.chapters .cx-map-stage .mapwrap.depth{transform:rotateX(24deg) rotateZ(-3deg) scale(.96);filter:drop-shadow(0 17px 0 var(--atlas-base)) drop-shadow(0 25px 20px var(--atlas-shadow))}
 .chapters .cx-map-stage svg.usmap{display:block;width:100%;height:auto;max-height:410px;touch-action:pan-y}
-.chapters .cx-map-panel .st{fill:#22273e;stroke:#48526c;stroke-width:1}
-.chapters .cx-map-panel .st.on{fill:#343453}
-.chapters .cx-map-panel .dot{fill:#758099;stroke:#bec8df;stroke-width:1.4;animation:none}
-.chapters .cx-map-panel .dot.prog{fill:#b29aff;stroke:#e2d9ff}
-.chapters .cx-map-panel .dot.goal{fill:#89ebc3;stroke:#d2ffec}
+.chapters .cx-map-panel .st{fill:var(--atlas-land);stroke:var(--atlas-coast);stroke-width:1}
+.chapters .cx-map-panel .st.on{fill:var(--atlas-land-active)}
+.chapters .cx-map-panel .dot{fill:var(--atlas-idle);stroke:#bec8df;stroke-width:1.4;animation:none}
+.chapters .cx-map-panel .dot.prog{fill:var(--atlas-progress);stroke:#e2d9ff}
+.chapters .cx-map-panel .dot.goal{fill:var(--atlas-goal);stroke:#d2ffec}
 .chapters .cx-map-panel .halo{opacity:.18}
-.chapters .cx-map-panel .ring{stroke:#89ebc3}
+.chapters .cx-map-panel .ring{stroke:var(--atlas-goal)}
 .chapters .cx-map-panel .ping{display:none}
-.chapters .pin-stem{stroke:#727095;stroke-width:5;pointer-events:none;opacity:.8}
+.chapters .pin-stem{stroke:var(--atlas-stem);stroke-width:5;pointer-events:none;opacity:.8}
 .chapters .cx-map-panel .marks.dim g:has(.dot:not(.sel)){opacity:.12}
 .chapters .cx-map-panel .dot.sel{stroke:#fff;stroke-width:3;opacity:1}
-.chapters .cx-map-panel .mapbar,.chapters .cx-map-panel .maplegend{background:#111324;border-color:#303046;color:#a4a5bd}
-.chapters .cx-map-panel .maplegend .k{font-size:10px;color:#a4a5bd}
-.chapters .cx-map-panel .maplegend i.goal{background:#89ebc3}
-.chapters .cx-map-panel .maplegend i.prog{background:#b29aff}
-.chapters .cx-map-panel .mapbar button{color:#d8d6ee;border-color:#3a3a50;background:#232439}
-.chapters .cx-map-panel .maphint{font-size:10px;color:#a4a5bd}
+.chapters .cx-map-panel .mapbar,.chapters .cx-map-panel .maplegend{background:var(--atlas-bg);border-color:var(--atlas-line);color:var(--atlas-muted)}
+.chapters .cx-map-panel .maplegend .k{font-size:10px;color:var(--atlas-muted)}
+.chapters .cx-map-panel .maplegend i.goal{background:var(--atlas-goal)}
+.chapters .cx-map-panel .maplegend i.prog{background:var(--atlas-progress)}
+.chapters .cx-map-panel .mapbar button{color:var(--atlas-control-text);border-color:var(--atlas-line);background:var(--atlas-control)}
+.chapters .cx-map-panel .maphint{font-size:10px;color:var(--atlas-muted)}
 .chapters .cx-inspector{padding:24px 22px;border-radius:20px;min-width:0;background:radial-gradient(circle at 50% 35%,var(--violet-soft),transparent 65%),var(--surface)}
 .chapters .cx-inspector h3{font-size:20px;line-height:1.25;letter-spacing:-.03em;margin:12px 0;text-wrap:balance}
 .chapters .cx-inspector p{font-size:12px;color:var(--muted);line-height:1.7}
@@ -348,4 +353,24 @@
 .chapters .cx-filters select{padding:8px 10px}
 .chapters .cx-orbit{width:145px;height:145px;margin:18px auto}
 .chapters .cx-inspector .cx-action{height:auto;min-height:38px;white-space:normal}
-.chapters .cx-map-panel{--gold:#89ebc3;--violet:#b29aff;--none:#758099}
+.chapters .cx-map-panel{--gold:var(--atlas-goal);--violet:var(--atlas-progress);--none:var(--atlas-idle);--land:var(--atlas-land);--land-hi:var(--atlas-land-active);--coast:var(--atlas-coast)}
+
+/* Match Internal's existing theme control, including the OS default. */
+:root[data-theme="light"] .chapters{--gold:#956908;--gold-soft:rgba(149,105,8,.1);--cx-mint:#16805c;--atlas-bg:#f8f8ff;--atlas-text:#292640;--atlas-line:#dcdbea;--atlas-muted:#615e78;
+  --atlas-control:#eeebfc;--atlas-control-text:#504080;--atlas-glow:#e3def5;--atlas-grid:#716e9912;
+  --atlas-label:#706b86;--atlas-base:#b5b0cf;--atlas-shadow:#64617c33;--atlas-land:#e7e7f1;
+  --atlas-land-active:#d5d2e8;--atlas-coast:#aaa6c0;--atlas-hover:#c8bff0;--atlas-selected:#b6a7e6;
+  --atlas-idle:#687893;--atlas-progress:#7950d0;--atlas-goal:#16805c;--atlas-pin-edge:#fff;--atlas-stem:#a19abb;--atlas-focus:#32234f;}
+@media(prefers-color-scheme:light){
+  :root:not([data-theme]) #ch-board.chapters{--gold:#956908;--gold-soft:rgba(149,105,8,.1);--cx-mint:#16805c;--atlas-bg:#f8f8ff;--atlas-text:#292640;--atlas-line:#dcdbea;--atlas-muted:#615e78;
+  --atlas-control:#eeebfc;--atlas-control-text:#504080;--atlas-glow:#e3def5;--atlas-grid:#716e9912;
+  --atlas-label:#706b86;--atlas-base:#b5b0cf;--atlas-shadow:#64617c33;--atlas-land:#e7e7f1;
+  --atlas-land-active:#d5d2e8;--atlas-coast:#aaa6c0;--atlas-hover:#c8bff0;--atlas-selected:#b6a7e6;
+  --atlas-idle:#687893;--atlas-progress:#7950d0;--atlas-goal:#16805c;--atlas-pin-edge:#fff;--atlas-stem:#a19abb;--atlas-focus:#32234f;}
+}
+.chapters .cx-map-panel svg.usmap path.st.on:hover{fill:var(--atlas-hover)}
+.chapters .cx-map-panel svg.usmap path.st.sel{fill:var(--atlas-selected);stroke:var(--atlas-progress)}
+.chapters .cx-map-panel svg.usmap circle.dot{stroke:var(--atlas-pin-edge)}
+.chapters .cx-map-panel svg.usmap circle.dot:hover,.chapters .cx-map-panel svg.usmap circle.dot:focus-visible,.chapters .cx-map-panel svg.usmap circle.dot.sel{stroke:var(--atlas-focus)}
+.chapters .cx-map-panel .maplegend i{background:var(--atlas-idle)}
+.chapters .cx-map-panel .selchip{color:var(--atlas-control-text);background:var(--atlas-control);border-color:var(--atlas-line)}
