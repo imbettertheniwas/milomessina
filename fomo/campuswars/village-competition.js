@@ -1,4 +1,4 @@
-import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=134';
+import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=138';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){

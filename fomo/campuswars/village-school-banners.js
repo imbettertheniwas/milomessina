@@ -1,6 +1,6 @@
 import {resolveSchoolArtwork,artworkPalette} from './school-artwork.js?v=51';
-import {hash} from './village-district-layout.js?v=80';
-import {createClothBanner} from './village-banners.js?v=134';
+import {createClothBanner} from './village-banners.js?v=138';
+import {campusIdentity} from './village-school-identities.js?v=138';
 
 // Official logo files and palette provenance: school-banner-references.md.
 const identities=[
@@ -13,7 +13,10 @@ const identities=[
 const normalize=value=>String(value||'').trim().toLowerCase().replace(/\s+/g,' ');
 export function schoolIdentity(chapter){
   const names=[normalize(chapter.school),normalize(chapter.shortSchool)];
-  return identities.find(school=>school.aliases.some(alias=>names.includes(alias)))||{key:'unknown',school:chapter.school||chapter.shortSchool||'UNIVERSITY',primary:['#233653','#4B2339','#164C47','#382C59'][Math.floor(hash(normalize(chapter.school||chapter.shortSchool),'school-color')*4)],secondary:'#D7BD80',lines:schoolLines(chapter.school||chapter.shortSchool||'UNIVERSITY'),logo:null,design:['split','border','stripe'][Math.floor(hash(normalize(chapter.school||chapter.shortSchool),'school-design')*3)]};
+  const original=identities.find(school=>school.aliases.some(alias=>names.includes(alias)));if(original)return original;
+  const campus=campusIdentity({name:chapter.school||chapter.shortSchool});
+  if(campus.logo)return {...campus,key:campus.id,school:campus.name,lines:schoolLines(campus.name),design:campus.markType==='institutional'?'border':'split'};
+  return {key:'unknown',school:chapter.school||chapter.shortSchool||'UNIVERSITY',primary:'#26384A',secondary:'#D4D8DE',lines:schoolLines(chapter.school||chapter.shortSchool||'UNIVERSITY'),logo:null,design:'border'};
 }
 function schoolLines(name){
   const words=name.split(/\s+/),lines=[''];for(const word of words){const i=lines.length-1;if(lines[i]&&lines[i].length+word.length>23)lines.push(word);else lines[i]+=(lines[i]?' ':'')+word;}return lines;
@@ -43,7 +46,7 @@ export function paintSchoolBanner(ctx,chapter,w,h,logo=null,school=schoolIdentit
   else{ctx.strokeStyle=school.secondary;ctx.lineWidth=w*.025;ctx.strokeRect(w*.06,h*.045,w*.88,h*.91);rect(.20,.72,.60,.013,school.secondary);}
   if(logo){
     // Keep the downloaded mark intact, including its aspect ratio and colors.
-    if(school.key==='unknown')rect(.12,.14,.76,.45,'#FFFFFF');
+    if(school.key==='unknown'||school.logoBackground==='white')rect(.12,.14,.76,.45,'#FFFFFF');
     const scale=Math.min(w*.68/logo.width,h*.35/logo.height),lw=logo.width*scale,lh=logo.height*scale;
     ctx.drawImage(logo,(w-lw)/2,h*.36-lh/2,lw,lh);
   }

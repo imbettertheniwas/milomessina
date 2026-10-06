@@ -10,9 +10,8 @@ const identities={
   'tau-kappa-epsilon-tampa':{key:'cherry-varsity',primary:'#AD2624',secondary:'#919194',ink:'#FFFFFF',paper:'#FFFFFF'}
 };
 const fallback={key:'chapter-classic',primary:'#252A51',secondary:'#C6BD9F',ink:'#FFFFFF',paper:'#FFFFFF'};
-// The per-member rate by organisation type, as fomocampus.com pays it:
-// $6.25 for Greek chapters, half for professional ones, a third for clubs.
-function rateFor(type){const t=String(type||'');if(/professional|business/i.test(t))return 6.25/2;if(/student org|\bclub\b|organi[sz]ation/i.test(t))return 6.25/3;return 6.25;}
+export const HOUSE_MEMBER_RATE=6.25;
+export function houseEarnings(chapter){return chapter.joined>20?chapter.joined*HOUSE_MEMBER_RATE:null;}
 function money(n){const r=Math.round(n*100)/100;return '$'+(Number.isInteger(r)?r.toLocaleString('en-US'):r.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));}
 export function bannerIdentity(chapter){return identities[chapter.id]||Object.entries(identities).find(([id])=>id.startsWith(chapter.name.toLowerCase().replaceAll(" ","-")+"-"))?.[1]||fallback;}
 
@@ -20,7 +19,7 @@ export function bannerIdentity(chapter){return identities[chapter.id]||Object.en
 export function paintChapterBanner(ctx,chapter,w,h){
   const b=bannerIdentity(chapter),sans='Aeonik, Arial, sans-serif';
   const white='#FFFFFF',muted='#BFC1D8',black='#12111A';
-  const target=Math.ceil(chapter.active*.8),reached=chapterGoalReached(chapter);
+  const target=Math.ceil(chapter.active*.8),reached=chapterGoalReached(chapter),earned=houseEarnings(chapter);
   ctx.save();ctx.clearRect(0,0,w,h);ctx.textBaseline='middle';
   const rect=(x,y,sw,sh,color)=>{ctx.fillStyle=color;ctx.fillRect(x*w,y*h,sw*w,sh*h);};
   const text=(value,x,y,size,color,width,align='left',weight=700)=>{
@@ -50,14 +49,13 @@ export function paintChapterBanner(ctx,chapter,w,h){
   text((chapter.shortSchool||chapter.school||'').toUpperCase(),.21,.851,.049,white,.32,'center',500);
 
   text('GREEK WARS',.45,.135,.068,muted,.24);
-  if(reached){
-    text('GOAL REACHED',.955,.135,.055,muted,.23,'right');
-    text(`${money(chapter.joined*rateFor(chapter.type))} EARNED`,.45,.405,.20,'#626CF3',.505);
+  if(earned!==null){
+    if(reached)text('GOAL REACHED',.955,.135,.055,muted,.23,'right');
+    text(`${money(earned)} EARNED`,.45,.405,.20,'#9FA7FF',.505);
     text(`${chapter.joined} / ${target}`,.45,.68,.165,white,.50);
     text('MEMBERS ONBOARDED',.453,.842,.059,muted,.49);
   }else{
-    rect(.744,.075,.211,.12,'#29273D');
-    text(`${money(chapter.joined*rateFor(chapter.type))} EARNED`,.8495,.138,.060,'#DAD9FF',.19,'center');
+    if(reached)text('GOAL REACHED',.955,.135,.055,muted,.23,'right');
     text(`${chapter.joined} / ${target}`,.45,.455,.32,white,.50);
     text('MEMBERS ONBOARDED',.453,.685,.059,muted,.49);
     text('80% MEMBER TARGET',.45,.862,.054,muted,.32);

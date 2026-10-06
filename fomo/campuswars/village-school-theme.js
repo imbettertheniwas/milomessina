@@ -1,5 +1,6 @@
 import {hash} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=128';
+import {createSchoolEntrance} from './village-school-signs.js?v=138';
 const themes={
  mission:{wall:0xe5d3b0,roof:0x9c4f36,sky:0xb8d9e6,ground:0xbfa779,tree:'palm',land:'hills',label:'Mission-style courtyards'},
  pacific:{wall:0xcaa88c,roof:0x96513f,sky:0xafd2e7,ground:0xbba77e,tree:'palm',land:'coast',label:'Pacific campus'},
@@ -52,8 +53,11 @@ export function createSchoolDistricts(T,school,extension=0){
   // Reuse the village's detailed masonry, windows, cornices and entry steps.
   // Clone the wall materials before regional tinting so other objects keep their colors.
   const copies=new Map();building.traverse(o=>{if(!o.material||!o.material.map||!o.geometry)return;const m=o.material;if(!copies.has(m)){const copy=m.clone();copy.color.lerp(new T.Color(theme.wall),.65);copies.set(m,copy);}o.material=copies.get(m);});
-  if(i===2)sign(root,school.name.toUpperCase(),x,h+5,z+10,36,2.4);
  }
+ // Keep the campus name ahead of both the central tower and palm-campus
+ // bell towers. A separate entrance frame gives the whole name a clear face
+ // instead of letting the seeded hall/tower placement cut through its text.
+ root.add(createSchoolEntrance(T,school,kit,theme.wall));
  if(theme.land==='city')for(const side of [-1,1])for(let i=0;i<5;i++){
   const x=side*(65+rand(i+'urban')*8),z=-40+i*28,h=19+rand(i+'urban-height')*16;
   kit.building(root,{type:'townhouse',x,z,width:24,depth:14,height:h,rotation:-side*Math.PI/2,label:'',seed:Math.floor(rand(i+'brownstone')*10000)},0,0);

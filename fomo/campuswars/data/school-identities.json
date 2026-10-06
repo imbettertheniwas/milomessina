@@ -1,0 +1,1251 @@
+{
+  "note": "Local university and athletics marks; source URLs retained for review. Banner layouts are custom campus-inspired compositions.",
+  "schools": [
+    {
+      "id": "122409",
+      "name": "San Diego State University",
+      "aliases": [
+        "San Diego State University"
+      ],
+      "logo": "sdsu.png",
+      "primary": "#D41736",
+      "secondary": "#000000",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://www.sdsu.edu/"
+    },
+    {
+      "id": "218724",
+      "name": "Coastal Carolina University",
+      "aliases": [
+        "Coastal Carolina University"
+      ],
+      "logo": "coastal.png",
+      "primary": "#006F71",
+      "secondary": "#A27752",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://www.coastal.edu/"
+    },
+    {
+      "id": "137847",
+      "name": "University of Tampa",
+      "aliases": [
+        "University of Tampa",
+        "The University of Tampa"
+      ],
+      "logo": "tampa.svg",
+      "primary": "#C8102E",
+      "secondary": "#000000",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://www.ut.edu/"
+    },
+    {
+      "id": "233921",
+      "name": "Virginia Tech",
+      "aliases": [
+        "Virginia Tech",
+        "Virginia Polytechnic Institute and State University"
+      ],
+      "logo": "vt.svg",
+      "primary": "#861F41",
+      "secondary": "#E87722",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "www.vt.edu/"
+    },
+    {
+      "id": "133951",
+      "name": "Florida International University",
+      "aliases": [
+        "Florida International University"
+      ],
+      "logo": "fiu.svg",
+      "primary": "#081E3F",
+      "secondary": "#D1A644",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "www.fiu.edu/"
+    },
+    {
+      "id": "190415",
+      "name": "Cornell University",
+      "aliases": [
+        "Cornell University"
+      ],
+      "logo": "campus-190415.png",
+      "primary": "#B31B1B",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/172.png"
+    },
+    {
+      "id": "228875",
+      "name": "Texas Christian University",
+      "aliases": [
+        "Texas Christian University"
+      ],
+      "logo": "campus-228875.png",
+      "primary": "#4D1979",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2628.png"
+    },
+    {
+      "id": "139658",
+      "name": "Emory University",
+      "aliases": [
+        "Emory University"
+      ],
+      "logo": "campus-139658.svg",
+      "primary": "#012169",
+      "secondary": "#B58500",
+      "logoBackground": "white",
+      "markType": "institutional",
+      "source": "https://www.emory.edu/sites/emorymain/files/logos/logo-dark.svg"
+    },
+    {
+      "id": "214777",
+      "name": "Pennsylvania State University",
+      "aliases": [
+        "Pennsylvania State University",
+        "Pennsylvania State University-Main Campus"
+      ],
+      "logo": "campus-214777.png",
+      "primary": "#061440",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png"
+    },
+    {
+      "id": "204857",
+      "name": "Ohio University",
+      "aliases": [
+        "Ohio University",
+        "Ohio University-Main Campus"
+      ],
+      "logo": "campus-204857.png",
+      "primary": "#154734",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/195.png"
+    },
+    {
+      "id": "170976",
+      "name": "University of Michigan - Ann Arbor",
+      "aliases": [
+        "University of Michigan - Ann Arbor",
+        "University of Michigan-Ann Arbor"
+      ],
+      "logo": "campus-170976.png",
+      "primary": "#00274C",
+      "secondary": "#FFCB05",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png"
+    },
+    {
+      "id": "163851",
+      "name": "Salisbury University",
+      "aliases": [
+        "Salisbury University"
+      ],
+      "logo": "campus-163851.png",
+      "primary": "#8B0E04",
+      "secondary": "#FDB913",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2532.png"
+    },
+    {
+      "id": "123961",
+      "name": "University of Southern California",
+      "aliases": [
+        "University of Southern California"
+      ],
+      "logo": "campus-123961.png",
+      "primary": "#9D2235",
+      "secondary": "#FFC72C",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png"
+    },
+    {
+      "id": "186380",
+      "name": "Rutgers University",
+      "aliases": [
+        "Rutgers University",
+        "Rutgers University-New Brunswick"
+      ],
+      "logo": "campus-186380.png",
+      "primary": "#CE0E2D",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/164.png"
+    },
+    {
+      "id": "204796",
+      "name": "Ohio State University - Columbus",
+      "aliases": [
+        "Ohio State University - Columbus",
+        "Ohio State University-Main Campus"
+      ],
+      "logo": "campus-204796.png",
+      "primary": "#BA0C2F",
+      "secondary": "#A8ADB4",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png"
+    },
+    {
+      "id": "104151",
+      "name": "Arizona State University",
+      "aliases": [
+        "Arizona State University",
+        "Arizona State University Campus Immersion"
+      ],
+      "logo": "campus-104151.png",
+      "primary": "#8C1D40",
+      "secondary": "#FFC627",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/9.png"
+    },
+    {
+      "id": "151351",
+      "name": "Indiana University - Bloomington",
+      "aliases": [
+        "Indiana University - Bloomington",
+        "Indiana University-Bloomington"
+      ],
+      "logo": "campus-151351.png",
+      "primary": "#970310",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png"
+    },
+    {
+      "id": "217882",
+      "name": "Clemson University",
+      "aliases": [
+        "Clemson University"
+      ],
+      "logo": "campus-217882.png",
+      "primary": "#F56600",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png"
+    },
+    {
+      "id": "193900",
+      "name": "New York University",
+      "aliases": [
+        "New York University"
+      ],
+      "logo": "campus-193900.svg",
+      "primary": "#57068C",
+      "secondary": "#FFFFFF",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://www.nyu.edu/"
+    },
+    {
+      "id": "218663",
+      "name": "University of South Carolina",
+      "aliases": [
+        "University of South Carolina",
+        "University of South Carolina-Columbia"
+      ],
+      "logo": "campus-218663.png",
+      "primary": "#73000A",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png"
+    },
+    {
+      "id": "126614",
+      "name": "University of Colorado at Boulder",
+      "aliases": [
+        "University of Colorado at Boulder",
+        "University of Colorado Boulder"
+      ],
+      "logo": "campus-126614.png",
+      "primary": "#CFB87C",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png"
+    },
+    {
+      "id": "198516",
+      "name": "Elon University",
+      "aliases": [
+        "Elon University"
+      ],
+      "logo": "campus-198516.png",
+      "primary": "#020303",
+      "secondary": "#B59A57",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2210.png"
+    },
+    {
+      "id": "100751",
+      "name": "The University of Alabama",
+      "aliases": [
+        "The University of Alabama"
+      ],
+      "logo": "campus-100751.png",
+      "primary": "#9E1B32",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png"
+    },
+    {
+      "id": "191649",
+      "name": "Hofstra University",
+      "aliases": [
+        "Hofstra University"
+      ],
+      "logo": "campus-191649.png",
+      "primary": "#003594",
+      "secondary": "#FFC72C",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2275.png"
+    },
+    {
+      "id": "228246",
+      "name": "Southern Methodist University",
+      "aliases": [
+        "Southern Methodist University"
+      ],
+      "logo": "campus-228246.png",
+      "primary": "#A80000",
+      "secondary": "#0033A1",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png"
+    },
+    {
+      "id": "196413",
+      "name": "Syracuse University",
+      "aliases": [
+        "Syracuse University"
+      ],
+      "logo": "campus-196413.png",
+      "primary": "#000E54",
+      "secondary": "#FF431B",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/183.png"
+    },
+    {
+      "id": "201645",
+      "name": "Case Western Reserve University",
+      "aliases": [
+        "Case Western Reserve University"
+      ],
+      "logo": "campus-201645.png",
+      "primary": "#003071",
+      "secondary": "#A7A9AC",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2963.png"
+    },
+    {
+      "id": "122597",
+      "name": "San Francisco State University",
+      "aliases": [
+        "San Francisco State University"
+      ],
+      "logo": "campus-122597.png",
+      "primary": "#231161",
+      "secondary": "#C99700",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://www.sfsu.edu/profiles/custom/sfstatedrupal/themes/custom/sfstatetemplate/patternlab/public/images/sfstate_white_logo.png"
+    },
+    {
+      "id": "243780",
+      "name": "Purdue University",
+      "aliases": [
+        "Purdue University",
+        "Purdue University-Main Campus"
+      ],
+      "logo": "campus-243780.png",
+      "primary": "#CEB888",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2509.png"
+    },
+    {
+      "id": "198464",
+      "name": "East Carolina University",
+      "aliases": [
+        "East Carolina University"
+      ],
+      "logo": "campus-198464.png",
+      "primary": "#582C83",
+      "secondary": "#FFC72C",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png"
+    },
+    {
+      "id": "134097",
+      "name": "Florida State University",
+      "aliases": [
+        "Florida State University"
+      ],
+      "logo": "campus-134097.png",
+      "primary": "#782F40",
+      "secondary": "#CEB888",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png"
+    },
+    {
+      "id": "227182",
+      "name": "Lone Star College System",
+      "aliases": [
+        "Lone Star College System"
+      ],
+      "logo": "campus-227182.svg",
+      "primary": "#003768",
+      "secondary": "#A6192E",
+      "logoBackground": "white",
+      "markType": "institutional",
+      "source": "https://www.lonestar.edu/images/lsc-logo/lsc-square-star-blue.svg"
+    },
+    {
+      "id": "126818",
+      "name": "Colorado State University",
+      "aliases": [
+        "Colorado State University",
+        "Colorado State University-Fort Collins"
+      ],
+      "logo": "campus-126818.png",
+      "primary": "#004C23",
+      "secondary": "#C8C372",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/36.png"
+    },
+    {
+      "id": "190512",
+      "name": "CUNY Baruch College",
+      "aliases": [
+        "CUNY Baruch College",
+        "CUNY Bernard M Baruch College"
+      ],
+      "logo": "campus-190512.png",
+      "primary": "#003DA5",
+      "secondary": "#FFFFFF",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://www.baruch.cuny.edu/wp-content/themes/BCTC-Baruch--bc2-qa/img/icons/Baruch-stackedlogo.png"
+    },
+    {
+      "id": "199120",
+      "name": "University of North Carolina at Chapel Hill",
+      "aliases": [
+        "University of North Carolina at Chapel Hill"
+      ],
+      "logo": "campus-199120.png",
+      "primary": "#7BAFD4",
+      "secondary": "#13294B",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/153.png"
+    },
+    {
+      "id": "176017",
+      "name": "University of Mississippi",
+      "aliases": [
+        "University of Mississippi"
+      ],
+      "logo": "campus-176017.png",
+      "primary": "#13294B",
+      "secondary": "#CF142B",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png"
+    },
+    {
+      "id": "178396",
+      "name": "University of Missouri",
+      "aliases": [
+        "University of Missouri",
+        "University of Missouri-Columbia"
+      ],
+      "logo": "campus-178396.png",
+      "primary": "#F1B82D",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/142.png"
+    },
+    {
+      "id": "166027",
+      "name": "Harvard University",
+      "aliases": [
+        "Harvard University"
+      ],
+      "logo": "campus-166027.png",
+      "primary": "#990000",
+      "secondary": "#DBDBDB",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/108.png"
+    },
+    {
+      "id": "110538",
+      "name": "California State University, Chico",
+      "aliases": [
+        "California State University, Chico",
+        "California State University-Chico"
+      ],
+      "logo": "campus-110538.svg",
+      "primary": "#9D2235",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "institutional",
+      "source": "www.csuchico.edu/"
+    },
+    {
+      "id": "160755",
+      "name": "Tulane University",
+      "aliases": [
+        "Tulane University",
+        "Tulane University of Louisiana"
+      ],
+      "logo": "campus-160755.png",
+      "primary": "#006747",
+      "secondary": "#418FDE",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2655.png"
+    },
+    {
+      "id": "225511",
+      "name": "University of Houston",
+      "aliases": [
+        "University of Houston"
+      ],
+      "logo": "campus-225511.png",
+      "primary": "#C8102E",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png"
+    },
+    {
+      "id": "167358",
+      "name": "Northeastern University",
+      "aliases": [
+        "Northeastern University"
+      ],
+      "logo": "campus-167358.png",
+      "primary": "#CC0001",
+      "secondary": "#C2C3C0",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/111.png"
+    },
+    {
+      "id": "216339",
+      "name": "Temple University",
+      "aliases": [
+        "Temple University"
+      ],
+      "logo": "campus-216339.png",
+      "primary": "#A41E35",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/218.png"
+    },
+    {
+      "id": "204024",
+      "name": "Miami University of Ohio",
+      "aliases": [
+        "Miami University of Ohio",
+        "Miami University-Oxford"
+      ],
+      "logo": "campus-204024.png",
+      "primary": "#C41230",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/193.png"
+    },
+    {
+      "id": "171100",
+      "name": "Michigan State University",
+      "aliases": [
+        "Michigan State University"
+      ],
+      "logo": "campus-171100.png",
+      "primary": "#173F35",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/127.png"
+    },
+    {
+      "id": "221759",
+      "name": "University of Tennessee, Knoxville",
+      "aliases": [
+        "University of Tennessee, Knoxville",
+        "The University of Tennessee-Knoxville"
+      ],
+      "logo": "campus-221759.png",
+      "primary": "#FF8200",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png"
+    },
+    {
+      "id": "196079",
+      "name": "State University of New York at Binghamton",
+      "aliases": [
+        "State University of New York at Binghamton",
+        "Binghamton University"
+      ],
+      "logo": "campus-196079.png",
+      "primary": "#00614A",
+      "secondary": "#F0F0F0",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2066.png"
+    },
+    {
+      "id": "181002",
+      "name": "Creighton University",
+      "aliases": [
+        "Creighton University"
+      ],
+      "logo": "campus-181002.png",
+      "primary": "#005CA9",
+      "secondary": "#6CADDE",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/156.png"
+    },
+    {
+      "id": "104179",
+      "name": "University of Arizona",
+      "aliases": [
+        "University of Arizona"
+      ],
+      "logo": "campus-104179.png",
+      "primary": "#CC0033",
+      "secondary": "#003366",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/12.png"
+    },
+    {
+      "id": "212106",
+      "name": "Duquesne University",
+      "aliases": [
+        "Duquesne University"
+      ],
+      "logo": "campus-212106.png",
+      "primary": "#002D62",
+      "secondary": "#B90B2E",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2184.png"
+    },
+    {
+      "id": "228778",
+      "name": "The University of Texas at Austin",
+      "aliases": [
+        "The University of Texas at Austin"
+      ],
+      "logo": "campus-228778.png",
+      "primary": "#BF5700",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png"
+    },
+    {
+      "id": "134130",
+      "name": "University of Florida",
+      "aliases": [
+        "University of Florida"
+      ],
+      "logo": "campus-134130.png",
+      "primary": "#0021A5",
+      "secondary": "#FA4616",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png"
+    },
+    {
+      "id": "182290",
+      "name": "University of Nevada, Reno",
+      "aliases": [
+        "University of Nevada, Reno",
+        "University of Nevada-Reno"
+      ],
+      "logo": "campus-182290.png",
+      "primary": "#041E42",
+      "secondary": "#8A8D8F",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2440.png"
+    },
+    {
+      "id": "243744",
+      "name": "Stanford University",
+      "aliases": [
+        "Stanford University"
+      ],
+      "logo": "campus-243744.png",
+      "primary": "#8C1515",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png"
+    },
+    {
+      "id": "196088",
+      "name": "State University of New York at Buffalo",
+      "aliases": [
+        "State University of New York at Buffalo",
+        "University at Buffalo"
+      ],
+      "logo": "campus-196088.png",
+      "primary": "#005BBB",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2084.png"
+    },
+    {
+      "id": "209542",
+      "name": "Oregon State University",
+      "aliases": [
+        "Oregon State University"
+      ],
+      "logo": "campus-209542.png",
+      "primary": "#DC4405",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/204.png"
+    },
+    {
+      "id": "133553",
+      "name": "Embry-Riddle Aeronautical University",
+      "aliases": [
+        "Embry-Riddle Aeronautical University",
+        "Embry-Riddle Aeronautical University-Daytona Beach"
+      ],
+      "logo": "campus-133553.svg",
+      "primary": "#003A70",
+      "secondary": "#FFC72C",
+      "logoBackground": "primary",
+      "markType": "institutional",
+      "source": "https://erau.edu/-/media/feature/navigation/logo.svg"
+    },
+    {
+      "id": "110608",
+      "name": "California State University, Northridge",
+      "aliases": [
+        "California State University, Northridge",
+        "California State University-Northridge"
+      ],
+      "logo": "campus-110608.png",
+      "primary": "#B50000",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2463.png"
+    },
+    {
+      "id": "199139",
+      "name": "University of North Carolina at Charlotte",
+      "aliases": [
+        "University of North Carolina at Charlotte"
+      ],
+      "logo": "campus-199139.png",
+      "primary": "#005035",
+      "secondary": "#A49665",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2429.png"
+    },
+    {
+      "id": "168591",
+      "name": "Alma College",
+      "aliases": [
+        "Alma College"
+      ],
+      "logo": "campus-168591.png",
+      "primary": "#8A1538",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2800.png"
+    },
+    {
+      "id": "145600",
+      "name": "University of Illinois Chicago",
+      "aliases": [
+        "University of Illinois Chicago"
+      ],
+      "logo": "campus-145600.png",
+      "primary": "#001E62",
+      "secondary": "#D50032",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/82.png"
+    },
+    {
+      "id": "132903",
+      "name": "University of Central Florida",
+      "aliases": [
+        "University of Central Florida"
+      ],
+      "logo": "campus-132903.png",
+      "primary": "#000000",
+      "secondary": "#B4A169",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2116.png"
+    },
+    {
+      "id": "190150",
+      "name": "Columbia University",
+      "aliases": [
+        "Columbia University",
+        "Columbia University in the City of New York"
+      ],
+      "logo": "campus-190150.png",
+      "primary": "#7BA4DB",
+      "secondary": "#183863",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/171.png"
+    },
+    {
+      "id": "215062",
+      "name": "University of Pennsylvania",
+      "aliases": [
+        "University of Pennsylvania"
+      ],
+      "logo": "campus-215062.png",
+      "primary": "#082A74",
+      "secondary": "#A6163D",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/219.png"
+    },
+    {
+      "id": "196097",
+      "name": "State University of New York at Stony Brook",
+      "aliases": [
+        "State University of New York at Stony Brook",
+        "Stony Brook University"
+      ],
+      "logo": "campus-196097.png",
+      "primary": "#990000",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2619.png"
+    },
+    {
+      "id": "199847",
+      "name": "Wake Forest University",
+      "aliases": [
+        "Wake Forest University"
+      ],
+      "logo": "campus-199847.png",
+      "primary": "#CEB888",
+      "secondary": "#2C2A29",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/154.png"
+    },
+    {
+      "id": "110680",
+      "name": "University of California, San Diego",
+      "aliases": [
+        "University of California, San Diego",
+        "University of California-San Diego"
+      ],
+      "logo": "campus-110680.png",
+      "primary": "#182B49",
+      "secondary": "#FFCD00",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/28.png"
+    },
+    {
+      "id": "110404",
+      "name": "California Institute of Technology",
+      "aliases": [
+        "California Institute of Technology"
+      ],
+      "logo": "campus-110404.png",
+      "primary": "#FF6C0C",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "institutional",
+      "source": "https://www.caltech.edu/static/core/img/caltech-new-logo.png"
+    },
+    {
+      "id": "229115",
+      "name": "Texas Tech University",
+      "aliases": [
+        "Texas Tech University"
+      ],
+      "logo": "campus-229115.png",
+      "primary": "#DA291C",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png"
+    },
+    {
+      "id": "192819",
+      "name": "Marist College",
+      "aliases": [
+        "Marist College",
+        "Marist University"
+      ],
+      "logo": "campus-192819.png",
+      "primary": "#E53730",
+      "secondary": "#F0F0F0",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2368.png"
+    },
+    {
+      "id": "174066",
+      "name": "University of Minnesota",
+      "aliases": [
+        "University of Minnesota",
+        "University of Minnesota-Twin Cities"
+      ],
+      "logo": "campus-174066.png",
+      "primary": "#5E0A2F",
+      "secondary": "#FAB41C",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/135.png"
+    },
+    {
+      "id": "105330",
+      "name": "Northern Arizona University",
+      "aliases": [
+        "Northern Arizona University"
+      ],
+      "logo": "campus-105330.png",
+      "primary": "#003976",
+      "secondary": "#1B3069",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2464.png"
+    },
+    {
+      "id": "196060",
+      "name": "State University of New York at Albany",
+      "aliases": [
+        "State University of New York at Albany",
+        "University at Albany"
+      ],
+      "logo": "campus-196060.png",
+      "primary": "#3D2777",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/399.png"
+    },
+    {
+      "id": "209551",
+      "name": "University of Oregon",
+      "aliases": [
+        "University of Oregon"
+      ],
+      "logo": "campus-209551.png",
+      "primary": "#00934B",
+      "secondary": "#FFF41B",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png"
+    },
+    {
+      "id": "199193",
+      "name": "North Carolina State University",
+      "aliases": [
+        "North Carolina State University",
+        "North Carolina State University at Raleigh"
+      ],
+      "logo": "campus-199193.png",
+      "primary": "#CC0000",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/152.png"
+    },
+    {
+      "id": "232423",
+      "name": "James Madison University",
+      "aliases": [
+        "James Madison University"
+      ],
+      "logo": "campus-232423.png",
+      "primary": "#450084",
+      "secondary": "#CBB677",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png"
+    },
+    {
+      "id": "133650",
+      "name": "Florida Agricultural and Mechanical University",
+      "aliases": [
+        "Florida Agricultural and Mechanical University"
+      ],
+      "logo": "campus-133650.png",
+      "primary": "#F89728",
+      "secondary": "#00843D",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/50.png"
+    },
+    {
+      "id": "236939",
+      "name": "Washington State University",
+      "aliases": [
+        "Washington State University"
+      ],
+      "logo": "campus-236939.png",
+      "primary": "#A60F2D",
+      "secondary": "#4D4D4D",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/265.png"
+    },
+    {
+      "id": "145637",
+      "name": "University of Illinois Urbana-Champaign",
+      "aliases": [
+        "University of Illinois Urbana-Champaign"
+      ],
+      "logo": "campus-145637.png",
+      "primary": "#FF5F05",
+      "secondary": "#13294B",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/356.png"
+    },
+    {
+      "id": "207388",
+      "name": "Oklahoma State University",
+      "aliases": [
+        "Oklahoma State University",
+        "Oklahoma State University-Main Campus"
+      ],
+      "logo": "campus-207388.png",
+      "primary": "#FE5C00",
+      "secondary": "#000000",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/197.png"
+    },
+    {
+      "id": "176080",
+      "name": "Mississippi State University",
+      "aliases": [
+        "Mississippi State University"
+      ],
+      "logo": "campus-176080.png",
+      "primary": "#5D1725",
+      "secondary": "#C1C6C8",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/344.png"
+    },
+    {
+      "id": "110565",
+      "name": "California State University, Fullerton",
+      "aliases": [
+        "California State University, Fullerton",
+        "California State University-Fullerton"
+      ],
+      "logo": "campus-110565.png",
+      "primary": "#003767",
+      "secondary": "#FF8300",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2239.png"
+    },
+    {
+      "id": "135726",
+      "name": "University of Miami",
+      "aliases": [
+        "University of Miami"
+      ],
+      "logo": "campus-135726.png",
+      "primary": "#F47423",
+      "secondary": "#035131",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png"
+    },
+    {
+      "id": "197869",
+      "name": "Appalachian State University",
+      "aliases": [
+        "Appalachian State University"
+      ],
+      "logo": "campus-197869.png",
+      "primary": "#000000",
+      "secondary": "#FFCD00",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png"
+    },
+    {
+      "id": "166629",
+      "name": "University of Massachusetts at Amherst",
+      "aliases": [
+        "University of Massachusetts at Amherst",
+        "University of Massachusetts-Amherst"
+      ],
+      "logo": "campus-166629.png",
+      "primary": "#881C1C",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/113.png"
+    },
+    {
+      "id": "161086",
+      "name": "Colby College",
+      "aliases": [
+        "Colby College"
+      ],
+      "logo": "campus-161086.png",
+      "primary": "#012778",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/33.png"
+    },
+    {
+      "id": "139931",
+      "name": "Georgia Southern University",
+      "aliases": [
+        "Georgia Southern University"
+      ],
+      "logo": "campus-139931.png",
+      "primary": "#041E42",
+      "secondary": "#A3AAAE",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/290.png"
+    },
+    {
+      "id": "110705",
+      "name": "University of California, Santa Barbara",
+      "aliases": [
+        "University of California, Santa Barbara",
+        "University of California-Santa Barbara"
+      ],
+      "logo": "campus-110705.png",
+      "primary": "#1E1840",
+      "secondary": "#FEBC11",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2540.png"
+    },
+    {
+      "id": "201885",
+      "name": "University of Cincinnati",
+      "aliases": [
+        "University of Cincinnati",
+        "University of Cincinnati-Main Campus"
+      ],
+      "logo": "campus-201885.png",
+      "primary": "#000000",
+      "secondary": "#E00122",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2132.png"
+    },
+    {
+      "id": "127556",
+      "name": "Colorado Mesa University",
+      "aliases": [
+        "Colorado Mesa University"
+      ],
+      "logo": "campus-127556.png",
+      "primary": "#860037",
+      "secondary": "#FED102",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/11.png",
+      "paletteSource": "https://www.coloradomesa.edu/marketing/brand-guidelines/visual-identity.html"
+    },
+    {
+      "id": "144892",
+      "name": "Eastern Illinois University",
+      "aliases": [
+        "Eastern Illinois University"
+      ],
+      "logo": "campus-144892.png",
+      "primary": "#004B85",
+      "secondary": "#B2B7BB",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/2197.png"
+    },
+    {
+      "id": "122977",
+      "name": "Santa Monica College",
+      "aliases": [
+        "Santa Monica College"
+      ],
+      "logo": "campus-122977.svg",
+      "primary": "#003B71",
+      "secondary": "#FFFFFF",
+      "logoBackground": "white",
+      "markType": "institutional",
+      "source": "https://www.smc.edu/_resources/assets/img/ou/logo-dark.svg"
+    },
+    {
+      "id": "122755",
+      "name": "San Jose State University",
+      "aliases": [
+        "San Jose State University"
+      ],
+      "logo": "campus-122755.png",
+      "primary": "#0038A8",
+      "secondary": "#FFB81A",
+      "logoBackground": "white",
+      "markType": "athletics",
+      "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/23.png"
+    }
+  ]
+}

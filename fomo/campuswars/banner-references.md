@@ -21,3 +21,7 @@ The current house banners use a shared near-black scorecard, the original eyes m
 `village-banner-art.js` draws all five designs into local canvas textures. The production scene makes no requests to fraternity websites. Cloth geometry, hanging hardware, texture resolution, member totals, selection behavior and banner proportions are preserved. Phi Kappa Psi and TKE show their individual artwork on their construction-site banners as well.
 
 `tests/banner-gallery.html` is a standalone visual review page using the same painter and real chapter data, at the five installed banner aspect ratios. It is not linked from the public landing page. Review it alongside the actual village to check small-text legibility and the effect of scene lighting.
+
+## House earnings — October 5, 2026
+
+Houses with more than 20 onboarded members display a prominent earnings headline calculated as total onboarded members × $6.25, regardless of organization type or whether the 80% roster target has been reached. Exactly 20 members does not show earnings. The existing onboarded/target count remains visible. This is a display calculation; no payment is issued or recorded by this change.
