@@ -21,3 +21,13 @@ test('state filtering combines with sector and search, and unknown locations rem
 test('coverage changes with new and removed schools in subsequent live snapshots',()=>{
  const first=[c('1','San Diego State University',3)];assert.equal(summarizeStates(first).states.length,1);assert.equal(summarizeStates([...first,c('2','University of Florida',1)]).states.length,2);assert.equal(summarizeStates([c('3',"Queen's University",1)]).states.length,0);
 });
+test('the five previously unconfirmed campuses contribute to their verified locations, with DC separate',()=>{
+ const locations=[['George Washington University','DC'],['Princeton University','NJ'],['Texas State University','TX'],['University of Kansas','KS'],['University of Rhode Island','RI']];
+ for(const [name,state] of locations)assert.equal(schoolLocation(name)?.state,state);
+ const rows=locations.map(([name],i)=>c(String(i),name,i+1)),result=summarizeStates(rows);
+ assert.deepEqual(result.states.map(s=>s.code).sort(),['KS','NJ','RI','TX']);
+ assert.deepEqual(result.other.map(s=>[s.code,s.members,s.chapters]),[['DC',1,1]]);
+ assert.equal(result.regions.reduce((sum,s)=>sum+s.members,0),15);
+ assert.deepEqual(marketRows(rows,{geography:'KS'}).map(c=>c.school),['University of Kansas']);
+ assert.equal(schoolLocation('The George Washington University').id,schoolLocation('George Washington University').id);
+});

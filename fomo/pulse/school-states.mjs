@@ -1020,5 +1020,47 @@ export const schoolStates = [
       "Queen’s University"
     ],
     "state": "ON"
+  },
+  // Additional live-feed schools verified against official university locations, 2026-10-06.
+  {
+    "id": "us-george-washington",
+    "name": "George Washington University",
+    "aliases": [
+      "The George Washington University"
+    ],
+    "state": "DC",
+    "source": "https://www.gwu.edu/foggy-bottom-campus"
+  },
+  {
+    "id": "us-princeton",
+    "name": "Princeton University",
+    "aliases": [],
+    "state": "NJ",
+    "source": "https://www.princeton.edu/meet-princeton/visit-us"
+  },
+  {
+    "id": "us-texas-state",
+    "name": "Texas State University",
+    "aliases": [],
+    "state": "TX",
+    "source": "https://www.txst.edu/about.html"
+  },
+  {
+    "id": "us-kansas",
+    "name": "University of Kansas",
+    "aliases": [
+      "The University of Kansas"
+    ],
+    "state": "KS",
+    "source": "https://www.ku.edu/about-ku"
+  },
+  {
+    "id": "us-rhode-island",
+    "name": "University of Rhode Island",
+    "aliases": [
+      "The University of Rhode Island"
+    ],
+    "state": "RI",
+    "source": "https://www.uri.edu/about/"
   }
 ];
