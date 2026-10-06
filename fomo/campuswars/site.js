@@ -55,6 +55,7 @@
   document.getElementById('intro-replay').addEventListener('click', () => {about.close();setDrawer(false);document.dispatchEvent(new CustomEvent('village:replay'));});
   document.addEventListener('keydown', event => {if(event.key === 'Escape' && !drawer.hidden){setDrawer(false);drawerToggle.focus();}});
   document.addEventListener('village:introstart', () => setDrawer(false));
+  document.addEventListener('school:visibility',event=>{if(event.detail.open){setDrawer(false);setMoreControls(false);if(about.open)about.close();}});
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let selectedId = 'sigma-chi-sdsu';
   const text = (id, value) => { document.getElementById(id).textContent = value; };
@@ -95,20 +96,23 @@
       text('panel-school', chapter.school.toUpperCase());
       text('panel-name', chapter.name);
       const upgrade=backyardStatus?.(chapter);
-      text('panel-target', upgrade?.message||(remaining ? `${remaining} more to unlock your backyard pool.` : 'Backyard pool unlocked.'));
-      text('panel-detail', `${chapter.joined} / ${target} joined · 80% qualification target`);
+      text('panel-target', `${chapter.joined} members`);
+      text('panel-detail', remaining ? `${remaining} to unlock pool` : 'Pool unlocked');
       panelShare.setAttribute('aria-label', `Share ${chapter.name}’s Greek Wars progress`);
     } else {
       text('panel-letters', '+');
-      text('panel-school', 'YOUR HOUSE BELONGS HERE');
-      text('panel-name', 'Your house starts here.');
-      text('panel-target', 'Claim your place on the row.');
-      text('panel-detail', 'Get your invite link. Bring your people. Build your house.');
+      text('panel-school', 'YOUR CAMPUS');
+      text('panel-name', 'Start your chapter.');
+      text('panel-target', 'Be the first.');
+      text('panel-detail', 'Bring your chapter. Get paid.');
     }
     if (writeHash) {const route=new URLSearchParams(location.hash.slice(1));route.set('chapter',id);history.replaceState(null,'',location.pathname+location.search+'#'+route);}
     if (emit) document.dispatchEvent(new CustomEvent('chapter:select', {detail: {id, focus: true}}));
   }
 
+  document.addEventListener('destination:request', event => {
+    setDrawer(false);setMoreControls(false);
+  });
   document.addEventListener('village:select', event => {
     selectChapter(event.detail.id, {emit: false});
     if (event.detail.interactive) setDrawer(true);
@@ -143,15 +147,16 @@
     if (dragged) {event.preventDefault();event.stopImmediatePropagation();dragged = false;}
   }, true);
   function bindCard(card) {
-    card.addEventListener('click', () => selectChapter(card.dataset.chapter));
+    card.addEventListener('click', () => {if(card.dataset.chapter==='empty'){location.assign(panelClaim.href);return;}selectChapter(card.dataset.chapter);});
     card.addEventListener('keydown', event => {
-      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
       event.preventDefault();
       const visible = cards.filter(item => !item.hidden);
       const index = visible.indexOf(card);
-      const next = event.key === 'Home' ? 0 : event.key === 'End' ? visible.length - 1 : Math.min(visible.length - 1, Math.max(0, index + (event.key === 'ArrowRight' ? 1 : -1)));
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? visible.length - 1 : Math.min(visible.length - 1, Math.max(0, index + (['ArrowRight','ArrowDown'].includes(event.key) ? 1 : -1)));
       visible[next].focus({preventScroll: true});
-      selectChapter(visible[next].dataset.chapter, {scroll: true});
+      selectChapter(visible[next].dataset.chapter);
+      visible[next].scrollIntoView({block:'nearest',inline:'nearest',behavior:reducedMotion?'instant':'smooth'});
     });
   }
   cards.forEach(bindCard);
@@ -201,8 +206,8 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village-national.js?v=135').then(m=>m.createNationalNavigation());
-  import('./village.js?v=138').catch(error => {
+  import('./village-national.js?v=146').then(m=>m.createNationalNavigation());
+  import('./village.js?v=146').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
@@ -213,8 +218,8 @@
   document.addEventListener('destination:changed',event=>{
     activeSchoolId=event.detail.school?.id||'';const visible=new Set(event.detail.chapters.map(c=>c.id));
     const localRanks=new Map((rankChapters?.(event.detail.chapters)||[]).map(c=>[c.id,c.rank]));
-    cards.forEach(card=>{card.hidden=Boolean(activeSchoolId&&card.dataset.chapter!=='empty'&&!visible.has(card.dataset.chapter));const badge=card.querySelector('.house-rank');if(badge)badge.textContent='#'+(activeSchoolId?localRanks.get(card.dataset.chapter):byId.get(card.dataset.chapter)?.rank);});
-    const heading=document.querySelector('#village-drawer h2');if(heading)heading.textContent=event.detail.school?'Your campus chapters':'All chapters';
+    cards.forEach(card=>{card.hidden=Boolean(activeSchoolId&&card.dataset.chapter!=='empty'&&!visible.has(card.dataset.chapter));const badge=card.querySelector('.house-rank');const chapter=byId.get(card.dataset.chapter),rank=activeSchoolId?localRanks.get(card.dataset.chapter):chapter?.rank;if(badge)badge.textContent='#'+rank;if(chapter&&rank)card.setAttribute('aria-label',`Rank ${rank}: ${chapter.name}, ${chapter.school}: ${chapter.joined} members onboarded`);});
+    const heading=document.querySelector('#village-drawer h2');if(heading)heading.textContent='Chapters';
   });
   let lastUpdated=savedSnapshot.updatedAt;
   function updateChapters(snapshot) {
@@ -229,13 +234,13 @@
       let card = existing.get(chapter.id);
       if (!card) {card = cardTemplate.cloneNode(true);card.dataset.chapter = chapter.id;bindCard(card);}
       card.querySelector('.house-label strong').textContent = chapter.letters;
+      card.querySelector('.house-label span').textContent = chapter.name;
       card.querySelector('.house-rank').textContent = `#${chapter.rank}`;
-      card.querySelector('.house-label span').textContent = chapter.shortSchool;
+
       const progress = chapter.joined / chapter.active * 100,target = Math.ceil(chapter.active*.8);
       const line = card.querySelector('.house-progress > span');
       const count = document.createElement('b');count.textContent = chapter.joined;
-      const percent = document.createElement('em');percent.textContent = `${Math.round(progress)}% of roster`;
-      line.replaceChildren(count,document.createTextNode(` / ${target} target `),percent);
+      line.replaceChildren(count);
       card.querySelector('.progress-track i').style.width = `${Math.min(100,progress)}%`;
       card.setAttribute('aria-label',`Rank ${chapter.rank}: ${chapter.name}, ${chapter.school}: ${chapter.joined} of ${target} members toward the 80% target`);
       track.insertBefore(card,empty);
@@ -250,7 +255,7 @@
     selectChapter(selectedId,{writeHash:false,emit:false});
     if (focusedChapter) cards.find(card => card.dataset.chapter === focusedChapter)?.focus({preventScroll:true});
   }
-  Promise.all([import('./chapter-feed.js?v=134'),import('./village-competition.js?v=138'),import('./village-backyards.js?v=112')]).then(([{startChapterFeed},{houseStandings},houses]) => {
+  Promise.all([import('./chapter-feed.js?v=134'),import('./village-competition.js?v=146'),import('./village-backyards.js?v=112')]).then(([{startChapterFeed},{houseStandings},houses]) => {
     rankChapters=chapters=>houseStandings(chapters,'members');
     backyardStatus=houses.backyardStatus;
     updateChapters(savedSnapshot);

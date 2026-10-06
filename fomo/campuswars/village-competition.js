@@ -1,4 +1,4 @@
-import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=138';
+import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=146';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){
@@ -15,7 +15,7 @@ function canvasTexture(T,w,h,paint){
   if(document.fonts)document.fonts.load('700 80px Aeonik').then(()=>{paint(ctx,w,h);map.needsUpdate=true;document.dispatchEvent(new Event('village:artwork'));});
   return map;
 }
-export function createCompetition(T,chapters,anchors,lightAnchors=anchors,metric='progress'){
+export function createCompetition(T,chapters,anchors,lightAnchors=anchors,metric='progress',{schoolName=''}={}){
   const root=new T.Group();root.name='village-competition';
   const standings=houseStandings(chapters,metric),leader=standings[0]?.joined>0?standings[0]:null,badges=[];
   for(const row of standings){
@@ -40,26 +40,29 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors,metric
       beam.name='leader-light-shaft';beam.position.set(anchor.lot.x,3+beamHeight/2,anchor.lot.z);root.add(beam);
     }
   }
-  const board=new T.Group();board.name='intersection-leaderboard';board.position.set(17.5,0,41.8);board.rotation.y=Math.PI+.28;root.add(board);
+  const board=new T.Group();board.name='intersection-leaderboard';board.userData.scope=schoolName||'national';board.position.set(17.5,0,41.8);board.rotation.y=Math.PI+.28;root.add(board);
   const material=new T.MeshStandardMaterial({color:0x1b2830,roughness:.68,metalness:.3});
   const box=(x,y,z,w,h,d,mat=material)=>{const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;board.add(mesh);return mesh;};
   box(0,.13,0,12,.26,1.7,new T.MeshStandardMaterial({color:0xb6b3a3,roughness:1}));
   for(const x of [-4.5,4.5])box(x,3.7,-.08,.3,7.3,.35);
   box(0,5.0,0,11.4,7.8,.40);box(0,9.01,0,11.7,.20,.65);
   const topChapters=standings.slice(0,LEADERBOARD_LIMIT);
-  const map=canvasTexture(T,2048,1376,(ctx,w,h)=>paintLeaderboardFrame(ctx,w,h,standings.length,metric));
+  const map=canvasTexture(T,2048,1376,(ctx,w,h)=>paintLeaderboardFrame(ctx,w,h,standings.length,metric,{schoolName}));
   const face=new T.Mesh(new T.PlaneGeometry(11,7.4),new T.MeshStandardMaterial({color:map?0xffffff:0x152632,map,roughness:.8,emissive:0xffffff,emissiveMap:map,emissiveIntensity:map?.4:0}));
   face.name='leaderboard-display';face.position.set(0,5,.215);face.userData.ownedTexture=true;board.add(face);
   // Scroll UV coordinates on a prepainted strip, avoiding canvas uploads per frame.
-  const rowMap=topChapters.length?canvasTexture(T,2048,topChapters.length*ROW_HEIGHT,(ctx,w,h)=>paintLeaderboardRows(ctx,w,h,topChapters,metric)):null;
+  const textureRows=Math.max(5,topChapters.length);let compactRows=false;
+  const paintRows=(ctx,w,h)=>{const rowHeight=compactRows?ROWS_HEIGHT/topChapters.length:ROW_HEIGHT,scale=compactRows?textureRows/5:1;ctx.save();ctx.scale(1,scale);paintLeaderboardRows(ctx,w,h/scale,topChapters,metric,{rowHeight,schoolName,compact:compactRows});ctx.restore();};
+  const rowMap=topChapters.length?canvasTexture(T,2048,textureRows*ROW_HEIGHT,paintRows):null;
   if(rowMap){rowMap.wrapT=T.RepeatWrapping;rowMap.generateMipmaps=false;rowMap.minFilter=T.LinearFilter;}
   const rowFace=new T.Mesh(new T.PlaneGeometry(11,7.4*ROWS_HEIGHT/1376),new T.MeshStandardMaterial({color:rowMap?0xffffff:0x101d29,map:rowMap,roughness:.8,emissive:0xffffff,emissiveMap:rowMap,emissiveIntensity:rowMap?.4:0}));
   rowFace.name='leaderboard-scrolling-rows';rowFace.position.set(0,5+7.4*(.5-(ROWS_TOP+ROWS_HEIGHT/2)/1376),.222);rowFace.userData.ownedTexture=true;rowFace.visible=topChapters.length>0;board.add(rowFace);
   function animate(time,reducedMotion=false){
     if(!rowMap)return;
-    const visibleRows=reducedMotion?topChapters.length:Math.min(5,topChapters.length);
-    rowMap.repeat.y=visibleRows/topChapters.length;
-    rowMap.offset.y=1-rowMap.repeat.y-(reducedMotion||topChapters.length<2?0:(time/3.2/topChapters.length)%1);
+    const compact=reducedMotion&&topChapters.length>5;
+    if(compact!==compactRows){compactRows=compact;paintRows(rowMap.image.getContext('2d'),rowMap.image.width,rowMap.image.height);rowMap.needsUpdate=true;}
+    rowMap.repeat.y=compact?1:5/textureRows;
+    rowMap.offset.y=1-rowMap.repeat.y-(reducedMotion||topChapters.length<=5?0:(time/3.2/topChapters.length)%1);
   }
   animate(0);
   const backMap=canvasTexture(T,2048,1376,paintLeaderboardGraffiti);

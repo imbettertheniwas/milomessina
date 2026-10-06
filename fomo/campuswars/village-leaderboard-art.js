@@ -6,30 +6,31 @@ export const ROW_HEIGHT=166;
 export const ROWS_TOP=382;
 export const ROWS_HEIGHT=830;
 
-export function paintLeaderboardFrame(ctx,w,h,count,metric='progress'){
+export function paintLeaderboardFrame(ctx,w,h,count,metric='progress',{schoolName=''}={}){
   ctx.fillStyle='#101D29';ctx.fillRect(0,0,w,h);ctx.textBaseline='middle';ctx.textAlign='left';
-  ctx.fillStyle='#E9C873';ctx.fillRect(0,0,w,12);ctx.font='700 47px Aeonik, Arial, sans-serif';ctx.fillText('FOMO / GREEK WARS',100,91);
-  ctx.fillStyle='#FFFFFF';ctx.font='700 121px Aeonik, Arial, sans-serif';ctx.fillText('LEADERBOARD',100,211);
+  ctx.fillStyle='#E9C873';ctx.fillRect(0,0,w,12);ctx.font='700 47px Aeonik, Arial, sans-serif';ctx.fillText(schoolName?schoolName.toUpperCase():'FOMO / GREEK WARS',100,91,w-200);
+  ctx.fillStyle='#FFFFFF';ctx.font='700 '+(schoolName?100:121)+'px Aeonik, Arial, sans-serif';ctx.fillText(schoolName?'CAMPUS LEADERBOARD':'LEADERBOARD',100,211);
   ctx.fillStyle='#AFC0CD';ctx.font='500 40px Aeonik, Arial, sans-serif';ctx.fillText('CHAPTER',105,315);
-  ctx.textAlign='right';ctx.fillText('80% TARGET',w-327,315);ctx.fillText('% ACTIVE',w-110,315);
+  ctx.textAlign='right';ctx.fillText(metric==='members'?'MEMBERS':'80% TARGET',w-327,315);ctx.fillText('% ROSTER',w-110,315);
   if(!count){ctx.textAlign='center';ctx.font='700 58px Aeonik, Arial, sans-serif';ctx.fillText('YOUR CHAPTER COULD BE FIRST',w/2,740);}
   ctx.textAlign='left';ctx.fillStyle='#AFC0CD';ctx.font='500 32px Aeonik, Arial, sans-serif';
-  ctx.fillText(`TOP ${Math.min(LEADERBOARD_LIMIT,count)} OF ${count} CHAPTERS · ONBOARDING STANDINGS`,100,h-74);
+  const scope=schoolName?'CAMPUS ':'';const total=count+' '+scope+(count===1?'CHAPTER':'CHAPTERS');ctx.fillText((count>LEADERBOARD_LIMIT?'TOP '+LEADERBOARD_LIMIT+' OF ':'')+total+' · ONBOARDING STANDINGS',100,h-74);
   ctx.font='500 27px Aeonik, Arial, sans-serif';ctx.fillText(metric==='members'?'RANKED BY MEMBERS ONBOARDED':'RANKED BY % ACTIVE · TIES BY MEMBERS',100,h-27);
   ctx.fillStyle='#E9C873';ctx.font='700 27px Aeonik, Arial, sans-serif';ctx.textAlign='right';ctx.fillText('80% TO QUALIFY',w-100,h-27);
 }
 
-export function paintLeaderboardRows(ctx,w,h,rows){
+export function paintLeaderboardRows(ctx,w,h,rows,metric='progress',{rowHeight=ROW_HEIGHT,schoolName='',compact=false}={}){
+  const scale=rowHeight/ROW_HEIGHT,fontScale=compact?1:scale;
   ctx.fillStyle='#101D29';ctx.fillRect(0,0,w,h);ctx.textBaseline='middle';
   rows.forEach((row,i)=>{
-    const y=i*ROW_HEIGHT,first=row.rank===1;
-    ctx.fillStyle=first?'#263A39':i%2?'#152632':'#12212E';ctx.fillRect(66,y,w-132,148);
-    ctx.fillStyle=bannerIdentity(row).primary;ctx.fillRect(66,y,13,148);
-    ctx.fillStyle=first?'#E9C873':'#AFC0CD';ctx.textAlign='left';ctx.font='700 67px Aeonik, Arial, sans-serif';ctx.fillText(`#${row.rank}`,107,y+75);
-    ctx.fillStyle='#FFFFFF';ctx.font='700 55px Aeonik, Arial, sans-serif';ctx.fillText(row.name.toUpperCase(),285,y+54,990);
-    ctx.fillStyle='#ACBDC8';ctx.font='500 34px Aeonik, Arial, sans-serif';ctx.fillText((row.shortSchool||row.school||'').toUpperCase(),285,y+106,990);
-    ctx.textAlign='right';ctx.fillStyle='#D0DCE4';ctx.font='500 58px Aeonik, Arial, sans-serif';ctx.fillText(`${row.joined} / ${Math.ceil(row.active*.8)}`,w-328,y+76);
-    ctx.fillStyle=first?'#E9C873':'#FFFFFF';ctx.font='700 75px Aeonik, Arial, sans-serif';ctx.fillText(`${Math.round(row.progress*100)}%`,w-111,y+76);
+    const y=i*rowHeight,first=row.rank===1;
+    ctx.fillStyle=first?'#263A39':i%2?'#152632':'#12212E';ctx.fillRect(66,y,w-132,148*scale);
+    ctx.fillStyle=bannerIdentity(row).primary;ctx.fillRect(66,y,13,148*scale);
+    ctx.fillStyle=first?'#E9C873':'#AFC0CD';ctx.textAlign='left';ctx.font='700 '+(67*fontScale)+'px Aeonik, Arial, sans-serif';ctx.fillText(`#${row.rank}`,107,y+rowHeight/2);
+    ctx.fillStyle='#FFFFFF';ctx.font='700 '+(55*fontScale)+'px Aeonik, Arial, sans-serif';ctx.fillText(row.name.toUpperCase(),285,y+(compact?rowHeight/2:54*scale),990);
+    ctx.fillStyle='#ACBDC8';ctx.font='500 '+(34*fontScale)+'px Aeonik, Arial, sans-serif';if(!compact)ctx.fillText((schoolName?(row.letters||''):(row.shortSchool||row.school||'')).toUpperCase(),285,y+106*scale,990);
+    ctx.textAlign='right';ctx.fillStyle='#D0DCE4';ctx.font='500 '+(58*fontScale)+'px Aeonik, Arial, sans-serif';ctx.fillText(metric==='members'?row.joined.toLocaleString():`${row.joined} / ${Math.ceil(row.active*.8)}`,w-328,y+rowHeight/2);
+    ctx.fillStyle=first?'#E9C873':'#FFFFFF';ctx.font='700 '+((metric==='members'?58:75)*fontScale)+'px Aeonik, Arial, sans-serif';ctx.fillText(`${Math.round(row.progress*100)}%`,w-111,y+rowHeight/2);
   });
 }
 

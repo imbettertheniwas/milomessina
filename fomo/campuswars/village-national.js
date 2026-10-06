@@ -1,40 +1,67 @@
-import {schoolStandings,loadSchoolCatalog} from './village-destinations.js?v=132';
-const fmt=n=>n.toLocaleString('en-US');
-export function createNationalNavigation(){
- const shell=document.getElementById('village'),source=document.getElementById('chapters-data');let snapshot=JSON.parse(source.textContent),catalog=[],schools=[],selected='',active='',map=null,mapPromise=null,live=source.dataset.feedLive==='true',updated=source.dataset.feedUpdatedAt||snapshot.updatedAt;
- const dialog=document.createElement('dialog');dialog.id='national-map';dialog.setAttribute('aria-labelledby','national-title');dialog.innerHTML=`<header class="national-header"><div><span class="national-eyebrow">FOMO / GREEK WARS</span><h2 id="national-title">Choose your next campus.</h2><p id="national-total"></p></div><label class="national-search">Find your campus<input type="search" id="national-search" placeholder="Search schools or chapters" autocomplete="off"></label><button class="national-close" autofocus type="button" aria-label="Close national map">×</button></header><nav class="national-mobile-views" aria-label="Map views"><button type="button" data-view="map" aria-pressed="true">Explore map</button><button type="button" data-view="schools" aria-pressed="false">Schools & rankings</button></nav><div class="national-grid"><section class="national-geography" aria-label="United States school map"><div class="national-map-stage"><div class="national-map-label">GREEK VILLAGE / UNITED STATES <span>Drag to pan · Scroll to zoom · Click a house to choose</span></div><div id="national-map-canvas"></div><div class="national-map-tools"><button type="button" data-map="in" aria-label="Zoom map in">+</button><button type="button" data-map="out" aria-label="Zoom map out">−</button><button type="button" data-map="reset">Reset view</button></div><p class="national-map-note">Numbers group nearby campuses · AK / HI inset</p><span class="national-map-loading" role="status">Opening the country…</span></div><div class="national-school" id="national-school" aria-live="polite"></div></section><aside class="national-sidebar"><div class="national-tabs" role="tablist" aria-label="Find a school"><button type="button" role="tab" id="national-top-tab" aria-selected="true" aria-controls="national-results" data-tab="top">Top 10 schools</button><button type="button" role="tab" id="national-all-tab" aria-selected="false" aria-controls="national-results" data-tab="all">All schools</button><button type="button" role="tab" id="national-near-tab" aria-selected="false" aria-controls="national-results" data-tab="nearby" hidden>Nearby</button></div><p class="national-ranking-note">Ranked by total members onboarded</p><div id="national-results" role="tabpanel" aria-labelledby="national-top-tab"></div><p id="national-status" role="status"></p></aside></div><footer class="national-footer"><button type="button" id="national-home">↖ National home block</button><span>Choose a school, then parachute into its block</span></footer>`;shell.append(dialog);
- const home=document.createElement('button');home.id='village-national-home';home.className='village-reset';home.type='button';home.textContent='← National home';home.hidden=true;document.querySelector('.village-title').append(home);
- const destination=document.createElement('p');destination.id='village-destination';destination.className='village-destination';document.querySelector('.village-title').append(destination);
- const button=document.createElement('button');button.id='village-map';button.className='village-reset';button.type='button';button.textContent='Explore US ↗';button.setAttribute('aria-haspopup','dialog');document.querySelector('.village-top-actions').prepend(button);
- let tab='top',nearbyIds=[];const results=dialog.querySelector('#national-results'),search=dialog.querySelector('input'),detail=dialog.querySelector('#national-school');
- function status(){dialog.querySelector('#national-status').textContent=`${live?'Live onboarding':'Saved counts · Reconnecting'}${updated?' · '+new Date(updated).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):''}`;}
- function renderResults(){const query=search.value.trim().toLowerCase(),list=schools.filter(s=>!query||[s.name,s.city,s.state,...s.chapters.map(c=>`${c.name} ${c.letters}`)].join(' ').toLowerCase().includes(query));results.replaceChildren();
-  for(const school of query||tab==='all'?list:tab==='nearby'?list.filter(s=>nearbyIds.includes(s.id)):list.slice(0,10)){const b=document.createElement('button');b.type='button';b.className='national-school-row';b.dataset.school=school.id;b.setAttribute('aria-pressed',String(school.id===selected));const rank=document.createElement('span');rank.className='national-rank';rank.textContent=String(school.rank).padStart(2,'0');const info=document.createElement('span'),name=document.createElement('strong'),sub=document.createElement('small'),count=document.createElement('b');name.textContent=school.name;sub.textContent=`${school.chapters.length} chapter${school.chapters.length===1?'':'s'}${school.state?' · '+school.state:''}`;info.append(name,sub);count.textContent=fmt(school.members);b.append(rank,info,count);b.addEventListener('click',()=>{select(school.id);setView('map');map?.focus(school.id);});results.append(b);}
-  if(!results.children.length){const p=document.createElement('p');p.className='national-empty';p.textContent='No matching schools or chapters yet.';results.append(p);}
- }
- function select(id,nearby=[]){if(nearby.length>1){nearbyIds=nearby;const nearTab=dialog.querySelector('#national-near-tab');nearTab.hidden=false;nearTab.textContent='Nearby ('+nearby.length+')';setTab('nearby');setView('schools');}selected=id;const school=schools.find(s=>s.id===id);detail.replaceChildren();map?.select(id);renderResults();if(!school)return;
-  const top=document.createElement('div');top.className='national-school-heading';const info=document.createElement('div'),location=document.createElement('span'),title=document.createElement('h3'),meta=document.createElement('p');location.className='national-eyebrow';location.textContent=school.city?`${school.city}, ${school.state}`:'Campus location being mapped';title.textContent=school.name;meta.textContent=`#${school.rank} nationally · ${fmt(school.members)} member${school.members===1?'':'s'} · ${school.chapters.length} chapter${school.chapters.length===1?'':'s'}`;info.append(location,title,meta);const visit=document.createElement('button');visit.type='button';visit.className='national-visit';visit.textContent='Visit campus ↗';visit.addEventListener('click',()=>travel(school.id));top.append(info,visit);detail.append(top);
-  const character=document.createElement('p');character.className='national-character';character.textContent=school.character?school.character+' · Campus-inspired':'A campus-inspired world for '+school.name;detail.append(character);
-  const chapters=document.createElement('div');chapters.className='national-chapters';chapters.setAttribute('aria-label','Choose a chapter to parachute into');for(const [i,c] of school.chapters.entries()){const b=document.createElement('button');b.type='button';const name=document.createElement('span'),count=document.createElement('b');name.textContent=`${c.letters} · ${c.name}`;count.textContent=`${fmt(c.joined)} ↗`;b.append(name,count);b.title=`Drop into ${c.name}`;b.addEventListener('click',()=>travel(school.id,c.id));chapters.append(b);}detail.append(chapters);
+import {schoolDestinations,loadSchoolCatalog} from './village-destinations.js?v=146';
+import {schoolChoices,SCHOOL_PROMPT_DELAY} from './village-school-search.js?v=146';
 
+export function createNationalNavigation(){
+ const shell=document.getElementById('village'),source=document.getElementById('chapters-data');
+ let snapshot=JSON.parse(source.textContent),catalog=[],schools=[],choices=[],selected=-1,required=true,travelling=false;
+ const dialog=document.createElement('dialog');dialog.id='school-picker';dialog.setAttribute('aria-labelledby','school-picker-title');
+ dialog.innerHTML=`<form class="school-picker-form"><span class="school-picker-brand">fomo / campus</span><h2 id="school-picker-title">What school do you go to?</h2><label class="school-picker-field"><span class="school-picker-label">Your school</span><input id="school-search" type="text" placeholder="Type your school" autocomplete="off" spellcheck="false" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="school-results" autofocus><span aria-hidden="true">↗</span></label><ul id="school-results" role="listbox" aria-label="Schools" hidden></ul><p id="school-picker-status" role="status">Your private jet is waiting.</p></form>`;
+ shell.append(dialog);
+ const search=dialog.querySelector('input'),results=dialog.querySelector('ul'),status=dialog.querySelector('[role=status]');
+ const button=document.createElement('button');button.id='village-school';button.className='village-reset';button.type='button';button.textContent='Your school ↗';button.setAttribute('aria-haspopup','dialog');document.querySelector('.village-top-actions').prepend(button);
+ const home=document.createElement('button');home.id='village-national-home';home.className='village-reset';home.type='button';home.textContent='← National home';home.hidden=true;document.querySelector('.village-title').append(home);
+ const destination=document.createElement('p');destination.className='village-destination';document.querySelector('.village-title').append(destination);
+ const starter=document.createElement('aside');starter.className='campus-starter';starter.hidden=true;starter.setAttribute('aria-labelledby','campus-starter-title');
+ starter.innerHTML=`<button type="button" aria-label="Close campus invitation">×</button><h3 id="campus-starter-title">Pioneer your campus.</h3><p>Start with your chapter and get paid.<br>Or refer another chapter and earn a referral reward.</p><div><a href="https://fomocampus.com/onboard/">Start your chapter ↗</a><a href="https://fomocampus.com/refer/">Refer a chapter ↗</a></div>`;
+ shell.append(starter);let emptyCampus=false;
+ starter.querySelector('button').addEventListener('click',()=>{starter.hidden=true;});
+ const showStarter=()=>{starter.hidden=!emptyCampus||dialog.open||shell.classList.contains('intro-playing');};
+ document.addEventListener('village:introend',showStarter);
+ let timer=0,remaining=SCHOOL_PROMPT_DELAY,timerStarted=0,promptShown=false,visible=true;
+ function stopTimer(){if(timer){clearTimeout(timer);timer=0;remaining=Math.max(0,remaining-(performance.now()-timerStarted));}}
+ function checkTimer(){
+  stopTimer();if(promptShown||!required||!shell.classList.contains('village-ready')||document.hidden||!visible)return;
+  timerStarted=performance.now();timer=setTimeout(()=>{timer=0;remaining=0;open();},remaining);
  }
- function travel(id='',chapter=''){dialog.close();document.dispatchEvent(new CustomEvent('destination:request',{detail:{school:id,chapter}}));}
- async function open(){if(dialog.open)return;search.value='';setTab('top');dialog.querySelector('#national-near-tab').hidden=true;dialog.showModal();setView('map');document.dispatchEvent(new CustomEvent('national:visibility',{detail:{open:true}}));if(!selected||!schools.some(s=>s.id===selected))selected=active||schools[0]?.id;select(selected);status();
-  if(!mapPromise){mapPromise=import('./village-national-map.js?v=135').then(m=>m.createNationalMap(dialog.querySelector('#national-map-canvas'),{onSelect:select})).then(value=>{map=value;map.setSchools(schools);map.select(selected);dialog.querySelector('.national-map-loading').hidden=true;return map;}).catch(error=>{console.error('National map failed',error);mapPromise=null;setView('schools');dialog.querySelector('.national-map-loading').textContent='3D map unavailable. All schools are available in the list.';});}
-  await mapPromise;map?.resize();map?.reset();
+ function render(){
+  choices=schoolChoices(schools,search.value);selected=-1;search.removeAttribute('aria-activedescendant');results.replaceChildren();
+  choices.forEach((school,i)=>{const item=document.createElement('li');item.id=`school-choice-${i}`;item.setAttribute('role','option');item.setAttribute('aria-selected','false');item.dataset.index=i;
+   const name=document.createElement('span'),arrow=document.createElement('span');name.textContent=school.custom?`Fly to ${school.name}`:school.name;arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');item.append(name,arrow);results.append(item);
+  });
+  results.hidden=!choices.length;search.setAttribute('aria-expanded',String(Boolean(choices.length)));
+  status.textContent=search.value.trim()&&!choices.length?'Keep typing your school’s name.':'Your private jet is waiting.';
  }
- button.addEventListener('click',open);dialog.querySelector('.national-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>{document.dispatchEvent(new CustomEvent('national:visibility',{detail:{open:false}}));button.focus();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
- dialog.querySelector('#national-home').addEventListener('click',()=>travel());home.addEventListener('click',()=>travel());
- function setTab(value){tab=value;for(const t of dialog.querySelectorAll('[data-tab]')){t.setAttribute('aria-selected',String(t.dataset.tab===value));t.tabIndex=t.dataset.tab===value?0:-1;if(t.dataset.tab===value)results.setAttribute('aria-labelledby',t.id);}renderResults();}
- for(const b of dialog.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>setTab(b.dataset.tab));
- dialog.querySelector('.national-tabs').addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=[...dialog.querySelectorAll('[data-tab]')].filter(t=>!t.hidden),current=tabs.indexOf(document.activeElement),index=event.key==='Home'?0:event.key==='End'?tabs.length-1:(current+(event.key==='ArrowRight'?1:tabs.length-1))%tabs.length;tabs[index].click();tabs[index].focus();});
- function setView(view){dialog.dataset.view=view;for(const b of dialog.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===view));if(view==='map')map?.resize();}
- for(const b of dialog.querySelectorAll('[data-view]'))b.addEventListener('click',()=>setView(b.dataset.view));
- search.addEventListener('input',()=>{setTab('all');if(search.value.trim())setView('schools');});for(const b of dialog.querySelectorAll('[data-map]'))b.addEventListener('click',()=>b.dataset.map==='reset'?(map?.reset(),setTab('top')):map?.zoom(b.dataset.map==='in'?.8:1.25));
- function update(){schools=schoolStandings(snapshot.chapters,catalog);dialog.querySelector('#national-total').textContent=`${fmt(snapshot.chapters.length)} chapters · ${fmt(schools.length)} schools · ${fmt(snapshot.chapters.reduce((n,c)=>n+c.joined,0))} members onboarded`;map?.setSchools(schools);if(dialog.open)select(schools.some(s=>s.id===selected)?selected:schools[0]?.id);else renderResults();status();}
- document.addEventListener('chapters:update',e=>{snapshot=e.detail;update();});document.addEventListener('chapters:status',e=>{live=e.detail.live;updated=e.detail.updatedAt;status();});
- document.addEventListener('destination:changed',e=>{const {school,chapters}=e.detail;active=school?.id||'';home.hidden=!school;document.querySelector('.village-title h1').textContent=school?school.name:'Greek village';document.querySelector('.village-kicker').textContent=school?'GREEK WARS · YOUR CAMPUS':'GREEK WARS · NATIONAL HOME';destination.textContent=school?`${school.city?school.city+', '+school.state+' · ':''}${chapters.length} chapters · ${fmt(chapters.reduce((n,c)=>n+c.joined,0))} member${chapters.reduce((n,c)=>n+c.joined,0)===1?'':'s'}`:'The top 19 chapters · Ranked by members';shell.dataset.destination=active||'national';});
- loadSchoolCatalog().then(data=>{catalog=data;update();}).catch(()=>update());update();
- addEventListener('pagehide',e=>{if(!e.persisted)map?.dispose();});
+ function highlight(index){selected=index;[...results.children].forEach((item,i)=>item.setAttribute('aria-selected',String(i===index)));const item=results.children[index];if(item){search.setAttribute('aria-activedescendant',item.id);item.scrollIntoView({block:'nearest'});}}
+ function open(message=''){
+  if(travelling||dialog.open)return;promptShown=true;stopTimer();search.value='';render();if(message)status.textContent=message;
+  document.dispatchEvent(new CustomEvent('school:visibility',{detail:{open:true}}));dialog.showModal();search.focus({preventScroll:true});
+ }
+ function travel(school){
+  if(!school||travelling)return;travelling=true;search.disabled=true;dialog.close();
+  document.dispatchEvent(new CustomEvent('destination:request',{detail:{school:school.id,...(school.custom?{name:school.name}:{}),flight:true}}));
+ }
+ dialog.addEventListener('cancel',event=>{if(required)event.preventDefault();});
+ dialog.addEventListener('keydown',event=>{if(required&&event.key==='Escape'){event.preventDefault();event.stopPropagation();}});
+ dialog.addEventListener('close',()=>{if(required&&!travelling){dialog.showModal();search.focus({preventScroll:true});return;}document.dispatchEvent(new CustomEvent('school:visibility',{detail:{open:false}}));if(!travelling)button.focus({preventScroll:true});});
+ dialog.querySelector('form').addEventListener('submit',event=>{event.preventDefault();travel(choices[selected>=0?selected:0]);});
+ search.addEventListener('input',render);
+ search.addEventListener('keydown',event=>{if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();if(choices.length)highlight((selected+(event.key==='ArrowDown'?1:choices.length-1)+choices.length)%choices.length);}});
+ results.addEventListener('pointerdown',event=>{if(event.target.closest('[role=option]'))event.preventDefault();});
+ results.addEventListener('click',event=>{const item=event.target.closest('[role=option]');if(item)travel(choices[Number(item.dataset.index)]);});
+ button.addEventListener('click',()=>open());home.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('destination:request',{detail:{school:''}})));
+ document.addEventListener('school:request',()=>open());
+ document.addEventListener('destination:arrived',()=>{if(travelling){required=false;travelling=false;search.disabled=false;}showStarter();});
+ document.addEventListener('destination:error',()=>{travelling=false;search.disabled=false;open('Couldn’t open that campus. Choose your school to try again.');});
+ function update(){schools=schoolDestinations(snapshot.chapters,catalog);if(dialog.open)render();}
+ document.addEventListener('chapters:update',event=>{snapshot=event.detail;update();});
+ document.addEventListener('destination:changed',event=>{
+  const {school,chapters}=event.detail;emptyCampus=Boolean(school&&!chapters.length);starter.hidden=true;home.hidden=!school;document.querySelector('.village-title h1').textContent=school?school.name:'Greek village';document.querySelector('.village-kicker').textContent=school?'GREEK WARS · YOUR CAMPUS':'GREEK WARS · NATIONAL HOME';
+  destination.textContent=school?(chapters.length?`${chapters.length} chapters · ${chapters.reduce((n,c)=>n+c.joined,0).toLocaleString()} members`:'Your campus. Start the first chapter.') :'';shell.dataset.destination=school?.id||'national';
+ });
+ const observer=new MutationObserver(checkTimer);observer.observe(shell,{attributes:true,attributeFilter:['class']});
+ const intersection=new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;checkTimer();});intersection.observe(shell);
+ document.addEventListener('visibilitychange',checkTimer);
+ loadSchoolCatalog().then(data=>{catalog=data;update();}).catch(()=>update());update();checkTimer();
+ addEventListener('pagehide',event=>{if(!event.persisted){stopTimer();observer.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',checkTimer);}});
  return {open};
 }

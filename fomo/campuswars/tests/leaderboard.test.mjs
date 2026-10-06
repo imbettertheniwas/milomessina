@@ -38,3 +38,16 @@ test('scroll cycles all ten chapters seamlessly, freezes at the same time, and e
   single.animate(12);assert.equal(singleMap.offset.y,0);assert.equal(singleMap.repeat.y,1);
   const empty=createCompetition(T,[],[]);empty.animate(100);assert.equal(empty.topChapters.length,0);assert.equal(empty.board.getObjectByName('leaderboard-scrolling-rows').visible,false);
 });
+
+test('campus boards keep one through five rows at natural height and never scroll a short list',t=>{
+ const calls=[],context=new Proxy({fillText:text=>calls.push(String(text))},{get:(obj,key)=>obj[key]||(()=>{})});
+ const originalDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),originalPath=Object.getOwnPropertyDescriptor(globalThis,'Path2D');
+ Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>({getContext:()=>context})}});Object.defineProperty(globalThis,'Path2D',{configurable:true,value:class{}});
+ t.after(()=>{for(const [key,d] of [['document',originalDocument],['Path2D',originalPath]]){if(d)Object.defineProperty(globalThis,key,d);else delete globalThis[key];}});
+ for(const count of [1,2,3,5]){
+  const rows=Array.from({length:count},(_,i)=>({id:'c'+i,name:'Chapter '+i,letters:'Χ',school:'Campus A',joined:40-i,active:100}));
+  const board=createCompetition(T,rows,[],[],'members',{schoolName:'Campus A'}),map=board.board.getObjectByName('leaderboard-scrolling-rows').material.map;
+  assert.equal(map.image.height,830,'short rosters must pad the row texture rather than stretch it');assert.equal(map.repeat.y,1);board.animate(9.1);assert.equal(map.offset.y,0);board.animate(20,true);assert.equal(map.repeat.y,1);assert.equal(map.offset.y,0);assert.equal(board.board.userData.scope,'Campus A');
+ }
+ assert(calls.includes('CAMPUS A'));assert(calls.includes('CAMPUS LEADERBOARD'));assert(calls.includes('MEMBERS'));assert(calls.includes('40'));assert(!calls.includes('40 / 80'));
+});

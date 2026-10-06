@@ -28,3 +28,23 @@ campus-inspired interpretations; they are not surveys or replicas of real houses
 New schools remain searchable and visitable even before coordinates are added.
 Add a verified institution record and its feed aliases to place it on the map.
 Member counts always come from the public aggregate feed, never this catalog.
+
+The October 2026 catalog expansion uses the same NCES directory for US campuses.
+Canadian campus coordinates come from [Western's official map metadata](https://www.uwo.ca/about/visit/maps.html)
+and the [Queen's official campus map link](https://www.queensu.ca/visit).
+[Zeta Psi's Ontario directory](https://zetapsi.org/about/chapter-location/ontario/)
+confirms these Canadian institutions. The feed's “Rowan College” Sigma Alpha Epsilon
+entry is reconciled to Rowan University using its [official chapter directory](https://sites.rowan.edu/oslp/greekaffairs/chapters.html).
+Each school has one pin at its verified campus coordinate. A pin opens the
+campus block directly, without a chapter picker. Pins are not house addresses.
+
+## School autocomplete (October 6, 2026)
+
+`school-search-catalog.json` contains US and Canadian institution names, domains,
+and supplied province/state labels from Hipo's University Domains and Names list:
+https://github.com/Hipo/university-domains-list
+
+The original license is retained in `school-search-LICENSE.txt`. These entries
+expand school search beyond registered chapters. Existing curated campus identities
+and aliases take precedence; additional campuses receive the generic starter
+campus, without invented locations, logos, members, or chapters.

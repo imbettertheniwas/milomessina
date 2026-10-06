@@ -11,9 +11,19 @@ export function schoolStandings(chapters,catalog=[]){
   schools.forEach((s,i)=>{s.rank=i&&s.members===schools[i-1].members?schools[i-1].rank:i+1;s.chapters=memberOrder(s.chapters);});return schools;
 }
 export function destinationChapters(chapters,school=null){return school?memberOrder(school.chapters):memberOrder(chapters).slice(0,HOME_LIMIT);}
-export function routeFromHash(hash){const p=new URLSearchParams(hash.replace(/^#/,''));return {school:p.get('school')||'',chapter:p.get('chapter')||''};}
-export function destinationHash(school,chapter){const p=new URLSearchParams();if(school)p.set('school',school);if(chapter&&chapter!=='empty')p.set('chapter',chapter);return p.size?'#'+p:'';}
-export function resolveDestination(route,schools){return schools.find(s=>s.id===route.school)||(!route.school&&route.chapter?schools.find(s=>s.chapters.some(c=>c.id===route.chapter)):null)||null;}
+// Keep standings limited to registered chapters, but let every catalog campus
+// be a destination. An empty campus uses the world's existing claimable lot.
+export function schoolDestinations(chapters,catalog=[]){
+ const schools=schoolStandings(chapters,catalog),ids=new Set(schools.map(s=>s.id));
+ return [...schools,...catalog.filter(s=>!ids.has(`school-${s.id}`)).map(s=>({...s,id:`school-${s.id}`,chapters:[],members:0}))];
+}
+export function customSchool(name){
+ const clean=String(name||'').trim().replace(/\s+/g,' ').slice(0,100),key=schoolKey(clean);
+ return clean.length>=2&&key?{id:`custom-${key}`,name:clean,aliases:[],chapters:[],members:0,custom:true}:null;
+}
+export function routeFromHash(hash){const p=new URLSearchParams(hash.replace(/^#/,''));return {school:p.get('school')||'',chapter:p.get('chapter')||'',...(p.has('name')?{name:p.get('name')}: {})};}
+export function destinationHash(school,chapter,name){const p=new URLSearchParams();if(school)p.set('school',school);if(chapter&&chapter!=='empty')p.set('chapter',chapter);if(name)p.set('name',name);return p.size?'#'+p:'';}
+export function resolveDestination(route,schools){const custom=customSchool(route.name);return schools.find(s=>s.id===route.school)||schools.find(s=>route.school&&s.chapters.some(c=>schoolKey(c.school)===route.school))||(!route.school&&route.chapter?schools.find(s=>s.chapters.some(c=>c.id===route.chapter)):null)||(custom?.id===route.school?custom:null)||null;}
 export function mapPoint(lon,lat){
   if(lon>0)lon-=360;
   if(lat>50)return {x:-80+(lon+152)*1.1,y:-50+(lat-64)*1.1};
@@ -21,4 +31,18 @@ export function mapPoint(lon,lat){
   return {x:(lon+96)*3.15,y:(lat-38)*4};
 }
 let catalogPromise;
-export function loadSchoolCatalog(){return catalogPromise??=fetch(new URL('./data/schools.json',import.meta.url)).then(r=>{if(!r.ok)throw Error('School locations unavailable');return r.json();}).then(d=>d.schools).catch(error=>{catalogPromise=null;throw error;});}
+export function mergeSchoolCatalog(base,extra){
+ const schools=base.map(s=>({...s,aliases:[...(s.aliases||[])]}));
+ const domain=value=>{try{return new URL(/^https?:/.test(value)?value:`https://${value}`).hostname.replace(/^www\./,'');}catch{return '';}};
+ const names=new Map(schools.flatMap(s=>[s.name,...s.aliases].map(name=>[schoolKey(name),s]))),domains=new Map(schools.filter(s=>s.website).map(s=>[domain(s.website),s]));
+ for(const school of extra){
+  const existing=names.get(schoolKey(school.name))||(school.website&&domains.get(domain(school.website)));
+  if(existing){existing.aliases=[...new Set([...existing.aliases,school.name,...(school.aliases||[])])];continue;}
+  schools.push(school);names.set(schoolKey(school.name),school);
+ }
+ return schools;
+}
+export function loadSchoolCatalog(){return catalogPromise??=Promise.all([
+ fetch(new URL('./data/schools.json?v=146',import.meta.url)).then(r=>{if(!r.ok)throw Error('School directory unavailable');return r.json();}).then(d=>d.schools),
+ fetch(new URL('./data/school-search-catalog.json?v=146',import.meta.url)).then(r=>{if(!r.ok)throw Error('Additional schools unavailable');return r.json();}).then(d=>d.schools).catch(()=>[])
+]).then(([base,extra])=>mergeSchoolCatalog(base,extra)).catch(error=>{catalogPromise=null;throw error;});}

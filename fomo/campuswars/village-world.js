@@ -2,20 +2,20 @@ import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=113';
 import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=131';
 import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
-import {rankedHouseSizes} from './village-house-sizing.js?v=138';
+import {rankedHouseSizes} from './village-house-sizing.js?v=146';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
 import {createVillageEntrance} from './village-entrance.js?v=128';
-import {createPongGames} from './village-pong.js?v=138';
-import {createDieGames} from './village-die.js?v=138';
-import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=138';
-import {createCompetition,houseStandings} from './village-competition.js?v=138';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=138';
+import {createPongGames} from './village-pong.js?v=146';
+import {createDieGames} from './village-die.js?v=146';
+import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=146';
+import {createCompetition,houseStandings} from './village-competition.js?v=146';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=146';
 import {humanPose} from './village-human-motion.js?v=106';
 import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=138';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=128';
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=138';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=138';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=146';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=146';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=138';
 import {createSchoolBanner} from './village-school-banners.js?v=138';
 import {createDistantCrowd} from './village-distant-crowd.js?v=131';
@@ -296,7 +296,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     return updated;
   }
   animateCrowd(0);
-  const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors,metric);world.add(competition.root);competition.board.position.z+=extension;
+  const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors,metric,{schoolName:theme?.schoolName||''});world.add(competition.root);competition.board.position.z+=extension;
   const entrance=createVillageEntrance(THREE,extension);world.add(entrance);
   // Batch repeated architectural parts so phones draw whole sets at once.
   world.updateMatrixWorld(true);

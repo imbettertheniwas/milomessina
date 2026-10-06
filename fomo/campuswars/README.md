@@ -1,5 +1,30 @@
 # fomo Campus Wars
 
+## School selection and private-jet arrival — October 6, 2026
+
+The map and its invitation have been removed from the production navigation.
+A required school picker opens after five visible seconds of a ready village.
+It searches the curated campus list plus a bundled US/Canada school-name
+directory, with a typed-name fallback. Catalog campuses without registered
+chapters and custom schools land in a starter campus with the existing claimable
+lot, a start-chapter link, and a referral link. The school choice is retained in
+the destination URL; no new registrations are created by visiting.
+
+Choosing a school plays an eight-second FOMO private-jet sequence (exterior,
+cabin, open-door exit), followed by the existing 6.4-second parachute arrival.
+Pause and skip remain available, and reduced-motion visitors arrive directly.
+School-picker visibility pauses rendering and playback. The opening money rain
+covers every rendered chapter for eight visible seconds and starts after landing
+on a selected campus.
+
+The chapter drawer is a compact scrolling list of chapter mark, name, and member
+count. Detailed progress, duplicate detail cards, and secondary actions are
+hidden. Join Greek Wars and the drawer accents use the original FOMO blue.
+
+Validation: 281 village tests pass; browser checks cover required selection,
+autocomplete, the flight and landing, starter-campus calls to action, and the
+390px compact chapter list.
+
 ## Public-site detail sync — October 5, 2026
 
 Compared the HTML, 65 unique JavaScript/CSS files, and referenced local artwork

@@ -9,17 +9,20 @@ const anchors=chapters.map((c,i)=>({id:c.id,lot:{x:i%2?20:-20,z:Math.floor(i/2)*
 // house across the lawn where the chapter's crowd stands.
 const local=(row,point)=>({x:(point.x-row.x)*Math.cos(row.rotation)-(point.z-row.z)*Math.sin(row.rotation),z:(point.x-row.x)*Math.sin(row.rotation)+(point.z-row.z)*Math.cos(row.rotation)});
 const matrix=new T.Matrix4(),position=new T.Vector3(),scale=new T.Vector3(),rotation=new T.Quaternion();
-test('rain follows actual onboarding ranks, excludes construction below its goal, and treats ties equally',()=>{
+test('opening rain covers every chapter including empty and construction lots, and treats ties equally',()=>{
   const rows=moneyRecipients(chapters,anchors);
-  assert.deepEqual(rows.map(row=>row.id),['first','second','third']);
+  assert.deepEqual(rows.map(row=>row.id),['first','second','construction','third','empty']);
   assert(rows[0].count>rows[1].count&&rows[1].count>rows[2].count);
   const tied=moneyRecipients([{...chapters[0],joined:50},{...chapters[1],joined:50,active:100}],anchors);
   assert.equal(tied[0].rank,tied[1].rank);assert.equal(tied[0].count,tied[1].count);
 });
-test('clouds and bills exist only during the reward beat, stay over eligible lots, and freeze with time',()=>{
+test('clouds and bills cover every lot from the first frame until exactly eight seconds',()=>{
   const rain=createMoneyRain(T,chapters,anchors);
-  rain.update(MONEY_START);assert.equal(rain.root.visible,false);
-  rain.update(9.5);assert.equal(rain.root.visible,true);assert.equal(rain.root.children.length,2);
+  assert.equal(MONEY_START,0);assert.equal(MONEY_END,8);
+  rain.update(-.01);assert.equal(rain.root.visible,false);
+  rain.update(0);assert.equal(rain.root.visible,true);
+  assert.equal(rain.root.children[1].material.opacity,1);
+  rain.update(3.5);assert.equal(rain.root.visible,true);assert.equal(rain.root.children.length,2);
   const bills=rain.root.getObjectByName('rank-weighted-money');let index=0;
   for(const row of rain.recipients)for(let i=0;i<row.count;i++){
     bills.getMatrixAt(index++,matrix);matrix.decompose(position,rotation,scale);
@@ -27,11 +30,24 @@ test('clouds and bills exist only during the reward beat, stay over eligible lot
     assert(Math.abs(spot.x)<RAIN_HALF_WIDTH+1.2);assert(spot.z>RAIN_BACK-1&&spot.z<RAIN_FRONT+1);
     assert(position.y>0);assert(position.y<=row.roof+12.5);
   }
-  const frozen=Array.from(bills.instanceMatrix.array);rain.update(9.5);assert.deepEqual(Array.from(bills.instanceMatrix.array),frozen);
-  rain.update(9.6);assert.notDeepEqual(Array.from(bills.instanceMatrix.array),frozen);
+  const frozen=Array.from(bills.instanceMatrix.array);rain.update(3.5);assert.deepEqual(Array.from(bills.instanceMatrix.array),frozen);
+  rain.update(3.6);assert.notDeepEqual(Array.from(bills.instanceMatrix.array),frozen);
   rain.update(MONEY_END);assert.equal(rain.root.visible,false);
-  rain.update(9.5);rain.clear();assert.equal(rain.root.visible,false);
-  rain.update(9.5);assert.equal(rain.root.visible,true);rain.dispose();
+  rain.update(MONEY_END+1);assert.equal(rain.root.visible,false);
+  rain.update(3.5);rain.clear();assert.equal(rain.root.visible,false);
+  rain.update(3.5);assert.equal(rain.root.visible,true);rain.dispose();
+});
+test('chapters with no active-member total still receive opening rain',()=>{
+  const rain=createMoneyRain(T,[{id:'empty',joined:0,active:0}],anchors);
+  rain.update(0);assert(rain.root.visible);assert.equal(rain.recipients[0].id,'empty');
+  const bills=rain.root.getObjectByName('rank-weighted-money');
+  let falling=0;
+  for(let i=0;i<bills.count;i++){
+    bills.getMatrixAt(i,matrix);matrix.decompose(position,rotation,scale);
+    if(scale.x>0)falling++;
+  }
+  assert(falling>0,'money is already falling on the first visible frame');
+  rain.dispose();
 });
 test('money falls past the eaves onto the lawn crowd as well as onto the roof',()=>{
   const rain=createMoneyRain(T,chapters,anchors);
@@ -61,14 +77,14 @@ test('money falls past the eaves onto the lawn crowd as well as onto the roof',(
   rain.dispose();
 });
 
-test('live registration changes rebuild eligible rain and release replaced instance buffers',()=>{
+test('live registration changes retain rain over every lot and release replaced instance buffers',()=>{
   const rain=createMoneyRain(T,chapters,anchors);let disposed=0;
   rain.root.children.forEach(mesh=>mesh.addEventListener('dispose',()=>disposed++));
   const updated=chapters.map(c=>c.id==='construction'?{...c,joined:15,active:30}:c.id==='first'?{...c,joined:14}:c);
   rain.setChapters(updated,anchors);assert.equal(disposed,2);
-  assert(!rain.recipients.some(row=>row.id==='first'));assert(rain.recipients.some(row=>row.id==='construction'));
-  rain.update(9);assert.equal(rain.root.visible,true);
-  rain.setChapters([],[]);rain.update(9);assert.equal(rain.root.visible,false);assert.equal(rain.root.children.length,0);rain.dispose();
+  assert(rain.recipients.some(row=>row.id==='first'));assert.equal(rain.recipients.length,chapters.length);assert(rain.recipients.some(row=>row.id==='construction'));
+  rain.update(3);assert.equal(rain.root.visible,true);
+  rain.setChapters([],[]);rain.update(3);assert.equal(rain.root.visible,false);assert.equal(rain.root.children.length,0);rain.dispose();
 });
 
 

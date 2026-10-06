@@ -1,10 +1,10 @@
 import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
 import {villageQuality} from './village-quality.js?v=127';
-import {createVillage,buildVillageSteps} from './village-world.js?v=138';
-import {houseStandings} from './village-competition.js?v=138';
-import {rankedHouseSizes} from './village-house-sizing.js?v=138';
+import {createVillage,buildVillageSteps} from './village-world.js?v=146';
+import {houseStandings} from './village-competition.js?v=146';
+import {rankedHouseSizes} from './village-house-sizing.js?v=146';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=138';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=146';
 import {unoccludedHouses} from './village-occlusion.js?v=112';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
 

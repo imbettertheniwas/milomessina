@@ -30,8 +30,9 @@ const preloads=[...html.matchAll(/<link\b[^>]*\brel="modulepreload"[^>]*>/g)].ma
   return resolve(href,root).href;
 });
 
-test('the page preloads the village while deferring the interactive map until opened',()=>{
+test('the page preloads the village and arrival sequence without loading the removed map',()=>{
   assert(graph.size>1,'the test follows the entry module dependencies');
+  assert(![...graph.keys()].some(url=>/village-(national-map|map-invitation|map-layout)\.js/.test(url)),'the old map and invitation are absent from the production graph');
   assert.deepEqual(new Set(preloads),new Set([...graph.keys()].filter(url=>!url.includes('/village-national-map.js'))),'preloads must exactly match production imports, including their cache versions; do not preload unused galleries');
   assert.equal(preloads.length,new Set(preloads).size,'each module is preloaded once');
 });

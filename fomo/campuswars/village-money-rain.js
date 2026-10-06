@@ -1,10 +1,9 @@
 import {chapterGoalReached,GOAL_RAIN_DURATION} from './village-rewards.js?v=55';
-import {INTRO_PACE} from './village-intro.js?v=134';
 import {createCloudTexture,createBanknoteTexture} from './village-money-art.js?v=42';
-import {houseStandings} from './village-competition.js?v=138';
+import {houseStandings} from './village-competition.js?v=146';
 
-export const MONEY_START=7.3*INTRO_PACE;
-export const MONEY_END=12*INTRO_PACE;
+export const MONEY_START=0;
+export const MONEY_END=8;
 const smooth=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t);};
 const seed=(index,salt)=>{const value=Math.sin(index*127.1+salt*311.7)*43758.5453;return value-Math.floor(value);};
 
@@ -28,12 +27,14 @@ const BILL_WIDTH=.34,BILL_HEIGHT=BILL_WIDTH/2.35;
 // the oversized ones did, so it takes more of them to still read as a downpour.
 export function moneyRecipients(chapters,anchors){
   const byId=new Map(anchors.map(anchor=>[anchor.id,anchor]));
-  return houseStandings(chapters).filter(row=>(row.joined>=15||chapterGoalReached(row))&&byId.has(row.id)).map(row=>{
+  const ranked=houseStandings(chapters),rankedIds=new Set(ranked.map(row=>row.id));
+  const rows=[...ranked,...chapters.filter(row=>!rankedIds.has(row.id)).map(row=>({...row,rank:ranked.length+1}))];
+  return rows.filter(row=>byId.has(row.id)).map(row=>{
     const anchor=byId.get(row.id);
     // Only a finished house reports a roof to catch bills. A lot still under
     // construction has none, so its rain carries all the way down to its crew.
     const house=anchor.house;
-    return {id:row.id,goalReached:chapterGoalReached(row),rank:row.rank,count:Math.max(24,Math.round(560/Math.pow(row.rank,.8))),
+    return {id:row.id,goalReached:chapterGoalReached(row),rank:row.rank,count:Math.max(96,Math.round(560/Math.pow(row.rank,.8))),
       x:anchor.lot.x,z:anchor.lot.z,rotation:anchor.lot.rotation||0,roof:anchor.point.y-1,
       houseHalf:house?house.halfWidth+.45:0,houseFront:house?house.front+.45:0};
   });
@@ -81,9 +82,11 @@ export function createMoneyRain(T,chapters,anchors){
   function update(seconds,night=0,reward=false){
     if(seconds===lastTime)return;lastTime=seconds;
     const end=reward?MONEY_START+GOAL_RAIN_DURATION:MONEY_END;
-    root.visible=recipients.some(row=>!reward||(row.goalReached&&celebrating.has(row.id)))&&seconds>MONEY_START&&seconds<end;
+    root.visible=recipients.some(row=>!reward||(row.goalReached&&celebrating.has(row.id)))&&seconds>=MONEY_START&&seconds<end;
     if(!root.visible)return;
-    const time=seconds-MONEY_START,rise=smooth(time/.65),fade=1-smooth((seconds-(end-.7))/.7);
+    // The opening starts with bills already falling over every lot. Goal
+    // celebrations keep their rising-cloud entrance when earned later.
+    const time=seconds-MONEY_START+(reward?0:2),rise=reward?smooth(time/.65):1,fade=1-smooth((seconds-(end-.7))/.7);
     cloudMaterial.opacity=rise*fade*.88;cloudMaterial.color.setRGB(1-night*.3,1-night*.27,1-night*.22);billMaterial.opacity=rise*fade;flutter.value=time;
     let cloudIndex=0,billIndex=0;
     for(const row of recipients){
