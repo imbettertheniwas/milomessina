@@ -43,3 +43,9 @@ Browser checks: all three layouts; live totals; directory search and selection; 
 Sound on enables a soft two-note member chime (~0.72 seconds) and a louder rising goal celebration (~3.69 seconds). A goal sound replaces the ordinary chime for an observed positive member-count update that crosses the rounded-up 80% target. Initial loads, already-qualified chapters and roster-only edits do not trigger goal celebrations. Muting stops playing/scheduled voices. Both sounds have labeled preview buttons; previews enable audio via the browser click and do not change data. Sound controls are available on mobile.
 
 Validation: 13 model tests pass. `tests/audio.html` renders both sounds with OfflineAudioContext: goal peak 0.087 versus member peak 0.029, with neither clipping. Browser goal preview enabled the audio context successfully with no runtime errors.
+
+## State coverage
+
+The States we’re in section derives coverage from the current chapter snapshot and the existing NCES/official-campus location catalog in `school-states.mjs`. It counts U.S. states with registered chapters, including zero-member chapters; Ontario and unknown locations remain separate. Known school aliases share one school in state totals while distinct chapter records and reported members are retained. Selecting a state filters the chapter market and combines with existing sector, search and progress filters. Unmapped new schools remain explicitly unconfirmed until their locations are verified. No counts are stored in the location catalog.
+
+Run `node --test fomo/pulse/tests/*.test.mjs` for data and state-aggregation checks.
