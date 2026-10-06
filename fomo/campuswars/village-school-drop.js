@@ -37,14 +37,20 @@ canopyRig.visible=false;
 
 const clamp01=x=>Math.max(0,Math.min(1,x));
 const smoother=(a,b,x)=>{const u=clamp01((x-a)/(b-a));return u*u*u*(10+u*(-15+6*u));};
-function track(knots,t){
- if(t<=knots[0][0])return knots[0][1];if(t>=knots.at(-1)[0])return knots.at(-1)[1];
- let i=0;while(t>knots[i+1][0])i++;const [ta,p0,v0=0]=knots[i],[tb,p1,v1=0]=knots[i+1],dt=tb-ta,u=(t-ta)/dt,d=p1-p0,m0=v0*dt,m1=v1*dt;
- return p0+m0*u+(10*d-6*m0-4*m1)*u**3+(-15*d+8*m0+7*m1)*u**4+(6*d-3*m0-3*m1)*u**5;
+// Integrate a smooth velocity profile: accelerate in freefall, brake under canopy,
+// then steadily lose speed on approach. No second dive after the canopy opens.
+function distanceRemaining(knots,t){
+ let distance=0;
+ for(let i=0;i<knots.length-1;i++){
+  const [a,v0]=knots[i],[b,v1]=knots[i+1],dt=b-a,u=clamp01((t-a)/dt);
+  const primitive=x=>v0*x+(v1-v0)*(x*x*x-.5*x*x*x*x);
+  distance+=dt*(primitive(1)-primitive(u));
+ }
+ return distance;
 }
-function openingMotion(t){const age=Math.max(0,t-2.55);return {swing:.35*Math.exp(-2.4*age)*Math.sin(7*age),recoil:0,snatch:0,age};}
-const HEIGHT=[[0,180,-22],[1.05,138,-58],[1.75,104,-32],[3.5,12,-24],[4.4,0,0]];
-const FORWARD=[[0,130,-20],[1.05,108,-22],[1.75,80,-33],[3.5,12,-25],[4.4,0,0]];
+function openingMotion(t){const age=Math.max(0,t-2.55);return {swing:.22*Math.exp(-2.8*age)*Math.sin(5*age),recoil:0,age};}
+const FALL_SPEED=[[0,22],[.9,47],[1.55,20],[4.4,0]];
+const GLIDE_SPEED=[[0,20],[.9,26],[1.55,16],[4.4,0]];
 function updateCanopy(t,pose){
   canopyRig.visible=t>=2.4;if(!canopyRig.visible)return;
   const left=smoother(2.4,2.61,t),right=smoother(2.445,2.70,t),taut=smoother(2.48,2.57,t);
@@ -79,10 +85,10 @@ return {root:canopyRig,begin({anchor,extension=0,aspect=1,overview=null}){
  if(!path)return;time=Math.max(0,Math.min(time,SCHOOL_DROP_DURATION));if(time>SCHOOL_DROP_DURATION-1e-9)time=SCHOOL_DROP_DURATION;cloudRoot.visible=time<1.4;
  const view=path.overview||{target:[path.x,3,path.z],radius:path.aspect<1?78:58,theta:.5,phi:.4},target=new T.Vector3(...view.target),r=view.radius;
  const end=target.clone().add(new T.Vector3(Math.sin(view.theta)*Math.cos(view.phi)*r,Math.sin(view.phi)*r,Math.cos(view.theta)*Math.cos(view.phi)*r));
- const settle=smoother(0,SCHOOL_DROP_DURATION,time),height=track(HEIGHT,time),forward=track(FORWARD,time);
- camera.position.copy(end).add(new T.Vector3(-12*(1-settle),height,forward));
- const opening=smoother(.9,1.55,time),roll=(.018*Math.sin(time*1.7)+.012*opening*Math.exp(-Math.max(0,time-1.15)*2)*Math.sin(time*5))*(1-settle);
- camera.fov=68+7*smoother(0,.9,time)-13*opening-14*smoother(2.0,SCHOOL_DROP_DURATION,time);
+ const settle=smoother(0,SCHOOL_DROP_DURATION,time),height=distanceRemaining(FALL_SPEED,time),forward=distanceRemaining(GLIDE_SPEED,time);
+ camera.position.copy(end).add(new T.Vector3(-8*(1-settle),height,forward));
+ const opening=smoother(.9,1.55,time),roll=(.008*Math.sin(time*1.7)+.007*opening*Math.exp(-Math.max(0,time-1.15)*2)*Math.sin(time*5))*(1-settle);
+ camera.fov=64+4*smoother(0,.9,time)-6*opening-14*smoother(1.55,SCHOOL_DROP_DURATION,time);
  camera.far=Math.max(1800,r*3);camera.near=.1;camera.updateProjectionMatrix();camera.lookAt(target);camera.rotateZ(roll);camera.updateMatrixWorld();
  const canopyTime=time<.9?2.3:time<1.55?2.4+(time-.9)/.65*.32:2.72+(time-1.55)*.6;updateCanopy(canopyTime,{position:camera.position,yaw:Math.atan2(camera.position.x-target.x,camera.position.z-target.z)});
  const opacity=smoother(2.395,2.425,canopyTime)*(1-smoother(3.1,4.25,time));for(const m of [...canopyMaterials,cordMaterial,seamMaterial])m.opacity=opacity;

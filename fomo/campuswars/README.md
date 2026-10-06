@@ -36,8 +36,17 @@ the destination URL; no new registrations are created by visiting.
 
 Choosing a school plays a 3.8-second FOMO private-jet sequence (exterior,
 cabin, open-door exit), followed by a 4.4-second parachute arrival: 8.2 seconds total.
-The exit matches the jet and freefall velocities. Restrained banking, gradual
-canopy inflation, and a continuous descent settle into the exact island overview.
+The first 2.55 seconds use native After Effects renders at 60 fps, with a
+180-degree shutter, motion blur, and an eased exterior-to-cabin transition.
+Desktop and portrait H.264 plates are 320 KB and 284 KB; the last 250 ms
+blend into the live door exit. Slow loading or blocked playback keeps the live
+3D film, and reduced motion downloads neither film. Pause, skip, visibility,
+and replay share the live arrival clock. Source project and 306 source frames:
+`deliverables/greek-village-flight-ae/fomo-school-flight.aep`.
+The exit matches the jet and freefall velocities. After canopy inflation,
+downward speed decreases continuously instead of diving again; the camera
+settles into the exact island overview. Pearl paint, sky reflections, a curved
+fuselage and segmented cockpit glazing improve the jet model.
 Pause and skip remain available, and reduced-motion visitors arrive directly.
 School-picker visibility pauses rendering and playback. The opening money rain
 covers every rendered chapter for eight visible seconds and starts after landing

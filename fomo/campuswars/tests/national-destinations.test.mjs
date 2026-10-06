@@ -38,6 +38,6 @@ test('school environment variants build finite geometry and release instanced sc
 });
 test('The quick canopy opens on the flight and ends with an exact continuous orbit handoff',()=>{
  const scene=new T.Scene(),drop=createSchoolDrop(T,scene),camera=new T.PerspectiveCamera();drop.begin({anchor:{lot:{z:38,originX:0}},aspect:1});
- drop.update(0,camera);assert.equal(drop.root.visible,false);assert(camera.position.y>180);drop.update(2.1,camera);assert.equal(drop.root.visible,true);
+ drop.update(0,camera);assert.equal(drop.root.visible,false);assert(camera.position.y>80);drop.update(2.1,camera);assert.equal(drop.root.visible,true);
  const end=drop.update(SCHOOL_DROP_DURATION,camera),target=new T.Vector3(...end.target),expected=target.clone().add(new T.Vector3(Math.sin(end.theta)*Math.cos(end.phi)*end.radius,Math.sin(end.phi)*end.radius,Math.cos(end.theta)*Math.cos(end.phi)*end.radius));assert(camera.position.distanceTo(expected)<1e-8);assert.equal(camera.fov,48);drop.finish();assert.equal(drop.root.visible,false);drop.dispose();
 });

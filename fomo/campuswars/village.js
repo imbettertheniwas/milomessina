@@ -1,3 +1,4 @@
+import {createSchoolFilm} from './village-school-film.js?v=151';
 import {islandFootprint,islandOverview} from './village-island.js?v=149';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=146';
@@ -21,7 +22,7 @@ import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
 import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=149';
-import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=150';
+import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=151';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
 const loading=document.getElementById('village-loading');
@@ -77,6 +78,7 @@ async function startVillage(){
   const streetButton=document.getElementById('village-street'),streetControls=document.getElementById('street-controls');
   let districts=makeDistricts(activeSchool,village.extension,village.streetTotal);scene.add(districts.root);
   let schoolFlight=null;
+  const schoolFilm=createSchoolFilm(viewport,{enabled:!reduced});
   const dusk={sky:new THREE.Color(0x25233f),ambient:new THREE.Color(0x9a9fdc),ground:new THREE.Color(0x453649),sun:new THREE.Color(0xc49ab1),fill:new THREE.Color(0x858dff)};
   let litAtNight=false;
   function applyLighting(amount){
@@ -118,7 +120,7 @@ async function startVillage(){
     const wasPlaying=entranceActive||entrancePending;
     entrancePending=false;entranceActive=false;intro.hidden=true;shell.classList.remove('intro-playing','school-flight');
     shell.dataset.introComplete='true';
-    schoolFlight?.finish();introRoll=0;camera.near=1;camera.far=activeSchool?Math.max(1000,islandOverview(islandFootprint(chapters),camera.aspect).radius*3):650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
+    schoolFilm.finish();schoolFlight?.finish();introRoll=0;camera.near=1;camera.far=activeSchool?Math.max(1000,islandOverview(islandFootprint(chapters),camera.aspect).radius*3):650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
     applyLighting(document.getElementById('night-toggle').getAttribute('aria-pressed')==='true'?1:0);
     if(['intro-skip','intro-pause','intro-join'].some(id=>document.activeElement===document.getElementById(id)))canvas.focus({preventScroll:true});
     if(ready)arrivals.start(chapters,partyTime,reduced);
@@ -129,6 +131,7 @@ async function startVillage(){
     flightKeys.clear();
     if(activeSchool&&reduced){finishIntro();resetView();return;}
     if(activeSchool)(schoolFlight??=createSchoolFlight(THREE,scene)).begin({anchor:village.anchors.find(a=>a.id===selected)||village.anchors[0],extension:village.extension,aspect:camera.aspect,overview:islandOverview(islandFootprint(chapters),camera.aspect)});
+    if(activeSchool)schoolFilm.begin();
     if(village.streaming&&!village.residentIndices.has(0)){village.focus(village.anchors[0].id,beginIntro);wake();return;}
     leaveStreet();
     shell.dataset.introComplete='false';
@@ -150,7 +153,7 @@ async function startVillage(){
   }
   document.getElementById('intro-skip').addEventListener('click',()=>{finishIntro();resetView();wake();});
   document.getElementById('intro-pause').addEventListener('click',()=>{
-    entrancePaused=!entrancePaused;lastTime=0;
+    entrancePaused=!entrancePaused;lastTime=0;if(entrancePaused)schoolFilm.pause();
     document.getElementById('intro-pause').textContent=entrancePaused?'Resume intro':'Pause intro';
     document.getElementById('intro-pause').setAttribute('aria-pressed',String(entrancePaused));wake();
   });
@@ -417,16 +420,16 @@ async function startVillage(){
   new IntersectionObserver(([entry])=>{
     visible=entry.isIntersecting;lastTime=0;
     if(visible&&entrancePending)beginIntro();
-    if(!visible){releasePointer();lastTime=0;}wake();
+    if(!visible){schoolFilm.pause();releasePointer();lastTime=0;}wake();
   },{threshold:0}).observe(shell);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)releasePointer();lastTime=0;wake();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){schoolFilm.pause();releasePointer();}lastTime=0;wake();});
   const framePacer=createFramePacer(quality.frameRate);
   let overlayOpen=quality.mobile&&(!document.getElementById('village-drawer').hidden||document.getElementById('village-more').getAttribute('aria-expanded')==='true'||Boolean(document.getElementById('about-dialog').open));
   document.addEventListener('village:overlay',event=>{overlayOpen=quality.mobile&&event.detail.open;lastTime=0;viewDirty=true;wake();});
   function wake(){if(ready&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
   function frame(now){
     raf=0;
-    if(!visible||document.hidden||schoolPickerOpen||travelling){lastTime=0;return;}
+    if(!visible||document.hidden||schoolPickerOpen||travelling){schoolFilm.pause();lastTime=0;return;}
     const activityPaused=paused||overlayOpen;
     // Bound GPU and animation work on high-refresh phones as well as 60 Hz displays.
     if(!framePacer.due(now)){wake();return;}
@@ -465,7 +468,7 @@ async function startVillage(){
       document.getElementById('street-back').disabled=streetStep(streetWantedZ,-direction,village.extension)===streetWantedZ;
     }else camera.position.set(target.x+Math.sin(theta)*Math.cos(phi)*radius,target.y+Math.sin(phi)*radius,target.z+Math.cos(theta)*Math.cos(phi)*radius);
     camera.lookAt(target);if(introRoll)camera.rotateZ(introRoll);camera.updateMatrixWorld();
-    if(entranceActive&&activeSchool&&!reduced){const pose=schoolFlight.update(entranceTime,camera);target.set(...pose.target);wantedTarget.copy(target);theta=wantedTheta=pose.theta;phi=wantedPhi=pose.phi;radius=wantedRadius=pose.radius;if(entranceTime>=SCHOOL_FLIGHT_DURATION)finishIntro();}
+    if(entranceActive&&activeSchool&&!reduced){schoolFilm.update(entranceTime,entrancePaused);const pose=schoolFlight.update(entranceTime,camera);target.set(...pose.target);wantedTarget.copy(target);theta=wantedTheta=pose.theta;phi=wantedPhi=pose.phi;radius=wantedRadius=pose.radius;if(entranceTime>=SCHOOL_FLIGHT_DURATION)finishIntro();}
     const housesChanged=village.updateView?.(camera)||false;
     if(housesChanged){moneyRain.setChapters(chapters,village.renderAnchors||village.anchors);renderer.shadowMap.needsUpdate=true;viewDirty=true;}
     // Use visible playback time, independent of the camera intro: skipping or

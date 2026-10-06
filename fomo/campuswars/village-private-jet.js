@@ -3,8 +3,13 @@ export function createPrivateJet(T){
  const root=new T.Group();root.name='fomo-private-jet';
  const exterior=new T.Group(),cabin=new T.Group();exterior.name='jet-exterior';cabin.name='jet-cabin';root.add(exterior,cabin);cabin.visible=false;
  const resources=new Set();
- const material=(color,extra={})=>{const m=new T.MeshStandardMaterial({color,roughness:.4,metalness:.12,...extra});resources.add(m);return m;};
- const pearl=material(0xf4f1e9),lavender=material(0x516af6),ink=material(0x24253d),glass=material(0x263b51,{roughness:.15,metalness:.6}),chrome=material(0xafb6bd,{roughness:.23,metalness:.8}),leather=material(0xe5d8c5,{roughness:.85,metalness:0}),wood=material(0x664d3e,{roughness:.25}),carpet=material(0xaaa092,{roughness:1,metalness:0});
+ const material=(color,extra={})=>{const m=new T.MeshPhysicalMaterial({color,roughness:.34,metalness:.16,...extra});resources.add(m);return m;};
+ const pearl=material(0xf4f1e9,{clearcoat:.8,clearcoatRoughness:.18,roughness:.24}),blue=material(0x516af6),ink=material(0x24253d),glass=material(0x263b51,{roughness:.12,metalness:.5,clearcoat:1}),chrome=material(0xafb6bd,{roughness:.23,metalness:.8}),leather=material(0xe5d8c5,{roughness:.85,metalness:0}),wood=material(0x664d3e,{roughness:.25}),carpet=material(0xaaa092,{roughness:1,metalness:0});
+ // Soft sky reflections give the pearl paint and window glass their curvature.
+ if(typeof document!=='undefined'){
+  const c=document.createElement('canvas');c.width=512;c.height=256;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#668fb7');g.addColorStop(.42,'#d9eafa');g.addColorStop(.5,'#ffffff');g.addColorStop(.62,'#acb7bd');g.addColorStop(1,'#667783');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);
+  const environment=new T.CanvasTexture(c);environment.mapping=T.EquirectangularReflectionMapping;environment.colorSpace=T.SRGBColorSpace;for(const m of resources){m.envMap=environment;m.envMapIntensity=.65;}resources.add(environment);
+ }
  const mesh=(parent,geometry,mat,position=[0,0,0],scale=[1,1,1])=>{resources.add(geometry);const m=new T.Mesh(geometry,mat);m.position.set(...position);m.scale.set(...scale);parent.add(m);return m;};
  const box=(parent,pos,size,mat)=>mesh(parent,new T.BoxGeometry(...size),mat,pos);
  const round=(parent,pos,size,mat)=>mesh(parent,new T.SphereGeometry(1,24,16),mat,pos,size);
@@ -21,11 +26,12 @@ export function createPrivateJet(T){
   const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();return mesh(exterior,geometry,mat);
  }
  const profile=[[-14,0],[-13.2,.55],[-11.8,1.15],[-9,1.65],[-6,1.8],[5.9,1.8],[8.5,1.45],[11.8,.6],[13.3,.12],[13.6,0]].map(([z,r])=>new T.Vector2(r,z));
- const hull=mesh(exterior,new T.LatheGeometry(profile,40),pearl);hull.rotation.x=Math.PI/2;
- const belly=round(exterior,[0,-.76,.2],[1.55,.99,10.2],lavender);
+ const hullProfile=new T.SplineCurve(profile).getPoints(100);
+ const hull=mesh(exterior,new T.LatheGeometry(hullProfile,64),pearl);hull.rotation.x=Math.PI/2;
+ const belly=round(exterior,[0,-.76,.2],[1.55,.99,10.2],blue);
  for(const side of [-1,1]){
   foil([[side*1.1,-2],[side*13.7,3.1],[side*14.2,5.2],[side*3.5,3.4],[side*1.1,4.5]],-.55,.14,pearl);
-  const winglet=box(exterior,[side*14,0,4.7],[.13,1.7,1.4],lavender);winglet.rotation.z=-side*.16;
+  const winglet=box(exterior,[side*14,0,4.7],[.13,1.7,1.4],blue);winglet.rotation.z=-side*.16;
   foil([[side*.55,9],[side*5.5,10.7],[side*5.4,12.3],[side*.6,11.5]],1.1,.1,pearl);
   box(exterior,[side*2.05,.35,7.5],[1.9,.16,2.2],pearl);
   const engine=mesh(exterior,new T.CylinderGeometry(.95,.78,4.2,32),pearl,[side*2.7,.35,7.1]);engine.rotation.x=Math.PI/2;
@@ -34,11 +40,15 @@ export function createPrivateJet(T){
   round(exterior,[side*2.7,.35,4.9],[.2,.2,.22],chrome);
   for(let i=0;i<10;i++){const blade=box(exterior,[side*2.7,.35,4.94],[.06,1.3,.015],chrome);blade.rotation.z=i*Math.PI/5;}
   for(let i=0;i<7;i++){const window=round(exterior,[side*1.74,.58,-6.3+i*1.5],[.065,.43,.31],glass);window.rotation.z=side*.17;}
-  const cockpit=round(exterior,[side*.87,.93,-10.05],[.66,.48,1.13],glass);cockpit.rotation.y=side*.16;
-  box(exterior,[side*1.79,-.15,-.4],[.025,.13,12.5],lavender);
+  const windshield=new T.BufferGeometry();
+  windshield.setAttribute('position',new T.Float32BufferAttribute([side*.10,1.01,-11.35,side*.78,.92,-11.1,side*1.12,1.07,-9.8,side*.12,1.53,-9.95],3));
+  windshield.setIndex(side===1?[0,2,1,0,3,2]:[0,1,2,0,2,3]);windshield.computeVertexNormals();mesh(exterior,windshield,glass);
+  const sideWindow=round(exterior,[side*1.32,.81,-9.15],[.10,.34,.69],glass);sideWindow.rotation.y=side*.2;
+  const navLight=material(side<0?0xff3020:0x76dfa8,{emissive:side<0?0xff3020:0x76dfa8,emissiveIntensity:1.1,roughness:.18});round(exterior,[side*14.13,.07,4.25],[.1,.12,.14],navLight);
+  box(exterior,[side*1.79,-.15,-.4],[.025,.13,12.5],blue);
  }
  const finShape=new T.Shape();finShape.moveTo(7.8,.7);finShape.lineTo(10.2,5.9);finShape.lineTo(12.2,6.1);finShape.lineTo(12.9,.6);finShape.closePath();
- const fin=mesh(exterior,new T.ExtrudeGeometry(finShape,{depth:.2,bevelEnabled:false}),lavender);fin.rotation.y=-Math.PI/2;fin.position.x=.1;
+ const fin=mesh(exterior,new T.ExtrudeGeometry(finShape,{depth:.2,bevelEnabled:false}),blue);fin.rotation.y=-Math.PI/2;fin.position.x=.1;
  function wordmark(parent,width,height,position,rotation,color='#302b45'){
   if(typeof document==='undefined')return;
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,1024,256);ctx.fillStyle=color;ctx.font='700 225px Aeonik, Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('fomo',512,132,940);
