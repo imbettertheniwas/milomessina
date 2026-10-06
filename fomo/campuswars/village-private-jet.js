@@ -4,7 +4,7 @@ export function createPrivateJet(T){
  const exterior=new T.Group(),cabin=new T.Group();exterior.name='jet-exterior';cabin.name='jet-cabin';root.add(exterior,cabin);cabin.visible=false;
  const resources=new Set();
  const material=(color,extra={})=>{const m=new T.MeshStandardMaterial({color,roughness:.4,metalness:.12,...extra});resources.add(m);return m;};
- const pearl=material(0xf4f1e9),lavender=material(0x8071b3),ink=material(0x24253d),glass=material(0x263b51,{roughness:.15,metalness:.6}),chrome=material(0xafb6bd,{roughness:.23,metalness:.8}),leather=material(0xe5d8c5,{roughness:.85,metalness:0}),wood=material(0x664d3e,{roughness:.25}),carpet=material(0xaaa092,{roughness:1,metalness:0});
+ const pearl=material(0xf4f1e9),lavender=material(0x516af6),ink=material(0x24253d),glass=material(0x263b51,{roughness:.15,metalness:.6}),chrome=material(0xafb6bd,{roughness:.23,metalness:.8}),leather=material(0xe5d8c5,{roughness:.85,metalness:0}),wood=material(0x664d3e,{roughness:.25}),carpet=material(0xaaa092,{roughness:1,metalness:0});
  const mesh=(parent,geometry,mat,position=[0,0,0],scale=[1,1,1])=>{resources.add(geometry);const m=new T.Mesh(geometry,mat);m.position.set(...position);m.scale.set(...scale);parent.add(m);return m;};
  const box=(parent,pos,size,mat)=>mesh(parent,new T.BoxGeometry(...size),mat,pos);
  const round=(parent,pos,size,mat)=>mesh(parent,new T.SphereGeometry(1,24,16),mat,pos,size);

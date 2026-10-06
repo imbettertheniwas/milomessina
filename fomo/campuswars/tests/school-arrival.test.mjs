@@ -29,10 +29,10 @@ test('empty-campus worlds have a claimable lot and never fabricate chapters or m
 test('the jet ride includes exterior, cabin and exit before the existing freefall sequence',()=>{
  const scene=new T.Scene(),flight=createSchoolFlight(T,scene),camera=new T.PerspectiveCamera(48,.5,.1,2000),options={anchor:{lot:{z:38,originX:0}},aspect:.5};flight.begin(options);
  for(let time=0;time<=SCHOOL_FLIGHT_DURATION;time+=.1){const pose=flight.update(time,camera);assert(camera.position.toArray().every(Number.isFinite));assert(Number.isFinite(camera.fov));assert(pose.target.every(Number.isFinite));}
- assert.equal(schoolFlightStage(0),'jet');assert.equal(schoolFlightStage(4),'cabin');assert.equal(schoolFlightStage(7),'jump');assert.equal(schoolFlightStage(8.1),'freefall');
+ assert.equal(schoolFlightStage(0),'jet');assert.equal(schoolFlightStage(1.8),'cabin');assert.equal(schoolFlightStage(2.8),'jump');assert.equal(schoolFlightStage(4.1),'freefall');
  flight.update(0,camera);assert(flight.root.visible);assert(flight.root.getObjectByName('jet-exterior').visible);
- flight.update(4,camera);assert(flight.root.getObjectByName('jet-cabin').visible);
- flight.update(10,camera);assert(!flight.root.visible);assert(flight.drop.root.visible);
+ flight.update(1.8,camera);assert(flight.root.getObjectByName('jet-cabin').visible);
+ flight.update(5.8,camera);assert(!flight.root.visible);assert(flight.drop.root.visible);
  flight.finish();assert(!flight.root.visible);assert(!flight.drop.root.visible);flight.dispose();assert.equal(scene.children.length,0);
 });
 test('jet exit meets the original drop camera continuously and lands at the exact orbit view',()=>{
@@ -41,11 +41,25 @@ test('jet exit meets the original drop camera continuously and lands at the exac
  flight.update(JET_RIDE_DURATION-1e-6,camera);assert(camera.position.distanceTo(reference.position)<.001);assert(camera.quaternion.angleTo(reference.quaternion)<.001);
  flight.update(JET_RIDE_DURATION,camera);assert(camera.position.distanceTo(reference.position)<1e-8);
  const pose=flight.update(SCHOOL_FLIGHT_DURATION,camera),expected=new T.Vector3(...pose.target).add(new T.Vector3(Math.sin(pose.theta)*Math.cos(pose.phi)*pose.radius,Math.sin(pose.phi)*pose.radius,Math.cos(pose.theta)*Math.cos(pose.phi)*pose.radius));assert(camera.position.distanceTo(expected)<1e-8);assert.equal(camera.fov,48);
- flight.finish();flight.begin(options);flight.update(JET_RIDE_DURATION+.1,camera);assert(!flight.root.visible);flight.dispose();drop.dispose();
+ flight.finish();flight.begin(options);flight.update(JET_RIDE_DURATION+.6,camera);assert(!flight.root.visible);flight.dispose();drop.dispose();
 });
 
 test('supplementary search names reuse a curated campus when its website matches',()=>{
  const base=[{...catalog[0],website:'alpha.edu'}],extra=[{id:'directory-alpha',name:'Alpha University Main Campus',aliases:['alpha'],website:'https://www.alpha.edu/'},{id:'directory-new',name:'New College',aliases:[],website:'https://new.edu'}];
  const merged=mergeSchoolCatalog(base,extra);assert.equal(merged.length,2);assert.equal(merged[0].id,'a');assert(merged[0].aliases.includes('Alpha University Main Campus'));assert.equal(base[0].aliases.length,1);
  const destinations=schoolDestinations([{...chapters[0],school:'Alpha University Main Campus'}],merged);assert.equal(destinations.find(s=>s.id==='school-a').chapters.length,1);assert.equal(destinations.find(s=>s.id==='school-directory-new').chapters.length,0);
+});
+
+test('quick arrival keeps descent finite and downward, and matches velocity at the jump handoff',()=>{
+ assert(Math.abs(SCHOOL_FLIGHT_DURATION-8.2)<1e-9);
+ const scene=new T.Scene(),flight=createSchoolFlight(T,scene),camera=new T.PerspectiveCamera(48,.5),options={anchor:{lot:{z:-19,originX:100}},aspect:.5};flight.begin(options);
+ const h=.0001;flight.update(JET_RIDE_DURATION-h,camera);const before=camera.position.clone();flight.update(JET_RIDE_DURATION,camera);const at=camera.position.clone();flight.update(JET_RIDE_DURATION+h,camera);const after=camera.position.clone();
+ assert(at.clone().sub(before).divideScalar(h).distanceTo(after.clone().sub(at).divideScalar(h))<.05);
+ let previous=Infinity;for(let t=JET_RIDE_DURATION;t<=SCHOOL_FLIGHT_DURATION;t+=1/60){flight.update(t,camera);assert(camera.position.y<=previous+.0001);previous=camera.position.y;assert(camera.quaternion.toArray().every(Number.isFinite));flight.drop.root.updateMatrixWorld(true);assert(flight.drop.root.matrixWorld.elements.every(Number.isFinite));assert(camera.fov>=47.99&&camera.fov<=75.01);}
+ flight.dispose();
+});
+test('canopy opacity is independent of frame rate and resets when the flight is replayed',()=>{
+ const drop=createSchoolDrop(T,new T.Scene()),camera=new T.PerspectiveCamera(),options={anchor:{lot:{z:-19,originX:0}}};drop.begin(options);
+ const cloth=drop.root.getObjectByName('parachute-visible-cloth');drop.update(3.7,camera);const expected=cloth.material.opacity;for(let i=0;i<20;i++)drop.update(3.7,camera);assert.equal(cloth.material.opacity,expected);
+ drop.update(4.4,camera);assert.equal(cloth.material.opacity,0);drop.finish();drop.begin(options);drop.update(2,camera);assert.equal(cloth.material.opacity,1);drop.dispose();
 });

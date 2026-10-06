@@ -34,8 +34,10 @@ chapters and custom schools land in a starter campus with the existing claimable
 lot, a start-chapter link, and a referral link. The school choice is retained in
 the destination URL; no new registrations are created by visiting.
 
-Choosing a school plays an eight-second FOMO private-jet sequence (exterior,
-cabin, open-door exit), followed by the existing 6.4-second parachute arrival.
+Choosing a school plays a 3.8-second FOMO private-jet sequence (exterior,
+cabin, open-door exit), followed by a 4.4-second parachute arrival: 8.2 seconds total.
+The exit matches the jet and freefall velocities. Restrained banking, gradual
+canopy inflation, and a continuous descent settle into the exact island overview.
 Pause and skip remain available, and reduced-motion visitors arrive directly.
 School-picker visibility pauses rendering and playback. The opening money rain
 covers every rendered chapter for eight visible seconds and starts after landing
@@ -103,8 +105,8 @@ vegetation and sky, using verified campus location metadata. School views do not
 construct the national helipad. Return to National Home restores the original
 national surroundings and its top 19 chapters.
 
-Travel uses a 6.4-second parachute sequence adapted from the v13 cinematic's
-canopy and camera motion, rendered over the selected school world. It supports
+Travel uses a 4.4-second parachute descent with a nine-cell cloth canopy,
+rendered over the selected school world. It supports
 skip, pause and reduced motion. School and chapter URL hashes support direct
 entry and browser Back/Forward. Live feed updates preserve the current destination
 and refresh member standings, sizes, school totals and the national top ten.

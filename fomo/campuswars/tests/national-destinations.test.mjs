@@ -36,8 +36,8 @@ test('all catalog locations are finite and school themes are deterministic and d
 test('school environment variants build finite geometry and release instanced scenery on departure',()=>{
  for(const name of ['Arizona State University','San Diego State University','University of Colorado at Boulder','New York University']){const school={...catalog.find(s=>s.name===name),id:name};const world=createSchoolDistricts(T,school,19);let meshes=0,instances=0,released=0;world.root.traverse(o=>{if(o.geometry){meshes++;o.geometry.computeBoundingSphere();assert(Number.isFinite(o.geometry.boundingSphere.radius));}if(o.isInstancedMesh){instances++;o.addEventListener('dispose',()=>released++);}});assert(meshes>0);assert(instances>0);world.dispose();assert.equal(released,instances);}
 });
-test('V13 canopy opens on the flight and ends with an exact continuous orbit handoff',()=>{
+test('The quick canopy opens on the flight and ends with an exact continuous orbit handoff',()=>{
  const scene=new T.Scene(),drop=createSchoolDrop(T,scene),camera=new T.PerspectiveCamera();drop.begin({anchor:{lot:{z:38,originX:0}},aspect:1});
- drop.update(0,camera);assert.equal(drop.root.visible,false);assert(camera.position.y>400);drop.update(2.1,camera);assert.equal(drop.root.visible,true);
+ drop.update(0,camera);assert.equal(drop.root.visible,false);assert(camera.position.y>180);drop.update(2.1,camera);assert.equal(drop.root.visible,true);
  const end=drop.update(SCHOOL_DROP_DURATION,camera),target=new T.Vector3(...end.target),expected=target.clone().add(new T.Vector3(Math.sin(end.theta)*Math.cos(end.phi)*end.radius,Math.sin(end.phi)*end.radius,Math.cos(end.theta)*Math.cos(end.phi)*end.radius));assert(camera.position.distanceTo(expected)<1e-8);assert.equal(camera.fov,48);drop.finish();assert.equal(drop.root.visible,false);drop.dispose();
 });
