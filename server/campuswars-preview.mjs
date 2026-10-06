@@ -5,6 +5,7 @@ import {readFile,realpath} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve,extname,sep} from 'node:path';
 import {validateSnapshot} from '../fomo/campuswars/chapter-feed.js';
+import {validateMemberHistory} from '../fomo/pulse/member-series.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const types={'.mp4':'video/mp4','.webm':'video/webm','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2','.ico':'image/x-icon'};
@@ -29,7 +30,8 @@ export function createPreviewServer(fetchImpl=fetch){
       if(pathname==='/api/campuswars/'){
         const response=await fetchImpl('https://milomessina.com/api/campuswars',{signal:AbortSignal.timeout(10000),redirect:'error'});
         if(!response.ok)throw new Error('Public feed unavailable');
-        const snapshot=validateSnapshot(await response.json());
+        const raw=await response.json(),snapshot=validateSnapshot(raw);
+        snapshot.memberHistory=validateMemberHistory(raw.memberHistory);
         res.setHeader('Content-Type',types['.json']);res.writeHead(200);res.end(req.method==='HEAD'?undefined:JSON.stringify(snapshot));return;
       }
       if(!['/fomo/','/landingpage/'].some(prefix=>pathname.startsWith(prefix))||pathname.split('/').some(part=>part.startsWith('.'))){res.writeHead(404);res.end();return;}
