@@ -48,3 +48,15 @@ The original license is retained in `school-search-LICENSE.txt`. These entries
 expand school search beyond registered chapters. Existing curated campus identities
 and aliases take precedence; additional campuses receive the generic starter
 campus, without invented locations, logos, members, or chapters.
+
+## Nationwide U.S. college autocomplete
+
+`us-college-catalog.json` includes the 5,994 active (CYACTIVE = 1) institutions
+in [NCES IPEDS HD2024](https://nces.ed.gov/ipeds/datacenter/data/HD2024.zip).
+It retains institution IDs, names, official IALIAS values, city/state, and public
+websites. The source covers participating colleges, universities, and technical
+and vocational institutions; the typed-name fallback remains available for
+new institutions and those outside the directory. Shared names or web domains
+do not collapse distinct federal campus IDs. Existing destination IDs remain
+stable when an official name or alias matches. Initials are also derived from
+institution names and aliases; ambiguous abbreviations offer multiple schools.

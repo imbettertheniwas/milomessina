@@ -18,7 +18,7 @@ import {prewarmVillage} from './village-prewarm.js?v=146';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
-import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=146';
+import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
 import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=138';
 import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=146';
 const shell=document.getElementById('village');
@@ -114,8 +114,9 @@ async function startVillage(){
     if(!reduced)applyLighting(view.night);
   }
   function finishIntro(){
-    const wasPlaying=entranceActive;
+    const wasPlaying=entranceActive||entrancePending;
     entrancePending=false;entranceActive=false;intro.hidden=true;shell.classList.remove('intro-playing','school-flight');
+    shell.dataset.introComplete='true';
     schoolFlight?.finish();introRoll=0;camera.near=1;camera.far=650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
     applyLighting(document.getElementById('night-toggle').getAttribute('aria-pressed')==='true'?1:0);
     if(['intro-skip','intro-pause','intro-join'].some(id=>document.activeElement===document.getElementById(id)))canvas.focus({preventScroll:true});
@@ -129,6 +130,7 @@ async function startVillage(){
     if(activeSchool)(schoolFlight??=createSchoolFlight(THREE,scene)).begin({anchor:village.anchors.find(a=>a.id===selected)||village.anchors[0],extension:village.extension,aspect:camera.aspect});
     if(village.streaming&&!village.residentIndices.has(0)){village.focus(village.anchors[0].id,beginIntro);wake();return;}
     leaveStreet();
+    shell.dataset.introComplete='false';
     entrancePending=false;entranceActive=true;entrancePaused=false;entranceTime=0;captionIndex=-1;lastTime=0;
     document.getElementById('intro-pause').textContent='Pause intro';
     document.getElementById('intro-pause').setAttribute('aria-pressed','false');

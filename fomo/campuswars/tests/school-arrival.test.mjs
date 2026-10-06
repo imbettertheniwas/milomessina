@@ -14,7 +14,7 @@ test('autocomplete includes registered and empty campuses, matches aliases, and 
  assert.equal(searchSchools(schools,'beta')[0].chapters.length,0);
  assert.equal(searchSchools(schools,'alpha')[0].chapters[0].id,'c1');
  assert.equal(searchSchools(schools,'Boston')[0].name,'Beta College');
- assert.equal(SCHOOL_PROMPT_DELAY,5000);
+ assert.equal(SCHOOL_PROMPT_DELAY,6000);
 });
 test('a school outside the catalog gets a named starter campus and survives a reload link',()=>{
  const school=schoolChoices(schoolDestinations(chapters,catalog),'New Campus College')[0];assert(school.custom);assert.equal(school.chapters.length,0);

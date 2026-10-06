@@ -31,18 +31,21 @@ export function mapPoint(lon,lat){
   return {x:(lon+96)*3.15,y:(lat-38)*4};
 }
 let catalogPromise;
-export function mergeSchoolCatalog(base,extra){
+export function mergeSchoolCatalog(base,extra,{matchDomains=true}={}){
  const schools=base.map(s=>({...s,aliases:[...(s.aliases||[])]}));
  const domain=value=>{try{return new URL(/^https?:/.test(value)?value:`https://${value}`).hostname.replace(/^www\./,'');}catch{return '';}};
+ const ids=new Map(schools.map(s=>[s.id,s]));
  const names=new Map(schools.flatMap(s=>[s.name,...s.aliases].map(name=>[schoolKey(name),s]))),domains=new Map(schools.filter(s=>s.website).map(s=>[domain(s.website),s]));
  for(const school of extra){
-  const existing=names.get(schoolKey(school.name))||(school.website&&domains.get(domain(school.website)));
-  if(existing){existing.aliases=[...new Set([...existing.aliases,school.name,...(school.aliases||[])])];continue;}
-  schools.push(school);names.set(schoolKey(school.name),school);
+  const named=[school.name,...(school.aliases||[]).filter(name=>schoolKey(name).includes('-'))].map(name=>names.get(schoolKey(name))).find(candidate=>candidate&&(matchDomains||!(candidate.unitid||/^\d+$/.test(candidate.id))||(candidate.unitid||candidate.id)===school.id));
+  const existing=ids.get(school.id)||named||(matchDomains&&school.website&&domains.get(domain(school.website)));
+  if(existing){existing.aliases=[...new Set([...existing.aliases,school.name,...(school.aliases||[])])];existing.city||=school.city;existing.state||=school.state;if(!matchDomains){existing.unitid=school.id;ids.set(school.id,existing);}continue;}
+  schools.push(school);ids.set(school.id,school);names.set(schoolKey(school.name),school);
  }
  return schools;
 }
 export function loadSchoolCatalog(){return catalogPromise??=Promise.all([
  fetch(new URL('./data/schools.json?v=146',import.meta.url)).then(r=>{if(!r.ok)throw Error('School directory unavailable');return r.json();}).then(d=>d.schools),
- fetch(new URL('./data/school-search-catalog.json?v=146',import.meta.url)).then(r=>{if(!r.ok)throw Error('Additional schools unavailable');return r.json();}).then(d=>d.schools).catch(()=>[])
-]).then(([base,extra])=>mergeSchoolCatalog(base,extra)).catch(error=>{catalogPromise=null;throw error;});}
+ fetch(new URL('./data/school-search-catalog.json?v=146',import.meta.url)).then(r=>{if(!r.ok)throw Error('Additional schools unavailable');return r.json();}).then(d=>d.schools).catch(()=>[]),
+ fetch(new URL('./data/us-college-catalog.json?v=147',import.meta.url)).then(r=>{if(!r.ok)throw Error('U.S. college directory unavailable');return r.json();}).then(d=>d.schools).catch(()=>[])
+]).then(([base,extra,us])=>mergeSchoolCatalog(mergeSchoolCatalog(base,extra),us,{matchDomains:false})).catch(error=>{catalogPromise=null;throw error;});}

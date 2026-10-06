@@ -3,9 +3,12 @@
 ## School selection and private-jet arrival — October 6, 2026
 
 The map and its invitation have been removed from the production navigation.
-A required school picker opens after five visible seconds of a ready village.
-It searches the curated campus list plus a bundled US/Canada school-name
-directory, with a typed-name fallback. Catalog campuses without registered
+A required school picker opens six visible seconds after the opening intro ends
+or is skipped. Pausing the intro does not start the school-picker countdown.
+It searches the curated campus list, a bundled US/Canada school-name directory,
+and all 5,994 active institutions in the federal NCES IPEDS HD2024 directory.
+Full names, official aliases, and initials (including SMU, UCLA, and LSU) work,
+with a typed-name fallback for schools outside those directories. Catalog campuses without registered
 chapters and custom schools land in a starter campus with the existing claimable
 lot, a start-chapter link, and a referral link. The school choice is retained in
 the destination URL; no new registrations are created by visiting.

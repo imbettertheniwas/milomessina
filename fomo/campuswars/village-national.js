@@ -1,11 +1,12 @@
-import {schoolDestinations,loadSchoolCatalog} from './village-destinations.js?v=146';
-import {schoolChoices,SCHOOL_PROMPT_DELAY} from './village-school-search.js?v=146';
+import {schoolDestinations,loadSchoolCatalog} from './village-destinations.js?v=147';
+import {schoolChoices} from './village-school-search.js?v=147';
+import {createSchoolPromptTimer} from './village-school-prompt.js?v=147';
 
 export function createNationalNavigation(){
  const shell=document.getElementById('village'),source=document.getElementById('chapters-data');
  let snapshot=JSON.parse(source.textContent),catalog=[],schools=[],choices=[],selected=-1,required=true,travelling=false;
  const dialog=document.createElement('dialog');dialog.id='school-picker';dialog.setAttribute('aria-labelledby','school-picker-title');
- dialog.innerHTML=`<form class="school-picker-form"><span class="school-picker-brand">fomo / campus</span><h2 id="school-picker-title">What school do you go to?</h2><label class="school-picker-field"><span class="school-picker-label">Your school</span><input id="school-search" type="text" placeholder="Type your school" autocomplete="off" spellcheck="false" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="school-results" autofocus><span aria-hidden="true">↗</span></label><ul id="school-results" role="listbox" aria-label="Schools" hidden></ul><p id="school-picker-status" role="status">Your private jet is waiting.</p></form>`;
+ dialog.innerHTML=`<form class="school-picker-form"><span class="school-picker-brand">fomo / campus</span><h2 id="school-picker-title">What school do you go to?</h2><label class="school-picker-field"><span class="school-picker-label">Your school</span><input id="school-search" type="text" placeholder="School name or initials" autocomplete="off" spellcheck="false" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="school-results" autofocus><span aria-hidden="true">↗</span></label><ul id="school-results" role="listbox" aria-label="Schools" hidden></ul><p id="school-picker-status" role="status">Your private jet is waiting.</p></form>`;
  shell.append(dialog);
  const search=dialog.querySelector('input'),results=dialog.querySelector('ul'),status=dialog.querySelector('[role=status]');
  const button=document.createElement('button');button.id='village-school';button.className='village-reset';button.type='button';button.textContent='Your school ↗';button.setAttribute('aria-haspopup','dialog');document.querySelector('.village-top-actions').prepend(button);
@@ -17,12 +18,11 @@ export function createNationalNavigation(){
  starter.querySelector('button').addEventListener('click',()=>{starter.hidden=true;});
  const showStarter=()=>{starter.hidden=!emptyCampus||dialog.open||shell.classList.contains('intro-playing');};
  document.addEventListener('village:introend',showStarter);
- let timer=0,remaining=SCHOOL_PROMPT_DELAY,timerStarted=0,promptShown=false,visible=true;
- function stopTimer(){if(timer){clearTimeout(timer);timer=0;remaining=Math.max(0,remaining-(performance.now()-timerStarted));}}
- function checkTimer(){
-  stopTimer();if(promptShown||!required||!shell.classList.contains('village-ready')||document.hidden||!visible)return;
-  timerStarted=performance.now();timer=setTimeout(()=>{timer=0;remaining=0;open();},remaining);
- }
+ let visible=true,introFinished=shell.dataset.introComplete==='true';
+ const promptTimer=createSchoolPromptTimer({show:()=>open()});
+ function checkTimer(){promptTimer.update({ready:shell.classList.contains('village-ready'),visible:visible&&!document.hidden,introFinished});}
+ document.addEventListener('village:introstart',()=>{introFinished=false;checkTimer();});
+ document.addEventListener('village:introend',()=>{introFinished=true;checkTimer();});
  function render(){
   choices=schoolChoices(schools,search.value);selected=-1;search.removeAttribute('aria-activedescendant');results.replaceChildren();
   choices.forEach((school,i)=>{const item=document.createElement('li');item.id=`school-choice-${i}`;item.setAttribute('role','option');item.setAttribute('aria-selected','false');item.dataset.index=i;
@@ -33,7 +33,7 @@ export function createNationalNavigation(){
  }
  function highlight(index){selected=index;[...results.children].forEach((item,i)=>item.setAttribute('aria-selected',String(i===index)));const item=results.children[index];if(item){search.setAttribute('aria-activedescendant',item.id);item.scrollIntoView({block:'nearest'});}}
  function open(message=''){
-  if(travelling||dialog.open)return;promptShown=true;stopTimer();search.value='';render();if(message)status.textContent=message;
+  if(travelling||dialog.open)return;promptTimer.stop();search.value='';render();if(message)status.textContent=message;
   document.dispatchEvent(new CustomEvent('school:visibility',{detail:{open:true}}));dialog.showModal();search.focus({preventScroll:true});
  }
  function travel(school){
@@ -62,6 +62,6 @@ export function createNationalNavigation(){
  const intersection=new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;checkTimer();});intersection.observe(shell);
  document.addEventListener('visibilitychange',checkTimer);
  loadSchoolCatalog().then(data=>{catalog=data;update();}).catch(()=>update());update();checkTimer();
- addEventListener('pagehide',event=>{if(!event.persisted){stopTimer();observer.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',checkTimer);}});
+ addEventListener('pagehide',event=>{if(!event.persisted){promptTimer.dispose();observer.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',checkTimer);}});
  return {open};
 }
