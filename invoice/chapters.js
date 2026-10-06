@@ -449,7 +449,7 @@ function mount(opts){
     marks = marks.join("");
 
     el("mapwrap").innerHTML = '<svg class="usmap" viewBox="0 0 ' + MAP.width + ' ' + MAP.height +
-      '" role="img" aria-label="Interactive chapter map of the United States and southern Ontario">' +
+      '" role="group" aria-label="Interactive chapter map of the United States and southern Ontario">' +
       '<g class="mapg"><g class="states">' + stPaths + '</g><g class="marks">' + marks + '</g></g></svg>';
     bindMap();
     applySelection();
