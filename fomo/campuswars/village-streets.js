@@ -1,4 +1,4 @@
-import {islandFloorGeometry} from './village-island.js?v=148';
+import {islandFloorGeometry} from './village-island.js?v=149';
 import {villageQuality} from './village-quality.js?v=127';
 import {createGrassMaterial} from './village-grass.js?v=146';
 import {hash} from './village-district-layout.js?v=80';

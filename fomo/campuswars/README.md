@@ -3,11 +3,14 @@
 ## Floating school islands — October 6, 2026
 
 Each school destination contains its chapter houses and claim lot on a bounded
-grassy island, with a faceted rock underside and clouds below. Surrounding
+grassy island, with weathered rock strata and soft cloud wisps below. Surrounding
 academic buildings, distant terrain and roads extending into the horizon are
 removed from school destinations. The national launch village stays available.
 
-Island dimensions grow with registered chapters and joined members. The live
+The footprint is tighter around the lots (about 13% less area for the six-house
+SDSU example), with a rounded irregular shore, thinner soil rim, shallower
+undercut and procedural mineral detail. Island dimensions grow with registered
+chapters and joined members. The live
 feed rebuilds both the floor and island together, including changes that add
 members without adding a house. Shared lot coordinates keep houses, backyards,
 and crowds supported as larger campuses open additional streets. Starter

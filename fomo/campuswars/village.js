@@ -1,4 +1,4 @@
-import {islandFootprint,islandOverview} from './village-island.js?v=148';
+import {islandFootprint,islandOverview} from './village-island.js?v=149';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=146';
 import {createLiveArrivals} from './village-arrivals.js?v=146';
@@ -8,7 +8,7 @@ import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality,createResolutionBudget} from './village-quality.js?v=127';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=148';
+import {createVillageRendererAsync} from './village-renderer.js?v=149';
 import {chapterSceneKey} from './village-startup.js?v=128';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
 import {createDistricts} from './village-districts.js?v=146';
@@ -20,7 +20,7 @@ import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=75';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
-import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=148';
+import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=149';
 import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=148';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
