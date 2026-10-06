@@ -49,3 +49,7 @@ Validation: 13 model tests pass. `tests/audio.html` renders both sounds with Off
 The States we’re in section derives coverage from the current chapter snapshot and the existing NCES/official-campus location catalog in `school-states.mjs`. It counts U.S. states with registered chapters, including zero-member chapters; Ontario and unknown locations remain separate. Known school aliases share one school in state totals while distinct chapter records and reported members are retained. Selecting a state filters the chapter market and combines with existing sector, search and progress filters. Unmapped new schools remain explicitly unconfirmed until their locations are verified. No counts are stored in the location catalog.
 
 Run `node --test fomo/pulse/tests/*.test.mjs` for data and state-aggregation checks.
+
+## Members per day
+
+The chart switches between Chapters and Members, with daily additions and cumulative growth for 7D, 30D and ALL. Member totals are grouped by actual UTC join timestamps from the authenticated admin member export, reduced server-side to date/count pairs only. No member names, contact fields, referral identities or raw CSV are exposed. The member export may finish moments after chapter totals, so totals can briefly differ during arrivals. Today is a partial day. Clicking a member day pins its count; clicking a chapter day retains chapter-registration filtering. Missing/invalid exports show unavailable history, never fabricated zero counts, while chapter data continues refreshing.

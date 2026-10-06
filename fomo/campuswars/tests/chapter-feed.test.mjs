@@ -37,8 +37,8 @@ test('login pages, incomplete rows, duplicate identities and invalid totals fail
 });
 test('server reads the fixed authenticated source without following redirects or leaking credentials',async()=>{
   const result=await fetchChapterSnapshot({password:'test-only-password',fetchImpl:async(url,options)=>{
-    assert.equal(url,'https://fomocampus.com/admin/');assert.equal(options.redirect,'error');assert.equal(options.cache,'no-store');
-    assert(options.headers.Authorization.startsWith('Basic '));return {ok:true,text:async()=>table(row())};
+    assert(['https://fomocampus.com/admin/','https://fomocampus.com/admin/members.csv'].includes(url));assert.equal(options.redirect,'error');assert.equal(options.cache,'no-store');
+    assert(options.headers.Authorization.startsWith('Basic '));return {ok:true,text:async()=>url.endsWith('.csv')?'joined\n2026-09-09T12:00:00Z':table(row())};
   }});
   assert.equal(result.live,true);assert.equal(result.chapters.length,1);assert(!JSON.stringify(result).includes('password'));
   await assert.rejects(fetchChapterSnapshot({password:'test-only',fetchImpl:async()=>({ok:false,status:401})}));
@@ -73,10 +73,10 @@ test('hosted endpoint rejects writes, hides upstream failures and coalesces conc
     const failed=response();await handler({method:'GET'},failed);assert.equal(failed.code,502);assert(!JSON.stringify(failed.body).includes('PRIVATE'));
     time=5000;
     let requests=0,release;const held=new Promise(resolve=>release=resolve);
-    globalThis.fetch=async()=>{requests++;await held;return {ok:true,text:async()=>table(row())};};
+    globalThis.fetch=async url=>{requests++;await held;return {ok:true,text:async()=>url.endsWith('.csv')?'joined\n2026-09-09T12:00:00Z':table(row())};};
     const a=response(),b=response();const pending=Promise.all([handler({method:'GET'},a),handler({method:'GET'},b)]);release();await pending;
-    assert.equal(requests,1);assert.equal(a.code,200);assert.deepEqual(a.body,b.body);
-    await handler({method:'GET'},response());assert.equal(requests,1);
+    assert.equal(requests,2);assert.equal(a.code,200);assert.deepEqual(a.body,b.body);
+    await handler({method:'GET'},response());assert.equal(requests,2);
   } finally {globalThis.fetch=originalFetch;if(password===undefined)delete process.env.CAMPUSWARS_ADMIN_PASSWORD;else process.env.CAMPUSWARS_ADMIN_PASSWORD=password;}
 });
 

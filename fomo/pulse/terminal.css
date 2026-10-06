@@ -8,3 +8,5 @@
 
 .arrival-toast.goal-reached{background:linear-gradient(110deg,#e1d1ff,#b7a0ff,#b2f2dc);box-shadow:0 15px 110px #bb94ff66}.arrivals #preview-goal{margin-top:0;border-top:0;padding-top:0}
 @media(max-width:760px){#sound{display:inline-block}.top-actions{gap:4px}.top-actions button{font-size:6px;padding:6px 5px}.brand-product{letter-spacing:1px}.brand-divider{margin:0 6px}}
+
+.chart-datasets{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:5px}.chart-datasets button.active{background:var(--lime);color:var(--bg)}.chart-toolbar{flex-wrap:wrap;justify-content:flex-start}.chart-periods{margin-left:auto}.day-bar.pinned-day{outline:2px solid var(--lime);outline-offset:2px;filter:brightness(1.15)}#growth-bars[hidden],.chart-foot[hidden]{display:none}#chart-unavailable{font:11px/1.7 var(--mono);color:var(--muted);padding:25px 0;min-height:135px}[data-theme=light] .chart-datasets button.active{background:#7852c3;color:#fff}@media(max-width:760px){.chart-toolbar{gap:7px}.chart-datasets button{padding:6px 8px}.chart-periods{margin-left:auto}.chart-foot span:nth-child(2){max-width:190px;text-align:center}}

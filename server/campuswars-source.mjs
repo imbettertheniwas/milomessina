@@ -1,3 +1,4 @@
+import {parseMemberDaily} from './member-daily.mjs';
 // The source is a server-rendered admin table. Read only chapter identity and
 // aggregate progress; never return contacts, invite links or individual members.
 const legacy = [
@@ -96,7 +97,16 @@ export async function fetchChapterSnapshot({password, username='village', fetchI
     throw new Error('Chapter source unavailable');
   }
   const chapters = parseChapterAdmin(await readChapterSource(response));
-  return {source:'Chapter registrations', live:true, updatedAt:now().toISOString(), chapters};
+  let memberHistory={available:false};
+  try{
+    const members=await fetchImpl('https://fomocampus.com/admin/members.csv',{
+      headers:{Authorization:`Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,Accept:'text/csv','Cache-Control':'no-cache'},
+      redirect:'error',signal:AbortSignal.timeout(3000),cache:'no-store'
+    });
+    if(!members.ok){await members.body?.cancel();throw Error('Member history unavailable');}
+    memberHistory=parseMemberDaily(await readChapterSource(members),now().getTime());
+  }catch{/* Keep the live chapter feed usable if the optional history export fails. */}
+  return {source:'Chapter registrations', live:true, updatedAt:now().toISOString(), chapters,memberHistory};
 }
 
 

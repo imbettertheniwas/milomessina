@@ -1,3 +1,4 @@
+import {validateMemberHistory} from './member-series.mjs';
 import {geographyCode} from './geography.mjs';
 export const COLORS=['#a89aff','#7778ff','#e9aeff','#6ce6da','#d7ff9a'];
 export function validate(value){
@@ -7,7 +8,7 @@ export function validate(value){
     if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!['name','school','type','letters','registered'].every(k=>typeof c[k]==='string'&&c[k].length>0)||!/^\d{4}-\d{2}-\d{2}$/.test(c.registered)||!Number.isFinite(Date.parse(c.registered))||!Number.isSafeInteger(c.joined)||c.joined<0||!Number.isSafeInteger(c.active)||c.active<=0)throw Error('Invalid chapter');
     ids.add(c.id);return {id:c.id,name:c.name,school:c.school,shortSchool:c.shortSchool||c.school,type:c.type,letters:c.letters,registered:c.registered,joined:c.joined,active:c.active};
   });
-  return {chapters,updatedAt:value.updatedAt,stale:value.stale===true};
+  return {chapters,updatedAt:value.updatedAt,stale:value.stale===true,memberHistory:validateMemberHistory(value.memberHistory)};
 }
 export function summarize(chapters){
  const joined=chapters.reduce((s,c)=>s+c.joined,0),active=chapters.reduce((s,c)=>s+c.active,0);
