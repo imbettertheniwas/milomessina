@@ -133,13 +133,13 @@ test('portal checks and API counts start before the slow form index finishes', a
 
 test('chapter polling coalesces reads, skips hidden views, and reuses unchanged maps', async () => {
   const script = source('chapters.js');
-  const loadSource = script.slice(script.indexOf('  function load(force){'), script.indexOf('\n  onLive(true, "loading");'));
+  const loadSource = script.slice(script.indexOf('  function load(force){'), script.indexOf('\n  onLive(false, "loading");'));
   const pending = deferred();let now = 1000000, active = true, calls = 0;
   class TestDate extends Date {static now(){return now;}}
   const context = vm.createContext({Date:TestDate, document:{hidden:false}, AbortController, setTimeout, clearTimeout,
     fetch:async()=>{calls++;return calls === 1 ? pending.promise : response({chapters:[], updatedAt:'today'});},
     isActive:()=>active, onLive(){}, onSource(){}, banner(){}, esc:String, hhmm12:()=>'', niceDate:()=>'',
-    el:()=>({}), unitsFrom:rows=>rows});
+    root:{querySelector:()=>null}, el:()=>({}), unitsFrom:rows=>rows});
   vm.runInContext(`var dead=false,pending=null,controller=null,checkedAt=0,renderedSnapshot='',POLL_MS=120000,
     FEED='/api/campuswars',units=[],raw=[],feedAt='',feedStale=false,paintCount=0;
     function render(){paintCount++;}

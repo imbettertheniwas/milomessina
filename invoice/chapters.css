@@ -52,54 +52,84 @@
 @media(max-width:1180px){.chapters .stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.chapters .stats{grid-template-columns:repeat(2,1fr)}}
 
-/* the funnel ------------------------------------------------------- */
-.chapters .funnel{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
-.chapters .fstep{background:var(--surface);padding:15px 18px 16px;position:relative}
-.chapters .fstep .fv{font-family:var(--mono);font-size:1.75rem;letter-spacing:-.04em;line-height:1;margin:7px 0 6px}
-.chapters .fstep .fs{font-size:.74rem;color:var(--muted-2)}
-.chapters .fstep .fbar{height:5px;border-radius:99px;background:var(--raise);overflow:hidden;margin-top:11px}
-.chapters .fstep .fbar i{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.3,1)}
-.chapters .fstep.s1 .fv{color:var(--text)}      .chapters .fstep.s1 .fbar i{background:var(--muted-2)}
-.chapters .fstep.s2 .fv{color:var(--violet-hi)} .chapters .fstep.s2 .fbar i{background:var(--violet)}
-.chapters .fstep.s3 .fv{color:var(--gold)}      .chapters .fstep.s3 .fbar i{background:var(--gold)}
-.chapters .fstep .drop{position:absolute;top:15px;right:16px;font-family:var(--mono);font-size:.66rem;
-  color:var(--muted-2);letter-spacing:.04em}
-@media(max-width:620px){.chapters .funnel{grid-template-columns:1fr}}
+/* every house: the toolbar above the table ------------------------- */
+.chapters .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:13px 14px;
+  border-bottom:1px solid var(--line)}
+.chapters .tools input[type="search"]{flex:1 1 220px;min-width:0;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:99px;color:var(--text);font:inherit;font-size:.85rem;
+  padding:8px 14px}
+.chapters .tools input[type="search"]::placeholder{color:var(--muted-2)}
+.chapters .tools input[type="search"]:focus{outline:none;border-color:var(--violet)}
+.chapters .seg{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:99px;padding:3px}
+.chapters .seg button{background:transparent;border:0;color:var(--muted);font:inherit;font-size:.8rem;
+  padding:5px 11px;border-radius:99px;cursor:pointer;white-space:nowrap}
+.chapters .seg button:hover{color:var(--text)}
+.chapters .seg button.on{background:var(--violet-soft);color:var(--text)}
+.chapters .seg button u{text-decoration:none;font-family:var(--mono);font-size:.7rem;color:var(--muted-2);margin-left:3px}
+.chapters .seg button.on u{color:var(--violet-hi)}
 
-/* every house, one row each --------------------------------------- */
-.chapters .port{padding:6px 0 10px}
-.chapters .prow{display:grid;grid-template-columns:minmax(0,15em) 1fr auto;gap:12px;align-items:center;
-  padding:6px 18px;transition:background .15s;cursor:pointer}
-.chapters .prow:hover{background:var(--raise)}
-.chapters .prow.on{background:var(--violet-soft)}
-.chapters .prow .pn{font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chapters .prow .pn b{font-weight:500}
-.chapters .prow .pn span{color:var(--muted-2);font-size:.75rem;margin-left:6px}
-.chapters .prow .pb{height:12px;border-radius:4px;background:var(--raise);overflow:hidden;position:relative;min-width:60px}
-.chapters .prow .pb i{display:block;height:100%;border-radius:4px;background:var(--violet);
-  transition:width .55s cubic-bezier(.2,.8,.3,1)}
-.chapters .prow .pb i.g{background:linear-gradient(90deg,var(--gold),#FFD98A)}
-.chapters .prow .pb i.z{background:var(--none);opacity:.35}
-.chapters .prow .pv{font-family:var(--mono);font-size:.78rem;color:var(--muted);min-width:5.6em;
-  text-align:right;white-space:nowrap}
-.chapters .prow .pv b{color:var(--gold);font-weight:500}
+/* every house: the rows ---------------------------------------------- */
+.chapters table.houses{min-width:560px}
+.chapters table.houses th[data-sort]{cursor:pointer;user-select:none}
+.chapters table.houses th[data-sort]:hover{color:var(--muted)}
+.chapters table.houses th.on{color:var(--text)}
+.chapters table.houses th.on::after{content:"↓";margin-left:5px;color:var(--violet-hi)}
+.chapters table.houses th.on.rev::after{content:"↑"}
+.chapters table.houses th[data-sort="name"].on::after{content:"↑"}
+.chapters table.houses th[data-sort="name"].on.rev::after{content:"↓"}
+.chapters table.houses th.r{text-align:right}
+.chapters table.houses th.prog-h{width:34%}
+.chapters table.houses td{padding:9px 14px;vertical-align:middle}
+.chapters table.houses tbody tr{cursor:pointer}
+.chapters table.houses tbody tr:focus-visible{outline:2px solid var(--violet-hi);outline-offset:-2px}
+.chapters table.houses td.who{font-weight:400;max-width:0;width:38%}
+.chapters table.houses td.who b{display:block;font-weight:500;font-size:.87rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chapters table.houses td.who .lt{font-style:normal;color:var(--muted-2);font-weight:400;margin-right:7px}
+.chapters table.houses td.who span{display:block;font-size:.76rem;color:var(--muted-2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.chapters table.houses .pwrap{display:flex;align-items:center;gap:10px}
+.chapters table.houses .pbar{flex:1;height:8px;border-radius:99px;background:var(--raise);overflow:hidden;min-width:60px}
+.chapters table.houses .pbar i{display:block;height:100%;border-radius:99px;background:var(--violet)}
+.chapters table.houses .pbar i.g{background:linear-gradient(90deg,var(--gold),#FFD98A)}
+.chapters table.houses .pbar i.z{background:transparent}
+.chapters table.houses .pp{font-family:var(--mono);font-size:.78rem;color:var(--muted);min-width:3.4em;text-align:right}
+.chapters table.houses .pp.g{color:var(--gold)}
+.chapters table.houses .dim{color:var(--muted-2)}
+.chapters table.houses td.flags{white-space:nowrap;text-align:right;width:1%}
+.chapters .tbl-foot{display:flex;align-items:center;justify-content:center;gap:12px;font-size:.8rem;color:var(--muted-2)}
+.chapters .tbl-foot:not(:empty){padding:12px 14px 14px;border-top:1px solid var(--line)}
+.chapters .tbl-foot button,.chapters .rank .rmore{background:var(--surface-2);border:1px solid var(--line-2);color:var(--text);
+  font:inherit;font-size:.8rem;border-radius:99px;padding:6px 14px;cursor:pointer}
+.chapters .tbl-foot button:hover,.chapters .rank .rmore:hover{border-color:var(--violet-hi)}
 @media(max-width:620px){
-  .chapters .prow{grid-template-columns:1fr auto;gap:4px 10px;padding:8px 16px}
-  .chapters .prow .pb{grid-column:1/-1;order:3}
+  .chapters table.houses{min-width:0}
+  .chapters table.houses .hide-s{display:none}
+  .chapters table.houses th,.chapters table.houses td{padding-left:10px;padding-right:10px}
+  .chapters table.houses td.who{width:46%}
+  .chapters table.houses th.prog-h{width:auto}
+  .chapters table.houses .pbar{min-width:36px}
+  .chapters .seg{display:grid;grid-template-columns:1fr 1fr;width:100%;border-radius:14px}
+  .chapters .seg button{border-radius:11px}
+  .chapters .rrow{grid-template-columns:minmax(0,1fr) 28% 2.2em;padding:7px 14px}
 }
 
-/* chip clouds ------------------------------------------------------ */
-.chapters .cloud{display:flex;flex-wrap:wrap;gap:7px;padding:15px 18px 18px}
-.chapters .chip2{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;
-  padding:5px 11px 5px 10px;font-size:.81rem;background:var(--surface-2);transition:border-color .15s,transform .15s}
-.chapters .chip2:hover{border-color:var(--violet);transform:translateY(-1px)}
-.chapters .chip2 u{font-family:var(--mono);font-size:.7rem;text-decoration:none;color:var(--muted-2);
-  background:var(--raise);border-radius:99px;padding:1px 6px}
-.chapters .chip2.multi{border-color:rgba(81,106,246,.45)}
-.chapters .chip2.multi u{color:var(--violet-hi)}
-.chapters .chip2.gold{border-color:rgba(242,193,78,.45)}
-.chapters .chip2.gold u{color:var(--gold)}
-.chapters .cloud .lead-in{width:100%;font-size:.76rem;color:var(--muted-2);margin-bottom:2px}
+/* who they are, where they are: ranked bars ------------------------ */
+.chapters .rank{padding:8px 0 12px}
+.chapters .rank .regions{display:flex;flex-wrap:wrap;gap:6px 16px;padding:6px 18px 10px;font-size:.78rem;color:var(--muted-2)}
+.chapters .rank .regions b{font-family:var(--mono);font-weight:500;color:var(--text)}
+.chapters .rrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,34%) 2.4em;gap:12px;align-items:center;
+  width:100%;background:transparent;border:0;color:inherit;font:inherit;text-align:left;padding:7px 18px;cursor:pointer}
+.chapters .rrow:hover{background:var(--raise)}
+.chapters .rrow.on{background:var(--violet-soft)}
+.chapters .rrow .rl{min-width:0}
+.chapters .rrow .rl b{display:block;font-weight:500;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chapters .rrow .rl span{display:block;font-size:.73rem;color:var(--muted-2)}
+.chapters .rrow .rl em{font-style:normal;color:var(--gold)}
+.chapters .rrow .rb{height:8px;border-radius:99px;background:var(--raise);overflow:hidden}
+.chapters .rrow .rb i{display:block;height:100%;border-radius:99px;background:var(--violet)}
+.chapters .rrow .rn{font-family:var(--mono);font-size:.82rem;text-align:right}
+.chapters .rank .rmore{display:block;margin:8px auto 0}
 
 /* callout cards ---------------------------------------------------- */
 .chapters .calls{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
@@ -111,13 +141,10 @@
 .chapters .call.warn .cv{color:var(--owed)}
 .chapters .call.good .cv{color:var(--good)}
 .chapters .call.violet .cv{color:var(--violet-hi)}
+.chapters .call .cs .cl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chapters .call .cs .cl b{font-weight:500;color:var(--muted)}
 @media(max-width:1000px){.chapters .calls{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.chapters .calls{grid-template-columns:1fr}}
-
-/* a progress cell inside the table --------------------------------- */
-.chapters td .mini-tr{height:5px;border-radius:99px;background:var(--raise);overflow:hidden;margin-top:5px;min-width:70px}
-.chapters td .mini-tr i{display:block;height:100%;border-radius:99px;background:var(--violet)}
-.chapters td .mini-tr i.g{background:var(--gold)}
 
 /* the map ---------------------------------------------------------- */
 .chapters .mapwrap{padding:10px 8px 4px;position:relative}
@@ -185,7 +212,7 @@
 .chapters .two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,20px)}
 @media(max-width:1000px){.chapters .two{grid-template-columns:1fr}}
 
-/* the full table --------------------------------------------------- */
+/* tables --------------------------------------------------- */
 .chapters .tbl-scroll{overflow-x:auto}
 .chapters table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:640px}
 .chapters th{text-align:left;font-family:var(--mono);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;
@@ -216,3 +243,108 @@
 .ch-tip.on{opacity:1}
 .ch-tip b{display:block;font-weight:600;margin-bottom:3px}
 .ch-tip span{display:block;color:var(--muted-2);font-size:.76rem}
+
+/* Chapter explorer: a compact atlas, campus collection and focused directory. */
+.chapters [hidden]{display:none!important}
+.chapters{--cx-accent:#ad9aff;--cx-mint:#81e9c2}
+.chapters .cx-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:8px 0}
+.chapters .cx-eyebrow{font:10px var(--mono);letter-spacing:.15em;color:var(--violet-hi,#ad9aff)}
+.chapters .cx-heading h2{font-size:clamp(24px,3vw,40px);margin:12px 0;text-transform:none;letter-spacing:-.045em}
+.chapters .cx-heading p{font-size:13px;color:var(--muted);margin:0}
+.chapters .cx-heading a{font-size:12px;color:var(--muted);white-space:nowrap;text-decoration:none}
+.chapters .stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;border:0;background:transparent;overflow:visible}
+.chapters .stat{border:1px solid var(--line);border-radius:16px;padding:18px 20px;background:linear-gradient(135deg,var(--surface),var(--surface-2));}
+.chapters .stat .v{font-size:30px;letter-spacing:-.05em}
+.chapters .cx-command{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.chapters .cx-tabs{display:flex;gap:6px}
+.chapters button,.chapters select{font:inherit}
+.chapters .cx-tabs button,.chapters .cx-filters>button,.chapters .panel-h>button,.chapters table.houses th button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:10px 16px;border-radius:10px;font-size:12px}
+.chapters .cx-tabs button[aria-pressed=true]{background:var(--violet-soft);color:var(--text)}
+.chapters .cx-sync{font:10px var(--mono);color:var(--muted-2)}
+.chapters .cx-sync:before{content:'';display:inline-block;width:6px;height:6px;background:var(--cx-mint);border-radius:50%;margin-right:8px}
+.chapters .cx-filters{padding:0;border:0;gap:10px}
+.chapters .cx-filters input[type=search]{border-radius:12px;padding:12px 15px}
+.chapters .cx-filters select{max-width:230px;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:11px;font-size:12px}
+.chapters .cx-filters .seg{flex-basis:100%;background:none;border:none;padding:2px 0;gap:8px;border-radius:0}
+.chapters .seg button{border:1px solid var(--line);padding:8px 12px}
+.chapters .seg button.on{border-color:var(--violet-hi);background:var(--violet-soft)}
+.chapters .cx-explore{display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:16px;align-items:stretch}
+.chapters .cx-map-panel{background:#111324;color:#eaeaff;border-color:#303046;border-radius:20px}
+.chapters .cx-map-panel .panel-h{border-color:#303046;align-items:center}
+.chapters .cx-map-panel .panel-h h2{font-size:16px;color:#eaeaff}
+.chapters .cx-map-panel .panel-h .note{font:10px var(--mono);color:#a4a5bd}
+.chapters .cx-map-panel .panel-h>button{background:#29263e;color:#cfc5ff;padding:7px 9px}
+.chapters .cx-map-stage{perspective:950px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#282440 0,transparent 68%),linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:auto,30px 30px,30px 30px;min-height:320px;display:flex;align-items:center}
+.chapters .cx-map-label{position:absolute;left:20px;top:20px;font:8px var(--mono);letter-spacing:.14em;color:#777a98;z-index:1;pointer-events:none}
+.chapters .cx-map-stage .mapwrap{width:100%;background:none;overflow:visible;transition:transform .5s;transform-origin:center 65%;margin:15px 0 5px;padding:15px 0;}
+.chapters .cx-map-stage .mapwrap.depth{transform:rotateX(24deg) rotateZ(-3deg) scale(.96);filter:drop-shadow(0 17px 0 #080a16) drop-shadow(0 25px 20px #0008)}
+.chapters .cx-map-stage svg.usmap{display:block;width:100%;height:auto;max-height:410px;touch-action:pan-y}
+.chapters .cx-map-panel .st{fill:#22273e;stroke:#48526c;stroke-width:1}
+.chapters .cx-map-panel .st.on{fill:#343453}
+.chapters .cx-map-panel .dot{fill:#758099;stroke:#bec8df;stroke-width:1.4;animation:none}
+.chapters .cx-map-panel .dot.prog{fill:#b29aff;stroke:#e2d9ff}
+.chapters .cx-map-panel .dot.goal{fill:#89ebc3;stroke:#d2ffec}
+.chapters .cx-map-panel .halo{opacity:.18}
+.chapters .cx-map-panel .ring{stroke:#89ebc3}
+.chapters .cx-map-panel .ping{display:none}
+.chapters .pin-stem{stroke:#727095;stroke-width:5;pointer-events:none;opacity:.8}
+.chapters .cx-map-panel .marks.dim g:has(.dot:not(.sel)){opacity:.12}
+.chapters .cx-map-panel .dot.sel{stroke:#fff;stroke-width:3;opacity:1}
+.chapters .cx-map-panel .mapbar,.chapters .cx-map-panel .maplegend{background:#111324;border-color:#303046;color:#a4a5bd}
+.chapters .cx-map-panel .maplegend .k{font-size:10px;color:#a4a5bd}
+.chapters .cx-map-panel .maplegend i.goal{background:#89ebc3}
+.chapters .cx-map-panel .maplegend i.prog{background:#b29aff}
+.chapters .cx-map-panel .mapbar button{color:#d8d6ee;border-color:#3a3a50;background:#232439}
+.chapters .cx-map-panel .maphint{font-size:10px;color:#a4a5bd}
+.chapters .cx-inspector{padding:24px 22px;border-radius:20px;min-width:0;background:radial-gradient(circle at 50% 35%,var(--violet-soft),transparent 65%),var(--surface)}
+.chapters .cx-inspector h3{font-size:20px;line-height:1.25;letter-spacing:-.03em;margin:12px 0;text-wrap:balance}
+.chapters .cx-inspector p{font-size:12px;color:var(--muted);line-height:1.7}
+.chapters .cx-orbit{width:170px;height:170px;margin:22px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--violet-hi);border-radius:50%;box-shadow:0 0 0 10px var(--violet-soft),inset 0 0 35px var(--violet-soft);transform:rotate(-5deg)}
+.chapters .cx-orbit strong{font:32px var(--mono);letter-spacing:-.06em;transform:rotate(5deg)}
+.chapters .cx-orbit strong small{font-size:17px}
+.chapters .cx-orbit>span{font-size:10px;color:var(--muted);margin-top:8px;transform:rotate(5deg)}
+.chapters .cx-action{width:100%;text-align:left;margin-top:9px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--violet-soft);color:var(--text);font-size:11px;cursor:pointer;line-height:1.5}
+.chapters .cx-action.secondary{background:transparent;color:var(--muted)}
+.chapters .cx-section-heading{display:flex;gap:12px;justify-content:space-between;align-items:center;margin:8px 0 18px}
+.chapters .cx-section-heading h2{font-size:18px;text-transform:none}
+.chapters .cx-section-heading>span{font:10px var(--mono);color:var(--muted-2)}
+.chapters .cx-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.chapters .cx-campus{min-width:0;display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:20px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,var(--surface),var(--surface-2));color:var(--text);cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s}
+.chapters .cx-campus:hover{transform:perspective(650px) rotateX(3deg) translateY(-4px);border-color:var(--violet-hi);box-shadow:0 12px 22px #0002}
+.chapters .cx-card-top{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--muted-2);margin-bottom:18px}
+.chapters .cx-campus-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:var(--violet-hi);font:12px var(--mono);background:var(--violet-soft);box-shadow:3px 4px 0 var(--line);transform:rotate(-6deg)}
+.chapters .cx-card-arrow{margin-left:auto;font-size:18px}
+.chapters .cx-campus>b{font-size:15px;line-height:1.4;min-height:42px;letter-spacing:-.02em}
+.chapters .cx-card-meta{font-size:11px;color:var(--muted);margin-top:8px}
+.chapters .cx-track{height:5px;background:var(--line);border-radius:20px;overflow:hidden;margin:19px 0 9px}
+.chapters .cx-track>i{display:block;height:100%;background:linear-gradient(90deg,#9c83ed,#81e9c2);border-radius:20px}
+.chapters .cx-card-bottom{display:flex;justify-content:space-between;font:9px var(--mono);color:var(--muted-2)}
+.chapters .cx-house-list{max-height:260px;overflow:auto}
+.chapters .cx-house-list button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;border-bottom:1px solid var(--line);background:none;padding:11px 0;color:var(--text);text-align:left;cursor:pointer;font-size:12px}
+.chapters .cx-house-list small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.chapters .cx-house-list em{color:var(--violet-hi);font:11px var(--mono)}
+.chapters .cx-detail-stats{display:flex;justify-content:space-between;gap:10px}
+.chapters .cx-detail-stats b{display:block;font:21px var(--mono)}
+.chapters .cx-detail-stats span{font-size:10px;color:var(--muted)}
+.chapters .cx-inspector details{font-size:11px;line-height:1.6;padding:12px 0;border-top:1px solid var(--line)}
+.chapters .cx-inspector summary{cursor:pointer}
+.chapters .cx-method{font-size:12px;line-height:1.7;color:var(--muted);margin:20px 0}
+.chapters [data-pane=insights] .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+.chapters table.houses th button{padding:0;color:inherit;border-radius:0;font:inherit}
+.chapters button:focus-visible,.chapters select:focus-visible{outline:2px solid var(--violet-hi);outline-offset:3px}
+@media(max-width:1150px){.chapters .cx-explore{grid-template-columns:minmax(0,1fr) 250px}.chapters .cx-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.chapters .cx-map-panel .panel-h .note{display:none}}
+@media(max-width:800px){.chapters .cx-explore{grid-template-columns:1fr}.chapters .cx-inspector{display:block}.chapters .stats{grid-template-columns:repeat(2,minmax(0,1fr))}.chapters .cx-sync{display:none}.chapters .cx-map-stage{min-height:240px}.chapters .cx-heading a{display:none}.chapters .cx-orbit{width:135px;height:135px;margin:20px auto}.chapters .cx-filters select{flex:1;max-width:none}.chapters .cx-section-heading{align-items:flex-start;flex-direction:column}.chapters [data-pane=insights] .two{grid-template-columns:1fr}}
+@media(max-width:480px){.chapters .cx-cards{grid-template-columns:1fr}.chapters .stat{padding:14px}.chapters .stat .v{font-size:26px}.chapters .cx-tabs button{padding:9px 13px}.chapters .seg button{font-size:11px;padding:7px 9px}.chapters .cx-map-stage{min-height:205px}.chapters .cx-filters input[type=search]{flex-basis:100%}.chapters .cx-heading h2{font-size:27px}}
+@media(prefers-reduced-motion:reduce){.chapters *{animation:none!important;transition:none!important;scroll-behavior:auto!important}.chapters .cx-campus:hover{transform:none}}
+.chapters .cx-sync.off:before{background:#d9a35d}
+.chapters .cx-review{padding:10px 12px;border:1px solid var(--gold);border-radius:10px;color:var(--text)!important;background:var(--gold-soft)}
+.chapters .cx-inspector h3{text-transform:none}
+.chapters{gap:16px}
+.chapters .cx-heading{padding:2px 0}
+.chapters .cx-heading h2{font-size:clamp(24px,2.7vw,34px);line-height:1.1;margin:8px 0}
+.chapters .stat{padding:14px 18px}
+.chapters .stat .v{line-height:1.15}
+.chapters .cx-filters select,.chapters .cx-filters input[type=search]{height:42px;line-height:18px;box-sizing:border-box}
+.chapters .cx-filters select{padding:8px 10px}
+.chapters .cx-orbit{width:145px;height:145px;margin:18px auto}
+.chapters .cx-inspector .cx-action{height:auto;min-height:38px;white-space:normal}

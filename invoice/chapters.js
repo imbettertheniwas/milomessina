@@ -44,30 +44,140 @@ var POLL_MS = 120000;
    table is counted, listed under the map, and kept in every total.
    Adding a school is one line: name, latitude, longitude, state. */
 var SCHOOLS = {
-  "Arizona State University":            [33.4242, -111.9281, "AZ"],
-  "Clemson University":                  [34.6834,  -82.8374, "SC"],
-  "Coastal Carolina University":         [33.7930,  -79.0117, "SC"],
-  "Cornell University":                  [42.4534,  -76.4735, "NY"],
-  "Elon University":                     [36.1032,  -79.5064, "NC"],
-  "Emory University":                    [33.7925,  -84.3240, "GA"],
-  "Florida International University":    [25.7574,  -80.3736, "FL"],
-  "Indiana University - Bloomington":    [39.1682,  -86.5230, "IN"],
-  "New York University":                 [40.7295,  -73.9965, "NY"],
-  "Ohio State University - Columbus":    [40.0067,  -83.0305, "OH"],
-  "Ohio University":                     [39.3242,  -82.1013, "OH"],
-  "Pennsylvania State University":       [40.7982,  -77.8599, "PA"],
-  "Rutgers University":                  [40.5008,  -74.4474, "NJ"],
-  "Salisbury University":                [38.3465,  -75.6019, "MD"],
-  "San Diego State University":          [32.7757, -117.0719, "CA"],
-  "Texas Christian University":          [32.7092,  -97.3628, "TX"],
-  "University of California, Irvine":    [33.6405, -117.8443, "CA"],
-  "University of Colorado at Boulder":   [40.0076, -105.2659, "CO"],
-  "University of Michigan - Ann Arbor":  [42.2780,  -83.7382, "MI"],
-  "University of South Carolina":        [33.9937,  -81.0300, "SC"],
-  "University of Southern California":   [34.0224, -118.2851, "CA"],
-  "University of Tampa":                 [27.9478,  -82.4648, "FL"],
-  "Virginia Tech":                       [37.2284,  -80.4234, "VA"]
+  "Alma College":                                   [43.3792,  -84.6611, "MI"],
+  "Appalachian State University":                   [36.2135,  -81.6846, "NC"],
+  "Arizona State University":                       [33.4242, -111.9281, "AZ"],
+  "California Institute of Technology":             [34.1377, -118.1253, "CA"],
+  "California State University, Chico":             [39.7285, -121.8453, "CA"],
+  "California State University, Fullerton":         [33.8823, -117.8851, "CA"],
+  "California State University, Northridge":        [34.2410, -118.5277, "CA"],
+  "Case Western Reserve University":                [41.5043,  -81.6084, "OH"],
+  "Clemson University":                             [34.6834,  -82.8374, "SC"],
+  "Coastal Carolina University":                    [33.7930,  -79.0117, "SC"],
+  "Colby College":                                  [44.5639,  -69.6626, "ME"],
+  "Colorado Mesa University":                       [39.0814, -108.5536, "CO"],
+  "Colorado State University":                      [40.5734, -105.0865, "CO"],
+  "Columbia University":                            [40.8075,  -73.9626, "NY"],
+  "Cornell University":                             [42.4534,  -76.4735, "NY"],
+  "Creighton University":                           [41.2655,  -95.9469, "NE"],
+  "CUNY Baruch College":                            [40.7402,  -73.9834, "NY"],
+  "Duquesne University":                            [40.4362,  -79.9900, "PA"],
+  "East Carolina University":                       [35.6066,  -77.3664, "NC"],
+  "Eastern Illinois University":                    [39.4818,  -88.1756, "IL"],
+  "Elon University":                                [36.1032,  -79.5064, "NC"],
+  "Embry-Riddle Aeronautical University":           [29.1887,  -81.0489, "FL"],
+  "Emory University":                               [33.7925,  -84.3240, "GA"],
+  "Florida Agricultural and Mechanical University": [30.4255,  -84.2856, "FL"],
+  "Florida International University":               [25.7574,  -80.3736, "FL"],
+  "Florida State University":                       [30.4419,  -84.2985, "FL"],
+  "Georgia Southern University":                    [32.4205,  -81.7832, "GA"],
+  "Harvard University":                             [42.3770,  -71.1167, "MA"],
+  "Hofstra University":                             [40.7146,  -73.6004, "NY"],
+  "Indiana University - Bloomington":               [39.1682,  -86.5230, "IN"],
+  "James Madison University":                       [38.4351,  -78.8698, "VA"],
+  "Lone Star College System":                       [30.1658,  -95.4613, "TX"],
+  "Marist College":                                 [41.7225,  -73.9340, "NY"],
+  "Miami University of Ohio":                       [39.5104,  -84.7310, "OH"],
+  "Michigan State University":                      [42.7018,  -84.4822, "MI"],
+  "Mississippi State University":                   [33.4552,  -88.7944, "MS"],
+  "New York University":                            [40.7295,  -73.9965, "NY"],
+  "North Carolina State University":                [35.7847,  -78.6821, "NC"],
+  "Northeastern University":                        [42.3398,  -71.0892, "MA"],
+  "Northern Arizona University":                    [35.1894, -111.6513, "AZ"],
+  "Ohio State University - Columbus":               [40.0067,  -83.0305, "OH"],
+  "Ohio University":                                [39.3242,  -82.1013, "OH"],
+  "Oklahoma State University":                      [36.1270,  -97.0737, "OK"],
+  "Oregon State University":                        [44.5638, -123.2794, "OR"],
+  "Pennsylvania State University":                  [40.7982,  -77.8599, "PA"],
+  "Purdue University":                              [40.4237,  -86.9212, "IN"],
+  "Rutgers University":                             [40.5008,  -74.4474, "NJ"],
+  "Salisbury University":                           [38.3465,  -75.6019, "MD"],
+  "San Diego State University":                     [32.7757, -117.0719, "CA"],
+  "San Francisco State University":                 [37.7219, -122.4782, "CA"],
+  "San Jose State University":                      [37.3352, -121.8811, "CA"],
+  "Santa Monica College":                           [34.0168, -118.4695, "CA"],
+  "Southern Methodist University":                  [32.8412,  -96.7845, "TX"],
+  "Stanford University":                            [37.4275, -122.1697, "CA"],
+  "State University of New York at Albany":         [42.6864,  -73.8236, "NY"],
+  "State University of New York at Binghamton":     [42.0894,  -75.9695, "NY"],
+  "State University of New York at Buffalo":        [43.0008,  -78.7890, "NY"],
+  "State University of New York at Stony Brook":    [40.9124,  -73.1234, "NY"],
+  "Syracuse University":                            [43.0392,  -76.1351, "NY"],
+  "Temple University":                              [39.9812,  -75.1554, "PA"],
+  "Texas Christian University":                     [32.7092,  -97.3628, "TX"],
+  "Texas Tech University":                          [33.5843, -101.8783, "TX"],
+  "The University of Alabama":                      [33.2140,  -87.5391, "AL"],
+  "The University of Texas at Austin":              [30.2849,  -97.7341, "TX"],
+  "Tulane University":                              [29.9407,  -90.1203, "LA"],
+  "University of Arizona":                          [32.2319, -110.9501, "AZ"],
+  "University of California, Irvine":               [33.6405, -117.8443, "CA"],
+  "University of California, San Diego":            [32.8801, -117.2340, "CA"],
+  "University of California, Santa Barbara":        [34.4140, -119.8489, "CA"],
+  "University of Central Florida":                  [28.6024,  -81.2001, "FL"],
+  "University of Cincinnati":                       [39.1329,  -84.5150, "OH"],
+  "University of Colorado at Boulder":              [40.0076, -105.2659, "CO"],
+  "University of Florida":                          [29.6436,  -82.3549, "FL"],
+  "University of Houston":                          [29.7199,  -95.3422, "TX"],
+  "University of Illinois Chicago":                 [41.8708,  -87.6505, "IL"],
+  "University of Illinois Urbana-Champaign":        [40.1020,  -88.2272, "IL"],
+  "University of Massachusetts at Amherst":         [42.3868,  -72.5301, "MA"],
+  "University of Miami":                            [25.7215,  -80.2793, "FL"],
+  "University of Michigan - Ann Arbor":             [42.2780,  -83.7382, "MI"],
+  "University of Minnesota":                        [44.9740,  -93.2277, "MN"],
+  "University of Mississippi":                      [34.3650,  -89.5384, "MS"],
+  "University of Missouri":                         [38.9404,  -92.3277, "MO"],
+  "University of Nevada, Reno":                     [39.5442, -119.8164, "NV"],
+  "University of North Carolina at Chapel Hill":    [35.9049,  -79.0469, "NC"],
+  "University of North Carolina at Charlotte":      [35.3071,  -80.7352, "NC"],
+  "University of Oregon":                           [44.0448, -123.0726, "OR"],
+  "University of Pennsylvania":                     [39.9522,  -75.1932, "PA"],
+  "University of South Carolina":                   [33.9937,  -81.0300, "SC"],
+  "University of Southern California":              [34.0224, -118.2851, "CA"],
+  "University of Tampa":                            [27.9478,  -82.4648, "FL"],
+  "University of Tennessee, Knoxville":             [35.9544,  -83.9295, "TN"],
+  "Virginia Tech":                                  [37.2284,  -80.4234, "VA"],
+  "Wake Forest University":                         [36.1335,  -80.2774, "NC"],
+  "Washington State University":                    [46.7298, -117.1817, "WA"],
+
+  /* Campus coordinates (not house addresses). U.S.: NCES IPEDS HD2024
+     https://nces.ed.gov/ipeds/datacenter/data/HD2024.zip
+     Indiana University uses the existing Bloomington campus location.
+     Ontario: Queen's Kingston campus and Western's official map center.
+     https://fr.wikipedia.org/wiki/Universit%C3%A9_Queen%27s
+     https://www.uwo.ca/web_standards/js/mapscode.js */
+  "Bradley University":                             [40.696896, -89.616786, "IL"],
+  "Covenant College":                               [34.965161, -85.375066, "GA"],
+  "Dartmouth College":                              [43.704115, -72.289949, "NH"],
+  "DePauw University":                              [39.640904, -86.860363, "IN"],
+  "Duke University":                                [36.001135, -78.937624, "NC"],
+  "Indiana University":                             [39.1682, -86.523, "IN"],
+  "Lehigh University":                              [40.606822, -75.380236, "PA"],
+  "New Mexico State University":                    [32.281568, -106.752069, "NM"],
+  "Queen's University":                             [44.22499, -76.49509, "ON"],
+  /* The feed calls Rowan University's Sigma Alpha Epsilon chapter "Rowan College".
+     https://sites.rowan.edu/oslp/greekaffairs/chapters.html */
+  "Rowan College":                                  [39.709108, -75.119119, "NJ"],
+  "Sacred Heart University":                        [41.220893, -73.243332, "CT"],
+  "Saint Joseph's University":                      [39.994442, -75.238343, "PA"],
+  "Saint Leo University":                           [28.336776, -82.257801, "FL"],
+  "State University of New York at Farmingdale":    [40.754224, -73.42832, "NY"],
+  "Texas A&M University - College Station":         [30.618726, -96.336475, "TX"],
+  "The College of New Jersey":                      [40.268651, -74.778791, "NJ"],
+  "University of California, Davis":                [38.539667, -121.749567, "CA"],
+  "University of Illinois Springfield":             [39.729524, -89.616796, "IL"],
+  "University of Oklahoma":                         [35.209407, -97.444211, "OK"],
+  "University of Pittsburgh":                       [40.444388, -79.953254, "PA"],
+  "University of San Diego":                        [32.770816, -117.192073, "CA"],
+  "University of Texas at Arlington":               [32.729718, -97.11296, "TX"],
+  "University of Wisconsin - Milwaukee":            [43.076848, -87.880488, "WI"],
+  "Western University":                             [43.006103, -81.274978, "ON"]
 };
+
+// Campus locations: NCES IPEDS HD2024 (campus centers, never house addresses).
+Object.assign(SCHOOLS, {"San Diego State University":[32.77525,-117.071228,"CA"],"Coastal Carolina University":[33.794995,-79.011767,"SC"],"University of Tampa":[27.948455,-82.46483,"FL"],"Virginia Tech":[37.229012,-80.423675,"VA"],"Florida International University":[25.75732,-80.373928,"FL"],"Cornell University":[42.4472,-76.483084,"NY"],"Texas Christian University":[32.70961,-97.364758,"TX"],"Emory University":[33.790183,-84.325512,"GA"],"Pennsylvania State University":[40.7965,-77.862848,"PA"],"Ohio University":[39.326798,-82.100985,"OH"],"University of Michigan - Ann Arbor":[42.278374,-83.73481,"MI"],"Salisbury University":[38.34648,-75.604815,"MD"],"University of Southern California":[34.021281,-118.284169,"CA"],"Rutgers University":[40.498769,-74.446251,"NJ"],"Ohio State University - Columbus":[39.999803,-83.007525,"OH"],"Arizona State University":[33.417721,-111.934383,"AZ"],"Indiana University - Bloomington":[39.16609,-86.526559,"IN"],"Clemson University":[34.679381,-82.835114,"SC"],"New York University":[40.729452,-73.997264,"NY"],"University of South Carolina":[33.996788,-81.026935,"SC"],"University of Colorado at Boulder":[40.008781,-105.270823,"CO"],"Elon University":[36.104148,-79.50344,"NC"],"The University of Alabama":[33.211875,-87.545978,"AL"],"Hofstra University":[40.715959,-73.60078,"NY"],"Southern Methodist University":[32.843612,-96.783365,"TX"],"Syracuse University":[43.036644,-76.133989,"NY"],"Case Western Reserve University":[41.507419,-81.609596,"OH"],"San Francisco State University":[37.721224,-122.476799,"CA"],"Purdue University":[40.428206,-86.914435,"IN"],"East Carolina University":[35.607186,-77.368291,"NC"],"Florida State University":[30.443147,-84.295064,"FL"],"Lone Star College System":[30.18737,-95.488103,"TX"],"Colorado State University":[40.574805,-105.080732,"CO"],"CUNY Baruch College":[40.740238,-73.983417,"NY"],"University of North Carolina at Chapel Hill":[35.911769,-79.050969,"NC"],"University of Mississippi":[34.365529,-89.537434,"MS"],"University of Missouri":[38.94531,-92.328843,"MO"],"Harvard University":[42.374471,-71.118313,"MA"],"California State University, Chico":[39.729712,-121.844859,"CA"],"Tulane University":[29.940069,-90.122144,"LA"],"University of Houston":[29.720393,-95.343537,"TX"],"Northeastern University":[42.339992,-71.088782,"MA"],"Temple University":[39.980546,-75.156859,"PA"],"Miami University of Ohio":[39.507757,-84.732954,"OH"],"Michigan State University":[42.73212,-84.476111,"MI"],"University of Tennessee, Knoxville":[35.952082,-83.925852,"TN"],"State University of New York at Binghamton":[42.087868,-75.966889,"NY"],"Creighton University":[41.265361,-95.947811,"NE"],"University of Arizona":[32.232672,-110.950815,"AZ"],"Duquesne University":[40.43589,-79.993123,"PA"],"The University of Texas at Austin":[30.282825,-97.738273,"TX"],"University of Florida":[29.64629,-82.347911,"FL"],"University of Nevada, Reno":[39.543642,-119.815377,"NV"],"Stanford University":[37.429434,-122.167359,"CA"],"State University of New York at Buffalo":[43.000942,-78.789458,"NY"],"Oregon State University":[44.56395,-123.274723,"OR"],"Embry-Riddle Aeronautical University":[29.189903,-81.048367,"FL"],"California State University, Northridge":[34.240126,-118.529319,"CA"],"University of North Carolina at Charlotte":[35.306022,-80.730919,"NC"],"Alma College":[43.38004,-84.672053,"MI"],"University of Illinois Chicago":[41.871837,-87.650503,"IL"],"University of Central Florida":[28.602159,-81.200889,"FL"],"Columbia University":[40.808286,-73.961885,"NY"],"University of Pennsylvania":[39.950929,-75.19391,"PA"],"State University of New York at Stony Brook":[40.91476,-73.12046,"NY"],"Wake Forest University":[36.133609,-80.277446,"NC"],"University of California, San Diego":[32.877749,-117.235866,"CA"],"California Institute of Technology":[34.137349,-118.125878,"CA"],"Texas Tech University":[33.583448,-101.874783,"TX"],"Marist College":[41.720937,-73.935484,"NY"],"University of Minnesota":[44.972851,-93.235464,"MN"],"Northern Arizona University":[35.188449,-111.653724,"AZ"],"State University of New York at Albany":[42.685489,-73.824662,"NY"],"University of Oregon":[44.045146,-123.075792,"OR"],"North Carolina State University":[35.785111,-78.674517,"NC"],"James Madison University":[38.436311,-78.870484,"VA"],"Florida Agricultural and Mechanical University":[30.428504,-84.290226,"FL"],"Washington State University":[46.730448,-117.158168,"WA"],"University of Illinois Urbana-Champaign":[40.104718,-88.229114,"IL"],"Oklahoma State University":[36.123085,-97.069743,"OK"],"Mississippi State University":[33.454852,-88.790139,"MS"],"California State University, Fullerton":[33.881506,-117.885446,"CA"],"University of Miami":[25.72126,-80.278662,"FL"],"Appalachian State University":[36.215536,-81.680583,"NC"],"University of Massachusetts at Amherst":[42.385999,-72.526728,"MA"],"Colby College":[44.564211,-69.66337,"ME"],"Georgia Southern University":[32.426153,-81.784045,"GA"],"University of California, Santa Barbara":[34.416297,-119.846426,"CA"],"University of Cincinnati":[39.131159,-84.51428,"OH"],"Colorado Mesa University":[39.080643,-108.553275,"CO"],"Eastern Illinois University":[39.479843,-88.175658,"IL"],"Santa Monica College":[34.017022,-118.469765,"CA"],"San Jose State University":[37.336569,-121.880621,"CA"],"University of California, Berkeley":[37.871918,-122.260463,"CA"],"University of California, Davis":[38.539667,-121.749567,"CA"],"University of California, Santa Cruz":[36.995584,-122.058801,"CA"],"University of San Diego":[32.770816,-117.192073,"CA"],"Sacred Heart University":[41.220893,-73.243332,"CT"],"Saint Leo University":[28.336776,-82.257801,"FL"],"Covenant College":[34.965161,-85.375066,"GA"],"Bradley University":[40.696896,-89.616786,"IL"],"University of Illinois Springfield":[39.729524,-89.616796,"IL"],"DePauw University":[39.640904,-86.860363,"IN"],"Dartmouth College":[43.704115,-72.289949,"NH"],"Rowan University":[39.709108,-75.119119,"NJ"],"The College of New Jersey":[40.268651,-74.778791,"NJ"],"New Mexico State University":[32.281568,-106.752069,"NM"],"State University of New York at Farmingdale":[40.754224,-73.42832,"NY"],"Duke University":[36.001135,-78.937624,"NC"],"High Point University":[35.972035,-79.994675,"NC"],"University of Oklahoma":[35.209407,-97.444211,"OK"],"Lehigh University":[40.606822,-75.380236,"PA"],"University of Pittsburgh":[40.444388,-79.953254,"PA"],"Saint Joseph's University":[39.994442,-75.238343,"PA"],"College of Charleston":[32.784225,-79.939794,"SC"],"Texas A&M University - College Station":[30.618726,-96.336475,"TX"],"University of Texas at Arlington":[32.729718,-97.11296,"TX"],"Washington & Lee University":[37.788939,-79.443018,"VA"],"University of Wisconsin - Milwaukee":[43.076848,-87.880488,"WI"],"Western University":[43.00996583025348,-81.27358339688361,"ON"],"Queen's University":[44.225377765814784,-76.50042525940074,"ON"],"George Washington University":[38.89923,-77.048363,"DC"],"University of Kansas":[38.958549,-95.247567,"KS"],"Princeton University":[40.348732,-74.659365,"NJ"],"University of Rhode Island":[41.484691,-71.527356,"RI"],"Texas State University":[29.888885,-97.943029,"TX"]});
+var SCHOOL_ALIASES = {"Indiana University":"Indiana University - Bloomington", "Rowan University":"Rowan College", "Washington and Lee University":"Washington & Lee University"};
+function cleanName(value){return String(value||"").trim().replace(/\s+/g," ").replace(/’/g,"'");}
+function canonicalSchool(name){name=cleanName(name);return SCHOOL_ALIASES[name]||name;}
 
 /* What "hit goal" means, and it is not a number invented here.
    server/campuswars-source.mjs reads the admin's progress cell and notes
@@ -88,9 +198,9 @@ function regionOf(st){
   for (var r in REGION) if (REGION[r].indexOf(st) > -1) return r;
   return "elsewhere";
 }
-var STATE_NAME = {AZ:"Arizona",CA:"California",CO:"Colorado",FL:"Florida",GA:"Georgia",IN:"Indiana",
-  MD:"Maryland",MI:"Michigan",NC:"North Carolina",NJ:"New Jersey",NY:"New York",OH:"Ohio",
-  PA:"Pennsylvania",SC:"South Carolina",TX:"Texas",VA:"Virginia"};
+var STATE_NAME = {AK:"Alaska",HI:"Hawaii",ON:"Ontario, Canada"};
+Object.keys(ST_CODE).forEach(function(name){STATE_NAME[ST_CODE[name]]=name;});
+REGION.Canada=["ON"];
 
 /* ---------- helpers ---------- */
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
@@ -137,10 +247,11 @@ function project(lon, lat){
    houses at Clemson and put the headline number half again too
    high. */
 function unitsFrom(rows){
-  var by = {}, order = [];
+  var by = Object.create(null), order = [];
   rows.forEach(function(r){
-    var key = String(r.name||"") + "|" + String(r.school||"");
-    if (!by[key]) { by[key] = {name:r.name, school:r.school, shortSchool:r.shortSchool,
+    var name = cleanName(r.name), school = canonicalSchool(r.school);
+    var key = name.toLowerCase() + "|" + school.toLowerCase();
+    if (!by[key]) { by[key] = {name:name, school:school, shortSchool:school,
                                letters:r.letters, type:r.type, rows:[]}; order.push(key); }
     by[key].rows.push(r);
   });
@@ -187,6 +298,7 @@ function unitsFrom(rows){
     var s = SCHOOLS[u.school];
     u.state   = s ? s[2] : "";
     u.placed  = !!s;
+    u.review = !u.placed || u.disputed || u.joined > u.size;
     return u;
   });
 }
@@ -200,73 +312,16 @@ function unitsFrom(rows){
    prefix it was asked for; nothing here is addressed any other way.
    ═══════════════════════════════════════════════════════════════ */
 function markup(prefix){
-  var p = prefix || "";
-  function id(n){ return p + n; }
-  return '' +
-  /* the banner is its own section, so an empty one collapses to
-     nothing rather than leaving a gap at the top of the board */
-  '<div class="ch-sec" id="' + id("feed-banner") + '"></div>' +
-
-  '<div class="ch-sec"><div class="stats" id="' + id("stats") + '"></div></div>' +
-
-  '<div class="ch-sec"><div class="panel">' +
-    '<div class="panel-h"><h2>on the map</h2><span class="note" id="' + id("map-note") + '"></span></div>' +
-    '<div class="mapwrap" id="' + id("mapwrap") + '"></div>' +
-    '<div class="mapbar">' +
-      '<span class="zoom">' +
-        '<button type="button" id="' + id("z-out") + '" aria-label="Zoom out">&minus;</button>' +
-        '<button type="button" id="' + id("z-in") + '" aria-label="Zoom in">+</button>' +
-        '<button type="button" id="' + id("z-reset") + '" aria-label="Reset the map">&#8634;</button>' +
-      '</span>' +
-      '<span class="selchip" id="' + id("selchip") + '">' +
-        '<b id="' + id("selchip-txt") + '"></b>' +
-        '<button type="button" id="' + id("selchip-x") + '" aria-label="Clear the selection">&times;</button>' +
-      '</span>' +
-      '<span class="maphint">Tap a dot to filter · drag to pan · Ctrl/⌘ + scroll to zoom</span>' +
-    '</div>' +
-    '<div class="maplegend">' +
-      '<span class="k"><i></i> onboarded, nobody joined</span>' +
-      '<span class="k"><i class="prog"></i> joining, under the 80% target</span>' +
-      '<span class="k"><i class="goal"></i> hit the target</span>' +
-      '<span class="k"><i class="sz"></i> bigger dot = bigger roster</span>' +
-      '<span class="k">one dot per house — a school can have several</span>' +
-      '<span class="k" id="' + id("unmapped") + '"></span>' +
-    '</div>' +
-  '</div></div>' +
-
-  '<div class="ch-sec"><div class="panel">' +
-    '<div class="panel-h"><h2>every house</h2><span class="note" id="' + id("port-note") + '"></span></div>' +
-    '<div class="funnel" id="' + id("funnel") + '"></div>' +
-    '<div class="port" id="' + id("port") + '"></div>' +
-  '</div></div>' +
-
-  '<div class="ch-sec two">' +
-    '<div class="panel">' +
-      '<div class="panel-h"><h2>who they are</h2><span class="note" id="' + id("frat-note") + '"></span></div>' +
-      '<div class="cloud" id="' + id("frats") + '"></div>' +
-    '</div>' +
-    '<div class="panel">' +
-      '<div class="panel-h"><h2>where they are</h2><span class="note" id="' + id("state-note") + '"></span></div>' +
-      '<div class="cloud" id="' + id("states") + '"></div>' +
-    '</div>' +
-  '</div>' +
-
-  '<div class="ch-sec"><div class="panel">' +
-    '<div class="panel-h"><h2>what stands out</h2><span class="note">Recomputed from the feed on every load.</span></div>' +
-    '<div class="calls" id="' + id("findings") + '"></div>' +
-  '</div></div>' +
-
-  '<div class="ch-sec"><div class="panel">' +
-    '<div class="panel-h"><h2>the full table</h2><span class="note" id="' + id("tbl-note") + '"></span></div>' +
-    '<div class="tbl-scroll"><table>' +
-      '<thead><tr><th>chapter</th><th>school</th><th>st</th>' +
-      '<th style="text-align:right">roster</th><th style="text-align:right">target</th>' +
-      '<th style="text-align:right">joined</th><th>progress</th>' +
-      '<th style="text-align:right">age</th><th></th></tr></thead>' +
-      '<tbody id="' + id("tbody") + '"></tbody>' +
-    '</table></div>' +
-    '<div class="empty" id="' + id("tbl-empty") + '" hidden>Nothing in the feed yet.</div>' +
-  '</div></div>';
+  var p=prefix||"";
+  return `<div class="ch-sec" id="${p}feed-banner"></div>
+  <header class="cx-heading"><div><span class="cx-eyebrow">FOMO CAMPUS / CHAPTER NETWORK</span><h2>Big picture. Every chapter.</h2><p>Explore the network, find momentum, and see who needs a nudge.</p></div><a href="https://fomocampus.com/admin/" target="_blank" rel="noopener">Open source ↗</a></header>
+  <div class="stats" id="${p}stats"></div>
+  <div class="cx-command"><nav class="cx-tabs" aria-label="Chapter views" id="${p}views"><button type="button" data-view="explore" aria-pressed="true">◈ Explore</button><button type="button" data-view="directory" aria-pressed="false">☷ Directory</button><button type="button" data-view="insights" aria-pressed="false">↗ Insights</button></nav><span class="cx-sync">Connecting to FOMO Campus</span></div>
+  <div class="tools cx-filters"><input type="search" id="${p}q" placeholder="Find a chapter, campus or state…" aria-label="Search houses" autocomplete="off"><select id="${p}state-filter" aria-label="Filter by state or province"><option value="">All states & provinces</option></select><select id="${p}type-filter" aria-label="Filter by chapter type"><option value="">All chapter types</option></select><button type="button" id="${p}clear">Reset filters</button><div class="seg" id="${p}seg" role="group" aria-label="Filter by progress"></div></div>
+  <section data-pane="explore" class="cx-explore"><div class="panel cx-map-panel"><div class="panel-h"><h2>The campus atlas</h2><span class="note" id="${p}map-note"></span><button type="button" id="${p}depth" aria-pressed="true">3D on</button></div><div class="cx-map-stage"><span class="cx-map-label">NORTH AMERICA · CAMPUS LOCATIONS</span><div class="mapwrap depth" id="${p}mapwrap"></div></div><div class="mapbar"><span class="zoom"><button type="button" id="${p}z-out" aria-label="Zoom out">−</button><button type="button" id="${p}z-in" aria-label="Zoom in">+</button><button type="button" id="${p}z-reset" aria-label="Reset the map">↺</button></span><span class="selchip" id="${p}selchip"><b id="${p}selchip-txt"></b><button type="button" id="${p}selchip-x" aria-label="Clear the selection">×</button></span><span class="maphint">Pick a chapter · drag to pan · zoom to explore</span></div><div class="maplegend"><span class="k"><i></i> Not started</span><span class="k"><i class="prog"></i> Joining</span><span class="k"><i class="goal"></i> At target</span><span class="k" id="${p}unmapped"></span></div></div><aside class="panel cx-inspector" id="${p}inspector" aria-live="polite"></aside></section>
+  <section data-pane="explore" class="cx-campus-section"><div class="cx-section-heading"><h2>Campus collection</h2><span id="${p}card-note"></span></div><div class="cx-cards" id="${p}cards"></div><div class="tbl-foot" id="${p}cards-more"></div></section>
+  <section data-pane="directory" hidden class="panel"><div class="panel-h"><h2>Chapter directory</h2><span class="note" id="${p}tbl-note"></span></div><div class="tbl-scroll"><table class="houses"><thead><tr><th data-sort="name"><button type="button">Chapter</button></th><th data-sort="pct" class="prog-h"><button type="button">Progress</button></th><th data-sort="joined" class="r"><button type="button">Joined</button></th><th data-sort="size" class="r hide-s"><button type="button">Roster</button></th><th data-sort="age" class="r hide-s"><button type="button">Age</button></th><th class="flags hide-s"></th></tr></thead><tbody id="${p}tbody"></tbody></table></div><div class="empty" id="${p}tbl-empty" hidden>Loading chapters…</div><div class="tbl-foot" id="${p}tbl-foot"></div></section>
+  <section data-pane="insights" hidden><div class="cx-section-heading"><h2>Network overview</h2><span>All chapters · filters apply to Explore & Directory</span></div><div class="calls" id="${p}findings"></div><div class="two"><div class="panel"><div class="panel-h"><h2>By organization</h2><span class="note" id="${p}frat-note"></span></div><div class="rank" id="${p}frats"></div></div><div class="panel"><div class="panel-h"><h2>By region & state</h2><span class="note" id="${p}state-note"></span></div><div class="rank" id="${p}states"></div></div></div><p class="cx-method">One chapter per organization and campus. Repeat registrations are grouped; the furthest-along registration supplies both joined and roster counts. Targets are 80% of that roster. Source records are preserved.</p></section>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -328,20 +383,12 @@ function mount(opts){
 
     /* ---- the numbers ---- */
     var stats = [
-      {l:"houses", v:units.length,
-       s:dupRows ? raw.length + " registrations · " + plural(dupRows,"repeat","repeats") : raw.length + " registrations"},
-      {l:"schools",  v:Object.keys(schools).length, s:plural(Object.keys(states).length,"state","states")},
-      {l:"roster reach", v:reach.toLocaleString("en-US"), s:"actives across every house"},
-      {l:"the target", v:goal.toLocaleString("en-US"), s:"80% of the roster"},
-      {l:"joined", v:joined.toLocaleString("en-US"),
-       s:pct(joined,goal) + "% of target · " + pct(joined,reach) + "% of roster", cls:joined?"good":""},
-      {l:"at target", v:atGoal + " / " + units.length,
-       s:atGoal ? plural(atGoal,"house has","houses have") + " hit 80%" : "none there yet",
-       cls:atGoal ? "gold" : "warn"},
-      {l:"started", v:live + " / " + units.length,
-       s:(units.length - live) + " with nobody joined", cls:live > units.length/2 ? "good" : "warn"},
-      {l:"median house", v:medPct + "%", s:"to target" + (medAge != null ? " · " + plural(medAge,"day","days") + " old" : "")}
+      {l:"Chapters",v:units.length,s:dupRows+" repeat registrations grouped"},
+      {l:"Campuses",v:Object.keys(schools).length,s:plural(Object.keys(states).filter(function(k){return k!=="ON";}).length,"US state / district","US states / districts")+(states.ON?" + Ontario":"")},
+      {l:"Members joined",v:joined.toLocaleString("en-US"),s:pct(joined,goal)+"% of the combined target",cls:"good"},
+      {l:"At target",v:atGoal,s:(units.length-live)+" chapters yet to start",cls:"gold"}
     ];
+    populateFilters();
     el("stats").innerHTML = stats.map(function(k){
       return '<div class="stat ' + (k.cls||"") + '"><div class="lbl">' + esc(k.l) + '</div>' +
              '<div class="v">' + esc(String(k.v)) + '</div><div class="s">' + esc(k.s) + '</div></div>';
@@ -392,7 +439,7 @@ function mount(opts){
         var ring = u.atGoal ? '<circle class="ring" cx="' + x + '" cy="' + y + '" r="' + (r + 4.5).toFixed(1) + '"></circle>' : "";
         marks.push('<g style="animation-delay:' + (n++ * 30) + 'ms">' +
           '<circle class="halo ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + (r+6).toFixed(1) + '"></circle>' +
-          ping + ring +
+          ping + ring + '<line class="pin-stem" x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (Number(y)+10) + '"></line>' +
           '<circle class="dot ' + cls + '" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) + '"' +
           ' tabindex="0" role="button" data-house="' + esc(u.name + "|" + u.school) + '"' +
           ' aria-label="' + esc(u.name + " at " + s) + ', ' + u.joined + ' of ' + u.goal +
@@ -402,95 +449,53 @@ function mount(opts){
     marks = marks.join("");
 
     el("mapwrap").innerHTML = '<svg class="usmap" viewBox="0 0 ' + MAP.width + ' ' + MAP.height +
-      '" role="img" aria-label="Map of the United States showing where chapters have onboarded">' +
+      '" role="img" aria-label="Interactive chapter map of the United States and southern Ontario">' +
       '<g class="mapg"><g class="states">' + stPaths + '</g><g class="marks">' + marks + '</g></g></svg>';
     bindMap();
     applySelection();
     var goalSchools = keys.filter(function(k){ return bySchool[k].atGoal; }).length;
     el("map-note").textContent = plural(keys.length,"school","schools") + " · " +
-      plural(Object.keys(onStates).length,"state","states") +
+      plural(Object.keys(onStates).length,"state / province","states / provinces") +
       (goalSchools ? " · " + goalSchools + " at target" : "");
     el("unmapped").innerHTML = missing.length
       ? '<b style="color:var(--owed)">' + plural(missing.length,"house","houses") + " not on the map:</b>&nbsp;" +
         esc(missing.map(function(u){ return u.school; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(", ")) +
-        "&nbsp;— add the coordinates to SCHOOLS"
+        "&nbsp;— location needs review"
       : "";
-
-    /* ---- the funnel: registered, started, finished ----
-       Three numbers people actually track, and each one is a subset of the
-       one before it, so the bar widths are the story on their own. */
-    var steps = [
-      {c:"s1", v:units.length, l:"registered", s:raw.length + " registrations in", w:100},
-      {c:"s2", v:live,   l:"someone has joined", s:pct(live, units.length) + "% of them",
-       w:units.length ? live/units.length*100 : 0},
-      {c:"s3", v:atGoal, l:"hit the 80% target", s:pct(atGoal, units.length) + "% of them",
-       w:units.length ? atGoal/units.length*100 : 0}
-    ];
-    el("funnel").innerHTML = steps.map(function(st, i){
-      var drop = i ? "&minus;" + (steps[i-1].v - st.v) : "";
-      return '<div class="fstep ' + st.c + '">' +
-        '<div class="lbl">' + esc(st.l) + '</div>' +
-        (drop ? '<div class="drop">' + drop + '</div>' : "") +
-        '<div class="fv">' + st.v + '</div>' +
-        '<div class="fs">' + esc(st.s) + '</div>' +
-        '<div class="fbar"><i style="width:' + st.w + '%"></i></div></div>';
-    }).join("");
-
-    /* ---- every house, one row, sorted by how far along it is ----
-       This replaced a five-band histogram and a top-nine board. Neither
-       showed you the house you were looking for, and between them they
-       said less than twenty-one bars in a column do. */
-    var port = units.slice().sort(function(a,b){
-      return b.pct - a.pct || b.joined - a.joined || (a.name < b.name ? -1 : 1);
-    });
-    el("port-note").textContent = plural(units.length,"house","houses") + " · sorted by progress";
-    el("port").innerHTML = port.map(function(u){
-      var w = Math.max(u.pct > 0 ? 2 : 100, Math.min(100, u.pct));
-      var cls = u.atGoal ? "g" : (u.started ? "" : "z");
-      return '<div class="prow" data-house="' + esc(houseKey(u)) + '">' +
-        '<div class="pn"><b>' + esc(u.name) + '</b><span>' + esc(u.shortSchool || u.school) + '</span></div>' +
-        '<div class="pb"><i class="' + cls + '" style="width:' + w + '%"></i></div>' +
-        '<div class="pv">' + (u.atGoal ? "<b>" + u.pct + "%</b>" : u.pct + "%") +
-          ' <span style="color:var(--muted-2)">' + u.joined + "/" + u.goal + '</span></div></div>';
-    }).join("");
 
     /* ---- who they are ---- */
     var frats = {};
     units.forEach(function(u){
-      var f = frats[u.name] || (frats[u.name] = {name:u.name, letters:u.letters, n:0, schools:{}, atGoal:0});
-      f.n++; f.schools[u.school] = true; if (u.atGoal) f.atGoal++;
+      var f = frats[u.name] || (frats[u.name] = {key:u.name, name:u.name, letters:u.letters, n:0, schools:{}, atGoal:0, joined:0});
+      f.n++; f.schools[u.school] = true; f.joined += u.joined; if (u.atGoal) f.atGoal++;
     });
     var fl = Object.keys(frats).map(function(k){ return frats[k]; })
-      .sort(function(a,b){ return b.n - a.n || b.atGoal - a.atGoal || (a.name<b.name?-1:1); });
+      .sort(function(a,b){ return b.n - a.n || b.atGoal - a.atGoal || b.joined - a.joined || (a.name<b.name?-1:1); });
     var multi = fl.filter(function(f){ return f.n > 1; });
-    el("frat-note").textContent = plural(fl.length,"organisation","organisations");
-    el("frats").innerHTML =
-      '<div class="lead-in">' + (multi.length
-        ? plural(multi.length,"national has","nationals have") + " more than one house — the cheapest growth there is"
-        : "every organisation has exactly one house so far") + '</div>' +
-      fl.map(function(f){
-        var cls = f.atGoal ? "gold" : (f.n > 1 ? "multi" : "");
-        return '<span class="chip2 ' + cls + '" title="' + esc(plural(Object.keys(f.schools).length,"school","schools")) + '">' +
-          esc(f.letters ? f.letters + " " : "") + esc(f.name) + '<u>' + f.n + '</u></span>';
-      }).join("");
+    el("frat-note").textContent = plural(fl.length,"organisation","organisations") +
+      (multi.length ? " · " + multi.length + " with more than one house" : "");
+    orgRank = fl.map(function(f){
+      return {kind:"org", key:f.key, label:(f.letters ? f.letters + " " : "") + f.name, n:f.n, gold:f.atGoal,
+              sub:plural(Object.keys(f.schools).length,"school","schools")};
+    });
 
     /* ---- where they are ---- */
-    var sl = Object.keys(states).map(function(k){ return {st:k, n:states[k]}; })
-      .sort(function(a,b){ return b.n - a.n || (a.st<b.st?-1:1); });
     var regions = {};
     units.forEach(function(u){ if (u.state) { var r = regionOf(u.state); regions[r] = (regions[r]||0)+1; } });
-    var topRegion = Object.keys(regions).sort(function(a,b){ return regions[b]-regions[a]; })[0] || "";
+    var regionOrder = Object.keys(regions).sort(function(a,b){ return regions[b]-regions[a]; });
+    var topRegion = regionOrder[0] || "";
     var goldStates = {};
-    units.forEach(function(u){ if (u.atGoal && u.state) goldStates[u.state] = true; });
+    units.forEach(function(u){ if (u.atGoal && u.state) goldStates[u.state] = (goldStates[u.state]||0) + 1; });
     el("state-note").textContent = topRegion
       ? pct(regions[topRegion], units.length) + "% in the " + topRegion : "";
-    el("states").innerHTML =
-      '<div class="lead-in">' + esc(Object.keys(regions).sort(function(a,b){ return regions[b]-regions[a]; })
-        .map(function(r){ return regions[r] + " " + r; }).join(" · ")) + '</div>' +
-      sl.map(function(x){
-        return '<span class="chip2 ' + (goldStates[x.st] ? "gold" : (x.n > 1 ? "multi" : "")) + '">' +
-          esc(STATE_NAME[x.st] || x.st) + '<u>' + x.n + '</u></span>';
-      }).join("");
+    regionLine = regionOrder.map(function(r){ return {r:r, n:regions[r]}; });
+    stateRank = Object.keys(states).map(function(k){
+      var sc = {};
+      units.forEach(function(u){ if (u.state === k) sc[u.school] = true; });
+      return {kind:"state", key:k, label:STATE_NAME[k] || k, n:states[k], gold:goldStates[k] || 0,
+              sub:plural(Object.keys(sc).length,"school","schools")};
+    }).sort(function(a,b){ return b.n - a.n || b.gold - a.gold || (a.label<b.label?-1:1); });
+    renderRanks();
 
     renderFindings({units:units, atGoal:atGoal, goal:goal, medPct:medPct, dupRows:dupRows, reach:reach,
                     joined:joined, live:live, frats:fl, regions:regions, topRegion:topRegion,
@@ -511,9 +516,11 @@ function mount(opts){
       f.push({cls:"gold", v:d.atGoal, t:"at the 80% target",
         /* escaped per name, then joined — escaping the joined string
            would turn the separators into visible text */
-        s:winners.map(function(u){
-            return esc(u.name) + ' <span style="color:var(--muted-2)">' + esc(u.shortSchool||u.school) + "</span>";
-          }).join("<br>")});
+        /* the first five, then a count — the card should not outgrow its row */
+        s:winners.slice(0, 5).map(function(u){
+            return '<span class="cl"><b>' + esc(u.name) + '</b> · ' + esc(u.shortSchool||u.school) + "</span>";
+          }).join("") +
+          (winners.length > 5 ? '<span class="cl">and ' + (winners.length - 5) + ' more — filter the table below</span>' : "")});
     } else {
       f.push({cls:"warn", v:"0", t:"at the 80% target", s:"Median house is " + d.medPct + "% of the way there."});
     }
@@ -527,7 +534,7 @@ function mount(opts){
     if (close.length) {
       var need = close.reduce(function(n,u){ return n + (u.goal - u.joined); }, 0);
       f.push({cls:"violet", v:need, t:"sign-ups from " + plural(close.length,"more house","more houses"),
-        s:"That is all that stands between " + plural(close.length,"this house","these houses") +
+        s:"That is all that stands between " + (close.length === 1 ? "this house" : "these " + close.length + " houses") +
           " and a finished target: " + esc(close.slice(0,3).map(function(u){
             return (u.shortSchool||u.school) + " needs " + (u.goal - u.joined); }).join(", ")) + "."});
     }
@@ -542,13 +549,13 @@ function mount(opts){
 
     if (d.topRegion) {
       f.push({v:pct(d.regions[d.topRegion], d.units.length) + "%", t:"in the " + d.topRegion,
-        s:"Across " + plural(Object.keys(d.states).length,"state","states") + ". Whole regions are still empty."});
+        s:"Across " + plural(Object.keys(d.states).length,"state / province","states / provinces") + ". Whole regions are still empty."});
     }
 
     var types = {};
     d.units.forEach(function(u){ types[u.type || "unknown"] = (types[u.type||"unknown"]||0) + 1; });
     var tk = Object.keys(types);
-    if (tk.length === 1) {
+    if (tk.length === 1 && tk[0].toLowerCase() === "fraternity") {
       f.push({v:d.units.length, t:"fraternities, no sororities",
         s:"Not one sorority or co-ed chapter has come through onboarding. The clearest gap in the roster."});
     } else {
@@ -564,30 +571,124 @@ function mount(opts){
     }).join("");
   }
 
+  /* ---------- every house ----------
+
+     One table, and it does the work the bar list used to: progress is a
+     bar in its own column, so the shape of the whole field still reads
+     at a glance. A search box, a filter by where a house is, and sortable
+     headers replace scrolling — and only the first page is drawn until
+     somebody asks for the rest. The map, the breakdowns and the search
+     all narrow the same rows. */
+  var PAGE = 25;
+  var stateFilter="", typeFilter="", cardsAll=false, currentView="explore";
+  var FILTERS = [
+    {k:"all",  l:"All",           test:function(){ return true; }},
+    {k:"goal", l:"At target",     test:function(u){ return u.atGoal; }},
+    {k:"prog", l:"Joining",       test:function(u){ return u.started && !u.atGoal; }},
+    {k:"zero", l:"Not started",   test:function(u){ return !u.started; }},
+    {k:"close",l:"Almost there",test:function(u){return !u.atGoal && u.pct>=50;}},
+    {k:"review",l:"Needs review",test:function(u){return u.review;}}
+  ];
+  var SORTS = {
+    pct:    function(a,b){ return b.pct - a.pct || b.joined - a.joined || b.size - a.size; },
+    joined: function(a,b){ return b.joined - a.joined || b.pct - a.pct; },
+    size:   function(a,b){ return b.size - a.size || b.pct - a.pct; },
+    age:    function(a,b){ return (a.age == null ? 1e9 : a.age) - (b.age == null ? 1e9 : b.age) || b.pct - a.pct; },
+    name:   function(a,b){ return 0; }
+  };
+  var filter = "all", query = "", sortBy = "pct", sortRev = false, showAll = false;
+
+  function byName(a,b){ return a.name < b.name ? -1 : a.name > b.name ? 1 : (a.school < b.school ? -1 : 1); }
+  function matchesQuery(u){
+    if (!query) return true;
+    var hay = (u.name + " " + (u.letters||"") + " " + u.school + " " + (u.shortSchool||"") + " " +
+               u.state + " " + (STATE_NAME[u.state]||"")).toLowerCase();
+    return query.split(/\s+/).every(function(w){ return hay.indexOf(w) > -1; });
+  }
+  function filterOf(k){ return FILTERS.filter(function(f){ return f.k === k; })[0] || FILTERS[0]; }
+
   function renderTable(){
-    var list = units.filter(inSelection).sort(function(a,b){
-      return b.pct - a.pct || b.joined - a.joined || b.size - a.size || (a.name < b.name ? -1 : 1);
+    var scoped = units.filter(inSelection).filter(matchesQuery).filter(inCategory);
+    var f = filterOf(filter);
+    var list = scoped.filter(f.test).sort(function(a,b){
+      var d = SORTS[sortBy](a,b) || byName(a,b);
+      return sortRev ? -d : d;
     });
-    el("tbody").innerHTML = list.map(function(u){
-      return "<tr>" +
-        '<td class="who">' + esc(u.letters ? u.letters + " " : "") + esc(u.name) + "</td>" +
-        "<td>" + esc(u.shortSchool || u.school) + "</td>" +
-        "<td>" + (u.state ? esc(u.state) : '<span class="pill">—</span>') + "</td>" +
-        '<td class="num2">' + u.size + "</td>" +
-        '<td class="num2" style="color:var(--muted-2)">' + u.goal + "</td>" +
-        '<td class="num2">' + (u.joined ? u.joined : '<span style="color:var(--muted-2)">0</span>') + "</td>" +
-        '<td style="min-width:110px">' +
-          '<span class="num2" style="text-align:left;display:inline-block;min-width:3em;' +
-          (u.atGoal ? "color:var(--gold)" : "") + '">' + u.pct + "%</span>" +
-          '<div class="mini-tr"><i class="' + (u.atGoal?"g":"") + '" style="width:' + Math.min(100,u.pct) + '%"></i></div></td>' +
-        '<td class="num2" style="color:var(--muted-2)">' + (u.age == null ? "—" : u.age + "d") + "</td>" +
-        "<td>" + (u.atGoal ? '<span class="pill goal">target</span>' : "") +
-                 (u.dupes > 1 ? ' <span class="pill dup">' + u.dupes + "</span>" : "") + "</td>" +
-      "</tr>";
+
+    el("seg").innerHTML = FILTERS.map(function(x){
+      var n = scoped.filter(x.test).length;
+      return '<button type="button" data-filter="' + x.k + '" aria-pressed="' + (x.k === filter) + '"' +
+        (x.k === filter ? ' class="on"' : "") + '>' + esc(x.l) + ' <u>' + n + '</u></button>';
     }).join("");
+    Array.prototype.forEach.call(root.querySelectorAll("table.houses th[data-sort]"), function(th){
+      var on = th.getAttribute("data-sort") === sortBy;
+      th.classList.toggle("on", on);
+      th.classList.toggle("rev", on && sortRev);
+      th.setAttribute("aria-sort", on ? ((sortBy === "name") !== sortRev ? "ascending" : "descending") : "none");
+    });
+
+    var shown = showAll || selected || list.length <= PAGE + 5 ? list : list.slice(0, PAGE);
+    el("tbody").innerHTML = shown.map(function(u){
+      var w = Math.max(u.joined > 0 ? 3 : 0, Math.min(100, u.pct));
+      var cls = u.atGoal ? "g" : (u.started ? "" : "z");
+      return '<tr data-house="' + esc(houseKey(u)) + '" tabindex="0">' +
+        '<td class="who"><b>' + (u.letters ? '<i class="lt">' + esc(u.letters) + '</i>' : "") + esc(u.name) + '</b>' +
+          '<span>' + esc(u.shortSchool || u.school) + (u.state ? ' · ' + esc(u.state) : "") + '</span></td>' +
+        '<td class="prog"><div class="pwrap"><div class="pbar"><i class="' + cls + '" style="width:' + w + '%"></i></div>' +
+          '<span class="pp' + (u.atGoal ? " g" : "") + '">' + u.pct + '%</span></div></td>' +
+        '<td class="num2">' + (u.joined ? u.joined : '<span class="dim">0</span>') +
+          '<span class="dim"> / ' + u.goal + '</span></td>' +
+        '<td class="num2 hide-s">' + u.size + '</td>' +
+        '<td class="num2 dim hide-s">' + (u.age == null ? "—" : u.age + "d") + '</td>' +
+        '<td class="flags hide-s">' + (u.atGoal ? '<span class="pill goal">target</span>' : "") +
+          (u.dupes > 1 ? ' <span class="pill dup" title="Registered ' + u.dupes + ' times">' + u.dupes + '×</span>' : "") +
+        '</td></tr>';
+    }).join("");
+
     el("tbl-empty").hidden = list.length > 0;
-    el("tbl-note").textContent = plural(list.length,"chapter","chapters") + (selected ? " · filtered" : "");
-    onCount(plural(raw.length,"row","rows") + " in the feed");
+    el("tbl-empty").textContent = units.length ? "No houses match." : "Nothing in the feed yet.";
+    var hidden = list.length - shown.length;
+    el("tbl-foot").innerHTML = hidden > 0
+      ? '<span>Showing ' + shown.length + ' of ' + list.length + '</span>' +
+        '<button type="button" data-more="1">Show all ' + list.length + '</button>'
+      : (showAll && list.length > PAGE ? '<span>All ' + list.length + ' shown</span><button type="button" data-more="0">Show fewer</button>' : "");
+    var narrowed = selected || query || stateFilter || typeFilter || filter !== "all";
+    el("tbl-note").textContent = narrowed
+      ? plural(list.length,"house","houses") + " of " + units.length
+      : plural(units.length,"house","houses") + " · " + plural(raw.length,"registration","registrations");
+    onCount(plural(units.length,"chapter","chapters") + " · " + raw.length + " source registrations");
+    renderCards(list); renderInspector(); applySelection();
+  }
+
+  /* ---------- who they are, where they are ----------
+
+     Ranked bars rather than a cloud of chips: the order is the point,
+     and a cloud of fifty-odd names has none. The first few are shown,
+     the rest one click away, and a row narrows the table like a dot. */
+  var RANK_TOP = 8;
+  var orgRank = [], stateRank = [], regionLine = [], rankOpen = {frats:false, states:false};
+  function rankHTML(rows, box){
+    var max = rows.reduce(function(m,r){ return Math.max(m, r.n); }, 1);
+    var open = rankOpen[box], shown = open ? rows : rows.slice(0, RANK_TOP);
+    return shown.map(function(r){
+      var on = selected && selected.kind === r.kind && selected.key === r.key;
+      return '<button type="button" class="rrow' + (on ? " on" : "") + '" data-kind="' + r.kind + '" data-key="' + esc(r.key) + '">' +
+        '<span class="rl"><b>' + esc(r.label) + '</b><span>' + esc(r.sub) +
+          (r.gold ? ' · <em>' + r.gold + ' at target</em>' : "") + '</span></span>' +
+        '<span class="rb"><i style="width:' + Math.max(4, r.n / max * 100) + '%"></i></span>' +
+        '<span class="rn">' + r.n + '</span></button>';
+    }).join("") +
+    (rows.length > RANK_TOP
+      ? '<button type="button" class="rmore" data-rank="' + box + '">' +
+          (open ? "Show top " + RANK_TOP : "Show all " + rows.length) + '</button>'
+      : "");
+  }
+  function renderRanks(){
+    el("frats").innerHTML = rankHTML(orgRank, "frats");
+    el("states").innerHTML =
+      (regionLine.length ? '<div class="regions">' + regionLine.map(function(x){
+        return '<span><b>' + x.n + '</b> ' + esc(x.r) + '</span>'; }).join("") + '</div>' : "") +
+      rankHTML(stateRank, "states");
   }
 
   /* ---------- the map as something you can actually use ----------
@@ -605,6 +706,7 @@ function mount(opts){
     if (!selected) return true;
     if (selected.kind === "house")  return houseKey(u) === selected.key;
     if (selected.kind === "school") return u.school === selected.key;
+    if (selected.kind === "org")    return u.name === selected.key;
     return u.state === selected.key;
   }
   function selectionLabel(){
@@ -614,7 +716,7 @@ function mount(opts){
       var u = units.filter(function(x){ return houseKey(x) === selected.key; })[0];
       return parts[0] + " · " + (u ? (u.shortSchool || u.school) : parts[1]);
     }
-    if (selected.kind === "school") return selected.key;
+    if (selected.kind === "school" || selected.kind === "org") return selected.key;
     return STATE_NAME[selected.key] || selected.key;
   }
   function select(kind, key){
@@ -622,20 +724,23 @@ function mount(opts){
     else selected = {kind:kind, key:key};
     applySelection();
     renderTable();
+    renderRanks();
+    if(currentView!=="explore")setPane("explore");
   }
-  function clearSelection(){ selected = null; applySelection(); renderTable(); }
+  function clearSelection(){ selected = null; applySelection(); renderTable(); renderRanks(); }
 
   function applySelection(){
     var svg = svgEl(); if (!svg) return;
     var marks = svg.querySelector(".marks");
-    if (marks) marks.classList.toggle("dim", !!selected);
+    var filtering=!!selected || !!query || !!stateFilter || !!typeFilter || filter!=="all";
+    if (marks) marks.classList.toggle("dim", filtering);
 
     /* A dot is lit when the house it stands for is in the selection, so a
        state lights every house inside it and a house lights just itself. */
     Array.prototype.forEach.call(svg.querySelectorAll("circle.dot"), function(d){
       var key = d.getAttribute("data-house") || "";
       var u = units.filter(function(x){ return houseKey(x) === key; })[0];
-      var on = !!selected && !!u && inSelection(u);
+      var on = filtering && !!u && inSelection(u) && matchesQuery(u) && inCategory(u) && filterOf(filter).test(u);
       d.classList.toggle("sel", on);
       var halo = d.parentNode.querySelector("circle.halo");
       if (halo) halo.classList.toggle("sel", on);
@@ -647,7 +752,7 @@ function mount(opts){
 
     /* scoped to this board's own rows — the console has other tables open
        behind this view, and a document-wide sweep would reach into them */
-    Array.prototype.forEach.call(root.querySelectorAll(".prow"), function(r){
+    Array.prototype.forEach.call(root.querySelectorAll("tbody tr[data-house]"), function(r){
       var u = units.filter(function(x){ return houseKey(x) === r.getAttribute("data-house"); })[0];
       r.classList.toggle("on", !!selected && !!u && inSelection(u));
     });
@@ -682,8 +787,9 @@ function mount(opts){
     clampView(); applyView();
   }
   function svgPoint(svg, clientX, clientY){
-    var r = svg.getBoundingClientRect();
-    return [(clientX - r.left) / r.width * MAP.width, (clientY - r.top) / r.height * MAP.height];
+    var pt=svg.createSVGPoint();pt.x=clientX;pt.y=clientY;
+    var matrix=svg.getScreenCTM();if(matrix){pt=pt.matrixTransform(matrix.inverse());return [pt.x,pt.y];}
+    return [MAP.width/2,MAP.height/2];
   }
   function resetView(){ view = {k:1, x:0, y:0}; applyView(); }
 
@@ -720,9 +826,10 @@ function mount(opts){
 
     /* one pointer path for mouse, pen and touch alike */
     svg.addEventListener("pointerdown", function(ev){
-      down = {x:ev.clientX, y:ev.clientY, vx:view.x, vy:view.y};
+      var pt=svgPoint(svg,ev.clientX,ev.clientY);
+      down = {x:ev.clientX, y:ev.clientY, px:pt[0], py:pt[1], vx:view.x, vy:view.y};
       dragged = false;
-      svg.setPointerCapture(ev.pointerId);
+
     });
     svg.addEventListener("pointermove", function(ev){
       if (!down) return;
@@ -730,9 +837,10 @@ function mount(opts){
       if (!dragged && Math.abs(dx) + Math.abs(dy) < 4) return;
       dragged = true;
       svg.classList.add("drag");
-      var r = svg.getBoundingClientRect();
-      view.x = down.vx + dx / r.width * MAP.width;
-      view.y = down.vy + dy / r.height * MAP.height;
+      svg.setPointerCapture(ev.pointerId);
+      var pt=svgPoint(svg,ev.clientX,ev.clientY);
+      view.x = down.vx + pt[0]-down.px;
+      view.y = down.vy + pt[1]-down.py;
       clampView(); applyView();
     });
     function up(ev){
@@ -758,11 +866,44 @@ function mount(opts){
   function onKey(ev){ if (ev.key === "Escape" && selected) clearSelection(); }
   document.addEventListener("keydown", onKey);
 
-  /* a row in the portfolio picks the same house its dot would */
-  el("port").addEventListener("click", function(ev){
-    var row = ev.target.closest(".prow"); if (!row) return;
+  /* a row in the table picks the same house its dot would */
+  el("tbody").addEventListener("click", function(ev){
+    var row = ev.target.closest("tr[data-house]"); if (!row) return;
     select("house", row.getAttribute("data-house"));
   });
+  el("tbody").addEventListener("keydown", function(ev){
+    var row = ev.target.closest && ev.target.closest("tr[data-house]");
+    if (row && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); select("house", row.getAttribute("data-house")); }
+  });
+
+  /* the table's own controls: filter, search, sort, and the rest of it */
+  el("seg").addEventListener("click", function(ev){
+    var b = ev.target.closest("button[data-filter]"); if (!b) return;
+    filter = b.getAttribute("data-filter"); showAll = false; cardsAll=false; renderTable();
+  });
+  el("q").addEventListener("input", function(){
+    query = el("q").value.trim().toLowerCase(); showAll = false; renderTable();
+  });
+  root.querySelector("table.houses thead").addEventListener("click", function(ev){
+    var th = ev.target.closest("th[data-sort]"); if (!th) return;
+    var k = th.getAttribute("data-sort");
+    if (k === sortBy) sortRev = !sortRev; else { sortBy = k; sortRev = false; }
+    renderTable();
+  });
+  el("tbl-foot").addEventListener("click", function(ev){
+    var b = ev.target.closest("button[data-more]"); if (!b) return;
+    showAll = b.getAttribute("data-more") === "1"; renderTable();
+  });
+
+  /* a row in either breakdown narrows the table to that organisation or state */
+  function onRank(ev){
+    var more = ev.target.closest("button[data-rank]");
+    if (more) { var k = more.getAttribute("data-rank"); rankOpen[k] = !rankOpen[k]; renderRanks(); return; }
+    var r = ev.target.closest("button.rrow"); if (!r) return;
+    select(r.getAttribute("data-kind"), r.getAttribute("data-key"));
+  }
+  el("frats").addEventListener("click", onRank);
+  el("states").addEventListener("click", onRank);
 
   /* ---------- the dot tooltip ---------- */
   function onOver(ev){
@@ -794,6 +935,51 @@ function mount(opts){
   document.addEventListener("mouseout", onOut);
   document.addEventListener("mousemove", onMove);
 
+  function inCategory(u){return (!stateFilter||u.state===stateFilter)&&(!typeFilter||u.type===typeFilter);}
+  function populateFilters(){
+    function fill(id,values,first,names){var e=el(id),old=e.value;e.innerHTML='<option value="">'+first+'</option>'+values.sort().map(function(v){return '<option value="'+esc(v)+'">'+esc(names?STATE_NAME[v]||v:v)+'</option>';}).join('');e.value=old;}
+    fill('state-filter',Object.keys(units.reduce(function(o,u){if(u.state)o[u.state]=1;return o;},{})),'All states & provinces',true);
+    fill('type-filter',Object.keys(units.reduce(function(o,u){if(u.type)o[u.type]=1;return o;},{})),'All chapter types');
+  }
+  function setPane(name){
+    currentView=name; tip.className="ch-tip";
+    root.querySelectorAll('[data-pane]').forEach(function(e){e.hidden=e.getAttribute('data-pane')!==name;});
+    el('views').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-view')===name);});
+  }
+  function renderCards(list){
+    var schools={};list.forEach(function(u){(schools[u.school]||(schools[u.school]=[])).push(u);});
+    var keys=Object.keys(schools).sort(function(a,b){return schools[b].reduce(function(n,u){return n+u.joined;},0)-schools[a].reduce(function(n,u){return n+u.joined;},0)||a.localeCompare(b);});
+    el('card-note').textContent=plural(keys.length,'campus','campuses')+' · '+plural(list.length,'chapter','chapters')+' in view';
+    el('cards').innerHTML=keys.slice(0,cardsAll?keys.length:9).map(function(k){
+      var us=schools[k],n=us.reduce(function(v,u){return v+u.joined;},0),target=us.reduce(function(v,u){return v+u.goal;},0),done=us.filter(function(u){return u.atGoal;}).length;
+      return '<button type="button" class="cx-campus" data-campus="'+esc(k)+'"><span class="cx-card-top"><span class="cx-campus-icon" aria-hidden="true">'+esc(us[0].state||'?')+'</span><span>'+esc(STATE_NAME[us[0].state]||'Location needs review')+'</span><span class="cx-card-arrow">↗</span></span><b>'+esc(k)+'</b><span class="cx-card-meta">'+plural(us.length,'chapter','chapters')+' · '+n.toLocaleString('en-US')+' joined</span><span class="cx-track"><i style="width:'+Math.min(100,pct(n,target))+'%"></i></span><span class="cx-card-bottom"><span>'+pct(n,target)+'% of target</span><span>'+done+' at target</span></span></button>';
+    }).join('')||'<div class="empty">No campuses match. Try another filter.</div>';
+    el('cards-more').innerHTML=keys.length>9?'<button type="button">'+(cardsAll?'Show fewer campuses':'Show all '+keys.length+' campuses')+'</button>':'';
+  }
+  function renderInspector(){
+    var list=units.filter(inSelection).filter(matchesQuery).filter(inCategory).filter(filterOf(filter).test);
+    var total=list.reduce(function(n,u){return n+u.joined;},0),goals=list.reduce(function(n,u){return n+u.goal;},0);
+    var title=selected?selectionLabel():'Your next move';
+    var html='<span class="cx-eyebrow">'+(selected?'SELECTED SPOTLIGHT':'NETWORK SPOTLIGHT')+'</span><h3>'+esc(title)+'</h3>';
+    if(selected&&selected.kind==='house'&&list.length){
+      var u=list[0];if(u.review)html+='<p class="cx-review">Needs review: '+(u.joined>u.size?'joined count exceeds the declared roster. ':'')+(u.disputed?'Repeat registrations disagree on roster size. ':'')+(!u.placed?'Location unconfirmed.':'')+'</p>';html+='<div class="cx-orbit"><strong>'+u.pct+'<small>%</small></strong><span>of the 80% target</span></div><div class="cx-detail-stats"><div><b>'+u.joined+'</b><span>joined</span></div><div><b>'+u.goal+'</b><span>target</span></div><div><b>'+u.size+'</b><span>roster</span></div></div><p>'+esc(u.type)+' · '+esc(STATE_NAME[u.state]||'Location needs review')+'</p><p>'+(u.atGoal?'Target reached. Keep the momentum going.':Math.max(0,u.goal-u.joined)+' more members to reach the target.')+'</p><details><summary>'+u.dupes+' source registration'+(u.dupes===1?'':'s')+'</summary><p>Counts use the furthest-along registration, keeping its roster and joined totals together.</p>'+u.rows.map(function(r){return '<p>'+esc(r.registered)+' · '+r.joined+' joined / '+r.active+' roster</p>';}).join('')+'</details>';
+    }else{
+      html+='<div class="cx-orbit"><strong>'+total.toLocaleString('en-US')+'</strong><span>members in this view</span></div><p>'+plural(list.length,'chapter','chapters')+' · '+pct(total,goals)+'% of the combined target</p>';
+      if(selected)html+='<div class="cx-house-list">'+list.map(function(u){return '<button type="button" data-pick="'+esc(houseKey(u))+'"><span><b>'+esc(u.name)+'</b><small>'+esc(u.school)+'</small></span><em>'+u.pct+'%</em></button>';}).join('')+'</div>';
+      else html+='<p>Pick a pin or campus card to open its chapters. Start with the houses closest to their goal.</p><button type="button" class="cx-action" data-action-filter="close">Find chapters almost there ↗</button><button type="button" class="cx-action secondary" data-action-filter="zero">See who hasn’t started →</button>';
+    }
+    if(selected)html+='<button type="button" class="cx-action secondary" data-unselect>Back to the network</button>';
+    el('inspector').innerHTML=html;
+  }
+  el('views').addEventListener('click',function(ev){var b=ev.target.closest('[data-view]');if(b)setPane(b.getAttribute('data-view'));});
+  el('state-filter').addEventListener('change',function(){stateFilter=this.value;selected=null;showAll=false;cardsAll=false;renderTable();});
+  el('type-filter').addEventListener('change',function(){typeFilter=this.value;showAll=false;cardsAll=false;renderTable();});
+  el('clear').addEventListener('click',function(){stateFilter='';typeFilter='';query='';filter='all';selected=null;cardsAll=false;showAll=false;el('q').value='';el('state-filter').value='';el('type-filter').value='';renderTable();renderRanks();});
+  el('depth').addEventListener('click',function(){var on=el('mapwrap').classList.toggle('depth');this.textContent=on?'3D on':'3D off';this.setAttribute('aria-pressed',on);});
+  el('cards').addEventListener('click',function(ev){var b=ev.target.closest('[data-campus]');if(b){select('school',b.getAttribute('data-campus'));el('inspector').scrollIntoView({block:'nearest',behavior:'auto'});}});
+  el('cards-more').addEventListener('click',function(){cardsAll=!cardsAll;renderTable();});
+  el('inspector').addEventListener('click',function(ev){var b=ev.target.closest('[data-pick]');if(b)select('house',b.getAttribute('data-pick'));if(ev.target.closest('[data-unselect]'))clearSelection();var f=ev.target.closest('[data-action-filter]');if(f){filter=f.getAttribute('data-action-filter');renderTable();}});
+
   /* ---------- pulling the feed ----------
 
      Straight through to the public snapshot, on load and then on a
@@ -818,6 +1004,7 @@ function mount(opts){
       checkedAt = Date.now();
       feedAt = out.updatedAt || "";
       feedStale = out.stale === true;
+      var sync=root.querySelector(".cx-sync"); if(sync){sync.textContent=(feedStale?"Saved snapshot":"Synced")+" · "+(feedAt?hhmm12(new Date(feedAt)):"FOMO Campus");sync.classList.toggle("off",feedStale);}
       var snapshot = JSON.stringify(out.chapters);
       if (snapshot !== renderedSnapshot) {
         raw = out.chapters;
@@ -826,7 +1013,7 @@ function mount(opts){
         renderedSnapshot = snapshot;
       }
       onLive(!feedStale, feedStale ? "stale · " + hhmm12(new Date()) : "live · " + hhmm12(new Date()));
-      onSource(out.source ? String(out.source).toLowerCase() : "live from the campus admin");
+      onSource("fomocampus.com");
       /* Stale is not an error. The server could not reach the admin this
          time and is serving the last snapshot it got, which is still the
          truth as of whenever that was — worth saying, not worth hiding
@@ -839,9 +1026,10 @@ function mount(opts){
     })["catch"](function(e){
       if (dead) return;
       onLive(false, "not reaching the feed");
+      var sync=root.querySelector(".cx-sync");if(sync){sync.textContent="Source unavailable";sync.classList.add("off");}
       banner('<div class="ch-banner"><span><b>Couldn\'t read the chapter feed.</b> ' +
         esc(e && e.message ? e.message : "something went wrong") +
-        '. Nothing here is lost — it is all read fresh, so a reload is the whole fix.</span></div>');
+        '. Try Refresh. If this continues, the source connection needs attention.</span></div>');
       if (!units.length) { el("tbl-empty").hidden = false; el("map-note").textContent = ""; }
     }).finally(function(){
       clearTimeout(timeout);
@@ -851,7 +1039,7 @@ function mount(opts){
     return pending;
   }
 
-  onLive(true, "loading");
+  onLive(false, "loading");
   load();
   timer = setInterval(function(){ load(true); }, POLL_MS);
   function onVis(){ if (!document.hidden) load(); }
@@ -876,6 +1064,6 @@ function mount(opts){
   };
 }
 
-global.Chapters = {markup:markup, mount:mount, FEED:FEED, SCHOOLS:SCHOOLS, TARGET:TARGET};
+global.Chapters = {unitsFrom:unitsFrom, STATE_NAME:STATE_NAME, markup:markup, mount:mount, FEED:FEED, SCHOOLS:SCHOOLS, TARGET:TARGET};
 
 })(typeof window !== "undefined" ? window : this);
