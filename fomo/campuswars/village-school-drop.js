@@ -101,11 +101,11 @@ if(typeof document!=='undefined'){
  for(let i=0;i<18;i++){const a=i*2.399,r=25+i*4,m=new T.SpriteMaterial({map:texture,color:0xd2dbea,transparent:true,opacity:.55,depthWrite:false,fog:false}),cloud=new T.Sprite(m);cloud.position.set(Math.sin(a)*r,115+i*24,Math.cos(a)*r+80);cloud.scale.set(65+i%4*22,30+i%3*12,1);cloudRoot.add(cloud);}
 }
 let path=null;
-return {root:canopyRig,begin({anchor,extension=0,aspect=1}){path={z:anchor?.lot.z??-19,x:anchor?.lot.originX??0,extension,aspect};cloudRoot.visible=true;cloudRoot.position.set(path.x,0,path.z+19);},update(time,camera){
+return {root:canopyRig,begin({anchor,extension=0,aspect=1,overview=null}){path={z:anchor?.lot.z??-19,x:anchor?.lot.originX??0,extension,aspect,overview};cloudRoot.visible=true;cloudRoot.position.set(path.x,0,path.z+19);},update(time,camera){
  if(!path)return;cloudRoot.visible=time<2.2;const t=sourceTimeAt(Math.min(time,4.85)),pose=cameraPose(t),shift=path.z+19;pose.position.x+=path.x;pose.position.z+=shift;
- const blend=smoother(4.85,SCHOOL_DROP_DURATION,time),target=new T.Vector3(path.x,3,path.z),r=path.aspect<1?78:58,end=target.clone().add(new T.Vector3(Math.sin(.5)*Math.cos(.4)*r,Math.sin(.4)*r,Math.cos(.5)*Math.cos(.4)*r));
+ const blend=smoother(4.85,SCHOOL_DROP_DURATION,time),view=path.overview||{target:[path.x,3,path.z],radius:path.aspect<1?78:58,theta:.5,phi:.4},target=new T.Vector3(...view.target),r=view.radius,end=target.clone().add(new T.Vector3(Math.sin(view.theta)*Math.cos(view.phi)*r,Math.sin(view.phi)*r,Math.cos(view.theta)*Math.cos(view.phi)*r));
  const aim=pose.position.clone().addScaledVector(pose.direction,30).lerp(target,blend);camera.position.copy(pose.position).lerp(end,blend);camera.fov=pose.fov+(48-pose.fov)*blend;camera.far=1800;camera.near=.1;camera.updateProjectionMatrix();camera.lookAt(aim);camera.rotateZ(pose.roll*(1-blend));camera.updateMatrixWorld();updateCanopy(t,pose);
  for(const m of [...canopyMaterials,cordMaterial,seamMaterial])m.opacity*=1-smoother(4.9,5.65,time);
- return {target:target.toArray(),theta:.5,phi:.4,radius:r};
+ return {target:target.toArray(),theta:view.theta,phi:view.phi,radius:r};
 },finish(){path=null;canopyRig.visible=false;cloudRoot.visible=false;},dispose(){const resources=new Set();canopyRig.traverse(o=>{if(o.geometry)resources.add(o.geometry);for(const m of [].concat(o.material||[]))resources.add(m);});cloudRoot.traverse(o=>{if(o.material){resources.add(o.material);if(o.material.map)resources.add(o.material.map);}});resources.forEach(r=>r.dispose());canopyRig.removeFromParent();cloudRoot.removeFromParent();}};
 }

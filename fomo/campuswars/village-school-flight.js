@@ -1,5 +1,5 @@
 import {createPrivateJet} from './village-private-jet.js?v=146';
-import {createSchoolDrop,SCHOOL_DROP_DURATION} from './village-school-drop.js?v=132';
+import {createSchoolDrop,SCHOOL_DROP_DURATION} from './village-school-drop.js?v=148';
 
 export const JET_RIDE_DURATION=8;
 export const SCHOOL_FLIGHT_DURATION=JET_RIDE_DURATION+SCHOOL_DROP_DURATION;

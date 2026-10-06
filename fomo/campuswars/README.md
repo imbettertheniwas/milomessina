@@ -1,5 +1,23 @@
 # fomo Campus Wars
 
+## Floating school islands — October 6, 2026
+
+Each school destination contains its chapter houses and claim lot on a bounded
+grassy island, with a faceted rock underside and clouds below. Surrounding
+academic buildings, distant terrain and roads extending into the horizon are
+removed from school destinations. The national launch village stays available.
+
+Island dimensions grow with registered chapters and joined members. The live
+feed rebuilds both the floor and island together, including changes that add
+members without adding a house. Shared lot coordinates keep houses, backyards,
+and crowds supported as larger campuses open additional streets. Starter
+campuses begin with a smaller island and their claimable lot.
+
+The jet/parachute sequence ends at an island overview sized for the viewport.
+School colors, house details, counts, and the six-second school prompt remain.
+Validation: 286 village tests passed, with desktop and mobile island/arrival
+checks and no browser rendering errors.
+
 ## School selection and private-jet arrival — October 6, 2026
 
 The map and its invitation have been removed from the production navigation.

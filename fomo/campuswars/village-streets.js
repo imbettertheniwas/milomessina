@@ -1,3 +1,4 @@
+import {islandFloorGeometry} from './village-island.js?v=148';
 import {villageQuality} from './village-quality.js?v=127';
 import {createGrassMaterial} from './village-grass.js?v=146';
 import {hash} from './village-district-layout.js?v=80';
@@ -6,6 +7,10 @@ import {campusBounds} from './village-campus-bounds.js?v=1';
 // while the original end junction and the campus beyond it move outward.
 export function setStreetExtension(T,streets,extension=0,streetTotal=1) {
   if (streets.userData.extension===extension&&streets.userData.streetTotal===streetTotal) return;
+  if(streets.userData.island){
+    const spec=streets.userData.island;streets.material.userData.campusBounds.set(-100000,100000,-100000,100000);
+    streets.geometry.dispose();streets.geometry=islandFloorGeometry(T,spec,streets.userData.seed,extension);streets.userData.extension=extension;streets.userData.streetTotal=streetTotal;return;
+  }
   const campus=campusBounds(streetTotal,extension),padding=1200;
   const x0=campus.minX-padding,x1=campus.maxX+padding,z0=campus.minZ-padding,z1=campus.maxZ+padding;
   streets.material.userData.campusBounds.set(campus.minX,campus.maxX,campus.minZ,campus.maxZ);
@@ -103,6 +108,15 @@ export function createStreetNetwork(T,theme=null){
       circle('#586567',ox+3.2,z+5,.4);
       for(let i=0;i<4;i++)rect('#e3d1ad',ox+6.6,z+i*.4,.5,.07);
     }
+    if(theme?.floating){
+      // A short residential lane belongs to each island; no roads run over its edge.
+      lawnPaint=true;rect('#718753',-150,-150,300,300);mask.fillStyle='#ffffff';mask.fillRect(0,0,300,300);lawnPaint=false;
+      for(const ox of [-100,0,100]){
+        line('#bfc0b5',[[ox,-31],[ox,43]],15);
+        line('#505a60',[[ox,-31],[ox,43]],10);
+        for(let z=-25;z<39;z+=9)rect('#c5bea5',ox-.09,z,.18,2.6);
+      }
+    }
     grassMask=new T.CanvasTexture(maskCanvas);grassMask.wrapS=grassMask.wrapT=T.RepeatWrapping;grassMask.anisotropy=8;
     map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;
   }
@@ -112,5 +126,5 @@ export function createStreetNetwork(T,theme=null){
     material.customProgramCacheKey=()=>cacheKey()+'-school-'+theme.ground;
     material.onBeforeCompile=shader=>{compile(shader);shader.uniforms.schoolGround={value:new T.Color(theme.ground)};shader.fragmentShader='uniform vec3 schoolGround;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('grassAmount);','grassAmount); diffuseColor.rgb=mix(diffuseColor.rgb,schoolGround*(.85+.15*meadow)*(.8+.2*grassSample.g),grassAmount*'+(theme.tree==='cactus'||theme.land==='city'?'.94':'.32')+');');};
   }
-  const streets=new T.Mesh(new T.BufferGeometry(),material);streets.name='continuous-village-floor';streets.rotation.x=-Math.PI/2;streets.position.y=.045;streets.receiveShadow=true;setStreetExtension(T,streets);return streets;
+  const streets=new T.Mesh(new T.BufferGeometry(),material);streets.name='continuous-village-floor';streets.rotation.x=-Math.PI/2;streets.position.y=.045;streets.receiveShadow=true;if(theme?.island){streets.userData.island=theme.island;streets.userData.seed=theme.seed;}setStreetExtension(T,streets);return streets;
 }

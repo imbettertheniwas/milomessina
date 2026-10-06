@@ -1,3 +1,4 @@
+import {islandFootprint} from './village-island.js?v=148';
 import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=113';
 import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=131';
@@ -15,7 +16,7 @@ import {createConstructionSite,createConstructionEquipment} from './village-cons
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=128';
 import {palettes,hash} from './village-district-layout.js?v=80';
 import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=146';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=146';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=148';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=138';
 import {createSchoolBanner} from './village-school-banners.js?v=138';
 import {createDistantCrowd} from './village-distant-crowd.js?v=131';
@@ -77,7 +78,8 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
 
 
 
-  const streets=existingStreet||createStreetNetwork(THREE,theme);setStreetExtension(THREE,streets,extension,streetTotal);if(attachStreet)world.add(streets);
+  const streetTheme=theme?.floating?{...theme,island:islandFootprint(chapters)}:theme;
+  const streets=existingStreet||createStreetNetwork(THREE,streetTheme);setStreetExtension(THREE,streets,extension,streetTotal);if(attachStreet)world.add(streets);
 
 
   // Street lamps, paths, trees and furniture give the village a lived-in scale.
@@ -297,7 +299,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   }
   animateCrowd(0);
   const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors,metric,{schoolName:theme?.schoolName||''});world.add(competition.root);competition.board.position.z+=extension;
-  const entrance=createVillageEntrance(THREE,extension);world.add(entrance);
+  if(!theme?.floating){const entrance=createVillageEntrance(THREE,extension);world.add(entrance);}
   // Batch repeated architectural parts so phones draw whole sets at once.
   world.updateMatrixWorld(true);
   const dynamic=new Set([...pickables.filter(mesh=>!compactCrowd||!mesh.name.startsWith('school-banner-')),...flags,swimWakes.mesh,...backyards.waters,...Object.values(parts),...(parachutes?[parachutes.mesh]:[]),...(distantCrowd?[distantCrowd.mesh]:[]),...Object.values(construction.meshes),...pong.games.map(game=>game.ball),die.dice]);
