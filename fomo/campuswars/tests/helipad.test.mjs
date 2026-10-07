@@ -29,7 +29,7 @@ test('pause, replay, reduced motion and live roster relocation preserve the sequ
     h.restart(400);h.update(427);assert(h.guests.every(g=>g.root.visible));
     const matrices=[];h.root.updateMatrixWorld(true);h.root.traverse(o=>matrices.push(o.matrixWorld.toArray()));
     h.update(427);const again=[];h.root.updateMatrixWorld(true);h.root.traverse(o=>again.push(o.matrixWorld.toArray()));assert.deepEqual(again,matrices);
-    h.relocate(133);assert.equal(h.root.position.z,333);assert.equal(h.state.time,27);
+    h.relocate(133);assert.equal(h.root.position.z,HELIPAD_SITE.z+133*HELIPAD_SITE.extensionFactor);assert.equal(h.state.time,27);
     h.restart(500,true);assert(h.state.guests.every(g=>g.standing));h.update(500);assert.equal(h.state.time,27);
     h.restart(800);assert.equal(h.state.time,0);
   }finally{h.dispose();}

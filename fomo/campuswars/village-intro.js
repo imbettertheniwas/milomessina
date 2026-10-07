@@ -1,7 +1,7 @@
 // One visible-time clock drives the flight, lens, lighting and brief captions.
 export const INTRO_DURATION = 13.6;
 export const INTRO_PACE = .85;
-export const openingView = {target:[1.808,2,-8.101],theta:2.956047,phi:.224457,radius:46.627674};
+export const openingView = {target:[-7,4,45],theta:3.14,phi:.58,radius:205};
 export const introStages = [
   {start:0,end:2.72,title:'GREEK WARS.',description:'Your chapter. Your team. A trading competition on fomo.'},
   {start:2.72,end:5.95,title:"IF YOU'RE IN A FRAT.",description:'fomo has committed $500,000'},
@@ -30,15 +30,19 @@ function targetVelocity(index,axis){
   if(index===0||index===knots.length-1)return 0;
   return (knots[index+1].target[axis]-knots[index-1].target[axis])/(knots[index+1].time-knots[index-1].time);
 }
-export function introViewAt(seconds){
+export function introViewAt(seconds,aspect=1){
   const time=Math.max(0,Math.min(16,seconds/INTRO_PACE));
   const index=knots.findIndex((k,i)=>i<knots.length-1&&time<=knots[i+1].time),a=knots[index],b=knots[index+1];
   const span=b.time-a.time,t=(time-a.time)/span;
   const position=a.position.map((value,i)=>interpolate(value,b.position[i],a.velocity[i],b.velocity[i],t,span));
   const target=a.target.map((value,i)=>interpolate(value,b.target[i],targetVelocity(index,i),targetVelocity(index+1,i),t,span));
   const offset=position.map((value,i)=>value-target[i]),radius=Math.hypot(...offset);
+  // Ease into a portrait framing that includes the arrival court beside the row.
+  const portrait=smooth((seconds-10)/(INTRO_DURATION-10));
+  target[0]-=Math.max(0,1-aspect)*8*portrait;
+  const framedRadius=radius*(1+(1/Math.min(1,aspect)-1)*1.5*portrait);
   const night=smooth((time-6.8)/1.1)*(1-smooth((time-11.5)/1.4));
-  return {target,theta:Math.atan2(offset[0],offset[2]),phi:Math.asin(offset[1]/radius),radius,fov:interpolate(a.fov,b.fov,0,0,t,span),roll:interpolate(a.roll,b.roll,0,0,t,span),night};
+  return {target,theta:Math.atan2(offset[0],offset[2]),phi:Math.asin(offset[1]/radius),radius:framedRadius,fov:interpolate(a.fov,b.fov,0,0,t,span),roll:interpolate(a.roll,b.roll,0,0,t,span),night};
 }
 export function introCaptionAt(seconds){
   const time=Math.max(0,Math.min(INTRO_DURATION,seconds));
@@ -50,7 +54,7 @@ export function introCaptionAt(seconds){
 // The flight's warm-up and its playback must frame identical views, or the
 // warm-up compiles draws the flight never makes and misses the ones it does.
 export function aimIntroCamera(camera,seconds){
-  const view=introViewAt(seconds),[x,y,z]=view.target;
+  const view=introViewAt(seconds,camera.aspect),[x,y,z]=view.target;
   camera.position.set(x+Math.sin(view.theta)*Math.cos(view.phi)*view.radius,y+Math.sin(view.phi)*view.radius,z+Math.cos(view.theta)*Math.cos(view.phi)*view.radius);
   camera.lookAt(x,y,z);
   if(view.roll)camera.rotateZ(view.roll);

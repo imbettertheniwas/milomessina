@@ -1,5 +1,5 @@
-import {MONEY_START} from './village-money-rain.js?v=153';
-import {INTRO_PREWARM_TIMES,aimIntroCamera} from './village-intro.js?v=134';
+import {MONEY_START} from './village-money-rain.js?v=167';
+import {INTRO_PREWARM_TIMES,aimIntroCamera} from './village-intro.js?v=167';
 
 // Compile and upload everything the intro flight will draw while the loading
 // cover is still up, so the flight itself links no shaders and uploads nothing.

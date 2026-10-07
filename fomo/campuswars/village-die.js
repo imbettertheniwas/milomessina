@@ -1,6 +1,6 @@
-import {DIE_TABLE,dieSeat,dieCup,dieTurn,lawnGround} from './village-layout.js?v=165';
-import {lawnGameKit,throwingHand} from './village-pong.js?v=165';
-import {bannerIdentity} from './village-banners.js?v=153';
+import {DIE_TABLE,dieSeat,dieCup,dieTurn,lawnGround} from './village-layout.js?v=167';
+import {lawnGameKit,throwingHand} from './village-pong.js?v=167';
+import {bannerIdentity} from './village-banners.js?v=167';
 import {DIE_EDGE_UV,DIE_FACES,createDieTableTexture,createDieFaceTexture} from './village-die-art.js?v=153';
 
 // Die, as it is actually played: partners at one end, opponents at the other,

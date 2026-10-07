@@ -1,0 +1,66 @@
+{
+  "source": "User-provided registration screenshot",
+  "live": false,
+  "chapters": [
+    {
+      "id": "sigma-chi-sdsu",
+      "name": "Sigma Chi",
+      "letters": "\u03a3\u03a7",
+      "school": "San Diego State University",
+      "shortSchool": "San Diego State",
+      "type": "Fraternity",
+      "joined": 60,
+      "active": 100,
+      "registered": "2026-09-03",
+      "house": 0
+    },
+    {
+      "id": "kappa-sigma-coastal",
+      "name": "Kappa Sigma",
+      "letters": "\u039a\u03a3",
+      "school": "Coastal Carolina University",
+      "shortSchool": "Coastal Carolina",
+      "type": "Fraternity",
+      "joined": 34,
+      "active": 69,
+      "registered": "2026-09-03",
+      "house": 1
+    },
+    {
+      "id": "phi-delta-theta-tampa",
+      "name": "Phi Delta Theta",
+      "letters": "\u03a6\u0394\u0398",
+      "school": "University of Tampa",
+      "shortSchool": "Tampa",
+      "type": "Fraternity",
+      "joined": 21,
+      "active": 50,
+      "registered": "2026-09-05",
+      "house": 2
+    },
+    {
+      "id": "phi-kappa-psi-vt",
+      "name": "Phi Kappa Psi",
+      "letters": "\u03a6\u039a\u03a8",
+      "school": "Virginia Tech",
+      "shortSchool": "Virginia Tech",
+      "type": "Fraternity",
+      "joined": 2,
+      "active": 90,
+      "registered": "2026-09-04",
+      "house": 3
+    },
+    {
+      "id": "tau-kappa-epsilon-tampa",
+      "name": "Tau Kappa Epsilon",
+      "letters": "\u03a4\u039a\u0395",
+      "school": "University of Tampa",
+      "shortSchool": "Tampa",
+      "type": "Fraternity",
+      "joined": 0,
+      "active": 60,
+      "registered": "2026-09-05",
+      "house": 4
+    }
+  ]
+}

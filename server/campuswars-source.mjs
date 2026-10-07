@@ -42,7 +42,8 @@ export function parseChapterAdmin(html) {
     const name = field(cells[0], 'ch');
     // "School · Type", optionally followed by a rate tier ("· half rate"),
     // which is billing detail and never part of the school or the type.
-    const [school = '', type = ''] = field(cells[0], 'sc').split(' · ');
+    const [school = '', type = '', tier = ''] = field(cells[0], 'sc').split(' · ');
+    const memberRate=tier.toLowerCase()==='half rate'?3.125:6.25;
     if (!type) throw new Error('Missing chapter school');
     const progress = field(cells[3], 'prog').match(/^([\d,]+)\s*\/\s*([\d,]+)$/);
     const activeMatch = text(cells[3]).match(/([\d,]+)\s+actives\b/);
@@ -55,7 +56,7 @@ export function parseChapterAdmin(html) {
     const id = known?.[2] ?? `chapter-${uuid}`;
     if (ids.has(id)) throw new Error('Duplicate chapter identity');
     ids.add(id);
-    return [{id, name, letters:name.split(/\s+/).map(word => greek[word.toLowerCase()] ?? word[0]).join(''), school, shortSchool:known?.[3] ?? school, type, joined, active, registered:date.toISOString().slice(0,10)}];
+    return [{id, name, letters:name.split(/\s+/).map(word => greek[word.toLowerCase()] ?? word[0]).join(''), school, shortSchool:known?.[3] ?? school, type, joined, active, memberRate, registered:date.toISOString().slice(0,10)}];
   });
   // Keep the original houses in place; append registrations chronologically.
   const rank = id => { const n = legacy.findIndex(c => c[2] === id); return n < 0 ? legacy.length : n; };

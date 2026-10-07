@@ -1,23 +1,25 @@
-import {islandFootprint} from './village-island.js?v=165';
+import {createSchoolBanner} from './village-school-banners.js?v=167';
+import {chapterGreekLetters} from './village-chapter-identity.js?v=167';
+import {islandFootprint} from './village-island.js?v=167';
 import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=165';
 import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=165';
 import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=165';
-import {rankedHouseSizes} from './village-house-sizing.js?v=153';
+import {rankedHouseSizes} from './village-house-sizing.js?v=167';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
 import {createVillageEntrance} from './village-entrance.js?v=153';
-import {createPongGames} from './village-pong.js?v=165';
-import {createDieGames} from './village-die.js?v=165';
-import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=153';
-import {createCompetition,houseStandings} from './village-competition.js?v=153';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=165';
+import {createPongGames} from './village-pong.js?v=167';
+import {createDieGames} from './village-die.js?v=167';
+import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=167';
+import {createCompetition,houseStandings} from './village-competition.js?v=167';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=167';
 import {humanPose} from './village-human-motion.js?v=165';
-import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=165';
+import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=167';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=153';
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=165';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=165';
-import {createChapterBanner,bannerIdentity} from './village-banners.js?v=153';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=167';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=167';
+import {createChapterBanner,bannerIdentity} from './village-banners.js?v=167';
 import {createDistantCrowd} from './village-distant-crowd.js?v=165';
 import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
 import {createBackyards,hasChapterHouse} from './village-backyards.js?v=112';
@@ -35,7 +37,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   const selectedHouseIndices=selected.filter(i=>i<chapters.length),selectedChapters=selectedHouseIndices.map(i=>chapters[i]),houseLots=selectedHouseIndices.map(i=>lots[i]);
   const world=new THREE.Group(),pickables=[],anchors=[],flags=[];
   const backyards=createBackyards(THREE);
-  const roofGeometries=new Map(),signArtwork=new Map(),signGeometries=new Map();
+  const roofGeometries=new Map(),signArtwork=new Map(),signGeometries=new Map(),schoolBannerCache=new Map();
   const materials=new Map(),landscapeKit=createCampusKit(THREE),grassMaterial=createGrassMaterial(THREE),lawns=[];
   function mat(color,emissive=0){const key=color+':'+emissive;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:.84,emissive,emissiveIntensity:emissive?.45:0}));return materials.get(key);}
   const boxGeometry=new THREE.BoxGeometry(1,1,1),sphereGeometry=new THREE.SphereGeometry(1,14,10),cylinderGeometry=new THREE.CylinderGeometry(1,1,1,20);
@@ -140,6 +142,15 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     }
     // Side windows are modeled too, so every angle holds up during a walk.
     [-1,1].forEach(side=>{const wing=new THREE.Group();wing.position.set(side*(width/2+.02),0,0);wing.rotation.y=side*Math.PI/2;house.add(wing);for(let floor=0;floor<2;floor++)[-2.6,2.6].forEach((x,j)=>windowUnit(wing,x,1.95+floor*2.75,0,(j+floor+style)%3!==0));});
+    // Recessed side-wall identity panels sit between the modeled windows.
+    for(const side of [-1,1]){
+      const wallPanel=new THREE.Group();wallPanel.position.set(side*(width/2+.09),0,0);wallPanel.rotation.y=side*Math.PI/2;house.add(wallPanel);
+      const greek=sign(wallPanel,chapterGreekLetters(chapter),0,height+.19,0,Math.min(depth-1,5),.65);
+      if(greek){greek.name='chapter-side-letters';greek.userData={chapter:id,letters:chapterGreekLetters(chapter),school:chapter.school};pickables.push(greek);}
+      const schoolBanner=createSchoolBanner(THREE,chapter,{adaptive:compactCrowd,cache:schoolBannerCache});
+      schoolBanner.scale.set(.64,.72,.64);schoolBanner.position.set(0,3.1,.07);
+      wallPanel.add(schoolBanner);pickables.push(schoolBanner);
+    }
     const porchWidth=style===1?10.8:style===3?8:6.8;
     box(house,0,.48,4.7,porchWidth+1,.5,2.6,0xbab6ac);
     for(let step=0;step<3;step++)box(house,0,.13+step*.12,6.2-step*.38,3.3,.25,1.1,0xb9b5ac);

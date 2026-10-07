@@ -6,7 +6,9 @@ import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from '../
 import {createVillagePopulation} from '../village-population.js';
 import {chapterSceneKey} from '../village-startup.js';
 import {backyardUnlocked} from '../village-backyards.js';
-import {createHelipad} from '../village-helipad.js';
+import {createHelipad,HELIPAD_SITE} from '../village-helipad.js';
+import {landmarkZ} from '../village-landmarks.js';
+import {STADIUM_SITE} from '../village-stadium.js';
 import {createLiveArrivals} from '../village-arrivals.js';
 import {createPedestrianSpacing} from '../village-pedestrian-spacing.js';
 import {createFramePacer} from '../village-frame-pacing.js';
@@ -56,17 +58,17 @@ test('slow frames preserve resolution and hidden villages perform no rendering',
   const renders=h.renders();h.show(false);h.step(10);assert.equal(h.renders(),renders);
   h.show(true);h.step(.1);assert(h.renders()>renders);
 });
-test('entrance falls from the campus overview into the row in 13.6 seconds and does not replay',async()=>{
+test('entrance settles above the row in 13.6 seconds and does not replay',async()=>{
   const h=await cameraHarness();h.show(true);const high=h.step(.02);assert(high.y>75);
-  const low=h.step(INTRO_DURATION);assert(low.y<14);assert(low.distanceTo(high)>60);
-  h.show(false);h.step(1);h.show(true);assert(h.step(.02).y<14);
+  const low=h.step(INTRO_DURATION);assert(low.distanceTo(position(openingView))<.01);assert(low.distanceTo(high)>60);
+  h.show(false);h.step(1);h.show(true);assert(Math.abs(h.step(.02).y-position(openingView).y)<.1);
 });
 test('taking control cancels the descent immediately and reset remains usable',async()=>{
   const h=await cameraHarness();h.show(true);h.step(1);h.drag();const at=h.step(.02),later=h.step(5);assert(at.distanceTo(later)<.001);
-  h.reset();assert(h.step(2).y<14);
+  h.reset();assert(h.step(2).distanceTo(position(openingView))<.01);
 });
 test('reduced motion opens directly on the row',async()=>{
-  const h=await cameraHarness(true);h.show(true);const a=h.step(.02);assert(a.y<14);assert(a.distanceTo(h.step(5))<.001);
+  const h=await cameraHarness(true);h.show(true);const a=h.step(.02);assert(a.distanceTo(position(openingView))<.01);assert(a.distanceTo(h.step(5))<.001);
 });
 test('startup preserves a new chapter deep link while waiting for live registrations',async()=>{
   const h=await cameraHarness(false,'#chapter=chapter-new');h.show(true);h.step(4);
@@ -100,7 +102,7 @@ test('skip and direct camera interaction both clear the captions',async()=>{
     const h=await cameraHarness();h.show(true);h.step(1);
     if(action==='skip')h.fire('intro-skip:click');else h.drag();
     assert.equal(h.element('village-intro').hidden,true);
-    if(action==='skip')assert(h.step(2).y<14);
+    if(action==='skip')assert(Math.abs(h.step(4).y-position(openingView).y)<.1);
   }
 });
 test('reduced motion keeps the camera still while explaining the game',async()=>{
@@ -127,6 +129,19 @@ test('the join link appears only on the closing invitation',async()=>{
   h.fire('document:village:replay');h.step(.02);assert.equal(h.element('intro-join').hidden,true);
 });
 function position(view){return new THREE.Vector3(view.target[0]+Math.sin(view.theta)*Math.cos(view.phi)*view.radius,view.target[1]+Math.sin(view.phi)*view.radius,view.target[2]+Math.cos(view.theta)*Math.cos(view.phi)*view.radius);}
+test('the default desktop and phone views show the stadium and pad beyond a full main row',()=>{
+  for(const aspect of [1440/1000,390/844]){
+    const view=introViewAt(INTRO_DURATION,aspect),camera=new THREE.PerspectiveCamera(48,aspect,1,650);
+    camera.position.copy(position(view));camera.lookAt(...view.target);camera.updateMatrixWorld();
+    for(const [x,z,radius] of [[STADIUM_SITE.x,landmarkZ(STADIUM_SITE,133),30],[HELIPAD_SITE.x,landmarkZ(HELIPAD_SITE,133),10]]){
+      for(const dx of [-radius,radius])for(const dz of [-radius,radius]){
+        const projected=new THREE.Vector3(x+dx,0,z+dz).project(camera);
+        assert(Math.abs(projected.x)<.95,'the landmark stays inside both screen edges');
+        assert(projected.y<.8&&projected.y>-.8,'the landmark clears the header and bottom controls');
+      }
+    }
+  }
+});
 const viewKey=code=>({code,preventDefault(){}});
 async function flightHarness(){const h=await cameraHarness(true);h.show(true);h.step(.1);h.fire('intro-skip:click');h.step(.1);return h;}
 test('normal-mode flight works without a canvas click and after using view controls',async()=>{
@@ -468,7 +483,7 @@ test('lifting one finger after a pinch preserves the remaining drag without sele
  test('helipad control frames the arrival, pauses on the shared clock, and offers a still reduced-motion view',async()=>{
   for(const reduced of [false,true]){
     const h=await cameraHarness(reduced);h.show(true);h.step(.1);h.fire('village-helipad:click');h.step(2);
-    assert.equal(h.element('village-intro').hidden,true);assert(h.camera().position.x>50);assert(h.camera().position.z>190);
+    assert.equal(h.element('village-intro').hidden,true);assert(h.camera().position.x>40);assert(h.camera().position.z>HELIPAD_SITE.z);
     if(reduced)assert(h.helipad().state.guests.every(g=>g.standing));
     else{
       const before=h.helipad().state.time;h.step(2);assert(h.helipad().state.time>before);

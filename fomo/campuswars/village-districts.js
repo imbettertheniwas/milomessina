@@ -1,16 +1,18 @@
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=165';
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=165';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=167';
 import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=80';
 import {createCampusKit} from './village-campus-kit.js?v=153';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=165';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=167';
 import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=153';
-import {campusDistrictExists} from './village-campus-bounds.js?v=1';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=167';
+import {HELIPAD_SITE,landmarkX,landmarkZ} from './village-landmarks.js?v=167';
+import {campusDistrictExists} from './village-campus-bounds.js?v=167';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
-  const stadium=createStadium(T,extension);root.add(stadium.root);
+  const stadium=createStadium(T,extension,streets);root.add(stadium.root);
+  const west=-Math.floor((streets-1)/2)-1,east=Math.ceil((streets-1)/2)+1;
   const {box,mesh,cylinder,bar,tree:plantTree,bench,lamp,table,path,sign}=kit;
   // The court straddles two district blocks. Keep landscaping from either
   // block outside its footprint, including when those blocks stream again.
@@ -130,8 +132,8 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     const p=new T.Group();p.name='permanent-campus-horizon';
     for(let i=0;i<65;i++){
       const a=hash(i,'sky-angle')*Math.PI*2,r=225+hash(i,'sky-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r,w=7+hash(i,'sky-width')*17,h=6+hash(i,'sky-height')*19;
-      if(Math.abs(x)<STADIUM_SITE.width/2+w&&Math.abs(z-STADIUM_SITE.z)<STADIUM_SITE.depth/2+18)continue;
-      if(Math.abs(x-100)<36+w&&Math.abs(z-200)<55)continue;
+      if(Math.abs(x-STADIUM_SITE.x)<STADIUM_SITE.width/2+w&&Math.abs(z-landmarkZ(STADIUM_SITE,extension))<STADIUM_SITE.depth/2+18)continue;
+      if(Math.abs(x-HELIPAD_SITE.x)<36+w&&Math.abs(z-landmarkZ(HELIPAD_SITE,extension))<55)continue;
       buildSkylineBuilding(T,kit,p,{x,z,width:w,depth:8+hash(i,'sky-depth')*9,height:h,seed:i});
     }
     for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;if(Math.abs(x-100)<38&&Math.abs(z-200)<56)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
@@ -148,7 +150,25 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     const p=new T.Group();p.position.set(cx*BLOCK,0,cz*BLOCK);root.add(p);
     // Reserve this entire outlying block for the permanent stadium. No campus
     // buildings, through-path crowds or trees may be streamed into its bowl.
-    if(cx===0&&cz===2){p.position.z+=extension;return {group:p,kind:'stadium',specs:[],people:[],activityBounds:stadium.bounds.clone(),setNight(){},animate(){},dispose(){}};}
+    if((cx===west||cx===east)&&(cz===0||cz===1)){
+      const side=cx===west?-1:1,kind=side<0?'stadium':'helipad';
+      if(cz===0){
+        const site=side<0?STADIUM_SITE:HELIPAD_SITE,sz=landmarkZ(site,extension);
+        path(p,[side*39,-38],[side*39,38+extension],2.4);
+        path(p,[side*39,sz],[landmarkX(site,streets)-cx*BLOCK,sz],3);
+        if(side>0){
+          const drive=landmarkX(HELIPAD_SITE,streets)-12-cx*BLOCK,length=100+extension;
+          box(p,drive,.16,extension/2,7,.08,length,0xbfc0b5);
+          box(p,drive,.205,extension/2,5.8,.025,length,0x505a5a);
+        }
+        for(const z of [-29,25+extension]){tree(p,side*31,z,112+z,.85);bench(p,side*35,z,side*Math.PI/2);lamp(p,side*39,z);}
+      }else p.position.z+=extension;
+      kit.batch(p);
+      const lights=new Set();p.traverse(o=>{if(o.material?.userData.placeLight)lights.add(o.material);});
+      const setNight=enabled=>{for(const light of lights)light.emissiveIntensity=enabled?2.3:.04;};setNight(night);
+      p.updateMatrixWorld(true);p.traverse(o=>o.matrixAutoUpdate=false);
+      return {group:p,kind,specs:[],people:[],activityBounds:stadium.bounds.clone(),setNight,animate(){},dispose(){kit.disposeChunk(p);}};
+    }
     const kind=districtKind(cx,cz,streets),specs=districtSpecs(cx,cz,streets);p.userData.specs=specs;
     for(const spec of specs){const building=kit.building(p,spec,cx*BLOCK,cz*BLOCK);if(isCampusHill(cx,cz))building.position.y=CAMPUS_HILL_HEIGHT;}
     if(isCampusHill(cx,cz))createCampusHill(T,kit,p);
@@ -190,7 +210,7 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
         const distance=([,c])=>Math.hypot(c.group.position.x-x,c.group.position.z-z);
         return distance(b)-distance(a);
       });
-      let detailed=[...chunks.values()].filter(c=>c.kind!=='stadium').length+missing.filter(c=>!(c.a===0&&c.b===2)).length;
+      let detailed=[...chunks.values()].filter(c=>c.kind!=='stadium').length+missing.filter(c=>!(c.a===west&&(c.b===0||c.b===1))).length;
       while(detailed>9&&evict.length){const [id,chunk]=evict.shift();chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);detailed--;changed=true;}
     }
     const count=incremental?Math.min(1,pending.length):pending.length;

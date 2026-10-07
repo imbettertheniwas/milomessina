@@ -5,14 +5,14 @@ import {createStadium,STADIUM_SITE} from '../village-stadium.js';
 import {createDistricts} from '../village-districts.js';
 import {PLAY_SECONDS,footballState,footballPlayer,footballBall} from '../village-football.js';
 
-test('stadium sits beyond a full athletics block and its reserved site survives streaming and growth',()=>{
-  assert(STADIUM_SITE.z-STADIUM_SITE.depth/2>150);
+test('stadium sits behind the west houses and its reserved site survives streaming and growth',()=>{
+  assert(STADIUM_SITE.x+STADIUM_SITE.width/2<-40);
   for(const extension of [0,133]){
     const d=createDistricts(T,extension,5);
     try{
       const stadium=d.stadium;
-      assert.equal(stadium.root.position.z,200+extension);
-      d.update(0,200+extension);const site=d.chunks.get('0,2');
+      assert.equal(stadium.root.position.z,STADIUM_SITE.z+extension*STADIUM_SITE.extensionFactor);
+      d.update(stadium.root.position.x,stadium.root.position.z);const site=d.chunks.get('-3,0');
       assert.equal(site.kind,'stadium');assert.deepEqual(site.specs,[]);assert.equal(site.people.length,0);
       d.setNight(true);d.animate(19);assert(stadium.night);assert.equal(stadium.crowdUniforms.stadiumRoar.value,1);
       d.update(500,500);d.update(0,200+extension);assert.equal(d.stadium,stadium);assert(stadium.night);
@@ -86,7 +86,7 @@ test('offscreen games catch up exactly when visible, including a paused camera m
   try{
     camera.position.set(0,8,38);camera.lookAt(0,2,-80);camera.updateMatrixWorld();
     d.animate(19,0,0,camera);assert.equal(d.stadium.crowdUniforms.stadiumTime.value,0);
-    camera.position.set(0,35,135);camera.lookAt(0,2,200);camera.updateMatrixWorld();
+    camera.position.set(STADIUM_SITE.x,35,STADIUM_SITE.z-65);camera.lookAt(STADIUM_SITE.x,2,STADIUM_SITE.z);camera.updateMatrixWorld();
     d.animate(19,0,200,camera);assert.equal(d.stadium.crowdUniforms.stadiumTime.value,19);
     assert.equal(d.stadium.crowdUniforms.stadiumRoar.value,1);
     const version=d.stadium.playerParts.instanceMatrix.version;d.animate(19,0,200,camera);assert.equal(d.stadium.playerParts.instanceMatrix.version,version);

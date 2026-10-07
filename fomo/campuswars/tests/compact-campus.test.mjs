@@ -33,7 +33,7 @@ test('the compact floor keeps roads aligned with world coordinates and extended 
       }
       floor.geometry.computeBoundingBox();const size=floor.geometry.boundingBox.getSize(new T.Vector3());
       assert(size.x*size.y<20000*20000*.03,'The background floor no longer spans an unused 20,000-unit world');
-      assert.deepEqual(floor.material.userData.campusBounds.toArray(),[-248,248,-148,248+extension]);
+      assert.deepEqual(floor.material.userData.campusBounds.toArray(),[-278,278,-148,248+extension]);
     }
   }finally{floor.geometry.dispose();floor.material.dispose();}
 });

@@ -4,7 +4,8 @@ import {createHelipadGuests} from './village-helipad-guests.js?v=153';
 import {createHelipadAircraft} from './village-helipad-aircraft.js?v=153';
 // Appearance references and modeling notes: helipad-references.md.
 // This scenery has its own identities; neither guest is a registered member.
-export const HELIPAD_SITE={x:100,z:200,radius:24};
+import {HELIPAD_SITE,landmarkX,landmarkZ,landmarkTarget} from './village-landmarks.js?v=167';
+export {HELIPAD_SITE} from './village-landmarks.js?v=167';
 export const HELIPAD_CYCLE=96;
 const clamp=x=>Math.max(0,Math.min(1,x));
 const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
@@ -44,8 +45,8 @@ export function helipadState(seconds){
   return {time:t,carZ,doors,cabin,helicopter,rotor,guests,phase};
 }
 
-export function createHelipad(T,extension=0){
-  const root=new T.Group();root.name='Rasmr & Orangie · helicopter arrival';root.position.set(HELIPAD_SITE.x,0,HELIPAD_SITE.z+extension);
+export function createHelipad(T,extension=0,streets=1){
+  const root=new T.Group();root.name='Rasmr & Orangie · helicopter arrival';root.position.set(landmarkX(HELIPAD_SITE,streets),0,landmarkZ(HELIPAD_SITE,extension));
   const resources=new Set(),own=r=>(resources.add(r),r),materials=new Map();let night=false;
   // A small local sky reflection gives polished paint, chrome and glazing a
   // shared outdoor response without another network asset or render pass.
@@ -167,7 +168,8 @@ export function createHelipad(T,extension=0){
     });
     return state;
   }
+  const pickables=[landmarkTarget(T,root,resources,'helipad',38,7,38,3.5),landmarkTarget(T,heli,resources,'helipad',15,5,17,1.5)];
   update(27);
   function setNight(enabled){night=Boolean(enabled);for(const material of resources)if(material.isMeshStandardMaterial){material.emissive.copy(material.color);material.emissiveIntensity=night?(material.userData.lamp?1.8:material.vertexColors?.025:.14):(material.userData.dayGlow||0);if(material.envMap)material.envMapIntensity=night?.18:.8;}}
-  return {root,car,heli,guests,doors,rotor,resources,update,setNight,get night(){return night;},get state(){return state;},restart(time,still=false){epoch=time-(still?27:0);lastTime=NaN;return update(time);},relocate(ext){root.position.z=HELIPAD_SITE.z+ext;},dispose(){disposed=true;for(const r of resources)r.dispose();resources.clear();}};
+  return {root,pickables,car,heli,guests,doors,rotor,resources,update,setNight,get night(){return night;},get state(){return state;},restart(time,still=false){epoch=time-(still?27:0);lastTime=NaN;return update(time);},relocate(ext,streetTotal=streets){root.position.x=landmarkX(HELIPAD_SITE,streetTotal);root.position.z=landmarkZ(HELIPAD_SITE,ext);},dispose(){disposed=true;for(const r of resources)r.dispose();resources.clear();}};
 }

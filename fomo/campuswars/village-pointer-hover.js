@@ -10,7 +10,7 @@ export function createPointerHover(T,canvas,camera,blimp,{schedule=requestAnimat
     pointer.set((latest.x-rect.left)/rect.width*2-1,-((latest.y-rect.top)/rect.height)*2+1);raycaster.setFromCamera(pointer,camera);
     bounds.copy(localBounds).applyMatrix4(blimp.root.matrixWorld);
     const schoolTargets=schoolPickables();
-    if(schoolTargets.length){const hit=raycaster.intersectObjects(schoolTargets,false)[0];paint(hit?.object.userData.action==='school'?`Jump to ${hit.object.userData.name} ↗`:hit?.object.userData.action==='discord'?'Join the FOMO Discord ↗':'');return;}
+    if(schoolTargets.length){const hit=raycaster.intersectObjects(schoolTargets,false)[0];paint(hit?.object.userData.action==='school'?`Jump to ${hit.object.userData.name} ↗`:hit?.object.userData.action==='discord'?'Join the FOMO Discord ↗':hit?.object.userData.action==='stadium'?'Visit the football stadium':hit?.object.userData.action==='helipad'?'Visit the helipad':'');return;}
     paint(blimp.root.visible&&raycaster.ray.intersectsSphere(bounds)&&raycaster.intersectObjects(blimp.pickables,false).length>0?'Join the FOMO Discord ↗':'');
   }
   return {move(event){latest={x:event.clientX,y:event.clientY};if(!pending)pending=schedule(flush);},clear(){if(pending)cancel(pending);pending=0;latest=null;paint('');}};

@@ -1,5 +1,5 @@
 import {constructionPlan,constructionStation} from './village-construction-layout.js?v=165';
-import {createChapterBanner} from './village-banners.js?v=153';
+import {createChapterBanner} from './village-banners.js?v=167';
 
 export function createConstructionSite(T,chapter,{box,cylinder,sign,pickables,artworkOptions={}}){
   const site=new T.Group(),plan=constructionPlan(chapter);

@@ -1,27 +1,27 @@
 import {createNearbyIslands} from './village-nearby-islands.js?v=159';
-import {islandFootprint,islandOverview} from './village-island.js?v=165';
+import {islandFootprint,islandOverview} from './village-island.js?v=167';
 import {backyardUnlocked} from './village-backyards.js?v=112';
-import {createVillagePopulation} from './village-population.js?v=165';
-import {createLiveArrivals} from './village-arrivals.js?v=165';
-import {createHelipad} from './village-helipad.js?v=153';
+import {createVillagePopulation} from './village-population.js?v=167';
+import {createLiveArrivals} from './village-arrivals.js?v=167';
+import {createHelipad} from './village-helipad.js?v=167';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=165';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality,createResolutionBudget} from './village-quality.js?v=127';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=165';
+import {createVillageRendererAsync} from './village-renderer.js?v=167';
 import {chapterSceneKey} from './village-startup.js?v=128';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
-import {createDistricts} from './village-districts.js?v=165';
-import {clampCampusTarget} from './village-campus-bounds.js?v=1';
-import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=134';
-import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=153';
-import {prewarmVillage} from './village-prewarm.js?v=153';
+import {createDistricts} from './village-districts.js?v=167';
+import {clampCampusTarget} from './village-campus-bounds.js?v=167';
+import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=167';
+import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=167';
+import {prewarmVillage} from './village-prewarm.js?v=167';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=153';
-import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=159';
+import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=167';
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
-import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=165';
+import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=167';
 import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=156';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
@@ -68,9 +68,9 @@ async function startVillage(){
   const population=createVillagePopulation(THREE,populationSnapshot.chapters,{live:populationSource.dataset.feedLive==='true',updatedAt:populationSource.dataset.feedUpdatedAt||populationSnapshot.updatedAt});scene.add(population.root);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
   function emptyHelipad(){return {root:new THREE.Group(),restart(){},setNight(){},relocate(){},update(){},dispose(){}};}
-  let helipad=activeSchool?emptyHelipad():createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced);
+  let helipad=activeSchool?emptyHelipad():createHelipad(THREE,village.extension,village.streetTotal);scene.add(helipad.root);helipad.restart(0,reduced);
   const nearby=createNearbyIslands(THREE,{host:shell,documentRef:document,onFocus:()=>takeControl(),onTravel:school=>document.dispatchEvent(new CustomEvent('destination:request',{detail:{school,instant:true}}))});scene.add(nearby.root);
-  const pointerHover=createPointerHover(THREE,canvas,camera,blimp,{schoolPickables:()=>nearby.pickables.length?scenePickables():[]});
+  const pointerHover=createPointerHover(THREE,canvas,camera,blimp,{schoolPickables:()=>scenePickables()});
   const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
   const moneyRain=createMoneyRain(THREE,chapters,village.renderAnchors||village.anchors);scene.add(moneyRain.root);
   let openingRainTime=0;
@@ -109,7 +109,7 @@ async function startVillage(){
   let introRoll=0,introNight=0;
   function applyIntroView(){
     if(activeSchool)return;
-    const view=reduced?openingView:introViewAt(entranceTime);
+    const view=introViewAt(reduced?INTRO_DURATION:entranceTime,camera.aspect);
     target.set(...view.target);theta=view.theta;phi=view.phi;radius=view.radius;
     wantedTarget.copy(target);wantedTheta=theta;wantedPhi=phi;wantedRadius=radius;
     introRoll=view.roll||0;introNight=view.night||0;
@@ -178,7 +178,7 @@ async function startVillage(){
     applyLighting(night?1:0);viewDirty=true;wake();
   });
   function snapLongJump(){if(target.distanceTo(wantedTarget)>180){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=activeSchool?islandOverview(islandFootprint(chapters),camera.aspect):openingView;wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;camera.far=Math.max(nearby.farDistance,650,home.radius*3);camera.updateProjectionMatrix();snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
+  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=activeSchool?islandOverview(islandFootprint(chapters),camera.aspect):introViewAt(INTRO_DURATION,camera.aspect);wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;camera.far=Math.max(nearby.farDistance,650,home.radius*3);camera.updateProjectionMatrix();snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
   function choose(id,focus=false,emit=true,instant=false){
     const anchor=village.anchors.find(a=>a.id===id);if(!anchor)return;selected=id;viewDirty=true;
     // Frame the house from its own street's centre line, whichever street that is.
@@ -227,11 +227,11 @@ async function startVillage(){
     const next=await createVillageRendererAsync(THREE,nextChapters,{houseFinishes:previous.houseFinishes,aspect:camera.aspect,attachStreet:true,metric:'members',theme:schoolTheme(school),arrivals});
     if(buildRevision!==chapterBuildRevision){next.dispose();return false;}
     chapters=nextChapters;activeSchool=school;
-    if(changedSchool){scene.remove(helipad.root);helipad.dispose();helipad=school?emptyHelipad():createHelipad(THREE,next.extension);scene.add(helipad.root);helipad.restart(partyTime,reduced||paused);}
+    if(changedSchool){scene.remove(helipad.root);helipad.dispose();helipad=school?emptyHelipad():createHelipad(THREE,next.extension,next.streetTotal);scene.add(helipad.root);helipad.restart(partyTime,reduced||paused);}
     arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);
     scene.remove(previous.world);scene.add(next.world);village=next;if(leaderboardView&&village.beacon)village.beacon.root.visible=false;previous.dispose();
     if(school||changedSchool||previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=makeDistricts(school,next.extension,next.streetTotal);scene.add(districts.root);}
-    if(previous.extension!==next.extension){helipad.relocate(next.extension);scene.remove(streetNav.root);streetNav.dispose();streetNav=createStreetNavigation(THREE,next.extension);scene.add(streetNav.root);streetNav.root.visible=streetMode;}
+    if(previous.extension!==next.extension){helipad.relocate(next.extension,next.streetTotal);scene.remove(streetNav.root);streetNav.dispose();streetNav=createStreetNavigation(THREE,next.extension);scene.add(streetNav.root);streetNav.root.visible=streetMode;}
     moneyRain.setChapters(chapters,village.renderAnchors||village.anchors);village.nightLife.setNight(litAtNight);districts.setNight(litAtNight);
     village.animateCrowd(partyTime);village.animateEffects(partyTime);
     announceDestination();
@@ -283,15 +283,17 @@ async function startVillage(){
   const stadiumDistance=()=>136/Math.min(1,camera.aspect);
   const helipadDistance=()=>34/Math.min(1,camera.aspect);
   const leaderboardDistance=()=>Math.max(16,7/(Math.tan(camera.fov*Math.PI/360)*camera.aspect));
-  document.getElementById('village-helipad').addEventListener('click',()=>{
+  function visitHelipad(){
     takeControl();leaveStreet();wantedTarget.copy(helipad.root.position).add(new THREE.Vector3(-4,1.6,3));
     helipadView=true;wantedTheta=-.78;wantedPhi=.38;wantedRadius=helipadDistance();
     helipad.restart(partyTime,paused||reduced);snapLongJump();viewDirty=true;wake();
-  });
-  document.getElementById('village-stadium').addEventListener('click',()=>{
+  }
+  document.getElementById('village-helipad').addEventListener('click',visitHelipad);
+  function visitStadium(){
     takeControl();leaveStreet();wantedTarget.copy(districts.stadium.root.position);wantedTarget.y=2;
     stadiumView=true;wantedTheta=-2.42;wantedPhi=.6;wantedRadius=stadiumDistance();snapLongJump();viewDirty=true;wake();
-  });
+  }
+  document.getElementById('village-stadium').addEventListener('click',visitStadium);
   document.getElementById('village-leaderboard').addEventListener('click',()=>{
     takeControl();leaveStreet();const board=village.competition.board;
     leaderboardView=true;if(village.beacon)village.beacon.root.visible=false;
@@ -345,7 +347,7 @@ async function startVillage(){
   const expand=document.getElementById('village-expand');expand.hidden=!shell.requestFullscreen;
   expand.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await shell.requestFullscreen();}catch{expand.disabled=true;expand.title='Full screen is unavailable in this browser.';}});
   document.addEventListener('fullscreenchange',()=>{expand.textContent=document.fullscreenElement?'Exit full screen ↙':'Full screen ↗';resize();});
-  function scenePickables(){const rock=activeSchool?districts.root.getObjectByName('island-rock-undercut'):null;return [...(blimp.root.visible?blimp.pickables:[]),...village.pickables,...nearby.pickables,...(rock?[rock]:[])];}
+  function scenePickables(){const rock=activeSchool?districts.root.getObjectByName('island-rock-undercut'):null;return [...(blimp.root.visible?blimp.pickables:[]),...village.pickables,...(!activeSchool?[...(districts.stadium.pickables||[]),...(helipad.pickables||[])]:[]),...nearby.pickables,...(rock?[rock]:[])];}
   canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;
     pointerHover.clear();
     if(e.pointerType==='touch'){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);if(touchPoints.size>1){takeControl();pinchDistance=touchDistance();drag=null;dragDistance=9;return;}}
@@ -370,6 +372,8 @@ async function startVillage(){
     if(startedOnBlimp){discordLink.click();return;}
     const hit=raycaster.intersectObjects(scenePickables(),false)[0];
     if(hit?.object.userData.action==='discord'){discordLink.click();return;}
+    if(hit?.object.userData.action==='stadium'){visitStadium();return;}
+    if(hit?.object.userData.action==='helipad'){visitHelipad();return;}
     if(hit?.object.userData.action==='school'){document.dispatchEvent(new CustomEvent('destination:request',{detail:{school:hit.object.userData.school,instant:true}}));return;}
     if(streetMode){const step=raycaster.intersectObjects(streetNav.pickables.filter(o=>o.parent.visible),false)[0];if(step){moveStreet(step.object.userData.streetZ);return;}}
     if(hit){if(hit.object.userData.action==='register'){document.getElementById('panel-claim').click();return;}choose(hit.object.userData.chapter,!streetMode);return;}
@@ -506,6 +510,7 @@ async function startVillage(){
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
     arrivals.advance(partyTime);
+    scene.fog.density=activeSchool?.0019:Math.min(.0019,.55/Math.max(radius,1));
     helipad.update(partyTime);
     const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
     village.animateCrowd(partyTime,camera,pedestrianPoses);

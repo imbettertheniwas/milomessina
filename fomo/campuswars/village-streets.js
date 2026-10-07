@@ -1,8 +1,8 @@
-import {islandFloorGeometry} from './village-island.js?v=165';
+import {islandFloorGeometry} from './village-island.js?v=167';
 import {villageQuality} from './village-quality.js?v=127';
-import {createGrassMaterial} from './village-grass.js?v=165';
+import {createGrassMaterial} from './village-grass.js?v=167';
 import {hash} from './village-district-layout.js?v=80';
-import {campusBounds} from './village-campus-bounds.js?v=1';
+import {campusBounds} from './village-campus-bounds.js?v=167';
 // Insert road sections in the one opaque floor. UVs repeat the straight part
 // while the original end junction and the campus beyond it move outward.
 export function setStreetExtension(T,streets,extension=0,streetTotal=1) {
@@ -107,6 +107,21 @@ export function createStreetNetwork(T,theme=null){
       line('#414c53',[[ox-.1,z-4],[ox+.14,z-3.7],[ox-.06,z-3.4]],.035);
       circle('#586567',ox+3.2,z+5,.4);
       for(let i=0;i<4;i++)rect('#e3d1ad',ox+6.6,z+i*.4,.5,.07);
+    }
+    if(!theme?.floating){
+      // Open a wider perimeter behind the house backyards. The old outer
+      // lanes end at the cross streets; the new lanes wrap both amenities.
+      for(const side of [-1,1]){
+        const old=side*100,x=side*150;
+        lawnPaint=true;rect('#718753',old-9.1,-41.7,18.2,83.4);
+        mask.fillStyle='#ffffff';mask.fillRect(old-9.1+150,150-41.7,18.2,83.4);
+        lawnPaint=false;
+        rect('#bfc0b5',x-9,-50,18,100);rect('#505a60',x-6,-50,12,100);
+        for(let z=-34;z<36;z+=8)rect('#c5bea5',x-.09,z,.18,2.6);
+        for(const z of [-50,50]){circle('#bfc0b5',x,z,13);circle('#505a60',x,z,11.5);rect('#505a60',x-14,z-5.5,28,11);}
+        rect('#505a60',x-6,-50,12,100);
+        for(let z=-34;z<36;z+=8)rect('#c5bea5',x-.09,z,.18,2.6);
+      }
     }
     if(theme?.floating){
       // A short residential lane belongs to each island; no roads run over its edge.

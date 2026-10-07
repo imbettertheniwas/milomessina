@@ -1,4 +1,4 @@
-import {bannerIdentity} from './village-banner-art.js?v=153';
+import {bannerIdentity} from './village-banner-art.js?v=167';
 import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
 
 export const LEADERBOARD_LIMIT=10;

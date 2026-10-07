@@ -3,6 +3,7 @@ export function validateSnapshot(value) {
   if (!value || !Array.isArray(value.chapters) || value.live !== true || !Number.isFinite(Date.parse(value.updatedAt))) throw new Error('Invalid chapter update');
   const ids = new Set();
   for (const c of value.chapters) {
+    if(c?.memberRate!==undefined&&![3.125,6.25].includes(c.memberRate))throw new Error('Invalid chapter rate');
     if (!c || !/^[a-z0-9-]+$/.test(c.id) || c.id === 'empty' || ids.has(c.id) || !['name','letters','school','shortSchool','type','registered'].every(k => typeof c[k] === 'string' && c[k].length > 0) || !Number.isSafeInteger(c.joined) || c.joined < 0 || !Number.isSafeInteger(c.active) || c.active <= 0) throw new Error('Invalid chapter update');
     ids.add(c.id);
   }

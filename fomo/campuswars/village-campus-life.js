@@ -2,7 +2,7 @@ import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spac
 import {createDistantCrowd} from './village-distant-crowd.js?v=165';
 import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=165';
 import {personalClock,conversation} from './village-human-behavior.js?v=165';
-import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=165';
+import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=167';
 import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=153';
 import {gaitPhase,humanPose,smooth} from './village-human-motion.js?v=165';
 import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=80';
@@ -217,12 +217,12 @@ export function createCampusPeople(T,kit,kind,cx,cz,streets=1,extension=0){
 export function createCampusTraffic(T,kit,extension=0){
   const root=new T.Group(),dummy=new T.Object3D(),color=new T.Color();
   // Two one-way circuits have separate lane centers and rounded junction turns.
-  const loops=[roundedLoop(2.4,-47.6,97.6,47.6+extension,7.8),roundedLoop(-97.6,-47.6,-2.4,47.6+extension,7.8)];
+  const loops=[roundedLoop(2.4,-47.6,147.6,47.6+extension,7.8),roundedLoop(-147.6,-47.6,-2.4,47.6+extension,7.8)];
   const cars=Array.from({length:8},(_,i)=>({loop:i%2,offset:22+i*83,speed:4.4,shuttle:i===3,style:i===3?'shuttle':i%3===1?'crossover':'sedan',branded:i%2===1,color:i%2===1?FOMO_VEHICLE_COLOR:[0xf1e9d6,0x66829e,0xa75a49,0xd6dbd8,0x48585e,0xbaa283,0x8c959e,0x555766][i]}));
   const cyclists=Array.from({length:12},(_,i)=>({loop:i%2,offset:i*57+19,speed:2.65,phase:i*2.1}));
-  const bikeLoops=[roundedLoop(4.7,-45.3,95.3,45.3+extension,8),roundedLoop(-95.3,-45.3,-4.7,45.3+extension,8)];
+  const bikeLoops=[roundedLoop(4.7,-45.3,145.3,45.3+extension,8),roundedLoop(-145.3,-45.3,-4.7,45.3+extension,8)];
   const rounded=new T.CapsuleGeometry(.5,1,3,10);rounded.scale(1,.5,1);
-  function instances(geo,n){const m=new T.InstancedMesh(geo,kit.material(0xffffff),n);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.boundingSphere=new T.Sphere(new T.Vector3(0,2,extension/2),145+extension/2);root.add(m);return m;}
+  function instances(geo,n){const m=new T.InstancedMesh(geo,kit.material(0xffffff),n);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.boundingSphere=new T.Sphere(new T.Vector3(0,2,extension/2),190+extension/2);root.add(m);return m;}
   const fleet=kit.vehicles.movingFleet(root,cars);
   const bikeWheels=instances(kit.geometries.wheel,cyclists.length*2),bikeTubes=instances(kit.geometries.cylinder,cyclists.length*13),riders=instances(rounded,cyclists.length*9),heads=instances(kit.geometries.sphere,cyclists.length*2);
   cyclists.forEach((c,i)=>{for(let j=0;j<2;j++){bikeWheels.setColorAt(i*2+j,color.set(0x303d42));heads.setColorAt(i*2+j,color.set(j?0xe0d9c7:0xc69b7a));}for(let j=0;j<13;j++)bikeTubes.setColorAt(i*13+j,color.set(j<6?0x6b8491:0x899593));for(let j=0;j<9;j++){riders.setColorAt(i*9+j,color.set(j===0?[0xb99269,0x576e99,0x994f47][i%3]:j<5?0xc69b7a:0x43505b));}});

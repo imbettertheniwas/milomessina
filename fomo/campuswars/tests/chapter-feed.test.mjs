@@ -9,10 +9,18 @@ const row = ({id='12345678-abcd-abcd-abcd-123456789012',name='Phi Delta Theta',s
 const table = rows => `<table><thead><tr>${['Chapter','Who registered','Contact','Progress','Best / worst','Registered','Join link'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
 const snapshot = joined => ({live:true,updatedAt:'2026-09-09T13:00:00Z',chapters:parseChapterAdmin(table(row({joined})))});
 
+test('admin half-rate tiers reach the public aggregate without becoming part of the school name',()=>{
+  const full=parseChapterAdmin(table(row()))[0];
+  const half=parseChapterAdmin(table(row().replace(' · Fraternity',' · Professional fraternity · half rate')))[0];
+  assert.equal(full.memberRate,6.25);assert.equal(half.memberRate,3.125);
+  assert.equal(half.school,full.school);assert.equal(half.type,'Professional fraternity');
+  assert.throws(()=>validateSnapshot({...snapshot(21),chapters:[{...half,memberRate:99}]}));
+});
+
 test('admin adapter uses full rosters and exposes only approved chapter aggregates',()=>{
   const chapters=parseChapterAdmin(table(row()));
   assert.equal(chapters.length,1);assert.equal(chapters[0].active,55);assert.equal(chapters[0].joined,1);assert.equal(chapters[0].letters,'ΦΔΘ');
-  assert.deepEqual(Object.keys(chapters[0]).sort(),['id','name','letters','school','shortSchool','type','joined','active','registered','house'].sort());
+  assert.deepEqual(Object.keys(chapters[0]).sort(),['id','name','letters','school','shortSchool','type','joined','active','memberRate','registered','house'].sort());
   assert(!/PRIVATE|private@example|INVITE/.test(JSON.stringify(chapters)));
 });
 test('FOMO Campus registration table is selected among analytics tables and uses its shifted date column',()=>{

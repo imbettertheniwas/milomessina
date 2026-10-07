@@ -11,7 +11,7 @@ const identities={
 };
 const fallback={key:'chapter-classic',primary:'#252A51',secondary:'#C6BD9F',ink:'#FFFFFF',paper:'#FFFFFF'};
 export const HOUSE_MEMBER_RATE=6.25;
-export function houseEarnings(chapter){return chapter.joined>20?chapter.joined*HOUSE_MEMBER_RATE:null;}
+export function houseEarnings(chapter){return chapter.joined>20?chapter.joined*(chapter.memberRate??HOUSE_MEMBER_RATE):null;}
 function money(n){const r=Math.round(n*100)/100;return '$'+(Number.isInteger(r)?r.toLocaleString('en-US'):r.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));}
 export function bannerIdentity(chapter){return identities[chapter.id]||Object.entries(identities).find(([id])=>id.startsWith(chapter.name.toLowerCase().replaceAll(" ","-")+"-"))?.[1]||fallback;}
 
