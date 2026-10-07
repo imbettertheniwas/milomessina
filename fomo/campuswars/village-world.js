@@ -1,24 +1,24 @@
-import {islandFootprint} from './village-island.js?v=162';
+import {islandFootprint} from './village-island.js?v=164';
 import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=162';
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=162';
-import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=162';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=164';
+import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=164';
 import {rankedHouseSizes} from './village-house-sizing.js?v=153';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
 import {createVillageEntrance} from './village-entrance.js?v=153';
-import {createPongGames} from './village-pong.js?v=162';
-import {createDieGames} from './village-die.js?v=162';
+import {createPongGames} from './village-pong.js?v=164';
+import {createDieGames} from './village-die.js?v=164';
 import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=153';
 import {createCompetition,houseStandings} from './village-competition.js?v=153';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=162';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=164';
 import {humanPose} from './village-human-motion.js?v=162';
 import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=162';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=153';
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=162';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=162';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=164';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=164';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=153';
-import {createDistantCrowd} from './village-distant-crowd.js?v=162';
+import {createDistantCrowd} from './village-distant-crowd.js?v=164';
 import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
 import {createBackyards,hasChapterHouse} from './village-backyards.js?v=112';
 
@@ -126,7 +126,11 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     const size=houseSizes.get(id),{style,width,height,footprint,roofline,depthScale}=size;
     const finish=houseFinishes.get(id);house.userData.exterior=finish;
     const color=theme?new THREE.Color(theme.wall).multiplyScalar(.90+hash(id,'school-wall')*.20):finish.color;const wall=theme?(theme.tree==='palm'||theme.tree==='cactus'?mat(color.getHex()):facade(color)):finish.brick?facade(finish.color):mat(finish.color);const depth=7.5;
-    box(house,0,.38,0,width+1,.6,depth+1,0xc1b5a0);box(house,0,height/2+.6,0,width,height,depth,wall);
+    box(house,0,.38,0,width+1,.6,depth+1,0xc1b5a0);
+    // A recessed, open front doorway gives arriving guests a real threshold.
+    for(const side of [-1,1])box(house,side*(width/4+.35),height/2+.6,0,width/2-.7,height,depth,wall);
+    box(house,0,(height+3.35)/2,0,1.4,height-2.15,depth,wall);
+    box(house,0,1.65,2.7,1.4,2.2,.1,0x17191c);
     box(house,0,height+.65,0,width+.5,.3,depth+.5,0xe4ddca);box(house,0,4.1,3.85,width+.25,.18,.22,0xcbbb9f);
     roof(house,0,height+.82,0,width+.8,depth+1.1,2.0,theme?.roof??0x343846,style!==4);
     box(house,-width*.3,height+1.4,-1.8,.85,2,.9,wall);box(house,-width*.3,height+2.45,-1.8,1,.16,1.05,0x76665e);
@@ -139,7 +143,8 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     const porchWidth=style===1?10.8:style===3?8:6.8;
     box(house,0,.48,4.7,porchWidth+1,.5,2.6,0xbab6ac);
     for(let step=0;step<3;step++)box(house,0,.13+step*.12,6.2-step*.38,3.3,.25,1.1,0xb9b5ac);
-    box(house,0,1.65,3.87,1.25,2.2,.13,[0x693b3e,0x313d60,0x3d3a37,0x343b58,0x6b3340][style]);box(house,.4,1.65,3.99,.07,.07,.05,0xebc36d);
+    const frontDoor=box(house,-.67,1.65,4.49,1.25,2.2,.13,[0x693b3e,0x313d60,0x3d3a37,0x343b58,0x6b3340][style]);frontDoor.rotation.y=-Math.PI/2;
+    box(house,-.58,1.65,4.93,.05,.07,.07,0xebc36d);
     const columnCount=style===1?6:4,colHeight=style===4?3.7:6.9;
     for(let col=0;col<columnCount;col++){const x=(col/(columnCount-1)-.5)*(porchWidth-.4);cylinder(house,x,colHeight/2+.75,5.35,.2,colHeight,0xece4cf);box(house,x,.65,5.35,.66,.22,.66,0xece4cf);box(house,x,colHeight+.76,5.35,.63,.23,.63,0xece4cf);}
     box(house,0,colHeight+.98,4.7,porchWidth+.8,.55,2.5,0xe5ddc7);
@@ -174,7 +179,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   // cull a row of people that is still on screen.
   const crowdReach=Math.max(...lots.map(lot=>Math.abs(lot.originX)))+40;
   const members=[],parts={};
-  for(let i=0;i<selectedChapters.length;i++){members.push(...crowdMembers([selectedChapters[i]],[houseLots[i]],houseSizes).map(greekPartyStyle));yield;}
+  for(let i=0;i<selectedChapters.length;i++){members.push(...crowdMembers([selectedChapters[i]],[houseLots[i]],houseSizes).map(person=>greekPartyStyle(person,selectedChapters[i])));yield;}
   assignPoolPeople(members,selectedChapters);
   const swimWakes=createSwimWakes(THREE,members);world.add(swimWakes.mesh);
   const pong=createPongGames(THREE,members);world.add(pong.root);
@@ -212,10 +217,12 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   for(const m of members)if(!overflowSlots.has(m.chapter)){const points=[];for(let x=-8.5;x<=8.5;x+=1.02)for(let z=backyards.has(m.chapter)?-27:-15;z<=15.1;z+=1.02)points.push(toWorld(m.lot,x,z));overflowSlots.set(m.chapter,points);}
   const pedestrian=pedestrianGroup('chapters',members,(m,time)=>isPoolPerson(m)?poolActivityPose(m,time):activityPose(m,time),{
     slots:m=>overflowSlots.get(m.chapter),
-    ground:(s,m)=>{if(isPoolPerson(m))return s.ground;if(!m.walking)return s.ground??m.ground??0;const p=localPoint(m,s.x,s.z);return lawnGround(p.x,p.z);},
+    ground:(s,m)=>{if(m.social&&!isPoolPerson(m))return s.ground;if(isPoolPerson(m))return s.ground;if(!m.walking)return s.ground??m.ground??0;const p=localPoint(m,s.x,s.z);return lawnGround(p.x,p.z);},
     allowed:(x,z,s,m)=>{
       if(isPoolPerson(m))return poolPersonAllowed(m,x,z,s);
       if(m.action==='build')return Math.abs(x-s.x)<=.55&&Math.abs(z-s.z)<=.55;
+      if(s.hidden)return true;
+      if(m.social?.door){const p=localPoint(m,x,z);if(Math.abs(p.x)<.62&&p.z>=m.social.out.points.at(-1).z-.2&&p.z<=7.2)return true;}
       if(m.ground>.5)return Math.hypot(x-m.x,z-m.z)<.7;
       const p=localPoint(m,x,z);
       // Large qualified chapters can gather on the common grass beyond the
@@ -224,8 +231,9 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
       const size=houseSizes.get(m.chapter);
       if(Math.abs(p.x)<size.footprint/2+.5&&p.z>size.offsetZ-4.5*size.depthScale-.5&&p.z<6.6)return false;
       if(backyards.contains(m.chapter,p.x,p.z))return false;
-      if(m.walking&&p.z<6.6)return false;
-      if(!m.walking&&!m.action&&p.z>=6.6&&(Math.abs(p.x)>7.05||p.z<8.0||p.z>13.4))return false;
+      if((m.walking||m.social)&&p.z<6.6)return false;
+      if(!m.social&&!m.walking&&!m.action&&Math.abs(p.x)<.95)return false;
+      if(!m.social&&!m.walking&&!m.action&&p.z>=6.6&&(Math.abs(p.x)>7.05||p.z<8.0||p.z>13.4))return false;
       if(pongChapters.has(m.chapter)&&Math.abs(p.x-PONG_TABLE.x)<PONG_TABLE.width/2+.25&&Math.abs(p.z-PONG_TABLE.z)<PONG_TABLE.length/2+.25)return false;
       if(dieChapters.has(m.chapter)&&Math.abs(p.x-DIE_TABLE.x)<DIE_TABLE.width/2+.25&&Math.abs(p.z-DIE_TABLE.z)<DIE_TABLE.depth/2+.25)return false;
       return true;
@@ -250,7 +258,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
       if(repack)for(const [name,mesh] of Object.entries(parts)){const stride=name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1;if(partColors[name]){mesh.instanceColor.array.set(partColors[name].subarray(batch.start*stride*3,(batch.start+batch.count)*stride*3),start*stride*3);mesh.instanceColor.needsUpdate=true;}}
       for(let i=batch.start;i<batch.start+batch.count;i++){
         const m=members[i],slot=start+i-batch.start;
-        const state=arrivalPose(m,poses[i]),rig=isPoolPerson(m)&&!state.arrival?poolHumanPose(m,state,time):humanPose(m,state,time),angle=state.rotation,h=m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
+        const state=arrivalPose(m,poses[i]),rig=isPoolPerson(m)&&!state.arrival?poolHumanPose(m,state,time):humanPose(m,state,time),angle=state.rotation,h=state.hidden?0:m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
         const transform=([x,y,z])=>[state.x+(x*cos+z*sin)*h,y*h+(state.ground??m.ground??0),state.z+(-x*sin+z*cos)*h];
         const part=(name,point,x,y,z,yaw=0,pitch=0,roll=0)=>posePart(name,slot*(name==='hair'?2:name==='backpack'?DETAIL_COUNT+1:1),...transform(point),x*h,y*h,z*h,angle+yaw,pitch,roll);
         const party=m.partyLook&&!isPoolPerson(m),fitted=party&&m.partyLook==='sorority',cropped=party&&m.outfit==='crop-tee';

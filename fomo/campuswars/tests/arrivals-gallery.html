@@ -3,8 +3,8 @@
 <nav><button id="join">Preview 3 joins</button><button id="air">Airborne</button><button id="land">Touchdown</button><button id="settled">Settled</button><button id="night">Day / night</button><button id="pause">Pause</button></nav><output id="stats">Local preview only — no registrations are submitted.</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createVillage} from '../village-world.js?v=162';
-import {createLiveArrivals,ARRIVAL_FALL} from '../village-arrivals.js?v=162';
+import {createVillage} from '../village-world.js?v=164';
+import {createLiveArrivals,ARRIVAL_FALL} from '../village-arrivals.js?v=164';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x98a7ba);const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,1,650);
 camera.position.set(10,15,12);camera.lookAt(-13,12,-18);camera.updateMatrixWorld();

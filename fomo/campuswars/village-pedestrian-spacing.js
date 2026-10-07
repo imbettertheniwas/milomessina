@@ -142,7 +142,7 @@ export function createPedestrianSpacing(){
       a.travel+=travelled;
       const motion=Math.min(1,travelled/(dt*Math.max(.65,a.person.speed??.85)));
       a.pose={...a.pose,walking:motion>.025,motion,gait:gaitPhase(a.travel,a.person,a.person.action==='jog')+a.gaitOrigin-a.person.phase};
-      if(travelled>.0001){const angle=Math.atan2(best.vx,best.vz),turn=Math.atan2(Math.sin(angle-a.heading),Math.cos(angle-a.heading));a.heading+=Math.max(-dt*4,Math.min(dt*4,turn));}a.pose.rotation=a.heading;a.pose.angle=a.heading;
+      if(travelled>.0001){const angle=Math.atan2(best.vx,best.vz),turn=Math.atan2(Math.sin(angle-a.heading),Math.cos(angle-a.heading));a.heading+=Math.max(-dt*4,Math.min(dt*4,turn));}if(travelled<=.0001&&!a.pose.walking){const target=a.pose.rotation??a.heading;a.heading+=Math.max(-dt*2,Math.min(dt*2,Math.atan2(Math.sin(target-a.heading),Math.cos(target-a.heading))));}a.pose.rotation=a.heading;a.pose.angle=a.heading;
     }
   }
   function update(time,nextGroups){
@@ -151,7 +151,7 @@ export function createPedestrianSpacing(){
     if(!changed&&time===lastTime)return result;
     if(changed){
       const previous=new Map(agents.map(a=>[a.id,a]));
-      groups=[...nextGroups];groupVersions=versions;agents=groups.flatMap(group=>group.people.map((person,index)=>({...previous.get(`${group.id}:${person.identity??index}`),group,person,index,id:`${group.id}:${person.identity??index}`,mobile:Boolean(person.walking)||movingActions.has(person.action),radius:pedestrianRadius(person),height:1.8*(person.height??1)})));
+      groups=[...nextGroups];groupVersions=versions;agents=groups.flatMap(group=>group.people.map((person,index)=>({...previous.get(`${group.id}:${person.identity??index}`),group,person,index,id:`${group.id}:${person.identity??index}`,mobile:Boolean(person.walking||person.social)||movingActions.has(person.action),radius:pedestrianRadius(person),height:1.8*(person.height??1)})));
       agents.sort((a,b)=>Number(a.mobile)-Number(b.mobile)||a.id.localeCompare(b.id));
     }
     // Long invisible gaps and backwards preview seeks are placed afresh. Live

@@ -73,7 +73,7 @@ export function createDistantCrowd(T,capacity){
   }
   function begin(now){time=now;count=0;colorsChanged=false;}
   function add(member,state){
-    dummy.position.set(state.x,state.ground??member.ground??0,state.z);dummy.rotation.set(0,state.rotation,0);dummy.scale.set(member.height*(member.build??1),member.height,member.height);dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);
+    dummy.position.set(state.x,state.ground??member.ground??0,state.z);dummy.rotation.set(0,state.rotation,0);const h=state.hidden?0:member.height;dummy.scale.set(h*(member.build??1),h,h);dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);
     if(slots[count]!==member){slots[count]=member;colorsChanged=true;
     color.set(member.poolRole?(member.swimsuit==='one-piece'?member.swimColor:palettes.skin[member.skin]):member.action==='build'?0xe5a13f:member.shirtColor??palettes.shirts[member.shirt]);mesh.setColorAt(count,color);
     for(const [name,value] of [['skin',palettes.skin[member.skin]],['pants',member.poolRole?member.swimColor:member.bottomColor??palettes.pants[member.pants]],['hair',member.cap?(member.shirtColor??palettes.shirts[member.shirt]):palettes.hair[member.hair]]]){color.set(value);geometry.attributes[name].setXYZ(count,color.r,color.g,color.b);}

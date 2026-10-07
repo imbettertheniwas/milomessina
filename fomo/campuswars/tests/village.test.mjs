@@ -51,13 +51,13 @@ test('repeated architecture is batched for a bounded draw count',()=>{
   let drawables=0;village.world.traverse(object=>{if(object.isMesh)drawables++;});assert(drawables<152,`Too many scene meshes: ${drawables}`);
 });
 
-test('completed houses retain conversation groups and five leisure walkers',()=>{
+test('completed houses retain conversations, a minority of dancers and five doorway visitors',()=>{
   assert.equal(village.members.filter(m=>m.walking).length,5);
-  const standing=village.members.filter(m=>!m.walking&&m.action!=='build');assert(standing.every(m=>m.groupSize>=2));
+  const standing=village.members.filter(m=>!m.walking&&!m.social&&m.action!=='build');assert(standing.every(m=>m.groupSize>=2));
   for(const member of standing){const a=activityPose(member,0),b=activityPose(member,15);assert.equal(a.x,b.x);assert.equal(a.z,b.z);assert(Math.abs(a.breath)<.01&&Math.abs(b.breath)<.01);}
   const groups=Map.groupBy(standing.filter(m=>!['pong','die'].includes(m.action)),m=>m.chapter+':'+m.groupPhase);
   for(const t of [0,4,13,27])for(const group of groups.values())assert(group.filter(m=>activityPose(m,t).speaking).length<=1);
-  for(const member of village.members.filter(m=>m.walking)){const a=activityPose(member,0),b=activityPose(member,10);assert(Math.hypot(a.x-b.x,a.z-b.z)>1);}
+  for(const member of village.members.filter(m=>m.walking))assert(member.social?.door);
 });
 
 test('the surrounding village streams a bounded number of repeatable blocks',()=>{
@@ -197,7 +197,7 @@ test('new campus activities have deterministic paths and parked cars clear build
 });
 
 test('member conversations spread across the lawn and porch without body overlap',()=>{
-  const members=crowdMembers(chapters);
+  const members=crowdMembers(chapters,undefined,undefined,{social:false});
   for(const chapter of chapters){const standing=members.filter(m=>m.chapter===chapter.id&&!m.walking);
     for(let i=0;i<standing.length;i++)for(let j=i+1;j<standing.length;j++)assert(Math.hypot(standing[i].x-standing[j].x,standing[i].z-standing[j].z)>.5);
     if(chapter.joined>=15){assert(standing.some(m=>m.ground>.3));assert(new Set(standing.map(m=>m.groupSize)).size>=3);}
@@ -230,7 +230,7 @@ test('knees bend forward without stretching legs and standing feet stay still',(
   assert.deepEqual(a.legs.map(l=>l.ankle),b.legs.map(l=>l.ankle));assert.notDeepEqual(a.chest,b.chest);
 });
 test('chapter walkers pause smoothly and clear their conversation groups',()=>{
-  const members=crowdMembers(chapters);
+  const members=crowdMembers(chapters,undefined,undefined,{social:false});
   for(const p of members.filter(m=>m.walking))for(let t=0;t<70;t+=.2){
     const a=activityPose(p,t),b=activityPose(p,t+.001);
     assert(Math.abs(Math.hypot(b.x-a.x,b.z-a.z)/.001-p.motionProfile.walkSpeed*a.motion)<.002);

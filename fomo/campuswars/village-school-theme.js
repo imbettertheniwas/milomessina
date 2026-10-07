@@ -1,4 +1,4 @@
-import {createFloatingIsland} from './village-island.js?v=162';
+import {createFloatingIsland} from './village-island.js?v=164';
 import {createCampusKit} from './village-campus-kit.js?v=153';
 import {createSchoolEntrance} from './village-school-signs.js?v=163';
 const themes={

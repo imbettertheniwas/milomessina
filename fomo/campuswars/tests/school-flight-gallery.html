@@ -3,8 +3,8 @@
 <nav><button id="play">Replay jump</button><button data-time="0">Jump</button><button data-time=".25">Dive</button><button data-time=".715">Opening</button><button data-time="1.2">Glide</button><button data-time="2.95">Arrival</button><button id="phone">Phone / desktop</button></nav><output>Loading</output><script type="module">
 import * as T from '../vendor/three.module.min.js';
 import {createSchoolFlight,SCHOOL_FLIGHT_DURATION} from '../village-school-flight.js?v=156';
-import {createVillage} from '../village-world.js?v=162';
-import {createFloatingIsland,islandFootprint,islandOverview} from '../village-island.js?v=162';
+import {createVillage} from '../village-world.js?v=164';
+import {createFloatingIsland,islandFootprint,islandOverview} from '../village-island.js?v=164';
 const scene=new T.Scene();scene.background=new T.Color(0xb8d5e6);scene.add(new T.HemisphereLight(0xe0edff,0x877a61,1.55));const sun=new T.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);scene.add(sun);
 const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,.1,2200),renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;document.body.prepend(renderer.domElement);
 const chapters=[{id:'preview',name:'Sigma Chi',letters:'ΣΧ',school:'San Diego State University',joined:200,active:200}];
