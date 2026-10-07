@@ -1,4 +1,5 @@
-// Private CSV rows are reduced to date/count pairs before leaving the server.
+// Private CSV rows are reduced to daily and hourly counts before leaving the server.
+const joinClock=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'});
 export function parseMemberDaily(csv,now=Date.now()){
  const rows=[];let row=[],field='',quoted=false,closed=false;
  for(let i=0;i<csv.length;i++){
@@ -13,13 +14,18 @@ export function parseMemberDaily(csv,now=Date.now()){
  row.push(field);if(row.some(Boolean))rows.push(row);
  const headers=rows.shift()?.map(h=>h.replace(/^\uFEFF/,'').trim());
  if(!headers||headers.filter(h=>h==='joined').length!==1)throw Error('Member join dates unavailable');
- const index=headers.indexOf('joined'),days=new Map();let total=0;
+ const index=headers.indexOf('joined'),days=new Map(),hourDays=new Map();let total=0;
  for(const row of rows){
   const joined=row[index];
   if(row.length!==headers.length||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(joined))throw Error('Invalid member join date');
   const datePart=joined.slice(0,10);if(!Number.isFinite(Date.parse(datePart))||new Date(datePart).toISOString().slice(0,10)!==datePart)throw Error('Invalid member join date');
   const time=Date.parse(joined);if(!Number.isFinite(time)||time>now+60000)throw Error('Invalid member join date');
+  const parts=Object.fromEntries(joinClock.formatToParts(time).map(p=>[p.type,p.value]));
+  const localDate=parts.year+'-'+parts.month+'-'+parts.day;
+  if(!hourDays.has(localDate))hourDays.set(localDate,Array(24).fill(0));
+  hourDays.get(localDate)[Number(parts.hour)]++;
   const date=new Date(time).toISOString().slice(0,10);days.set(date,(days.get(date)||0)+1);total++;
  }
- return {available:true,timezone:'UTC',total,days:[...days].sort(([a],[b])=>a.localeCompare(b)).map(([date,count])=>({date,count}))};
+ const timeOfDay={timezone:'America/New_York',days:[...hourDays].sort(([a],[b])=>a.localeCompare(b)).map(([date,counts])=>({date,counts}))};
+ return {timeOfDay,available:true,timezone:'UTC',total,days:[...days].sort(([a],[b])=>a.localeCompare(b)).map(([date,count])=>({date,count}))};
 }

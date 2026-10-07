@@ -6,7 +6,7 @@ import {memberGrowthSeries,validateMemberHistory} from '../member-series.mjs';
 const now=Date.parse('2026-10-06T23:00:00Z');
 test('private member CSV is reduced to daily UTC totals, including escaped fields and multiline names',()=>{
  const csv='first_name,email,joined\r\n"PRIVATE, \"\"NAME\"\"",private@example.com,2026-10-01T23:30:00-04:00\r\n"PRIVATE\nNAME",secret@example.com,2026-10-02T12:00:00.123456+00:00\r\nOther,last@example.com,2026-10-06T10:00:00Z\r\n';
- const history=parseMemberDaily(csv,now);assert.deepEqual(history,{available:true,timezone:'UTC',total:3,days:[{date:'2026-10-02',count:2},{date:'2026-10-06',count:1}]});assert(!/PRIVATE|example|email|NAME/.test(JSON.stringify(history)));
+ const history=parseMemberDaily(csv,now);const {timeOfDay,...daily}=history;assert.deepEqual(daily,{available:true,timezone:'UTC',total:3,days:[{date:'2026-10-02',count:2},{date:'2026-10-06',count:1}]});assert(!/PRIVATE|example|email|NAME/.test(JSON.stringify(history)));
 });
 test('malformed or incomplete exports fail rather than reporting false zeroes',()=>{
  for(const csv of ['<html>Login required</html>','name,joined\n"unclosed,date','name,joined\nx,not-a-date','name,joined\nx,2026-10-07T10:00:00Z','name,joined\nx,2026-10-01T10:00:00Z,extra'])assert.throws(()=>parseMemberDaily(csv,now));

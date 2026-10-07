@@ -53,3 +53,11 @@ Run `node --test fomo/pulse/tests/*.test.mjs` for data and state-aggregation che
 ## Members per day
 
 The chart switches between Chapters and Members, with daily additions and cumulative growth for 7D, 30D and ALL. Member totals are grouped by actual UTC join timestamps from the authenticated admin member export, reduced server-side to date/count pairs only. No member names, contact fields, referral identities or raw CSV are exposed. The member export may finish moments after chapter totals, so totals can briefly differ during arrivals. Today is a partial day. Clicking a member day pins its count; clicking a chapter day retains chapter-registration filtering. Missing/invalid exports show unavailable history, never fabricated zero counts, while chapter data continues refreshing.
+
+## When members join
+
+The hourly section uses the same authenticated member export as the daily chart. The server reduces each actual `joined` timestamp to a date and one of 24 hourly counts in `America/New_York`; daylight saving is applied to each timestamp. No member identities or raw timestamps leave the server. The existing daily chart continues using UTC dates.
+
+The section defaults to all available history and offers trailing 7- and 30-calendar-day views, including the partial current Eastern day. It shows the busiest hour, tied peaks when applicable, and four six-hour dayparts. Percentages use only joins in the selected period. Empty periods and unavailable history are distinguished. Counts describe historical volume, not a forecast or campus-local time. The panel refreshes with the existing feed. Older snapshots without hourly aggregates still support the daily chart.
+
+Validation: hourly/period tests cover midnight, both daylight-saving transitions, ties, missing/invalid data and aggregate privacy. Browser checks cover live-export aggregates, all period controls, keyboard hour inspection, light/dark themes, and 390px/320px layouts without page overflow.

@@ -1,9 +1,10 @@
+import {validateJoinTimes} from './join-times.mjs';
 export function validateMemberHistory(value){
  if(value?.available!==true||value.timezone!=='UTC'||!Number.isSafeInteger(value.total)||value.total<0||!Array.isArray(value.days))return null;
  const seen=new Set(),days=[];
  for(const day of value.days){if(!day||!/^\d{4}-\d{2}-\d{2}$/.test(day.date)||!Number.isFinite(Date.parse(day.date))||new Date(day.date).toISOString().slice(0,10)!==day.date||seen.has(day.date)||!Number.isSafeInteger(day.count)||day.count<0)return null;seen.add(day.date);days.push({date:day.date,count:day.count});}
  if(days.reduce((n,d)=>n+d.count,0)!==value.total)return null;
- return {available:true,timezone:'UTC',total:value.total,days:days.sort((a,b)=>a.date.localeCompare(b.date))};
+ return {timeOfDay:validateJoinTimes(value.timeOfDay,value.total),available:true,timezone:'UTC',total:value.total,days:days.sort((a,b)=>a.date.localeCompare(b.date))};
 }
 export function memberGrowthSeries(history,updatedAt,period=30){
  if(!history)return null;
