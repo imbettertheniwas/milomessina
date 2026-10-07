@@ -60,15 +60,6 @@
   let selectedId = 'sigma-chi-sdsu';
   const text = (id, value) => { document.getElementById(id).textContent = value; };
 
-  const partyToggle = document.getElementById('party-toggle');
-  let partyPaused = reducedMotion;
-  partyToggle.hidden = reducedMotion;
-  partyToggle.addEventListener('click', () => {
-    partyPaused = !partyPaused;
-    partyToggle.textContent = partyPaused ? 'Resume activity' : 'Pause activity';
-    partyToggle.setAttribute('aria-pressed', String(partyPaused));
-    document.dispatchEvent(new CustomEvent('party:pause', {detail: {paused: partyPaused}}));
-  });
 
   function selectChapter(id, { writeHash = true, scroll = false, emit = true } = {}) {
     const chapter = byId.get(id);
@@ -206,8 +197,8 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village-national.js?v=155').then(m=>m.createNationalNavigation());
-  import('./village.js?v=156').catch(error => {
+  import('./village-national.js?v=157').then(m=>m.createNationalNavigation());
+  import('./village.js?v=157').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');

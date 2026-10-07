@@ -21,3 +21,7 @@
 
 #village-school,.campus-starter a:first-child{background:var(--fomo-secondary);color:var(--fomo-white);font-weight:700;border-color:transparent}
 #village-school:hover,.campus-starter a:first-child:hover{background:var(--fomo-navy);border-color:var(--fomo-white)}
+
+.school-picker-close{position:absolute;top:8px;right:8px;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--fomo-navy);font:400 24px/1 Aeonik,Arial,sans-serif;cursor:pointer}
+.school-picker-close:hover{background:#516af614}
+.school-picker-close:focus-visible{outline:2px solid var(--fomo-blue);outline-offset:-4px}

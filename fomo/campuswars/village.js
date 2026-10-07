@@ -67,7 +67,7 @@ async function startVillage(){
   const population=createVillagePopulation(THREE,populationSnapshot.chapters,{live:populationSource.dataset.feedLive==='true',updatedAt:populationSource.dataset.feedUpdatedAt||populationSnapshot.updatedAt});scene.add(population.root);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
   function emptyHelipad(){return {root:new THREE.Group(),restart(){},setNight(){},relocate(){},update(){},dispose(){}};}
-  let helipad=activeSchool?emptyHelipad():createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true');
+  let helipad=activeSchool?emptyHelipad():createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced);
   const pointerHover=createPointerHover(THREE,canvas,camera,blimp);
   const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
   const moneyRain=createMoneyRain(THREE,chapters,village.renderAnchors||village.anchors);scene.add(moneyRain.root);
@@ -156,7 +156,7 @@ async function startVillage(){
   });
   document.addEventListener('village:replay',beginIntro);
   document.addEventListener('village:artwork',()=>{viewDirty=true;wake();});
-  let selected='sigma-chi-sdsu',paused=reduced||document.getElementById('party-toggle').getAttribute('aria-pressed')==='true',visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,stadiumView=false,helipadView=false,leaderboardView=false;
+  let selected='sigma-chi-sdsu',paused=reduced,visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,stadiumView=false,helipadView=false,leaderboardView=false;
   function describePopulation(){const data=population.root.userData;canvas.setAttribute('aria-description',`${data.members.toLocaleString('en-US')} members joined across ${data.chapters} chapters. ${data.status.toLowerCase()}.`);}
   describePopulation();
   document.addEventListener('chapters:update',event=>{if(!activeSchool)population.setChapters(event.detail.chapters);describePopulation();viewDirty=true;wake();});

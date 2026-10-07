@@ -213,3 +213,6 @@ dialog::backdrop{backdrop-filter:none;background:#221d4bb3}
 .school-picker-brand{padding:8px 0}
 #village-discord{background:var(--fomo-navy);color:var(--fomo-white)}
 #village-discord:hover{background:var(--fomo-secondary)}
+
+/* Keep fixed and changing village controls consistently lowercase. */
+#village button,#village a{text-transform:lowercase}
