@@ -6,7 +6,7 @@ export function createSchoolFilm(host,{enabled=true,doc=document}={}){
  const video=doc.createElement('video');video.className='school-flight-film';video.muted=true;video.defaultMuted=true;video.playsInline=true;video.preload='auto';video.setAttribute('aria-hidden','true');video.setAttribute('playsinline','');video.hidden=true;
  Object.assign(video.style,{position:'absolute',inset:'0',width:'100%',height:'100%',objectFit:'cover',pointerEvents:'none',zIndex:'1'});
  let active=false,mode='',playPending=false,generation=0,pausedByClock=false;
- function prepare(){const next=host.clientWidth<host.clientHeight?'phone':'wide';if(next!==mode){mode=next;video.src=`/fomo/campuswars/media/school-flight-${mode}-ae-v152.mp4`;video.load();}}
+ function prepare(){const next=host.clientWidth<host.clientHeight?'phone':'wide';if(next!==mode){mode=next;video.src=`/fomo/campuswars/media/school-flight-${mode}-ae-v154.mp4`;video.load();}}
  function pause(){pausedByClock=true;video.pause();}
  function finish(){generation++;active=false;playPending=false;video.hidden=true;pause();}
  function play(){pausedByClock=false;if(!video.paused||playPending)return;playPending=true;const attempt=generation;Promise.resolve(video.play()).then(()=>{if(attempt!==generation)return;playPending=false;if(!active)pause();},error=>{if(attempt!==generation)return;playPending=false;if(error?.name!=='AbortError'||!pausedByClock)finish();});}

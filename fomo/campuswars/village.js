@@ -1,4 +1,4 @@
-import {createSchoolFilm} from './village-school-film.js?v=152';
+import {createSchoolFilm} from './village-school-film.js?v=154';
 import {islandFootprint,islandOverview} from './village-island.js?v=153';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=153';
@@ -22,7 +22,7 @@ import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
 import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=153';
-import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=153';
+import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=154';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
 const loading=document.getElementById('village-loading');

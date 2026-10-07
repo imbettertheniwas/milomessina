@@ -1,12 +1,13 @@
-// Short continuous descent with a gentle canopy opening and exact island handoff.
+import {flightMotionAt} from './village-flight-motion.js?v=154';
+// Original V13 dive, canopy snatch, and suspended glide, retimed for school arrivals.
 export const SCHOOL_DROP_DURATION=2.95;
 export function createSchoolDrop(T,scene){
 // A nine-cell ram-air canopy inflates unevenly, then tensions its suspension lines.
 // Only cloth and cords enter the POV: no hands, arms, or artificial camera mount.
 const canopyRig=new T.Group();canopyRig.name='pov-parachute';scene.add(canopyRig);
-const canopyMaterials=[0x516af6,0xf4f6ff,0x283987].map(color=>new T.MeshStandardMaterial({color,side:T.DoubleSide,roughness:.86,emissive:color,emissiveIntensity:.32,transparent:true,opacity:1}));
-const cordMaterial=new T.MeshStandardMaterial({color:0xcbd1de,roughness:.85,transparent:true,opacity:1});
-const seamMaterial=new T.MeshStandardMaterial({color:0x353e63,roughness:.9,transparent:true,opacity:1});
+const canopyMaterials=[0x516af6,0xeaedff,0x221d4b].map(color=>new T.MeshStandardMaterial({color,side:T.DoubleSide,roughness:.86,emissive:color,emissiveIntensity:.32,transparent:true,opacity:1}));
+const cordMaterial=new T.MeshStandardMaterial({color:0xeaedff,roughness:.85,transparent:true,opacity:1});
+const seamMaterial=new T.MeshStandardMaterial({color:0x221d4b,roughness:.9,transparent:true,opacity:1});
 const canopyCells=[],canopySeams=[],canopyCords=[];
 const unitUp=new T.Vector3(0,1,0),lineA=new T.Vector3(),lineB=new T.Vector3(),lineDelta=new T.Vector3();
 function rigLine(parent,r,material){const mesh=new T.Mesh(new T.CylinderGeometry(r,r,1,5),material);parent.add(mesh);return mesh;}
@@ -17,7 +18,7 @@ function canopyPoint(x,v,openLeft,openRight,flutter,upper=false){
   // The packed bundle becomes an arched, visibly deep fabric wing.
   const cell=(x+3.375)/.75,belly=.065*Math.sin((cell-Math.floor(cell))*Math.PI)*Math.sin(v*Math.PI);
   const y=.76+open*(1.32+.30*arch+.28*Math.sin(v*Math.PI)+belly+(upper?.045+.22*Math.sin(v*Math.PI):0));
-  const z=-1.24+open*(-2.58+2.66*v)+flutter*Math.sin(v*Math.PI)*(1-open*.8);
+  const z=-1.84+open*(-2.58+2.66*v)+flutter*Math.sin(v*Math.PI)*(1-open*.8);
   return [span,y+flutter*.12*Math.sin(v*Math.PI+side*2),z];
 }
 for(let cell=0;cell<9;cell++){
@@ -48,14 +49,12 @@ function distanceRemaining(knots,t){
  }
  return distance;
 }
-function openingMotion(t){const age=Math.max(0,t-2.55);return {swing:.22*Math.exp(-2.8*age)*Math.sin(5*age),recoil:0,age};}
 const FALL_SPEED=[[0,28],[.55,55],[1,22],[2.95,0]];
 const GLIDE_SPEED=[[0,24],[.55,30],[1,18],[2.95,0]];
-function updateCanopy(t,pose){
+function updateCanopy(t,pose,motion){
   canopyRig.visible=t>=2.4;if(!canopyRig.visible)return;
   const left=smoother(2.4,2.61,t),right=smoother(2.445,2.70,t),taut=smoother(2.48,2.57,t);
-  const motion=openingMotion(t);
-  const flutter=.06*Math.exp(-Math.max(0,t-2.55)*4)*Math.sin((t-2.4)*29);
+  const flutter=.13*Math.exp(-Math.max(0,t-2.55)*4)*Math.sin((t-2.4)*29);
   for(const cell of canopyCells){const a=cell.geometry.attributes.position;let i=0;for(let j=0;j<=12;j++)for(let k=0;k<=2;k++){a.setXYZ(i++,...canopyPoint(cell.x0+k*.375,j/12,left,right,flutter,cell.upper));}a.needsUpdate=true;cell.geometry.computeVertexNormals();}
   for(const seam of canopySeams)placeLine(seam.mesh,canopyPoint(seam.x,seam.v0,left,right,flutter),canopyPoint(seam.x,seam.v1,left,right,flutter));
   for(const cord of canopyCords){
@@ -87,10 +86,22 @@ return {root:canopyRig,begin({anchor,extension=0,aspect=1,overview=null}){
  const end=target.clone().add(new T.Vector3(Math.sin(view.theta)*Math.cos(view.phi)*r,Math.sin(view.phi)*r,Math.cos(view.theta)*Math.cos(view.phi)*r));
  const settle=smoother(0,SCHOOL_DROP_DURATION,time),height=distanceRemaining(FALL_SPEED,time),forward=distanceRemaining(GLIDE_SPEED,time);
  camera.position.copy(end).add(new T.Vector3(-8*(1-settle),height,forward));
- const opening=smoother(.55,1,time),roll=(.008*Math.sin(time*1.7)+.007*opening*Math.exp(-Math.max(0,time-1.15)*2)*Math.sin(time*5))*(1-settle);
- camera.fov=64+4*smoother(0,.55,time)-6*opening-14*smoother(1,SCHOOL_DROP_DURATION,time);
- camera.far=Math.max(1800,r*3);camera.near=.1;camera.updateProjectionMatrix();camera.lookAt(target);camera.rotateZ(roll);camera.updateMatrixWorld();
- const canopyTime=time<.55?2.3:time<1?2.4+(time-.55)/.45*.32:2.72+(time-1)*.6;updateCanopy(canopyTime,{position:camera.position,yaw:Math.atan2(camera.position.x-target.x,camera.position.z-target.z)});
+ // The old sequence looks down during freefall, pulls up with the opening
+ // canopy, and swings under the cords. Locking lookAt to the island hid all three.
+ const motion=flightMotionAt(time),t=motion.source,landing=smoother(1.55,SCHOOL_DROP_DURATION,time);
+ const heading=Math.atan2(camera.position.x-target.x,camera.position.z-target.z);
+ camera.position.addScaledVector(new T.Vector3(Math.cos(heading),0,-Math.sin(heading)),.30*motion.swing*(1-landing));
+ const yaw=heading+.041*motion.swing*(1-landing);
+ const pitch=motion.pitch;
+ const roll=motion.roll;
+ const direction=new T.Vector3(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
+ camera.lookAt(camera.position.clone().add(direction));camera.rotateZ(roll);
+ const suspendedRotation=camera.quaternion.clone();camera.lookAt(target);
+ camera.quaternion.copy(suspendedRotation.slerp(camera.quaternion,landing));
+ camera.fov=motion.fov*(1-landing)+48*landing;
+ camera.far=Math.max(1800,r*3);camera.near=.1;camera.updateProjectionMatrix();camera.updateMatrixWorld();
+ updateCanopy(t,{position:camera.position,yaw:heading},motion);
+ const canopyTime=t;
  const opacity=smoother(2.395,2.425,canopyTime)*(1-smoother(2.1,2.85,time));for(const m of [...canopyMaterials,cordMaterial,seamMaterial])m.opacity=opacity;
  return {target:target.toArray(),theta:view.theta,phi:view.phi,radius:r};
 },finish(){path=null;canopyRig.visible=false;cloudRoot.visible=false;},dispose(){const resources=new Set();canopyRig.traverse(o=>{if(o.geometry)resources.add(o.geometry);for(const m of [].concat(o.material||[]))resources.add(m);});cloudRoot.traverse(o=>{if(o.material){resources.add(o.material);if(o.material.map)resources.add(o.material.map);}});resources.forEach(r=>r.dispose());canopyRig.removeFromParent();cloudRoot.removeFromParent();}};

@@ -7,7 +7,7 @@ import {createSchoolFlight,JET_RIDE_DURATION,SCHOOL_FLIGHT_DURATION,schoolFlight
 import {createSchoolDrop} from '../village-school-drop.js';
 import {createVillageRendererAsync} from '../village-renderer.js';
 const catalog=[{id:'a',name:'Alpha University',aliases:['AU'],city:'Austin',state:'TX'},{id:'b',name:'Beta College',aliases:['BC'],city:'Boston',state:'MA'}];
-const chapters=[{id:'c1',school:'AU',joined:22,active:40,name:'Sigma Chi',letters:'ΣΧ'}];
+const chapters=[{id:'c1',school:'AU',joined:22,active:40,name:'Sigma Chi',letters:'SC'}];
 test('autocomplete includes registered and empty campuses, matches aliases, and keeps existing chapters',()=>{
  const schools=schoolDestinations(chapters,catalog);assert.equal(schools.length,2);
  assert.equal(searchSchools(schools,'AU')[0].name,'Alpha University');
@@ -56,7 +56,7 @@ test('quick arrival keeps descent finite and downward, and matches velocity at t
  const scene=new T.Scene(),flight=createSchoolFlight(T,scene),camera=new T.PerspectiveCamera(48,.5),options={anchor:{lot:{z:-19,originX:100}},aspect:.5};flight.begin(options);
  const h=.0001;flight.update(JET_RIDE_DURATION-h,camera);const before=camera.position.clone();flight.update(JET_RIDE_DURATION,camera);const at=camera.position.clone();flight.update(JET_RIDE_DURATION+h,camera);const after=camera.position.clone();
  assert(at.clone().sub(before).divideScalar(h).distanceTo(after.clone().sub(at).divideScalar(h))<.05);
- let previous=Infinity;for(let t=JET_RIDE_DURATION;t<=SCHOOL_FLIGHT_DURATION;t+=1/60){flight.update(t,camera);assert(camera.position.y<=previous+.0001);previous=camera.position.y;assert(camera.quaternion.toArray().every(Number.isFinite));flight.drop.root.updateMatrixWorld(true);assert(flight.drop.root.matrixWorld.elements.every(Number.isFinite));assert(camera.fov>=47.99&&camera.fov<=75.01);}
+ let previous=Infinity;for(let t=JET_RIDE_DURATION;t<=SCHOOL_FLIGHT_DURATION;t+=1/60){flight.update(t,camera);assert(camera.position.y<=previous+.0001);previous=camera.position.y;assert(camera.quaternion.toArray().every(Number.isFinite));flight.drop.root.updateMatrixWorld(true);assert(flight.drop.root.matrixWorld.elements.every(Number.isFinite));assert(camera.fov>=47.99&&camera.fov<=94.01);}
  flight.dispose();
 });
 test('canopy opacity is independent of frame rate and resets when the flight is replayed',()=>{
@@ -65,3 +65,28 @@ test('canopy opacity is independent of frame rate and resets when the flight is 
  drop.update(2.95,camera);assert.equal(cloth.material.opacity,0);drop.finish();drop.begin(options);drop.update(2,camera);assert.equal(cloth.material.opacity,1);drop.dispose();
 });
 test('opening the canopy reduces fall speed continuously without a second acceleration',()=>{const drop=createSchoolDrop(T,new T.Scene()),camera=new T.PerspectiveCamera();drop.begin({anchor:{lot:{z:-19,originX:0}}});const speed=t=>{drop.update(t,camera);const y=camera.position.y;drop.update(t+.001,camera);return (y-camera.position.y)/.001;};assert(speed(.5)>speed(.1));let previous=speed(.56);for(let t=.57;t<2.94;t+=.02){const next=speed(t);assert(next<=previous+.001);assert(next>=0);previous=next;}drop.dispose();});
+
+
+test('original dive lifts with the canopy, reveals cloth, and settles on desktop and phone',()=>{
+ for(const aspect of [16/9,390/844]){
+  const drop=createSchoolDrop(T,new T.Scene()),camera=new T.PerspectiveCamera(48,aspect),direction=new T.Vector3();
+  drop.begin({anchor:{lot:{z:-19,originX:0}},aspect});
+  drop.update(0,camera);camera.getWorldDirection(direction);assert(direction.y<-.85);assert(!drop.root.visible);
+  drop.update(1.2,camera);camera.getWorldDirection(direction);assert(Math.abs(direction.y)<.2);assert(drop.root.visible);
+  drop.root.updateMatrixWorld(true);
+  let visible=0;for(const panel of drop.root.children.filter(c=>c.name==='parachute-visible-cloth')){
+   const points=panel.geometry.attributes.position;
+   for(let i=0;i<points.count;i++){const p=new T.Vector3().fromBufferAttribute(points,i).applyMatrix4(panel.matrixWorld).project(camera);if(Math.abs(p.x)<1&&Math.abs(p.y)<1&&p.z>-1&&p.z<1)visible++;}
+  }
+  assert(visible>20,'canopy cloth must actually enter the camera frame');
+  const h=.0001;drop.update(2.95-h,camera);const q=camera.quaternion.clone(),p=camera.position.clone();drop.update(2.95,camera);
+  assert(camera.quaternion.angleTo(q)<.00001);assert(camera.position.distanceTo(p)<.00001);assert.equal(camera.fov,48);
+  drop.dispose();
+ }
+});
+
+test('doorway looks out through the side hatch before rotating into freefall',()=>{
+ const flight=createSchoolFlight(T,new T.Scene()),camera=new T.PerspectiveCamera(),direction=new T.Vector3();flight.begin({anchor:{lot:{z:-19,originX:0}}});
+ flight.update(.85,camera);camera.getWorldDirection(direction);assert(direction.x<-.8);assert(direction.y>-.5);
+ flight.update(JET_RIDE_DURATION,camera);camera.getWorldDirection(direction);assert(direction.y<-.85);flight.dispose();
+});
