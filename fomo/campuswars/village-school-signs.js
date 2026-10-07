@@ -1,5 +1,4 @@
 import {campusIdentity} from './village-school-identities.js?v=138';
-import {createClothBanner} from './village-banners.js?v=153';
 
 const images=new Map();
 export function loadCampusLogo(identity){
@@ -36,10 +35,6 @@ export function createSchoolEntrance(T,school,kit,wallColor){
  const ready=loadCampusLogo(identity).then(image=>{logo=image;});
  for(const side of [-1,1]){
   box(root,side*19,11.8,0,1.2,23.6,1.2,wallColor);box(root,side*19,.3,0,2,.6,2,0xe4d5b9);
-  box(root,side*22.5,19.8,0,7.3,.16,.18,0x535c62);
-  const cloth=createClothBanner(T,{width:4.6,height:10,primary:identity.primary,resolution:512,ready,paint:(ctx,w,h)=>paintCampusSign(ctx,school,identity,logo,w,h,true)});
-  cloth.name='school-entrance-banner';cloth.userData.ownedTexture=true;cloth.position.set(side*22.5,14.7,.15);cloth.material.side=T.FrontSide;root.add(cloth);
-  const reverse=cloth.clone();reverse.name='school-entrance-banner-back';reverse.rotation.y=Math.PI;reverse.position.z=-.15;root.add(reverse);
  }
  box(root,0,21.2,0,39.2,5.6,.6,0xe4d5b9);
  let map;

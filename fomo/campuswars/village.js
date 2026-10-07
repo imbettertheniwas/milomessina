@@ -21,7 +21,7 @@ import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=153';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=159';
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
-import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=162';
+import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=163';
 import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=156';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
