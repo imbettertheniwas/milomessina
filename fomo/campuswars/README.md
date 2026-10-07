@@ -34,19 +34,20 @@ chapters and custom schools land in a starter campus with the existing claimable
 lot, a start-chapter link, and a referral link. The school choice is retained in
 the destination URL; no new registrations are created by visiting.
 
-Choosing a school plays a 3.8-second FOMO private-jet sequence (exterior,
-cabin, open-door exit), followed by a 4.4-second parachute arrival: 8.2 seconds total.
-The first 2.55 seconds use native After Effects renders at 60 fps, with a
-180-degree shutter, motion blur, and an eased exterior-to-cabin transition.
-Desktop and portrait H.264 plates are 320 KB and 284 KB; the last 250 ms
-blend into the live door exit. Slow loading or blocked playback keeps the live
-3D film, and reduced motion downloads neither film. Pause, skip, visibility,
-and replay share the live arrival clock. Source project and 306 source frames:
+Choosing a school now plays a 4.6-second arrival: one 0.85-second jet shot,
+0.8 seconds through the doorway into the jump, and a 2.95-second parachute glide.
+There is no separate cabin tour or return to the exterior plane. Captions show
+only FOMO AIR followed by the selected school name.
+The jet shot is a tighter cut of the native 60 fps After Effects render. It is
+fully opaque and cuts cleanly to the live jump; the live jet is hidden while
+the film is visible. Playing footage is never sought backwards to catch a slow
+3D frame. The arrival uses visible elapsed time, so a slow device cannot stretch
+it into another long intro. Repeated school requests during loading or arrival
+are ignored instead of queuing a second trip. Source project and source frames:
 `deliverables/greek-village-flight-ae/fomo-school-flight.aep`.
 The exit matches the jet and freefall velocities. After canopy inflation,
-downward speed decreases continuously instead of diving again; the camera
-settles into the exact island overview. Pearl paint, sky reflections, a curved
-fuselage and segmented cockpit glazing improve the jet model.
+downward speed decreases continuously and settles into the exact island overview.
+Slow loading or blocked playback keeps the live 3D shot. Reduced motion skips it.
 Pause and skip remain available, and reduced-motion visitors arrive directly.
 School-picker visibility pauses rendering and playback. The opening money rain
 covers every rendered chapter for eight visible seconds and starts after landing
@@ -114,7 +115,7 @@ vegetation and sky, using verified campus location metadata. School views do not
 construct the national helipad. Return to National Home restores the original
 national surroundings and its top 19 chapters.
 
-Travel uses a 4.4-second parachute descent with a nine-cell cloth canopy,
+Travel uses a 2.95-second parachute descent with a nine-cell cloth canopy,
 rendered over the selected school world. It supports
 skip, pause and reduced motion. School and chapter URL hashes support direct
 entry and browser Back/Forward. Live feed updates preserve the current destination

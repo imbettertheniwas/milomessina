@@ -1,5 +1,5 @@
 // Short continuous descent with a gentle canopy opening and exact island handoff.
-export const SCHOOL_DROP_DURATION=4.4;
+export const SCHOOL_DROP_DURATION=2.95;
 export function createSchoolDrop(T,scene){
 // A nine-cell ram-air canopy inflates unevenly, then tensions its suspension lines.
 // Only cloth and cords enter the POV: no hands, arms, or artificial camera mount.
@@ -49,8 +49,8 @@ function distanceRemaining(knots,t){
  return distance;
 }
 function openingMotion(t){const age=Math.max(0,t-2.55);return {swing:.22*Math.exp(-2.8*age)*Math.sin(5*age),recoil:0,age};}
-const FALL_SPEED=[[0,22],[.9,47],[1.55,20],[4.4,0]];
-const GLIDE_SPEED=[[0,20],[.9,26],[1.55,16],[4.4,0]];
+const FALL_SPEED=[[0,28],[.55,55],[1,22],[2.95,0]];
+const GLIDE_SPEED=[[0,24],[.55,30],[1,18],[2.95,0]];
 function updateCanopy(t,pose){
   canopyRig.visible=t>=2.4;if(!canopyRig.visible)return;
   const left=smoother(2.4,2.61,t),right=smoother(2.445,2.70,t),taut=smoother(2.48,2.57,t);
@@ -82,16 +82,16 @@ return {root:canopyRig,begin({anchor,extension=0,aspect=1,overview=null}){
  cloudRoot.visible=true;cloudRoot.position.set(path.x,0,path.z+19);
  for(const m of [...canopyMaterials,cordMaterial,seamMaterial])m.opacity=1;
 },update(time,camera){
- if(!path)return;time=Math.max(0,Math.min(time,SCHOOL_DROP_DURATION));if(time>SCHOOL_DROP_DURATION-1e-9)time=SCHOOL_DROP_DURATION;cloudRoot.visible=time<1.4;
+ if(!path)return;time=Math.max(0,Math.min(time,SCHOOL_DROP_DURATION));if(time>SCHOOL_DROP_DURATION-1e-9)time=SCHOOL_DROP_DURATION;cloudRoot.visible=time<.8;
  const view=path.overview||{target:[path.x,3,path.z],radius:path.aspect<1?78:58,theta:.5,phi:.4},target=new T.Vector3(...view.target),r=view.radius;
  const end=target.clone().add(new T.Vector3(Math.sin(view.theta)*Math.cos(view.phi)*r,Math.sin(view.phi)*r,Math.cos(view.theta)*Math.cos(view.phi)*r));
  const settle=smoother(0,SCHOOL_DROP_DURATION,time),height=distanceRemaining(FALL_SPEED,time),forward=distanceRemaining(GLIDE_SPEED,time);
  camera.position.copy(end).add(new T.Vector3(-8*(1-settle),height,forward));
- const opening=smoother(.9,1.55,time),roll=(.008*Math.sin(time*1.7)+.007*opening*Math.exp(-Math.max(0,time-1.15)*2)*Math.sin(time*5))*(1-settle);
- camera.fov=64+4*smoother(0,.9,time)-6*opening-14*smoother(1.55,SCHOOL_DROP_DURATION,time);
+ const opening=smoother(.55,1,time),roll=(.008*Math.sin(time*1.7)+.007*opening*Math.exp(-Math.max(0,time-1.15)*2)*Math.sin(time*5))*(1-settle);
+ camera.fov=64+4*smoother(0,.55,time)-6*opening-14*smoother(1,SCHOOL_DROP_DURATION,time);
  camera.far=Math.max(1800,r*3);camera.near=.1;camera.updateProjectionMatrix();camera.lookAt(target);camera.rotateZ(roll);camera.updateMatrixWorld();
- const canopyTime=time<.9?2.3:time<1.55?2.4+(time-.9)/.65*.32:2.72+(time-1.55)*.6;updateCanopy(canopyTime,{position:camera.position,yaw:Math.atan2(camera.position.x-target.x,camera.position.z-target.z)});
- const opacity=smoother(2.395,2.425,canopyTime)*(1-smoother(3.1,4.25,time));for(const m of [...canopyMaterials,cordMaterial,seamMaterial])m.opacity=opacity;
+ const canopyTime=time<.55?2.3:time<1?2.4+(time-.55)/.45*.32:2.72+(time-1)*.6;updateCanopy(canopyTime,{position:camera.position,yaw:Math.atan2(camera.position.x-target.x,camera.position.z-target.z)});
+ const opacity=smoother(2.395,2.425,canopyTime)*(1-smoother(2.1,2.85,time));for(const m of [...canopyMaterials,cordMaterial,seamMaterial])m.opacity=opacity;
  return {target:target.toArray(),theta:view.theta,phi:view.phi,radius:r};
 },finish(){path=null;canopyRig.visible=false;cloudRoot.visible=false;},dispose(){const resources=new Set();canopyRig.traverse(o=>{if(o.geometry)resources.add(o.geometry);for(const m of [].concat(o.material||[]))resources.add(m);});cloudRoot.traverse(o=>{if(o.material){resources.add(o.material);if(o.material.map)resources.add(o.material.map);}});resources.forEach(r=>r.dispose());canopyRig.removeFromParent();cloudRoot.removeFromParent();}};
 }

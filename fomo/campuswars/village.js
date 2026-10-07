@@ -1,4 +1,4 @@
-import {createSchoolFilm} from './village-school-film.js?v=151';
+import {createSchoolFilm} from './village-school-film.js?v=152';
 import {islandFootprint,islandOverview} from './village-island.js?v=149';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=146';
@@ -22,7 +22,7 @@ import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
 import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=149';
-import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=151';
+import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=152';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
 const loading=document.getElementById('village-loading');
@@ -49,7 +49,7 @@ async function startVillage(){
   const catalog=await loadSchoolCatalog().catch(()=>[]);
   allChapters=JSON.parse(document.getElementById('chapters-data').textContent).chapters;
   let activeSchool=resolveDestination(routeFromHash(location.hash),schoolDestinations(allChapters,catalog));
-  let travelling=false,schoolPickerOpen=false,pendingDestination=null;
+  let travelling=false,schoolPickerOpen=false,pendingDestination=null,destinationInFlight=null;
   chapters=destinationChapters(allChapters,activeSchool);
   function makeDistricts(school,extension,streets){return school?createSchoolDistricts(THREE,school,extension,chapters):createDistricts(THREE,extension,streets,{incremental:quality.mobile});}
   const resolutionBudget=createResolutionBudget(quality,devicePixelRatio);
@@ -131,9 +131,9 @@ async function startVillage(){
     flightKeys.clear();
     if(activeSchool&&reduced){finishIntro();resetView();return;}
     if(activeSchool)(schoolFlight??=createSchoolFlight(THREE,scene)).begin({anchor:village.anchors.find(a=>a.id===selected)||village.anchors[0],extension:village.extension,aspect:camera.aspect,overview:islandOverview(islandFootprint(chapters),camera.aspect)});
-    if(activeSchool)schoolFilm.begin();
     if(village.streaming&&!village.residentIndices.has(0)){village.focus(village.anchors[0].id,beginIntro);wake();return;}
     leaveStreet();
+    if(activeSchool)schoolFilm.begin();
     shell.dataset.introComplete='false';
     entrancePending=false;entranceActive=true;entrancePaused=false;entranceTime=0;captionIndex=-1;lastTime=0;
     document.getElementById('intro-pause').textContent='Pause intro';
@@ -239,15 +239,18 @@ async function startVillage(){
     renderer.shadowMap.needsUpdate=true;viewDirty=true;wake();return true;
   }
   async function navigate(route,{historyMode='push'}={}){
+    // A double tap while loading must not queue the same arrival a second time.
+    if(travelling&&route.school===destinationInFlight?.school&&route.chapter===destinationInFlight?.chapter&&Boolean(route.instant)===Boolean(destinationInFlight?.instant))return;
     if(!ready||travelling){pendingDestination={route,historyMode};return;}
     const schools=schoolDestinations(allChapters,catalog),school=resolveDestination(route,schools);
     if(route.school&&!school){document.dispatchEvent(new Event('destination:error'));return;}
+    if(school&&!route.instant&&entranceActive&&school.id===activeSchool?.id)return;
     if(route.instant&&school&&school.id===activeSchool?.id){
       takeControl();if(route.chapter)choose(route.chapter,true,true,true);else {resetView();target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}
       if(historyMode!=='none')history[historyMode==='push'?'pushState':'replaceState'](null,'',location.pathname+location.search+destinationHash(school?.id,route.chapter,school?.custom?school.name:undefined));
       canvas.focus({preventScroll:true});wake();return;
     }
-    travelling=true;takeControl();leaveStreet();loading.hidden=false;loading.textContent=school?'Getting your jet ready…':'Opening the village…';
+    travelling=true;destinationInFlight=route;takeControl();leaveStreet();loading.hidden=false;loading.textContent=school?'Getting your jet ready…':'Opening the village…';
     try{
       await updateChapters({detail:{chapters:allChapters,selectedId:route.chapter}},{school});
       while(districts.building){await yieldVillageBuild();districts.update(0,0);}
@@ -259,6 +262,7 @@ async function startVillage(){
       document.dispatchEvent(new CustomEvent('destination:arrived',{detail:{school}}));
       canvas.focus({preventScroll:true});wake();
     }catch(error){travelling=false;loading.hidden=true;console.error('Destination load failed',error);document.dispatchEvent(new Event('destination:error'));wake();}
+    destinationInFlight=null;
     if(pendingDestination){const next=pendingDestination;pendingDestination=null;await navigate(next.route,{historyMode:next.historyMode});}
     else if(pendingChapterUpdate){const event=pendingChapterUpdate;pendingChapterUpdate=null;await updateChapters(event);}
   }
@@ -450,7 +454,7 @@ async function startVillage(){
       target.x+=dx;target.z+=dz;wantedTarget.x+=dx;wantedTarget.z+=dz;
     }
     if(entranceActive){
-      if(visible&&!document.hidden&&!entrancePaused)entranceTime=Math.min(activeSchool?SCHOOL_FLIGHT_DURATION:INTRO_DURATION,entranceTime+Math.min(elapsed,.1));
+      if(visible&&!document.hidden&&!entrancePaused)entranceTime=Math.min(activeSchool?SCHOOL_FLIGHT_DURATION:INTRO_DURATION,entranceTime+(activeSchool?elapsed:Math.min(elapsed,.1)));
       applyIntroView();paintIntro();
       if(!activeSchool&&entranceTime>=INTRO_DURATION)finishIntro();
     }else{
@@ -468,7 +472,7 @@ async function startVillage(){
       document.getElementById('street-back').disabled=streetStep(streetWantedZ,-direction,village.extension)===streetWantedZ;
     }else camera.position.set(target.x+Math.sin(theta)*Math.cos(phi)*radius,target.y+Math.sin(phi)*radius,target.z+Math.cos(theta)*Math.cos(phi)*radius);
     camera.lookAt(target);if(introRoll)camera.rotateZ(introRoll);camera.updateMatrixWorld();
-    if(entranceActive&&activeSchool&&!reduced){schoolFilm.update(entranceTime,entrancePaused);const pose=schoolFlight.update(entranceTime,camera);target.set(...pose.target);wantedTarget.copy(target);theta=wantedTheta=pose.theta;phi=wantedPhi=pose.phi;radius=wantedRadius=pose.radius;if(entranceTime>=SCHOOL_FLIGHT_DURATION)finishIntro();}
+    if(entranceActive&&activeSchool&&!reduced){const filmVisible=schoolFilm.update(entranceTime,entrancePaused);const pose=schoolFlight.update(entranceTime,camera);if(filmVisible)schoolFlight.root.visible=false;target.set(...pose.target);wantedTarget.copy(target);theta=wantedTheta=pose.theta;phi=wantedPhi=pose.phi;radius=wantedRadius=pose.radius;if(entranceTime>=SCHOOL_FLIGHT_DURATION)finishIntro();}
     const housesChanged=village.updateView?.(camera)||false;
     if(housesChanged){moneyRain.setChapters(chapters,village.renderAnchors||village.anchors);renderer.shadowMap.needsUpdate=true;viewDirty=true;}
     // Use visible playback time, independent of the camera intro: skipping or
