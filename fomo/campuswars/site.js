@@ -104,7 +104,7 @@
     setDrawer(false);setMoreControls(false);
   });
   document.addEventListener('village:select', event => {
-    selectChapter(event.detail.id, {emit: false});
+    selectChapter(event.detail.id, {emit: false,writeHash:event.detail.writeHash!==false});
     if (event.detail.interactive) setDrawer(true);
   });
   let drag = null;
@@ -197,7 +197,7 @@
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
   import('./village-national.js?v=158').then(m=>m.createNationalNavigation());
-  import('./village.js?v=158').catch(error => {
+  import('./village.js?v=159').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');

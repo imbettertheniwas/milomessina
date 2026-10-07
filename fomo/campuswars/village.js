@@ -1,3 +1,4 @@
+import {createNearbyIslands} from './village-nearby-islands.js?v=159';
 import {islandFootprint,islandOverview} from './village-island.js?v=158';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=153';
@@ -17,7 +18,7 @@ import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-i
 import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=153';
 import {prewarmVillage} from './village-prewarm.js?v=153';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=153';
-import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=87';
+import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=159';
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
 import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=158';
@@ -68,7 +69,8 @@ async function startVillage(){
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
   function emptyHelipad(){return {root:new THREE.Group(),restart(){},setNight(){},relocate(){},update(){},dispose(){}};}
   let helipad=activeSchool?emptyHelipad():createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced);
-  const pointerHover=createPointerHover(THREE,canvas,camera,blimp);
+  const nearby=createNearbyIslands(THREE,{host:shell,documentRef:document,onFocus:()=>takeControl(),onTravel:school=>document.dispatchEvent(new CustomEvent('destination:request',{detail:{school,instant:true}}))});scene.add(nearby.root);
+  const pointerHover=createPointerHover(THREE,canvas,camera,blimp,{schoolPickables:()=>nearby.pickables.length?scenePickables():[]});
   const discordLink=document.getElementById('village-discord');discordLink.href=DISCORD_INVITE;
   const moneyRain=createMoneyRain(THREE,chapters,village.renderAnchors||village.anchors);scene.add(moneyRain.root);
   let openingRainTime=0;
@@ -87,7 +89,7 @@ async function startVillage(){
     sun.color.set(0xffe5c6).lerp(dusk.sun,amount);sun.intensity=2.6-amount*2.18;
     fill.color.set(0xb7d2f5).lerp(dusk.fill,amount);fill.intensity=.6-amount*.17;
     const night=amount>.45;
-    if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);helipad.setNight(night);}
+    if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);helipad.setNight(night);nearby.setNight(night);}
   }
   const intro=document.getElementById('village-intro');
   let autoOrbit=!reduced,entrancePending=true,entranceActive=false,entrancePaused=false,entranceTime=0,captionIndex=-1;
@@ -118,7 +120,7 @@ async function startVillage(){
     const wasPlaying=entranceActive||entrancePending;
     entrancePending=false;entranceActive=false;intro.hidden=true;shell.classList.remove('intro-playing','school-flight');
     shell.dataset.introComplete='true';
-    schoolFlight?.finish();introRoll=0;camera.near=1;camera.far=activeSchool?Math.max(1000,islandOverview(islandFootprint(chapters),camera.aspect).radius*3):650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
+    schoolFlight?.finish();introRoll=0;camera.near=1;camera.far=activeSchool?Math.max(nearby.farDistance,1000,islandOverview(islandFootprint(chapters),camera.aspect).radius*3):650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
     applyLighting(document.getElementById('night-toggle').getAttribute('aria-pressed')==='true'?1:0);
     if(['intro-skip','intro-pause','intro-join'].some(id=>document.activeElement===document.getElementById(id)))canvas.focus({preventScroll:true});
     if(ready)arrivals.start(chapters,partyTime,reduced);
@@ -131,6 +133,7 @@ async function startVillage(){
     if(activeSchool)(schoolFlight??=createSchoolFlight(THREE,scene)).begin({anchor:village.anchors.find(a=>a.id===selected)||village.anchors[0],extension:village.extension,aspect:camera.aspect,overview:islandOverview(islandFootprint(chapters),camera.aspect)});
     if(village.streaming&&!village.residentIndices.has(0)){village.focus(village.anchors[0].id,beginIntro);wake();return;}
     leaveStreet();
+    nearby.update(camera,viewportWidth,viewportHeight,false);
     shell.dataset.introComplete='false';
     entrancePending=false;entranceActive=true;entrancePaused=false;entranceTime=0;captionIndex=-1;lastTime=0;
     document.getElementById('intro-pause').textContent='Pause intro';
@@ -175,13 +178,13 @@ async function startVillage(){
     applyLighting(night?1:0);viewDirty=true;wake();
   });
   function snapLongJump(){if(target.distanceTo(wantedTarget)>180){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=activeSchool?islandOverview(islandFootprint(chapters),camera.aspect):openingView;wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;camera.far=Math.max(650,home.radius*3);camera.updateProjectionMatrix();snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
+  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=activeSchool?islandOverview(islandFootprint(chapters),camera.aspect):openingView;wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;camera.far=Math.max(nearby.farDistance,650,home.radius*3);camera.updateProjectionMatrix();snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
   function choose(id,focus=false,emit=true,instant=false){
     const anchor=village.anchors.find(a=>a.id===id);if(!anchor)return;selected=id;viewDirty=true;
     // Frame the house from its own street's centre line, whichever street that is.
     // On phones the chapter sheet takes the bottom of the screen, so stand back and aim low: the whole house fits above it.
     if(focus){takeControl();leaveStreet();const aim=()=>{if(selected!==id)return;const ox=anchor.lot.originX||0,side=anchor.lot.x-ox,phone=viewport.clientWidth<650,far=Math.abs(target.x-anchor.lot.x)>180;wantedTarget.set(ox+side*.69,phone?-.5:2,anchor.lot.z);wantedRadius=phone?46:30;wantedPhi=.67;wantedTheta=side<0?1.08:-1.08;if(far||instant){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;camera.position.set(target.x+Math.sin(theta)*Math.cos(phi)*radius,target.y+Math.sin(phi)*radius,target.z+Math.cos(theta)*Math.cos(phi)*radius);camera.lookAt(target);camera.updateMatrixWorld();}viewDirty=true;wake();};if(village.focus)village.focus(id,aim);else aim();}
-    if(emit)document.dispatchEvent(new CustomEvent('village:select',{detail:{id,interactive:focus&&!instant}}));wake();
+    if(emit)document.dispatchEvent(new CustomEvent('village:select',{detail:{id,interactive:focus&&!instant,writeHash:!travelling}}));wake();
   }
   document.addEventListener('chapter:select',e=>{
     if(village.anchors.some(a=>a.id===e.detail.id)){choose(e.detail.id,Boolean(e.detail.focus));return;}
@@ -203,6 +206,8 @@ async function startVillage(){
   });
   let chapterBuildRevision=0;
   function announceDestination(){
+    nearby.setSchool(activeSchool,schoolDestinations(allChapters,catalog),islandFootprint(chapters));nearby.setNight(litAtNight);
+    camera.far=Math.max(camera.far,nearby.farDistance);camera.updateProjectionMatrix();
     population.root.visible=!activeSchool;helipad.root.visible=!activeSchool;blimp.root.visible=!activeSchool;
     for(const id of ['village-stadium','village-helipad'])document.getElementById(id).hidden=Boolean(activeSchool);
     shell.dataset.renderedChapters=String(chapters.length);shell.dataset.renderedStreets=String(village.streetTotal);
@@ -247,7 +252,7 @@ async function startVillage(){
       if(historyMode!=='none')history[historyMode==='push'?'pushState':'replaceState'](null,'',location.pathname+location.search+destinationHash(school?.id,route.chapter,school?.custom?school.name:undefined));
       canvas.focus({preventScroll:true});wake();return;
     }
-    travelling=true;destinationInFlight=route;takeControl();leaveStreet();loading.hidden=false;loading.textContent=school?'Opening your campus…':'Opening the village…';
+    travelling=true;destinationInFlight=route;takeControl();leaveStreet();nearby.update(camera,viewportWidth,viewportHeight,false);loading.hidden=false;loading.textContent=school?'Opening your campus…':'Opening the village…';
     try{
       await updateChapters({detail:{chapters:allChapters,selectedId:route.chapter}},{school});
       while(districts.building){await yieldVillageBuild();districts.update(0,0);}
@@ -265,7 +270,7 @@ async function startVillage(){
   }
   document.addEventListener('destination:request',e=>navigate(e.detail));
   addEventListener('popstate',()=>navigate(routeFromHash(location.hash),{historyMode:'none'}));
-  document.addEventListener('school:visibility',e=>{schoolPickerOpen=e.detail.open;flightKeys.clear();lastTime=0;if(!schoolPickerOpen)wake();});
+  document.addEventListener('school:visibility',e=>{schoolPickerOpen=e.detail.open;if(schoolPickerOpen)nearby.update(camera,viewportWidth,viewportHeight,false);flightKeys.clear();lastTime=0;if(!schoolPickerOpen)wake();});
   document.removeEventListener('chapters:update',queueChapterUpdate);
   document.addEventListener('chapters:update',event=>{
     arrivals.enqueue(event.detail.arrivals);
@@ -340,11 +345,12 @@ async function startVillage(){
   const expand=document.getElementById('village-expand');expand.hidden=!shell.requestFullscreen;
   expand.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await shell.requestFullscreen();}catch{expand.disabled=true;expand.title='Full screen is unavailable in this browser.';}});
   document.addEventListener('fullscreenchange',()=>{expand.textContent=document.fullscreenElement?'Exit full screen ↙':'Full screen ↗';resize();});
+  function scenePickables(){const rock=activeSchool?districts.root.getObjectByName('island-rock-undercut'):null;return [...(blimp.root.visible?blimp.pickables:[]),...village.pickables,...nearby.pickables,...(rock?[rock]:[])];}
   canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;
     pointerHover.clear();
     if(e.pointerType==='touch'){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);if(touchPoints.size>1){takeControl();pinchDistance=touchDistance();drag=null;dragDistance=9;return;}}
     takeControl();canvas.focus({preventScroll:true});rayAt(e);
-    const hit=raycaster.intersectObjects([...blimp.pickables,...village.pickables],false)[0];
+    const hit=raycaster.intersectObjects(scenePickables(),false)[0];
     drag={id:e.pointerId,x:e.clientX,y:e.clientY,pan:e.shiftKey,blimp:hit?.object.userData.action==='discord'};dragDistance=0;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{
     if(drag&&releasedMouseDrag(e)){drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);}
@@ -362,8 +368,9 @@ async function startVillage(){
     rayAt(e);
     // Remember a blimp press so its gentle motion cannot outrun a touch tap.
     if(startedOnBlimp){discordLink.click();return;}
-    const hit=raycaster.intersectObjects([...blimp.pickables,...village.pickables],false)[0];
+    const hit=raycaster.intersectObjects(scenePickables(),false)[0];
     if(hit?.object.userData.action==='discord'){discordLink.click();return;}
+    if(hit?.object.userData.action==='school'){document.dispatchEvent(new CustomEvent('destination:request',{detail:{school:hit.object.userData.school,instant:true}}));return;}
     if(streetMode){const step=raycaster.intersectObjects(streetNav.pickables.filter(o=>o.parent.visible),false)[0];if(step){moveStreet(step.object.userData.streetZ);return;}}
     if(hit){if(hit.object.userData.action==='register'){document.getElementById('panel-claim').click();return;}choose(hit.object.userData.chapter,!streetMode);return;}
   });
@@ -504,6 +511,7 @@ async function startVillage(){
     village.animateCrowd(partyTime,camera,pedestrianPoses);
     districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);
     village.competition.animate?.(partyTime,reduced);
+    nearby.update(camera,viewportWidth,viewportHeight,!entranceActive&&!schoolPickerOpen&&!travelling);
     renderer.render(scene,camera);lastRender=now;
     const nextScale=resolutionBudget.sample(now,performance.now()-frameStarted,frameGap,{busy:entranceActive||activityPaused||Boolean(drag)||village.building||districts.building});
     if(nextScale!==renderScale){renderScale=nextScale;renderer.setPixelRatio(renderScale);}
@@ -561,5 +569,6 @@ async function startVillage(){
     loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     loading.hidden=false;shell.classList.add('village-unavailable');
   }
+  addEventListener('pagehide',event=>{if(!event.persisted)nearby.dispose();});
   prepare().catch(showLoadingError);
 }

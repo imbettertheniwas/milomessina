@@ -224,3 +224,11 @@ dialog::backdrop{backdrop-filter:none;background:#221d4bb3}
   .village-bottom .village-view-tools{justify-self:center}
   .village-bottom .village-primary-controls{justify-self:end}
 }
+
+/* Real nearby campus destinations, anchored to the distant islands. */
+.nearby-school-labels{position:absolute;inset:0;z-index:2;pointer-events:none}
+.nearby-school-label{position:absolute;left:0;top:0;pointer-events:auto;min-height:48px;padding:8px 10px;border:1px solid #eaedff66;border-radius:12px;background:#221d4be8;color:var(--fomo-white);box-shadow:0 4px 16px #221d4b30;text-align:center;line-height:1.25;cursor:pointer}
+.nearby-school-label strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:12px;font-weight:700;overflow:hidden}
+.nearby-school-label span{display:block;margin-top:4px;font-size:10px;color:#eaedffbb}
+.nearby-school-label:hover,.nearby-school-label:focus-visible{background:var(--fomo-secondary);border-color:var(--fomo-white)}
+.intro-playing .nearby-school-labels,.controls-open .nearby-school-labels,.drawer-open .nearby-school-labels{visibility:hidden}

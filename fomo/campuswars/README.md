@@ -458,3 +458,7 @@ The visual preview at `tests/campus-hill-gallery.html` includes quad, street-lev
 ### Pool yards and activity
 
 Greek Row keeps the rear-yard strips clear on every street. The café and basketball court sit beyond the rear walks, and the fountain moves with the end of an extended row. Eligible chapters move up to six existing members into bathing suits: two swimmers in separate lap lanes, loungers on deck chairs, and poolside conversation. Their identities and the visible roster count are preserved. Pool animation shares the village clock, including pause and reduced motion.
+
+### Nearby school islands
+
+School islands show up to six nearest campuses already registered in Greek Wars, using known campus latitude/longitude and great-circle distance. Directions follow real compass bearings; scene distances are compressed so neighboring islands remain visible. Unregistered campuses and destinations without coordinates are excluded. Nearby islands use shared, simplified campus scenery rather than full chapter worlds. Click an island or its school/distance label to teleport through the existing destination flow, without the parachute intro. The neighbors refresh after travel or feed changes and disappear at the national home. Labels support keyboard activation, pause orbit on focus/hover, avoid overlapping one another, and hide behind the main island and open overlays.
