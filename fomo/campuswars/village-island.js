@@ -68,7 +68,7 @@ float stoneNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix
   shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nfloat mineral=stoneNoise(islandStonePoint*.3);float grain=stoneNoise(islandStonePoint*3.0);float layers=sin(islandStonePoint.y*1.8+mineral*4.0);diffuseColor.rgb*=.79+.26*mineral+.12*grain+.045*layers;');
  };
  const rock=new T.Mesh(geometry,rockMaterial);rock.name='island-rock-undercut';rock.receiveShadow=true;root.add(rock);
- // Feathered cloud wisps replace solid cloud balls; all sixty share one draw call.
+ // Feathered clouds float above the campus; all sixty share one draw call.
  let cloudTexture=null;
  if(typeof document!=='undefined'){
   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128;const ctx=canvas.getContext('2d');
@@ -77,7 +77,7 @@ float stoneNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix
  }
  const cloudMaterial=own(new T.MeshBasicMaterial({map:cloudTexture,color:0xf4f8ff,transparent:true,opacity:.65,depthWrite:false,side:T.DoubleSide}));
  const clouds=new T.InstancedMesh(own(new T.PlaneGeometry(1,1)),cloudMaterial,60),dummy=new T.Object3D(),cloudPositions=[];clouds.name='island-clouds';clouds.frustumCulled=false;root.add(clouds);
- for(let i=0;i<60;i++){const group=Math.floor(i/5),a=group*Math.PI*2/12,r=1.65+hash(school.id,group,'cloud')*.8;cloudPositions.push({x:spec.x+Math.cos(a)*spec.rx*r+(i%5-2)*7,y:-spec.depth-19-hash(group,school.id)*24,z:spec.z+Math.sin(a)*spec.rz*r+Math.sin(i)*5,w:37+hash(i,'wide')*24,h:17+hash(i,'tall')*10});}
+ for(let i=0;i<60;i++){const group=Math.floor(i/5),a=group*Math.PI*2/12,r=.35+hash(school.id,group,'cloud')*.55;cloudPositions.push({x:spec.x+Math.cos(a)*spec.rx*r+(i%5-2)*7,y:52+hash(group,school.id)*16,z:spec.z+Math.sin(a)*spec.rz*r+Math.sin(i)*5,w:37+hash(i,'wide')*24,h:17+hash(i,'tall')*10});}
  function faceClouds(camera){for(let i=0;i<cloudPositions.length;i++){const p=cloudPositions[i];dummy.position.set(p.x,p.y,p.z);dummy.scale.set(p.w,p.h,1);if(camera)dummy.quaternion.copy(camera.quaternion);dummy.updateMatrix();clouds.setMatrixAt(i,dummy.matrix);}clouds.instanceMatrix.needsUpdate=true;}faceClouds();
  const stadium={root:new T.Group(),setNight(){},bounds:new T.Sphere(new T.Vector3(),1)};
  return {root,spec,stadium,pedestrians:[],building:false,update(){return false;},animate(time,x,z,camera){faceClouds(camera);},setNight(night){cloudMaterial.color.setHex(night?0x71829f:0xf4f8ff);},dispose(){clouds.dispose();resources.forEach(r=>r.dispose());root.removeFromParent();}};

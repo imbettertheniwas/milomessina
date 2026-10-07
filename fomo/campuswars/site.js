@@ -49,7 +49,6 @@
   document.addEventListener('village:introstart',()=>setMoreControls(false));
   const about = document.getElementById('about-dialog');
   function syncOverlay(){document.dispatchEvent(new CustomEvent('village:overlay',{detail:{open:!drawer.hidden||moreButton.getAttribute('aria-expanded')==='true'||Boolean(about.open)}}));}
-  document.getElementById('village-about').addEventListener('click', () => {about.showModal();syncOverlay();});
   about.addEventListener('close',syncOverlay);
   document.getElementById('about-close').addEventListener('click', () => about.close());
   document.getElementById('intro-replay').addEventListener('click', () => {about.close();setDrawer(false);document.dispatchEvent(new CustomEvent('village:replay'));});
@@ -197,8 +196,8 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village-national.js?v=157').then(m=>m.createNationalNavigation());
-  import('./village.js?v=157').catch(error => {
+  import('./village-national.js?v=158').then(m=>m.createNationalNavigation());
+  import('./village.js?v=158').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');

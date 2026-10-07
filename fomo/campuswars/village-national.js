@@ -54,7 +54,7 @@ export function createNationalNavigation(){
  function update(){schools=schoolDestinations(snapshot.chapters,catalog);if(dialog.open)render();}
  document.addEventListener('chapters:update',event=>{snapshot=event.detail;update();});
  document.addEventListener('destination:changed',event=>{
-  const {school,chapters}=event.detail;emptyCampus=Boolean(school&&!chapters.length);starter.hidden=true;home.hidden=!school;document.querySelector('.village-title h1').textContent=school?school.name:'Greek village';document.querySelector('.village-kicker').textContent=school?'GREEK WARS · YOUR CAMPUS':'GREEK WARS · HOME';
+  const {school,chapters}=event.detail;emptyCampus=Boolean(school&&!chapters.length);starter.hidden=true;home.hidden=!school;document.querySelector('.village-title h1').textContent=school?school.name:'greek village';document.querySelector('.village-kicker').textContent=school?'GREEK WARS · YOUR CAMPUS':'GREEK WARS · HOME';
   destination.textContent=school?(chapters.length?`${chapters.length} chapters · ${chapters.reduce((n,c)=>n+c.joined,0).toLocaleString()} members`:'Your campus. Start the first chapter.') :'';shell.dataset.destination=school?.id||'national';
  });
  const observer=new MutationObserver(checkTimer);observer.observe(shell,{attributes:true,attributeFilter:['class']});

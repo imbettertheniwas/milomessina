@@ -216,3 +216,11 @@ dialog::backdrop{backdrop-filter:none;background:#221d4bb3}
 
 /* Keep fixed and changing village controls consistently lowercase. */
 #village button,#village a{text-transform:lowercase}
+
+/* Equal side columns keep the desktop view controls centered under invitations. */
+@media(min-width:1281px) and (pointer:fine){
+  .village-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end}
+  .village-bottom .party-tools{justify-self:start}
+  .village-bottom .village-view-tools{justify-self:center}
+  .village-bottom .village-primary-controls{justify-self:end}
+}
