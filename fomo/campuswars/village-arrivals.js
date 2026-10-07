@@ -1,5 +1,5 @@
-import {toWorld,lawnGround} from './village-layout.js?v=153';
-import {smooth} from './village-human-motion.js?v=106';
+import {toWorld,lawnGround} from './village-layout.js?v=162';
+import {smooth} from './village-human-motion.js?v=162';
 
 export const ARRIVAL_HEIGHT=36,ARRIVAL_FALL=9,ARRIVAL_SETTLE=.65,ARRIVAL_RETURN=1.4;
 const duration=ARRIVAL_FALL+ARRIVAL_SETTLE+ARRIVAL_RETURN;

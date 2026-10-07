@@ -1,25 +1,24 @@
-import {islandFootprint} from './village-island.js?v=158';
+import {islandFootprint} from './village-island.js?v=162';
 import {createParachutes} from './village-parachutes.js?v=120';
-import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=113';
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=131';
-import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
+import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=162';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=162';
+import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=162';
 import {rankedHouseSizes} from './village-house-sizing.js?v=153';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';
 import {createVillageEntrance} from './village-entrance.js?v=153';
-import {createPongGames} from './village-pong.js?v=153';
-import {createDieGames} from './village-die.js?v=153';
+import {createPongGames} from './village-pong.js?v=162';
+import {createDieGames} from './village-die.js?v=162';
 import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=153';
 import {createCompetition,houseStandings} from './village-competition.js?v=153';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=153';
-import {humanPose} from './village-human-motion.js?v=106';
-import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=153';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=162';
+import {humanPose} from './village-human-motion.js?v=162';
+import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=162';
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=153';
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=153';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=158';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=162';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=162';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=153';
-import {createSchoolBanner} from './village-school-banners.js?v=153';
-import {createDistantCrowd} from './village-distant-crowd.js?v=131';
+import {createDistantCrowd} from './village-distant-crowd.js?v=162';
 import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
 import {createBackyards,hasChapterHouse} from './village-backyards.js?v=112';
 
@@ -36,7 +35,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   const selectedHouseIndices=selected.filter(i=>i<chapters.length),selectedChapters=selectedHouseIndices.map(i=>chapters[i]),houseLots=selectedHouseIndices.map(i=>lots[i]);
   const world=new THREE.Group(),pickables=[],anchors=[],flags=[];
   const backyards=createBackyards(THREE);
-  const roofGeometries=new Map(),schoolArtwork=new Map(),signArtwork=new Map(),signGeometries=new Map();
+  const roofGeometries=new Map(),signArtwork=new Map(),signGeometries=new Map();
   const materials=new Map(),landscapeKit=createCampusKit(THREE),grassMaterial=createGrassMaterial(THREE),lawns=[];
   function mat(color,emissive=0){const key=color+':'+emissive;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:.84,emissive,emissiveIntensity:emissive?.45:0}));return materials.get(key);}
   const boxGeometry=new THREE.BoxGeometry(1,1,1),sphereGeometry=new THREE.SphereGeometry(1,14,10),cylinderGeometry=new THREE.CylinderGeometry(1,1,1,20);
@@ -160,13 +159,6 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     const hit=box(house,0,height/2,0,width+1,height+3,depth+5,new THREE.MeshBasicMaterial({visible:false}));hit.userData.chapter=id;pickables.push(hit);
     // The displayed leaderboard rank determines the finished house's size.
     house.scale.set(size.scaleX,size.scaleY,depthScale);
-    for(const side of [-1,1]){
-      const schoolBanner=createSchoolBanner(THREE,chapter,{adaptive:compactCrowd,cache:schoolArtwork});schoolBanner.rotation.y=side*Math.PI/2;
-      schoolBanner.position.set(side*(width/2+.22),height/2+.6,0);
-      // Sideways cloth width follows house depth; counter-scale its height to match.
-      schoolBanner.scale.y=house.scale.z/house.scale.y;
-      house.add(schoolBanner);pickables.push(schoolBanner);
-    }
     // Preserve the banner's proportions when the house grows taller.
     banner.scale.y=house.scale.x/house.scale.y;
     banner.position.y=bannerTop-banner.geometry.parameters.height*banner.scale.y/2;
@@ -182,25 +174,26 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   // cull a row of people that is still on screen.
   const crowdReach=Math.max(...lots.map(lot=>Math.abs(lot.originX)))+40;
   const members=[],parts={};
-  for(let i=0;i<selectedChapters.length;i++){members.push(...crowdMembers([selectedChapters[i]],[houseLots[i]],houseSizes));yield;}
+  for(let i=0;i<selectedChapters.length;i++){members.push(...crowdMembers([selectedChapters[i]],[houseLots[i]],houseSizes).map(greekPartyStyle));yield;}
   assignPoolPeople(members,selectedChapters);
   const swimWakes=createSwimWakes(THREE,members);world.add(swimWakes.mesh);
   const pong=createPongGames(THREE,members);world.add(pong.root);
   const die=createDieGames(THREE,members,selectedChapters);world.add(die.root);
   const construction=createConstructionEquipment(THREE,members);world.add(construction.root);
   const bodyGeometry=new THREE.CapsuleGeometry(.5,1,3,8);bodyGeometry.scale(1,.5,1);
+  const skirtGeometry=new THREE.CylinderGeometry(.70,1,1,12);
   const roundParts=new Set(['head','hair','handL','handR','nose']);
-  const names=['torso','pelvis','neck','head','hair','nose','armL','armR','foreL','foreR','handL','handR','legL','legR','shinL','shinR','shoeL','shoeR','cup','backpack'];
+  const names=['torso','pelvis','neck','head','hair','nose','armL','armR','foreL','foreR','handL','handR','legL','legR','shinL','shinR','shoeL','shoeR','cup','backpack','skirt','shortL','shortR','sleeveL','sleeveR'];
   for(const name of names){
-    const geometry=roundParts.has(name)?landscapeKit.geometries.sphere:name.startsWith('shoe')?landscapeKit.geometries.shoe:name==='cup'?cylinderGeometry:name==='backpack'?landscapeKit.geometries.box:bodyGeometry;
+    const geometry=name==='skirt'?skirtGeometry:roundParts.has(name)?landscapeKit.geometries.sphere:name.startsWith('shoe')?landscapeKit.geometries.shoe:name==='cup'?cylinderGeometry:name==='backpack'?landscapeKit.geometries.box:bodyGeometry;
     const mesh=landscapeKit.instances(world,geometry,members.length*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1),39);mesh.material=mat(0xffffff);mesh.castShadow=false;mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,2,extension/2),Math.hypot(crowdReach,40+extension/2)+(arrivals?40:0));parts[name]=mesh;
     members.forEach((m,i)=>{
       if(name==='backpack'){mesh.setColorAt(i*(DETAIL_COUNT+1),new THREE.Color(m.bagColor));detailColors(m).forEach((color,j)=>mesh.setColorAt(i*(DETAIL_COUNT+1)+j+1,new THREE.Color(color)));return;}
-      if(name==='hair'){for(let j=0;j<2;j++)mesh.setColorAt(i*2+j,new THREE.Color(j===0&&m.cap?palettes.shirts[m.shirt]:palettes.hair[m.hair]));return;}
-      const shirt=name==='torso'||name.startsWith('arm')||(m.jacket&&name.startsWith('fore'));
-      const skin=['head','neck','nose'].includes(name)||name.startsWith('hand')||name.startsWith('fore')||(m.shorts&&name.startsWith('shin'));
+      if(name==='hair'){for(let j=0;j<2;j++)mesh.setColorAt(i*2+j,new THREE.Color(j===0&&m.cap?(m.shirtColor??palettes.shirts[m.shirt]):palettes.hair[m.hair]));return;}
+      const shirt=name==='torso'||name.startsWith('sleeve')||(!m.partyLook&&name.startsWith('arm'))||(m.jacket&&name.startsWith('fore'));
+      const skin=['head','neck','nose'].includes(name)||name.startsWith('hand')||name.startsWith('fore')||(m.partyLook&&name.startsWith('arm'))||(m.shorts&&(name.startsWith('shin')||m.partyLook&&name.startsWith('leg')));
       const poolSkin=isPoolPerson(m)&&!['pelvis','cup','hair'].includes(name)&&!name.startsWith('backpack')&&!(name==='torso'&&m.swimsuit==='one-piece')&&!(name.startsWith('leg')&&m.swimsuit==='trunks');
-      const color=poolSkin?palettes.skin[m.skin]:isPoolPerson(m)&&['torso','pelvis','legL','legR'].includes(name)?m.swimColor:shirt?(m.action==='build'?0xe5a13f:palettes.shirts[m.shirt]):skin?palettes.skin[m.skin]:name.startsWith('hair')?palettes.hair[m.hair]:name==='cup'?0xd54f56:name.startsWith('shoe')?m.shoeColor:name==='backpack'?m.bagColor:palettes.pants[m.pants];
+      const color=poolSkin?palettes.skin[m.skin]:isPoolPerson(m)&&['torso','pelvis','legL','legR'].includes(name)?m.swimColor:shirt?(m.action==='build'?0xe5a13f:m.shirtColor??palettes.shirts[m.shirt]):skin?palettes.skin[m.skin]:name.startsWith('hair')?palettes.hair[m.hair]:name==='cup'?0xd54f56:name.startsWith('shoe')?m.shoeColor:name==='backpack'?m.bagColor:m.bottomColor??palettes.pants[m.pants];
       mesh.setColorAt(i,new THREE.Color(color));
     });
   }
@@ -210,7 +203,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   if(distantCrowd)world.add(distantCrowd.mesh);
   let visibleKey='';
   const dummy=new THREE.Object3D(),up=new THREE.Vector3(0,1,0),a=new THREE.Vector3(),b=new THREE.Vector3(),direction=new THREE.Vector3();
-  function posePart(name,i,x,y,z,sx,sy,sz,rotation=0,pitch=0){dummy.position.set(x,y,z);dummy.rotation.set(pitch,rotation,0,'YXZ');dummy.scale.set(sx,sy,sz);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
+  function posePart(name,i,x,y,z,sx,sy,sz,rotation=0,pitch=0,roll=0){dummy.position.set(x,y,z);dummy.rotation.set(pitch,rotation,roll,'YXZ');if(sx===0||sy===0||sz===0)dummy.scale.set(0,0,0);else dummy.scale.set(sx,sy,sz);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
   function limb(name,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);dummy.position.copy(a).add(b).multiplyScalar(.5);const length=direction.length();dummy.quaternion.setFromUnitVectors(up,direction.normalize());dummy.scale.set(r,length+.025,r);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
   const crowdVisibility=createCrowdVisibility(THREE,members);
   const localPoint=(m,x,z)=>{const dx=x-m.lot.x,dz=z-m.lot.z,c=Math.cos(m.lot.rotation),s=Math.sin(m.lot.rotation);return {x:dx*c-dz*s,z:dx*s+dz*c};};
@@ -259,9 +252,11 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
         const m=members[i],slot=start+i-batch.start;
         const state=arrivalPose(m,poses[i]),rig=isPoolPerson(m)&&!state.arrival?poolHumanPose(m,state,time):humanPose(m,state,time),angle=state.rotation,h=m.height,w=m.build??1,cos=Math.cos(angle),sin=Math.sin(angle);
         const transform=([x,y,z])=>[state.x+(x*cos+z*sin)*h,y*h+(state.ground??m.ground??0),state.z+(-x*sin+z*cos)*h];
-        const part=(name,point,x,y,z,yaw=0,pitch=0)=>posePart(name,slot*(name==='hair'?2:name==='backpack'?DETAIL_COUNT+1:1),...transform(point),x*h,y*h,z*h,angle+yaw,pitch);
-        part('torso',rig.chest,.40*w,.52,.25*w,rig.twist,rig.lean);
+        const part=(name,point,x,y,z,yaw=0,pitch=0,roll=0)=>posePart(name,slot*(name==='hair'?2:name==='backpack'?DETAIL_COUNT+1:1),...transform(point),x*h,y*h,z*h,angle+yaw,pitch,roll);
+        const party=m.partyLook&&!isPoolPerson(m),fitted=party&&m.partyLook==='sorority',cropped=party&&m.outfit==='crop-tee';
+        part('torso',[rig.chest[0],rig.chest[1]+(cropped?.075:0),rig.chest[2]],(fitted?.34:party?.42:.40)*w,cropped?.37:.52,.25*w,rig.twist,rig.lean,rig.roll||0);
         part('pelvis',rig.hip,.29*w,.20,.23*w,-rig.twist*.5,rig.hipPitch||0);
+        part('skirt',[rig.hip[0],rig.hip[1]-.10,rig.hip[2]],party&&m.skirt?.255*w:0,m.outfit==='sundress'?.40:.31,.18*w,-rig.twist*.5,0,(rig.roll||0)*.4);
         part('neck',rig.neck||[rig.head[0],rig.head[1]-.19,rig.head[2]],.12,.15,.12);
         part('head',rig.head,.126,.17,.136,rig.headYaw);
         const hairOffset=-.025;
@@ -275,9 +270,12 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
         for(let j=0;j<2;j++){
           const side=j?'R':'L',arm=rig.arms[j],leg=rig.legs[j];
           limb('arm'+side,slot,transform(arm.shoulder),transform(arm.elbow),.115*h*w);
+          const along=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
+          limb('sleeve'+side,slot,transform(arm.shoulder),transform(along(arm.shoulder,arm.elbow,.48)),party&&!m.sleeveless?.128*h*w:0);
           limb('fore'+side,slot,transform(arm.elbow),transform(arm.hand),.083*h);
           part('hand'+side,arm.hand,.047,.067,.043);
           limb('leg'+side,slot,transform(leg.hip),transform(leg.knee),.155*h*w);
+          limb('short'+side,slot,transform(leg.hip),transform(along(leg.hip,leg.knee,fitted?.40:.58)),party&&m.shorts&&!m.skirt?.177*h*w:0);
           limb('shin'+side,slot,transform(leg.knee),transform(leg.ankle),.11*h*w);
           part('shoe'+side,[leg.ankle[0],leg.ankle[1]-.055+Math.abs(Math.sin(leg.pitch))*.145,leg.ankle[2]+.045],.15,isPoolPerson(m)?.08:.13,isPoolPerson(m)?.24:.29,0,leg.pitch);
           if(j)part('cup',[arm.hand[0],arm.hand[1]+.04,arm.hand[2]+.025],.065,!isPoolPerson(m)&&!state.arrival&&!state.walking&&!['pong','die','build'].includes(m.action)&&hash(m.chapter,m.member,'cup')>.86?.13:0,.065);
@@ -302,7 +300,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   if(!theme?.floating){const entrance=createVillageEntrance(THREE,extension);world.add(entrance);}
   // Batch repeated architectural parts so phones draw whole sets at once.
   world.updateMatrixWorld(true);
-  const dynamic=new Set([...pickables.filter(mesh=>!compactCrowd||!mesh.name.startsWith('school-banner-')),...flags,swimWakes.mesh,...backyards.waters,...Object.values(parts),...(parachutes?[parachutes.mesh]:[]),...(distantCrowd?[distantCrowd.mesh]:[]),...Object.values(construction.meshes),...pong.games.map(game=>game.ball),die.dice]);
+  const dynamic=new Set([...pickables,...flags,swimWakes.mesh,...backyards.waters,...Object.values(parts),...(parachutes?[parachutes.mesh]:[]),...(distantCrowd?[distantCrowd.mesh]:[]),...Object.values(construction.meshes),...pong.games.map(game=>game.ball),die.dice]);
   const resources=new Set();
   function collect(){world.traverse(o=>{if(o===streets)return;if(o.geometry)resources.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){resources.add(m);for(const value of Object.values(m))if(value?.isTexture)resources.add(value);}if(o.isInstancedMesh)resources.add(o);});}
   collect();Object.values(landscapeKit.geometries).forEach(g=>resources.add(g));materials.forEach(m=>resources.add(m));windowMaterials.forEach(m=>resources.add(m));

@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Greek Village · Front lawn movement</title>
+<style>body{margin:0;background:#a7bacb;font:14px system-ui;color:white}nav{position:fixed;top:16px;left:16px;z-index:2;display:flex;gap:8px}button{border:1px solid #ffffff66;background:#15263c;color:white;padding:12px 16px;border-radius:10px;cursor:pointer}output{position:fixed;bottom:16px;left:16px;background:#15263cee;padding:12px 16px;border-radius:10px}</style>
+<nav><button id="close">On the lawn</button><button id="street">From the street</button><button id="far">Overview</button><button id="pause">Pause</button></nav><output>Front lawn movement · sample chapter snapshot</output>
+<script type="module">
+import * as T from '../vendor/three.module.min.js';
+import {createVillage} from '../village-world.js?v=162';
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;document.body.append(renderer.domElement);
+const scene=new T.Scene();scene.background=new T.Color(0xa7bacb);const camera=new T.PerspectiveCamera(45,innerWidth/innerHeight,.1,700);
+scene.add(new T.HemisphereLight(0xe7f1ff,0x77715a,2));const sun=new T.DirectionalLight(0xffe5c4,2.6);sun.position.set(10,40,20);scene.add(sun);
+const {chapters}=await fetch('../chapters.json').then(r=>r.json());const village=createVillage(T,chapters.slice(0,3),{compactCrowd:true});scene.add(village.world);
+function view(x,y,z,tx,ty,tz){camera.position.set(x,y,z);camera.lookAt(tx,ty,tz);camera.updateMatrixWorld();}
+document.getElementById('close').onclick=()=>view(-3,3.8,-13,-10,1.1,-19);
+document.getElementById('street').onclick=()=>view(0,6,5,-10,1,-16);
+document.getElementById('far').onclick=()=>view(150,100,150,0,0,-8);
+let paused=false,time=10,last=performance.now();document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume':'Pause';};
+document.getElementById('close').click();
+function draw(now){if(!paused)time+=Math.min(.05,(now-last)/1000);last=now;village.animateCrowd(time,camera);renderer.render(scene,camera);requestAnimationFrame(draw);}requestAnimationFrame(draw);
+window.dancePreview={village,renderer,scene,camera,seek(t){paused=true;time=t;village.animateCrowd(t,camera);renderer.render(scene,camera);}};
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+</script></html>

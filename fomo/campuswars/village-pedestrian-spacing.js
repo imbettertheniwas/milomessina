@@ -1,7 +1,7 @@
 // One world-space spatial grid covers chapter members and campus visitors.
 // Steering uses swept circles, so fast walkers cannot skip through a neighbour
 // between frames. Rendering/LOD never determines who occupies a walking lane.
-import {gaitPhase} from './village-human-motion.js?v=106';
+import {gaitPhase} from './village-human-motion.js?v=162';
 
 const CELL=2,STEP=1/30,GAP=.025;
 const turns=[0,.35,-.35,.7,-.7,1.15,-1.15,1.55,-1.55].map(angle=>({angle,cos:Math.cos(angle),sin:Math.sin(angle)}));

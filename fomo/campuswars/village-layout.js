@@ -1,9 +1,10 @@
 import {hasChapterHouse} from './village-backyards.js?v=112';
-import {conversation,personalClock} from './village-human-behavior.js?v=131';
+import {conversation,personalClock} from './village-human-behavior.js?v=162';
 import {rankedHouseSizes} from './village-house-sizing.js?v=153';
 import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
-import {gaitPhase,smooth} from './village-human-motion.js?v=106';
-import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=128';
+import {gaitPhase,smooth} from './village-human-motion.js?v=162';
+import {danceActivity} from './village-human-dance.js?v=162';
+import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=162';
 const lawnRoute=roundedLoop(-7.9,7,7.9,14.4,1.15);
 // Ease over the low lawn/path edges; the walking loop clears the porch steps.
 export function lawnGround(x,z){const edge=smooth((12-z)/.25);return .045+.085*smooth((7.5-Math.abs(x))/.25)*edge+.07*smooth((.825-Math.abs(x))/.2)*edge;}
@@ -154,6 +155,6 @@ export function activityPose(member,time){
     return {x:member.x,z:member.z,rotation:member.rotation,walking:false,gait:0,speaking:false,gesture:0,breath:0,pong:{lift,extension}};
   }
   const profile=member.motionProfile,{speaking,gesture}=conversation(member,time);
-  // The speaking hand rises only to chest level; listeners keep their arms down.
-  return {x:member.x,z:member.z,rotation:member.rotation+Math.sin(time*(profile?.lookRate??.47)+member.phase)*(profile?.lookAmount??.055),walking:false,gait:0,speaking,gesture:gesture*(profile?.gestureAmount??1),breath:Math.sin(time*(profile?.breathRate??1.7)+member.phase)*(profile?.breathAmount??.008)};
+  const dance=danceActivity(member,time);
+  return {x:member.x,z:member.z,rotation:member.rotation+Math.sin(time*(profile?.lookRate??.47)+member.phase)*(profile?.lookAmount??.055)+Math.sin(dance.beat*.25)*dance.energy*.12,walking:false,gait:0,speaking,gesture:gesture*(profile?.gestureAmount??1),dance,breath:Math.sin(time*(profile?.breathRate??1.7)+member.phase)*(profile?.breathAmount??.008)};
 }
