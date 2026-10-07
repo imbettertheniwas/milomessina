@@ -1,3 +1,4 @@
+import {paintFomoWordmark} from './village-brand.js?v=153';
 // Lightweight, reusable jet and cabin geometry for the school-arrival film.
 export function createPrivateJet(T){
  const root=new T.Group();root.name='fomo-private-jet';
@@ -7,7 +8,7 @@ export function createPrivateJet(T){
  const pearl=material(0xf4f1e9,{clearcoat:.8,clearcoatRoughness:.18,roughness:.24}),blue=material(0x516af6),ink=material(0x24253d),glass=material(0x263b51,{roughness:.12,metalness:.5,clearcoat:1}),chrome=material(0xafb6bd,{roughness:.23,metalness:.8}),leather=material(0xe5d8c5,{roughness:.85,metalness:0}),wood=material(0x664d3e,{roughness:.25}),carpet=material(0xaaa092,{roughness:1,metalness:0});
  // Soft sky reflections give the pearl paint and window glass their curvature.
  if(typeof document!=='undefined'){
-  const c=document.createElement('canvas');c.width=512;c.height=256;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#668fb7');g.addColorStop(.42,'#d9eafa');g.addColorStop(.5,'#ffffff');g.addColorStop(.62,'#acb7bd');g.addColorStop(1,'#667783');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);
+  const c=document.createElement('canvas');c.width=512;c.height=256;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#668fb7');g.addColorStop(.42,'#d9eafa');g.addColorStop(.5,'#EAEDFF');g.addColorStop(.62,'#acb7bd');g.addColorStop(1,'#667783');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);
   const environment=new T.CanvasTexture(c);environment.mapping=T.EquirectangularReflectionMapping;environment.colorSpace=T.SRGBColorSpace;for(const m of resources){m.envMap=environment;m.envMapIntensity=.65;}resources.add(environment);
  }
  const mesh=(parent,geometry,mat,position=[0,0,0],scale=[1,1,1])=>{resources.add(geometry);const m=new T.Mesh(geometry,mat);m.position.set(...position);m.scale.set(...scale);parent.add(m);return m;};
@@ -49,16 +50,16 @@ export function createPrivateJet(T){
  }
  const finShape=new T.Shape();finShape.moveTo(7.8,.7);finShape.lineTo(10.2,5.9);finShape.lineTo(12.2,6.1);finShape.lineTo(12.9,.6);finShape.closePath();
  const fin=mesh(exterior,new T.ExtrudeGeometry(finShape,{depth:.2,bevelEnabled:false}),blue);fin.rotation.y=-Math.PI/2;fin.position.x=.1;
- function wordmark(parent,width,height,position,rotation,color='#302b45'){
+ function wordmark(parent,width,height,position,rotation,color='#516AF6'){
   if(typeof document==='undefined')return;
-  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,1024,256);ctx.fillStyle=color;ctx.font='700 225px Aeonik, Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('fomo',512,132,940);
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,1024,256);paintFomoWordmark(ctx,120,32,784,192,color);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;resources.add(texture);
   const mat=new T.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:T.DoubleSide});resources.add(mat);
-  const label=mesh(parent,new T.PlaneGeometry(width,height),mat,position);label.rotation.set(...rotation);return label;
+  const label=mesh(parent,new T.PlaneGeometry(width,width/4),mat,position);label.rotation.set(...rotation);return label;
  }
  for(const side of [-1,1])wordmark(exterior,5.4,1.35,[side*1.805,-.63,-3.8],[0,side*Math.PI/2,0]);
- wordmark(exterior,2.1,.6,[.13,3.25,10.9],[0,Math.PI/2,0],'#ffffff');
- wordmark(exterior,2.1,.6,[-.13,3.25,10.9],[0,-Math.PI/2,0],'#ffffff');
+ wordmark(exterior,2.1,.6,[.13,3.25,10.9],[0,Math.PI/2,0],'#EAEDFF');
+ wordmark(exterior,2.1,.6,[-.13,3.25,10.9],[0,-Math.PI/2,0],'#EAEDFF');
  // An open cabin with actual oval window apertures and warm indirect lighting.
  box(cabin,[0,-1.35,0],[3.5,.16,15],carpet);box(cabin,[0,1.55,0],[3.2,.2,15],pearl);
  for(const side of [-1,1]){

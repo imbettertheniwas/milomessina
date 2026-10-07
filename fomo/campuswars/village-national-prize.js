@@ -1,4 +1,4 @@
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
 import {createBanknoteTexture} from './village-money-art.js?v=42';
 
 export const NATIONAL_PRIZE_SITE={x:33,y:6,z:-90};
@@ -87,10 +87,10 @@ export function createNationalPrize(T){
       if(!bump){c.save();c.translate(0,3);c.fillStyle='#fff0b0';draw();c.restore();}
       c.fillStyle=bump?'#050505':'#79531f';draw();
     }
-    cut(()=>{c.save();c.translate(824,24);c.scale(4,4);for(const path of FOMO_MARK_PATHS)c.fill(new Path2D(path));c.restore();});
+    if(!bump){c.fillStyle='#221D4B';c.fillRect(808,100,432,260);c.fillStyle='#EAEDFF';c.save();c.translate(824,24);c.scale(4,4);for(const path of FOMO_MARK_PATHS)c.fill(new Path2D(path));c.restore();}
     c.textAlign='center';
-    cut(()=>{c.font='bold 138px Arial';c.fillText('?',1024,480);});
-    cut(()=>{c.font='bold 86px Arial';c.fillText('NATIONAL',1024,630);c.font='bold 96px Arial';c.fillText('CHAMPION',1024,755);});
+    cut(()=>{c.font='bold 138px Aeonik, Arial, sans-serif';c.fillText('?',1024,480);});
+    cut(()=>{c.font='bold 86px Aeonik, Arial, sans-serif';c.fillText('NATIONAL',1024,630);c.font='bold 96px Aeonik, Arial, sans-serif';c.fillText('CHAMPION',1024,755);});
   }
   const inscription=artwork(1024,512,c=>{c.scale(.5,.5);engraving(c);});
   const recess=artwork(1024,512,c=>{c.scale(.5,.5);engraving(c,true);});if(recess)recess.colorSpace=T.NoColorSpace;

@@ -1,5 +1,5 @@
 import {hash} from './village-district-layout.js?v=80';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
 
 // One sheet of plywood art serves every die table in the village: houses tell
 // themselves apart by the stain each table is tinted with, so any number of
@@ -55,7 +55,7 @@ export function paintDieTable(ctx,w,h){
     // Bottle cap, crimped edge and all.
     i=>{ctx.beginPath();for(let s=0;s<44;s++){const a=s/44*Math.PI*2,r=s%2?26:30;s?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();
       ctx.fillStyle=i%2?'#9a2a2a':'#1f4f7a';ctx.fill();ctx.shadowColor='transparent';starPath(13,'#f7f2e6');},
-    i=>{disc(32,'#101820');ctx.save();ctx.translate(-20,-20);ctx.scale(.40,.40);ctx.fillStyle='#f7f7f7';for(const path of FOMO_MARK_PATHS)ctx.fill(new Path2D(path));ctx.restore();},
+    i=>{disc(32,'#221D4B');ctx.save();ctx.translate(-20,-20);ctx.scale(.40,.40);ctx.fillStyle='#EAEDFF';for(const path of FOMO_MARK_PATHS)ctx.fill(new Path2D(path));ctx.restore();},
     i=>{starPath(32,'#f7f2e6');ctx.shadowColor='transparent';starPath(25,'#b8862c');},
     // Shield with a house number.
     i=>{ctx.fillStyle='#f7f2e6';ctx.beginPath();ctx.moveTo(-31,-33);ctx.lineTo(31,-33);ctx.lineTo(31,14);ctx.quadraticCurveTo(0,43,-31,14);ctx.closePath();ctx.fill();ctx.shadowColor='transparent';

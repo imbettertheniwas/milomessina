@@ -1,7 +1,8 @@
+import {paintFomoWordmark} from './village-brand.js?v=153';
 import {hash} from './village-district-layout.js?v=80';
 import {footballState,footballPlayer,footballBall} from './village-football.js?v=88';
 import {createStadiumFireworks} from './village-stadium-fireworks.js?v=1';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
 
 export const STADIUM_SITE={x:0,z:200,width:82,depth:84};
 export function createStadium(T,extension=0){
@@ -10,7 +11,7 @@ export function createStadium(T,extension=0){
   const own=r=>(resources.add(r),r);
   const awayBlack=0x111111;
   function drawFomoEyes(c,x,y,height,aspect=1){
-    c.save();c.translate(x,y);c.scale(height/51.2823*aspect,height/51.2823);c.translate(-50,-50);c.fillStyle='#ffffff';
+    c.save();c.translate(x,y);c.scale(height/51.2823*aspect,height/51.2823);c.translate(-50,-50);c.fillStyle='#EAEDFF';
     for(const path of FOMO_MARK_PATHS)c.fill(new Path2D(path));
     c.restore();
   }
@@ -35,10 +36,10 @@ export function createStadium(T,extension=0){
   function canvasMap(width,height,paint){
     if(typeof document==='undefined')return null;
     const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;paint(canvas.getContext('2d'),width,height);
-    const map=own(new T.CanvasTexture(canvas));map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return map;
+    const map=own(new T.CanvasTexture(canvas));map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;document.fonts?.ready.then(()=>{const ctx=canvas.getContext('2d');ctx.save();ctx.setTransform(1,0,0,1,0,0);paint(ctx,width,height);ctx.restore();map.needsUpdate=true;document.dispatchEvent(new Event('village:artwork'));});return map;
   }
-  function panel(text,x,y,z,w,h,rotation=0,bg='#10283b',ink='#faf0d8'){
-    const map=canvasMap(1024,128,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=ink;c.font='bold 62px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H/2,W-36);});
+  function panel(text,x,y,z,w,h,rotation=0,bg='#221D4B',ink='#EAEDFF'){
+    const map=canvasMap(1024,128,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=ink;c.font='bold 62px Aeonik, Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H/2,W-36);});
     const mesh=new T.Mesh(own(new T.PlaneGeometry(w,h)),own(new T.MeshStandardMaterial({color:map?0xffffff:0x16394c,map,roughness:.7,side:T.DoubleSide})));
     mesh.position.set(x,y,z);mesh.rotation.y=rotation;root.add(mesh);return mesh;
   }
@@ -53,17 +54,17 @@ export function createStadium(T,extension=0){
     for(let n=-25;n<25;n+=2.5){c.fillStyle=Math.round(n/2.5)%2?'#3f7948':'#396e40';c.fillRect(0,z(n),W,z(2.5)-z(0));}
     for(let i=0;i<90000;i++){const shade=hash(i,'turf');c.fillStyle=shade>.5?'#dddc9821':'#052e2028';c.fillRect(hash(i,'tx')*W,hash(i,'tz')*H,1,2+shade*4);}
     for(const end of [-1,1]){
-      c.fillStyle=end<0?'#4048a8':'#111111';c.fillRect(0,z(end<0?-30:25),W,H/12);
+      c.fillStyle=end<0?'#516AF6':'#111111';c.fillRect(0,z(end<0?-30:25),W,H/12);
       c.save();c.translate(W/2,z(end*27.5));
       if(end>0){c.rotate(Math.PI);drawFomoEyes(c,0,0,H/12*.76,(W/26.667)/(H/60));}
-      else{c.fillStyle='#efe9d6';c.font='900 144px Arial';c.textAlign='center';c.textBaseline='middle';c.scale(1.55,1);c.fillText('fomo',0,0,W*.92/1.55);}
+      else{const aspect=(W/26.667)/(H/60);c.scale(aspect,1);paintFomoWordmark(c,-300,-H/12*.3,600,H/12*.6);}
       c.restore();
     }
     c.strokeStyle='#eeeede';c.lineWidth=3;c.strokeRect(2,2,W-4,H-4);
     for(let yard=0;yard<=100;yard+=5){const zz=-25+yard*.5;c.beginPath();c.moveTo(0,z(zz));c.lineTo(W,z(zz));c.stroke();}
     c.lineWidth=2;
     for(let yard=1;yard<100;yard++){if(yard%5===0)continue;for(const xx of [-12.8,-3.1,3.1,12.8]){c.beginPath();c.moveTo(x(xx-.24),z(-25+yard*.5));c.lineTo(x(xx+.24),z(-25+yard*.5));c.stroke();}}
-    for(let yard=10;yard<100;yard+=10)for(const side of [-1,1]){c.save();c.translate(x(side*9.8),z(-25+yard*.5));c.rotate(side*Math.PI/2);c.fillStyle='#eeedde';c.font='bold 43px Arial';c.textAlign='center';c.fillText(String(Math.min(yard,100-yard)),0,14);c.restore();}
+    for(let yard=10;yard<100;yard+=10)for(const side of [-1,1]){c.save();c.translate(x(side*9.8),z(-25+yard*.5));c.rotate(side*Math.PI/2);c.fillStyle='#eeedde';c.font='bold 43px Aeonik, Arial, sans-serif';c.textAlign='center';c.fillText(String(Math.min(yard,100-yard)),0,14);c.restore();}
     c.save();c.translate(W/2,H/2);c.rotate(Math.PI/2);c.fillStyle='#173b50';c.strokeStyle='#ede1bf';c.lineWidth=6;c.beginPath();c.moveTo(-100,0);c.lineTo(0,-80);c.lineTo(100,0);c.lineTo(0,80);c.closePath();c.fill();c.stroke();c.fillStyle='#f6eed6';c.font='900 69px Georgia';c.textAlign='center';c.textBaseline='middle';c.fillText('GV',0,4);c.restore();
   });
   const field=new T.Mesh(own(new T.PlaneGeometry(26.667,60)),own(new T.MeshStandardMaterial({color:fieldMap?0xffffff:0x376f42,map:fieldMap,roughness:1})));
@@ -180,7 +181,7 @@ export function createStadium(T,extension=0){
   const seatGeometry=merged([[cube,[0,.22,0],[.48,.07,.45],0xffffff],[cube,[0,.46,-.2],[.46,.43,.055],0xffffff]]);
   fans.forEach((f,i)=>{
     dummy.position.set(f.x,f.y,f.z);dummy.rotation.set(0,f.angle,0);dummy.scale.setScalar(.86+hash(i,'fan-height')*.22);dummy.updateMatrix();fanMesh.setMatrixAt(i,dummy.matrix);
-    color.setHex(hash(i,'fan-shirt')>.27?(f.team?awayBlack:0x626cf3):hash(i,'white-shirt')>.4?0xece3cf:0xd9b35a);fanMesh.setColorAt(i,color);
+    color.setHex(hash(i,'fan-shirt')>.27?(f.team?awayBlack:0x516af6):hash(i,'white-shirt')>.4?0xece3cf:0xd9b35a);fanMesh.setColorAt(i,color);
     phases[i*2]=hash(i,'cheer-phase')*Math.PI*2;phases[i*2+1]=hash(i,'cheer-speed')*2;
     part(seatGeometry,f.x,f.y,f.z,1,1,1,f.team?awayBlack:0x454da9,'seat',f.angle);
   });
@@ -213,15 +214,15 @@ export function createStadium(T,extension=0){
   function drawScoreboard(state){
     if(!scoreboardCanvas)return;
     const c=scoreboardCanvas.getContext('2d'),W=1024;
-    c.fillStyle='#081826';c.fillRect(0,0,W,512);
-    c.fillStyle='#dcad60';c.fillRect(0,0,W,8);c.font='bold 32px Arial';c.textAlign='center';c.fillText('GREEK VILLAGE  /  EXHIBITION',512,57);
-    c.fillStyle='#626cf3';c.fillRect(30,86,440,208);c.fillStyle='#111111';c.fillRect(554,86,440,208);
+    c.fillStyle='#221D4B';c.fillRect(0,0,W,512);
+    c.fillStyle='#516AF6';c.fillRect(0,0,W,8);c.font='bold 32px Aeonik, Arial, sans-serif';c.textAlign='center';c.fillText('GREEK VILLAGE  /  EXHIBITION',512,57);
+    c.fillStyle='#516AF6';c.fillRect(30,86,440,208);c.fillStyle='#111111';c.fillRect(554,86,440,208);
     drawFomoEyes(c,774,120,38);
-    c.fillStyle='#f6edda';c.font='bold 34px Arial';c.fillText('FOMO',250,132);c.fillText('v',512,132);
-    c.font='bold 130px Arial';c.fillText(String(state.home),250,266);c.fillText(String(state.away),774,266);
-    c.font='bold 48px monospace';c.fillText(`Q${state.quarter}   ${state.clock}`,512,361);
-    c.fillStyle=state.celebration?'#f5c769':'#a8c5cf';c.font='bold 43px Arial';c.fillText(state.celebration?'TOUCHDOWN!':state.phase==='RESET'?'NEXT POSSESSION':state.phase==='SET'?'1ST & 10  •  READY TO PLAY':state.phase==='PASS'?'PASS IN THE AIR':'MAKE SOME NOISE',512,435);
-    c.fillStyle='#547486';c.font='22px Arial';c.fillText('MEMORIAL STADIUM  •  HOME OF THE VILLAGE',512,484);scoreboardTexture.needsUpdate=true;
+    c.fillStyle='#EAEDFF';c.font='bold 34px Aeonik, Arial, sans-serif';paintFomoWordmark(c,187,98,126,36);c.fillText('v',512,132);
+    c.font='bold 130px Aeonik, Arial, sans-serif';c.fillText(String(state.home),250,266);c.fillText(String(state.away),774,266);
+    c.font='bold 48px Aeonik, Arial, sans-serif';c.fillText(`Q${state.quarter}   ${state.clock}`,512,361);
+    c.fillStyle=state.celebration?'#EAEDFF':'#EAEDFFB8';c.font='bold 43px Aeonik, Arial, sans-serif';c.fillText(state.celebration?'TOUCHDOWN!':state.phase==='RESET'?'NEXT POSSESSION':state.phase==='SET'?'1ST & 10  •  READY TO PLAY':state.phase==='PASS'?'PASS IN THE AIR':'MAKE SOME NOISE',512,435);
+    c.fillStyle='#EAEDFFB8';c.font='22px Aeonik, Arial, sans-serif';c.fillText('MEMORIAL STADIUM  •  HOME OF THE VILLAGE',512,484);scoreboardTexture.needsUpdate=true;
   }
   // Static architecture shares a handful of geometry/material draw calls.
   for(const [key,b] of batches){
@@ -237,7 +238,7 @@ export function createStadium(T,extension=0){
     fireworks.animate(time);
     crowdUniforms.stadiumTime.value=time;crowdUniforms.stadiumRoar.value=state.celebration;
     for(let i=0;i<22;i++){
-      const p=footballPlayer(i,time),stride=p.running?Math.sin(time*10+i)*.55:0,jersey=p.team?awayBlack:0x626cf3;
+      const p=footballPlayer(i,time),stride=p.running?Math.sin(time*10+i)*.55:0,jersey=p.team?awayBlack:0x516af6;
       const pieces=[
         [0,1.05,0,.56,.5,.33,jersey],[0,.76,0,.4,.14,.28,p.team?0x242424:0xe9decc],
         [-.14,.52,stride*.2,.15,.4,.19,p.team?awayBlack:0xe1d8c1],[.14,.52,-stride*.2,.15,.4,.19,p.team?awayBlack:0xe1d8c1],
@@ -251,7 +252,7 @@ export function createStadium(T,extension=0){
         const bodyScale=.76,limb=j>=2&&j<=5?stride*(j%2?-1:1):j===8||j===9?stride*(j%2?1:-1):0;
         dummy.position.set(p.x+(x*c+z*s)*bodyScale,.505+y*bodyScale+(p.running?Math.abs(stride)*.035:0),p.z+(z*c-x*s)*bodyScale);dummy.rotation.set(limb,angle,0,'YXZ');dummy.scale.set(w*bodyScale,h*bodyScale,d*bodyScale);dummy.updateMatrix();playerParts.setMatrixAt(i*12+j,dummy.matrix);playerParts.setColorAt(i*12+j,color.setHex(hex));
       });
-      dummy.position.set(p.x,.505+1.56*.76,p.z);dummy.rotation.set(0,angle,0);dummy.scale.set(.23*.76,.25*.76,.24*.76);dummy.updateMatrix();helmets.setMatrixAt(i,dummy.matrix);helmets.setColorAt(i,color.setHex(p.team?awayBlack:0x626cf3));
+      dummy.position.set(p.x,.505+1.56*.76,p.z);dummy.rotation.set(0,angle,0);dummy.scale.set(.23*.76,.25*.76,.24*.76);dummy.updateMatrix();helmets.setMatrixAt(i,dummy.matrix);helmets.setColorAt(i,color.setHex(p.team?awayBlack:0x516af6));
     }
     playerParts.instanceMatrix.needsUpdate=true;playerParts.instanceColor.needsUpdate=true;helmets.instanceMatrix.needsUpdate=true;helmets.instanceColor.needsUpdate=true;
     const b=footballBall(time);ball.position.set(b.x,.505+b.y,b.z);ball.rotation.set(time*5,0,Math.PI/5);ball.updateMatrix();

@@ -35,7 +35,7 @@ export function createHelipadGuests(kit){
     if(typeof document==='undefined')return null;
     const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;
     const c=canvas.getContext('2d');c.clearRect(0,0,1024,256);c.fillStyle=color;c.textAlign='center';c.textBaseline='middle';
-    c.font='900 148px Arial';c.fillText(text,512,130,982);
+    c.font='700 148px Aeonik, Arial, sans-serif';c.fillText(text,512,130,982);
     const map=own(new T.CanvasTexture(canvas));map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return map;
   }
   function print(p,text,color,w,y,rz,rx){

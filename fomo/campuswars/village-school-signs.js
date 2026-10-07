@@ -1,5 +1,5 @@
 import {campusIdentity} from './village-school-identities.js?v=138';
-import {createClothBanner} from './village-banners.js?v=138';
+import {createClothBanner} from './village-banners.js?v=153';
 
 const images=new Map();
 export function loadCampusLogo(identity){

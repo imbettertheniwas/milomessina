@@ -1,3 +1,4 @@
+import {paintFomoLockup} from './village-floor-logo.js?v=153';
 // Official Discord Clyde symbol: https://discord.com/branding
 const DISCORD_SYMBOL_PATH='M40.9051 0C40.2863 1.09866 39.7306 2.2352 39.2255 3.397C34.4268 2.67719 29.5396 2.67719 24.7283 3.397C24.2358 2.2352 23.6675 1.09866 23.0487 0C18.5404 0.770324 14.1458 2.12155 9.97847 4.02841C1.71959 16.2652 -0.51561 28.1863 0.595677 39.9432C5.4323 43.517 10.8498 46.2447 16.6209 47.9874C17.9216 46.2447 19.0708 44.3883 20.0558 42.4562C18.1868 41.7616 16.381 40.8903 14.6509 39.88C15.1055 39.5517 15.5475 39.2107 15.9769 38.8824C26.1174 43.6559 37.8617 43.6559 48.0148 38.8824C48.4441 39.236 48.8861 39.577 49.3407 39.88C47.6107 40.9029 45.8048 41.7616 43.9232 42.4688C44.9082 44.4009 46.0574 46.2573 47.3581 48C53.1292 46.2573 58.5467 43.5422 63.3834 39.9684C64.6967 26.3299 61.1355 14.5099 53.9753 4.04104C49.8206 2.13418 45.426 0.782952 40.9177 0.0252565L40.9051 0ZM21.4702 32.7072C18.351 32.7072 15.7622 29.8785 15.7622 26.3804C15.7622 22.8824 18.25 20.041 21.4576 20.041C24.6651 20.041 27.216 22.895 27.1655 26.3804C27.115 29.8658 24.6525 32.7072 21.4702 32.7072ZM42.5089 32.7072C39.3771 32.7072 36.8135 29.8785 36.8135 26.3804C36.8135 22.8824 39.3013 20.041 42.5089 20.041C45.7164 20.041 48.2547 22.895 48.2042 26.3804C48.1537 29.8658 45.6912 32.7072 42.5089 32.7072Z';
 
@@ -16,23 +17,22 @@ function createBranding(T){
   const c=canvas.getContext('2d');
   function paint(){
     // Transparent ink follows the hull lighting with no rectangular sign behind it.
-    c.clearRect(0,0,2048,388);c.fillStyle='#fff';
-    c.save();c.translate(292,63);c.scale(5.4,5.4);c.fill(new Path2D(DISCORD_SYMBOL_PATH));c.restore();
-    c.font='700 292px Aeonik, Arial, sans-serif';c.textBaseline='middle';c.letterSpacing='-12px';
-    c.fillText('fomo',805,203,945);
+    c.clearRect(0,0,2048,388);c.fillStyle='#EAEDFF';
+    paintFomoLockup(c,210,91,1050,200);
+    c.fillRect(1360,71,2,240);
+    c.save();c.translate(1462,91);c.scale(200/48,200/48);c.fill(new Path2D(DISCORD_SYMBOL_PATH));c.restore();
   }
   paint();
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;
-  if(document.fonts)document.fonts.load('700 292px Aeonik').then(()=>{paint();map.needsUpdate=true;document.dispatchEvent(new Event('village:artwork'));});
   return map;
 }
 
 export function createFomoBlimp(T){
   const root=new T.Group();root.name='fomo-discord-blimp';root.scale.set(1.35,1.1,1.1);
-  const purple=new T.MeshPhysicalMaterial({color:0x6875f5,roughness:.4,metalness:.06,clearcoat:.4,clearcoatRoughness:.35,emissive:0x364bc7,emissiveIntensity:.16});
-  const dark=new T.MeshStandardMaterial({color:0x151e3d,roughness:.35,metalness:.25});
+  const purple=new T.MeshPhysicalMaterial({color:0x516af6,roughness:.4,metalness:.06,clearcoat:.4,clearcoatRoughness:.35,emissive:0x516af6,emissiveIntensity:.16});
+  const dark=new T.MeshStandardMaterial({color:0x221d4b,roughness:.35,metalness:.25});
   const glass=new T.MeshPhysicalMaterial({color:0x335c8b,roughness:.16,metalness:.35,clearcoat:.8,emissive:0x619ee6,emissiveIntensity:.36});
-  const white=new T.MeshStandardMaterial({color:0xf0f2ff,roughness:.38,metalness:.12,emissive:0x9aa8e1,emissiveIntensity:.12});
+  const white=new T.MeshStandardMaterial({color:0xeaedff,roughness:.38,metalness:.12,emissive:0x9aa8e1,emissiveIntensity:.12});
   const map=createBranding(T),branding=new T.MeshStandardMaterial({color:0xffffff,map,transparent:true,opacity:map?1:0,alphaTest:.08,depthWrite:false,emissive:0xffffff,emissiveMap:map,emissiveIntensity:map?.65:0,roughness:.55,side:T.DoubleSide});
   function mesh(name,geometry,material,x=0,y=0,z=0,parent=root){
     const item=new T.Mesh(geometry,material);item.name=name;item.position.set(x,y,z);parent.add(item);return item;
@@ -50,7 +50,7 @@ export function createFomoBlimp(T){
   mesh('blimp-envelope',hullGeometry,[purple,white]).scale.set(9,3,3);
   // Curved decals follow the envelope; both sides read forwards.
   for(const side of [-1,1]){
-    const geometry=new T.PlaneGeometry(13.4,3.1,32,12),positions=geometry.attributes.position;
+    const geometry=new T.PlaneGeometry(13.4,13.4*1.35/1.1*388/2048,32,12),positions=geometry.attributes.position;
     for(let i=0;i<positions.count;i++){
       const x=positions.getX(i),y=positions.getY(i)+.35;
       positions.setXYZ(i,x*side,y,side*(3*Math.sqrt(Math.max(0,1-x*x/81-y*y/9))+.035));

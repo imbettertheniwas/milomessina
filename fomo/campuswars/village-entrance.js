@@ -1,4 +1,4 @@
-import {createEntranceEyesTexture} from './village-floor-logo.js?v=79';
+import {createEntranceEyesTexture} from './village-floor-logo.js?v=153';
 import {districtSpecs} from './village-district-layout.js?v=80';
 
 export function createVillageEntrance(T,extension=0){
@@ -16,8 +16,8 @@ export function createVillageEntrance(T,extension=0){
     positions.setZ(i,.055*Math.sin(x*1.7)*sag+.018*Math.sin(y*3+x));
   }
   geometry.computeVertexNormals();
-  const map=createEntranceEyesTexture(T);
-  const fabric=new T.MeshStandardMaterial({color:map?0xffffff:0x626cf3,map,roughness:.9,metalness:0,emissive:0xffffff,emissiveMap:map,emissiveIntensity:map?.14:0});
+  const map=createEntranceEyesTexture(T,width/3.4);
+  const fabric=new T.MeshStandardMaterial({color:map?0xffffff:0x516af6,map,roughness:.9,metalness:0,emissive:0xffffff,emissiveMap:map,emissiveIntensity:map?.14:0});
   // Two outward faces preserve the original eyes' orientation from either approach.
   for(const side of [-1,1]){
     const banner=add(geometry,fabric,0,height,side*.012);banner.rotation.y=side<0?Math.PI:0;banner.name=side<0?'fomo-eyes-banner-front':'fomo-eyes-banner-back';

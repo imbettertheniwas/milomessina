@@ -42,7 +42,7 @@ export function createHelipadAircraft(k){
     bar(heli,paint,[side*1.5,.43,1.94],[side*1.5,.55,2.28],.09);
     bar(heli,paint,[side*1.5,.55,2.28],[side*1.5,.70,2.46],.08);
     box(heli,rubber,side*1.5,.51,.05,.18,.035,1.6);
-    const badge=label(heli,'fomo',side*1.265,1.63,-.62,.80,.22,'#ddd6bf','#253034');badge.rotation.y=side*Math.PI/2;
+    const badge=label(heli,'fomo',side*1.265,1.63,-.62,.80,.20,'#EAEDFF','#221D4B');badge.rotation.y=side*Math.PI/2;
   }
   // A dark doorway, leather seats and an independently sliding cabin panel.
   round(heli,seal,-1.246,1.99,-.1,.055,1.45,1.36);

@@ -1,4 +1,4 @@
-import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=146';
+import {LEADERBOARD_LIMIT,ROW_HEIGHT,ROWS_TOP,ROWS_HEIGHT,paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from './village-leaderboard-art.js?v=153';
 
 // These standings use the chapter onboarding totals, not unavailable trading P&L.
 export function houseStandings(chapters,metric='progress'){
@@ -20,10 +20,10 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors,metric
   const standings=houseStandings(chapters,metric),leader=standings[0]?.joined>0?standings[0]:null,badges=[];
   for(const row of standings){
     const anchor=anchors.find(a=>a.id===row.id);if(!anchor)continue;
-    const first=row.id===leader?.id,medal=row.rank===1?'#F1CA70':row.rank===2?'#D7E0E8':row.rank===3?'#D3A37A':'#AABCD3';
+    const first=row.id===leader?.id,medal=row.rank===1?'#516AF6':'#EAEDFF';
     const map=canvasTexture(T,512,256,(ctx,w,h)=>{
-      ctx.clearRect(0,0,w,h);ctx.fillStyle=first?'#F1CA70':'#142331';ctx.beginPath();ctx.roundRect(16,18,w-32,h-36,44);ctx.fill();
-      ctx.strokeStyle=medal;ctx.lineWidth=7;ctx.stroke();ctx.fillStyle=first?'#172331':'#FFFFFF';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.clearRect(0,0,w,h);ctx.fillStyle=first?'#4A36FF':'#221D4B';ctx.beginPath();ctx.roundRect(16,18,w-32,h-36,44);ctx.fill();
+      ctx.strokeStyle=medal;ctx.lineWidth=7;ctx.stroke();ctx.fillStyle='#EAEDFF';ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.font='700 119px Aeonik, Arial, sans-serif';ctx.fillText(`#${row.rank}`,w*.5,h*.43);
       ctx.font='700 28px Aeonik, Arial, sans-serif';ctx.fillText(first?'ROW LEADER':metric==='members'?`${row.joined} MEMBERS`:`${Math.round(row.progress*100)}% ONBOARDED`,w*.5,h*.80);
     });
@@ -66,7 +66,7 @@ export function createCompetition(T,chapters,anchors,lightAnchors=anchors,metric
   }
   animate(0);
   const backMap=canvasTexture(T,2048,1376,paintLeaderboardGraffiti);
-  const back=new T.Mesh(new T.PlaneGeometry(11,7.4),new T.MeshStandardMaterial({color:backMap?0xffffff:0x626cf3,map:backMap,roughness:.95}));
+  const back=new T.Mesh(new T.PlaneGeometry(11,7.4),new T.MeshStandardMaterial({color:backMap?0xffffff:0x516af6,map:backMap,roughness:.95}));
   back.name='leaderboard-fomo-graffiti';back.position.set(0,5,-.27);back.rotation.y=Math.PI;back.userData.ownedTexture=true;board.add(back);
   const gold=new T.MeshStandardMaterial({color:0xdcc47a,roughness:.4,metalness:.6});for(const x of [-4.5,0,4.5]){box(x,9.2,.4,.15,.15,1.1);box(x,9.13,.95,1.05,.09,.33,gold);}
   return {root,standings,topChapters,badges,spotlight,board,animate,leaderId:leader?.id||null};

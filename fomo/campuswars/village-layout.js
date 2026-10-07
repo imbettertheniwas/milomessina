@@ -1,6 +1,6 @@
 import {hasChapterHouse} from './village-backyards.js?v=112';
 import {conversation,personalClock} from './village-human-behavior.js?v=131';
-import {rankedHouseSizes} from './village-house-sizing.js?v=146';
+import {rankedHouseSizes} from './village-house-sizing.js?v=153';
 import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
 import {gaitPhase,smooth} from './village-human-motion.js?v=106';
 import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=128';

@@ -1,4 +1,4 @@
-import {campusGroundHeight} from './village-campus-hill.js?v=146';
+import {campusGroundHeight} from './village-campus-hill.js?v=153';
 
 // This is the sum of chapter registrations, never the decorative campus crowd
 // or the full active-roster/qualification denominators.
@@ -44,17 +44,17 @@ export function createVillagePopulation(T,chapters,status={}){
     root.userData={...totals,status:label,updatedAt:feedStatus.updatedAt||null};
     if(!canvas)return true;
     const c=canvas.getContext('2d'),w=canvas.width;
-    c.fillStyle='#294b68';c.fillRect(0,0,w,960);
-    c.strokeStyle='#f0e6c9';c.lineWidth=9;c.strokeRect(27,27,w-54,906);
-    c.strokeStyle='#bfa773';c.lineWidth=2;c.strokeRect(44,44,w-88,872);
+    c.fillStyle='#221D4B';c.fillRect(0,0,w,960);
+    c.strokeStyle='#EAEDFF';c.lineWidth=9;c.strokeRect(27,27,w-54,906);
+    c.strokeStyle='#516AF6';c.lineWidth=2;c.strokeRect(44,44,w-88,872);
     c.textBaseline='middle';c.textAlign='center';
-    c.fillStyle='#dbcaa1';c.font='500 34px Aeonik, Arial, sans-serif';c.fillText('WELCOME TO',w/2,112);
-    c.fillStyle='#fff5db';c.font='700 107px Aeonik, Arial, sans-serif';c.fillText('GREEK VILLAGE',w/2,230,w-160);
-    c.fillStyle='#bfa773';c.fillRect(180,323,w-360,3);
-    c.fillStyle='#e2d4b1';c.font='500 50px Aeonik, Arial, sans-serif';c.fillText('POPULATION',w/2,404);
-    c.fillStyle='#fff5db';c.font='700 296px Aeonik, Arial, sans-serif';c.fillText(totals.members.toLocaleString('en-US'),w/2,599,w-190);
+    c.fillStyle='#EAEDFF';c.font='500 34px Aeonik, Arial, sans-serif';c.fillText('WELCOME TO',w/2,112);
+    c.fillStyle='#EAEDFF';c.font='700 107px Aeonik, Arial, sans-serif';c.fillText('GREEK VILLAGE',w/2,230,w-160);
+    c.fillStyle='#516AF6';c.fillRect(180,323,w-360,3);
+    c.fillStyle='#EAEDFF';c.font='500 50px Aeonik, Arial, sans-serif';c.fillText('POPULATION',w/2,404);
+    c.fillStyle='#EAEDFF';c.font='700 296px Aeonik, Arial, sans-serif';c.fillText(totals.members.toLocaleString('en-US'),w/2,599,w-190);
     c.font='500 42px Aeonik, Arial, sans-serif';c.fillText(`${totals.chapters.toLocaleString('en-US')} ${totals.chapters===1?'chapter':'chapters'}`,w/2,805);
-    c.fillStyle='#c7cfcf';c.font='500 24px Aeonik, Arial, sans-serif';c.fillText(label==='LIVE REGISTRATIONS'?'LIVE MEMBER COUNT':label,w/2,882,w-160);
+    c.fillStyle='#EAEDFFB8';c.font='500 24px Aeonik, Arial, sans-serif';c.fillText(label==='LIVE REGISTRATIONS'?'LIVE MEMBER COUNT':label,w/2,882,w-160);
     for(const x of [77,w-77])for(const y of [78,882]){c.fillStyle='#bac1c2';c.beginPath();c.arc(x,y,7,0,Math.PI*2);c.fill();c.fillStyle='#727e83';c.fillRect(x-4,y-1,8,2);}
     texture.needsUpdate=true;return true;
   }

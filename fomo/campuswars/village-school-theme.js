@@ -1,6 +1,6 @@
-import {createFloatingIsland} from './village-island.js?v=149';
-import {createCampusKit} from './village-campus-kit.js?v=128';
-import {createSchoolEntrance} from './village-school-signs.js?v=138';
+import {createFloatingIsland} from './village-island.js?v=153';
+import {createCampusKit} from './village-campus-kit.js?v=153';
+import {createSchoolEntrance} from './village-school-signs.js?v=153';
 const themes={
  mission:{wall:0xe5d3b0,roof:0x9c4f36,sky:0xb8d9e6,ground:0xbfa779,tree:'palm',land:'hills',label:'Mission-style courtyards'},
  pacific:{wall:0xcaa88c,roof:0x96513f,sky:0xafd2e7,ground:0xbba77e,tree:'palm',land:'coast',label:'Pacific campus'},

@@ -2,8 +2,8 @@ import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spac
 import {createDistantCrowd} from './village-distant-crowd.js?v=131';
 import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=80';
 import {personalClock,conversation} from './village-human-behavior.js?v=131';
-import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=146';
-import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=128';
+import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=153';
+import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=153';
 import {gaitPhase,humanPose,smooth} from './village-human-motion.js?v=106';
 import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=80';
 import {journeyPose} from './village-place-layout.js?v=80';

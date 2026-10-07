@@ -1,6 +1,6 @@
-import {createVehicleLogoTexture} from './village-floor-logo.js?v=79';
+import {createVehicleLogoTexture} from './village-floor-logo.js?v=153';
 
-export const FOMO_VEHICLE_COLOR=0x626cf3;
+export const FOMO_VEHICLE_COLOR=0x516af6;
 
 // Shared, baked vehicle parts keep both moving traffic and parked fleets batched.
 export function createVehicleKit(T){
@@ -9,7 +9,7 @@ export function createVehicleKit(T){
   const detailMaterial=keep(new T.MeshStandardMaterial({vertexColors:true,roughness:.36,metalness:.22}));
   const wheelMaterial=keep(new T.MeshStandardMaterial({vertexColors:true,roughness:.57,metalness:.18}));
   const logoMap=createVehicleLogoTexture(T);if(logoMap)keep(logoMap);
-  const logoMaterial=keep(new T.MeshStandardMaterial({map:logoMap,color:logoMap?0xffffff:0x6975f5,roughness:.3,metalness:.32,alphaTest:.1,polygonOffset:true,polygonOffsetFactor:-1}));
+  const logoMaterial=keep(new T.MeshStandardMaterial({map:logoMap,color:logoMap?0xffffff:0x516af6,roughness:.3,metalness:.32,alphaTest:.1,polygonOffset:true,polygonOffsetFactor:-1}));
   function paint(color){if(!paints.has(color))paints.set(color,keep(new T.MeshStandardMaterial({color,roughness:.3,metalness:.32})));return paints.get(color);}
   function merge(parts){
     const values={position:[],normal:[],uv:[],color:[]};
@@ -76,7 +76,7 @@ export function createVehicleKit(T){
       box(painted,0xffffff,side*(width/2+.12),belt+.08,front-.11,.22,.13,.24);
       box(details,0x7b97a8,side*(width/2+.13),belt+.095,front-.238,.16,.08,.015);
       // Door decals sit on the flat body panel and face outward on either side.
-      const decal=new T.PlaneGeometry(shuttle?2.0:1.16,shuttle?.5:.34);
+      const decal=new T.PlaneGeometry(shuttle?2.0:1.16,(shuttle?2.0:1.16)*224/768);
       part(logos,decal,0xffffff,side*(width/2+.048),shuttle?.93:.68,shuttle?-.65:.1,0,side*Math.PI/2);
       if(suv)box(details,0x333c44,side*.61,roof+.105,-.38,.045,.04,1.45);
     }

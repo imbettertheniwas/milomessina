@@ -1,5 +1,5 @@
-import {createVehicleKit} from './village-vehicles.js?v=128';
-import {createCampusBannerTexture} from './village-floor-logo.js?v=79';
+import {createVehicleKit} from './village-vehicles.js?v=153';
+import {createCampusBannerTexture} from './village-floor-logo.js?v=153';
 import {hash,pick} from './village-district-layout.js?v=80';
 import {buildPlace} from './village-places.js?v=80';
 // Shared architectural parts, textures and landscape geometry. All static parts
@@ -176,18 +176,18 @@ export function createCampusKit(T){
     address(g,10+Math.floor(hash(s.x,s.z,'address')*89),2.8,2.1,d/2+.17);
   }
   function claimFloor(parent){
-    const floor=box(parent,0,.02,3,15,.22,18,0x6269dd);
+    const floor=box(parent,0,.02,3,15,.22,18,0x516af6);
     floor.name='chapter-claim-floor';floor.userData={chapter:'empty',action:'register'};
     if(typeof document!=='undefined'){
       const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=2458;
       const ctx=canvas.getContext('2d'),map=new T.CanvasTexture(canvas);
       map.colorSpace=T.SRGBColorSpace;map.anisotropy=16;
       const paint=()=>{
-        ctx.fillStyle='#5961d5';ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.strokeStyle='#bfc4ff';ctx.lineWidth=9;ctx.setLineDash([50,30]);ctx.strokeRect(90,90,1868,2278);ctx.setLineDash([]);
+        ctx.fillStyle='#516AF6';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.strokeStyle='#EAEDFF';ctx.lineWidth=9;ctx.setLineDash([50,30]);ctx.strokeRect(90,90,1868,2278);ctx.setLineDash([]);
         ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='700 480px Aeonik, Arial, sans-serif';
         ctx.fillText('YOUR',1024,810,1700);ctx.fillText('HOUSE',1024,1260,1700);
-        ctx.fillStyle='#e5e7ff';ctx.font='700 135px Aeonik, Arial, sans-serif';ctx.fillText('CLICK TO START',1024,1870,1660);
+        ctx.fillStyle='#EAEDFF';ctx.font='700 135px Aeonik, Arial, sans-serif';ctx.fillText('CLICK TO START',1024,1870,1660);
         map.needsUpdate=true;
       };
       paint();document.fonts?.ready.then(paint);

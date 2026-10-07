@@ -1,4 +1,4 @@
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=79';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
 import {chapterGoalReached} from './village-rewards.js?v=55';
 // Original chapter compositions informed by public fraternity brand references.
 // Color provenance and design notes: banner-references.md. These are not official flags.
@@ -18,7 +18,7 @@ export function bannerIdentity(chapter){return identities[chapter.id]||Object.en
 // Shared FOMO campaign layout in each fraternity’s own colors.
 export function paintChapterBanner(ctx,chapter,w,h){
   const b=bannerIdentity(chapter),sans='Aeonik, Arial, sans-serif';
-  const white='#FFFFFF',muted='#BFC1D8',black='#12111A';
+  const white='#EAEDFF',muted='#EAEDFFB8',black='#221D4B';
   const target=Math.ceil(chapter.active*.8),reached=chapterGoalReached(chapter),earned=houseEarnings(chapter);
   ctx.save();ctx.clearRect(0,0,w,h);ctx.textBaseline='middle';
   const rect=(x,y,sw,sh,color)=>{ctx.fillStyle=color;ctx.fillRect(x*w,y*h,sw*w,sh*h);};
@@ -41,6 +41,7 @@ export function paintChapterBanner(ctx,chapter,w,h){
   rect(.02,.018,.010,.964,b.secondary);
   // Use the existing original FOMO mark, never an approximation of it.
   if(typeof Path2D!=='undefined'){
+    ctx.fillStyle=black;ctx.fillRect(w*.21-h*.25,0,h*.5,h*.34);
     ctx.save();const size=h*.39;ctx.translate(w*.21-size*.5,-h*.017);ctx.scale(size/100,size/100);ctx.fillStyle=white;
     for(const path of FOMO_MARK_PATHS)ctx.fill(new Path2D(path));ctx.restore();
   }
@@ -51,7 +52,7 @@ export function paintChapterBanner(ctx,chapter,w,h){
   text('GREEK WARS',.45,.135,.068,muted,.24);
   if(earned!==null){
     if(reached)text('GOAL REACHED',.955,.135,.055,muted,.23,'right');
-    text(`${money(earned)} EARNED`,.45,.405,.20,'#9FA7FF',.505);
+    text(`${money(earned)} EARNED`,.45,.405,.20,'#EAEDFF',.505);
     text(`${chapter.joined} / ${target}`,.45,.68,.165,white,.50);
     text('MEMBERS ONBOARDED',.453,.842,.059,muted,.49);
   }else{

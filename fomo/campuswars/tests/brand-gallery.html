@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Greek Village — FOMO brand review</title><link rel="stylesheet" href="../styles.css"><style>html,body{height:auto;overflow:auto}body{padding:32px;background:var(--fomo-white);color:var(--fomo-navy)}main{max-width:1100px;margin:auto}h1{font-size:32px}p{margin:12px 0 24px}section{display:grid;grid-template-columns:1fr 1fr;gap:24px}figure{margin:0}canvas{display:block;width:100%;height:auto}figcaption{font-size:14px;font-weight:500;margin:8px 0 18px}@media(max-width:600px){section{grid-template-columns:1fr}}</style><main><h1>Greek Village / fomo</h1><p>Approved palette, original vector artwork and Aeonik.</p><section id="art"></section></main><script type="module">
+import * as T from '../vendor/three.module.min.js';
+import {createCampusBannerTexture,createVehicleLogoTexture,createEntranceEyesTexture} from '../village-floor-logo.js?v=153';
+import {paintFomoWordmark} from '../village-brand.js?v=153';
+import {paintChapterBanner} from '../village-banner-art.js?v=153';
+import {paintLeaderboardFrame,paintLeaderboardRows,paintLeaderboardGraffiti} from '../village-leaderboard-art.js?v=153';
+await Promise.all([document.fonts.load('400 16px Aeonik'),document.fonts.load('500 16px Aeonik'),document.fonts.load('700 16px Aeonik')]);
+const root=document.getElementById('art');function show(title,canvas){const figure=document.createElement('figure'),caption=document.createElement('figcaption');caption.textContent=title;figure.append(canvas,caption);root.append(figure);}function art(title,w,h,paint){const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;paint(canvas.getContext('2d'),w,h);show(title,canvas);}
+for(const [title,create] of [['Campus banner',createCampusBannerTexture],['Vehicle lockup',createVehicleLogoTexture],['Entrance symbol',createEntranceEyesTexture]]){const map=create(T);show(title,map.image);}
+art('Aircraft wordmark',1024,256,(ctx,w,h)=>{ctx.fillStyle='#EAEDFF';ctx.fillRect(0,0,w,h);paintFomoWordmark(ctx,120,32,784,192,'#516AF6');});
+const chapter={id:'sigma-chi-sdsu',name:'Sigma Chi',letters:'SC',school:'San Diego State University',shortSchool:'San Diego State',joined:85,active:100,rank:1,progress:.85};
+art('Chapter identity with approved FOMO badge',1400,580,(ctx,w,h)=>paintChapterBanner(ctx,chapter,w,h));
+art('Leaderboard reverse',1100,740,paintLeaderboardGraffiti);
+art('Leaderboard header',2048,1320,(ctx,w,h)=>paintLeaderboardFrame(ctx,w,h,6,'members',{schoolName:'San Diego State University'}));
+art('Leaderboard rows',2048,498,(ctx,w,h)=>paintLeaderboardRows(ctx,w,h,[chapter,{...chapter,name:'Kappa Sigma',rank:2,joined:34,progress:.34}], 'members'));
+</script></html>

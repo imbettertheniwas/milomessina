@@ -1,6 +1,7 @@
+import {paintFomoWordmark} from './village-brand.js?v=153';
 import {createMaybach} from './village-helipad-maybach.js?v=3';
-import {createHelipadGuests} from './village-helipad-guests.js?v=2';
-import {createHelipadAircraft} from './village-helipad-aircraft.js?v=2';
+import {createHelipadGuests} from './village-helipad-guests.js?v=153';
+import {createHelipadAircraft} from './village-helipad-aircraft.js?v=153';
 // Appearance references and modeling notes: helipad-references.md.
 // This scenery has its own identities; neither guest is a registered member.
 export const HELIPAD_SITE={x:100,z:200,radius:24};
@@ -67,9 +68,9 @@ export function createHelipad(T,extension=0){
   const oval=(p,m,x,y,z,w,h,d)=>mesh(p,ball,m,x,y,z,w,h,d);
   const round=(p,m,x,y,z,w,h,d)=>mesh(p,rounded,m,x,y,z,w,h,d);
   function bar(p,m,a,b,r){const v=new T.Vector3(...a),w=new T.Vector3(...b),o=mesh(p,cylinder,m,...v.clone().add(w).multiplyScalar(.5).toArray(),r,v.distanceTo(w),r);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),w.sub(v).normalize());return o;}
-  function texture(w,h,paint){if(typeof document==='undefined')return null;const c=document.createElement('canvas');c.width=w;c.height=h;paint(c.getContext('2d'),w,h);const map=own(new T.CanvasTexture(c));map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return map;}
+  function texture(w,h,paint){if(typeof document==='undefined')return null;const c=document.createElement('canvas');c.width=w;c.height=h;paint(c.getContext('2d'),w,h);const map=own(new T.CanvasTexture(c));map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;document.fonts?.ready.then(()=>{const ctx=c.getContext('2d');ctx.save();ctx.setTransform(1,0,0,1,0,0);paint(ctx,w,h);ctx.restore();map.needsUpdate=true;document.dispatchEvent(new Event('village:artwork'));});return map;}
   function label(p,text,x,y,z,w,h,color='#f6f2e9',background='#19232c',sprite=false){
-    const map=texture(1024,256,(c,W,H)=>{c.fillStyle=background;c.fillRect(0,0,W,H);c.fillStyle=color;c.font='700 92px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H/2,W-60);});
+    const map=texture(1024,256,(c,W,H)=>{c.fillStyle=text==='fomo'?'#221D4B':background;c.fillRect(0,0,W,H);if(text==='fomo'){paintFomoWordmark(c,160,48,704,160,'#EAEDFF');return;}c.fillStyle=color;c.font='700 92px Aeonik, Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H/2,W-60);});
     const material=own(sprite?new T.SpriteMaterial({map,color:map?0xffffff:0xeeeeee,depthTest:true}):new T.MeshStandardMaterial({map,color:map?0xffffff:0xeeeeee,roughness:.75}));
     const o=sprite?new T.Sprite(material):new T.Mesh(own(new T.PlaneGeometry(1,1)),material);o.position.set(x,y,z);o.scale.set(w,h,1);p.add(o);return o;
   }
