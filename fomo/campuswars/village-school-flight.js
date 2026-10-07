@@ -1,15 +1,13 @@
 import {createPrivateJet} from './village-private-jet.js?v=153';
 import {createSchoolDrop,SCHOOL_DROP_DURATION} from './village-school-drop.js?v=154';
 
-export const JET_RIDE_DURATION=1.65;
-export const SCHOOL_FLIGHT_DURATION=JET_RIDE_DURATION+SCHOOL_DROP_DURATION;
+export const DOOR_EXIT_DURATION=.8;
+export const SCHOOL_FLIGHT_DURATION=DOOR_EXIT_DURATION+SCHOOL_DROP_DURATION;
 const clamp=value=>Math.max(0,Math.min(1,value));
 const smooth=value=>{const t=clamp(value);return t*t*t*(10+t*(-15+6*t));};
-export function schoolFlightStage(time){return time<.85?'jet':time<JET_RIDE_DURATION?'jump':time<JET_RIDE_DURATION+.55?'freefall':time<SCHOOL_FLIGHT_DURATION-.5?'parachute':'arrival';}
+export function schoolFlightStage(time){return time<DOOR_EXIT_DURATION?'jump':time<DOOR_EXIT_DURATION+.55?'freefall':time<SCHOOL_FLIGHT_DURATION-.5?'parachute':'arrival';}
 export function schoolFlightCaption(time,school){
- const stage=schoolFlightStage(time);
- const title=stage==='jet'?'FOMO AIR':school.name;
- return {index:stage==='jet'?'jet':'campus',title,description:'',join:false,opacity:1,copyOpacity:1,lift:0,scale:1};
+ return {index:'campus',title:school.name,description:'',join:false,opacity:1,copyOpacity:1,lift:0,scale:1};
 }
 export function createSchoolFlight(T,scene){
  const jet=createPrivateJet(T);scene.add(jet.root);jet.root.visible=false;
@@ -21,41 +19,34 @@ export function createSchoolFlight(T,scene){
   const map=new T.CanvasTexture(c);resources.add(map);
   for(let i=0;i<28;i++){const material=new T.SpriteMaterial({map,color:0xf4f0fa,transparent:true,opacity:.78,depthWrite:false,fog:false});resources.add(material);const sprite=new T.Sprite(material);sprite.position.set(Math.sin(i*2.4)*(55+i*4),-15-(i%4)*14,Math.cos(i*2.4)*(60+i*5));sprite.scale.set(80+i%3*35,24+i%4*10,1);clouds.add(sprite);}
  }
- function frameCamera(camera,position,aim,fov,roll=0){camera.position.copy(position);camera.fov=fov;camera.near=.06;camera.far=2200;camera.lookAt(aim);camera.rotateZ(roll);camera.updateProjectionMatrix();camera.updateMatrixWorld();}
  function begin(options){
   path=options;drop.begin(options);drop.update(0,temp);dropStart.copy(temp.position);dropRotation.copy(temp.quaternion);dropFov=temp.fov;drop.finish();
-  clouds.position.copy(dropStart);jet.root.visible=true;clouds.visible=true;jet.exterior.visible=true;jet.cabin.visible=false;
+  clouds.position.copy(dropStart);jet.root.visible=true;clouds.visible=true;jet.exterior.visible=false;jet.cabin.visible=true;
  }
  function update(time,camera){
   if(!path)return;
   const stage=schoolFlightStage(time),mobile=camera.aspect<1;
-  jet.root.visible=time<1.05;clouds.visible=time<JET_RIDE_DURATION+.2;
-  const origin=dropStart.clone().add(new T.Vector3(0,7,8+(JET_RIDE_DURATION-time)*24));
-  jet.root.position.copy(origin);jet.root.rotation.set(stage==='jet'?.015:0,stage==='jet'?.025:0,stage==='jet'?-.075+.11*smooth(time/.85):0);
-  if(time>=JET_RIDE_DURATION){
-   jet.cabin.visible=false;jet.exterior.visible=true;
+  jet.root.visible=time<.2;clouds.visible=time<DOOR_EXIT_DURATION+.2;
+  const origin=dropStart.clone().add(new T.Vector3(0,7,8+(DOOR_EXIT_DURATION-time)*24));
+  jet.root.position.copy(origin);jet.root.rotation.set(0,0,0);
+  if(time>=DOOR_EXIT_DURATION){
+   jet.cabin.visible=false;jet.exterior.visible=false;
    if(!drop.root.userData.flightStarted){drop.begin(path);drop.root.userData.flightStarted=true;}
-   return {...drop.update(time-JET_RIDE_DURATION,camera),stage};
+   return {...drop.update(time-DOOR_EXIT_DURATION,camera),stage};
   }
-  jet.exterior.visible=stage==='jet';jet.cabin.visible=stage!=='jet';
-  if(stage==='jet'){
-   const t=smooth(time/.85),position=origin.clone().add(new T.Vector3(31-t*5,9-t*2,29-t*4).multiplyScalar(mobile?1.5:1));
-   frameCamera(camera,position,origin.clone().add(new T.Vector3(0,.3,-3)),mobile?57:48,-.018+.012*Math.sin(time/.85*Math.PI*2));
-  }else{
-   const elapsed=time-.85,exit=smooth(elapsed/.2),fall=clamp((elapsed-.2)/.6);
-   const position=origin.clone().add(new T.Vector3(.25,.15,-4.2).lerp(new T.Vector3(-3.4,-.05,-4.2),exit));
-   if(elapsed>=.2){
-    // Match the jet's forward velocity at the door and the freefall velocity at handoff.
-    const start=dropStart.clone().add(new T.Vector3(-3.4,6.95,18.2)),u=fall,u2=u*u,u3=u2*u;
-    position.copy(start).multiplyScalar(2*u3-3*u2+1).addScaledVector(new T.Vector3(0,0,-24),.6*(u3-2*u2+u)).addScaledVector(dropStart,-2*u3+3*u2).addScaledVector(new T.Vector3(0,-28,-24),.6*(u3-u2));
-   }
-   // Face out through the side hatch, then tip into the original freefall pose.
-   // The quintic turn settles before the continuous drop handoff.
-   const turn=smooth(fall);
-   camera.position.copy(position);camera.lookAt(position.clone().add(new T.Vector3(-8,-3,-.7)));camera.quaternion.slerp(dropRotation,turn);const fov=mobile?72:68;camera.fov=fov+(dropFov-fov)*turn;camera.near=.06;camera.far=2200;camera.updateProjectionMatrix();camera.updateMatrixWorld();
-   jet.cabin.visible=elapsed<.2;jet.exterior.visible=false;
+  const elapsed=time,exit=smooth(elapsed/.2),fall=clamp((elapsed-.2)/.6);
+  const position=origin.clone().add(new T.Vector3(mobile?.55:.25,.15,-4.2).lerp(new T.Vector3(-3.4,-.05,-4.2),exit));
+  if(elapsed>=.2){
+   // Match the jet's forward velocity at the door and the freefall velocity at handoff.
+   const start=dropStart.clone().add(new T.Vector3(-3.4,6.95,18.2)),u=fall,u2=u*u,u3=u2*u;
+   position.copy(start).multiplyScalar(2*u3-3*u2+1).addScaledVector(new T.Vector3(0,0,-24),.6*(u3-2*u2+u)).addScaledVector(dropStart,-2*u3+3*u2).addScaledVector(new T.Vector3(0,-28,-24),.6*(u3-u2));
   }
-  return {stage,target:[path.anchor?.lot.originX||0,3,path.anchor?.lot.z??-19],theta:.5,phi:.4,radius:camera.aspect<1?78:58};
+  // Face out through the side hatch, then tip into the original freefall pose.
+  // The quintic turn settles before the continuous drop handoff.
+  const turn=smooth(fall);
+  camera.position.copy(position);camera.lookAt(position.clone().add(new T.Vector3(-8,-3,-.7)));camera.quaternion.slerp(dropRotation,turn);const fov=mobile?92:68;camera.fov=fov+(dropFov-fov)*turn;camera.near=.06;camera.far=2200;camera.updateProjectionMatrix();camera.updateMatrixWorld();
+  jet.cabin.visible=elapsed<.2;jet.exterior.visible=false;
+  return {stage,...(path.overview||{target:[path.anchor?.lot.originX||0,3,path.anchor?.lot.z??-19],theta:.5,phi:.4,radius:camera.aspect<1?78:58})};
  }
  function finish(){path=null;jet.root.visible=false;clouds.visible=false;drop.finish();drop.root.userData.flightStarted=false;}
  return {root:jet.root,drop,begin(options){finish();begin(options);},update,finish,dispose(){finish();jet.dispose();drop.dispose();clouds.removeFromParent();for(const resource of resources)resource.dispose();}};

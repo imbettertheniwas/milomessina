@@ -6,7 +6,7 @@ export function createNationalNavigation(){
  const shell=document.getElementById('village'),source=document.getElementById('chapters-data');
  let snapshot=JSON.parse(source.textContent),catalog=[],schools=[],choices=[],selected=-1,required=true,travelling=false;
  const dialog=document.createElement('dialog');dialog.id='school-picker';dialog.setAttribute('aria-labelledby','school-picker-title');
- dialog.innerHTML=`<form class="school-picker-form"><span class="school-picker-brand"><img src="/fomo/campuswars/assets/fomo-lockup-blue.svg" alt="fomo" width="126" height="24"></span><h2 id="school-picker-title">What school do you go to?</h2><label class="school-picker-field"><span class="school-picker-label">Your school</span><input id="school-search" type="text" placeholder="School name or initials" autocomplete="off" spellcheck="false" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="school-results" autofocus><span aria-hidden="true">↗</span></label><ul id="school-results" role="listbox" aria-label="Schools" hidden></ul><p id="school-picker-status" role="status">Your private jet is waiting.</p></form>`;
+ dialog.innerHTML=`<form class="school-picker-form"><span class="school-picker-brand"><img src="/fomo/campuswars/assets/fomo-lockup-blue.svg" alt="fomo" width="126" height="24"></span><h2 id="school-picker-title">What school do you go to?</h2><label class="school-picker-field"><span class="school-picker-label">Your school</span><input id="school-search" type="text" placeholder="School name or initials" autocomplete="off" spellcheck="false" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="school-results" autofocus><span aria-hidden="true">↗</span></label><ul id="school-results" role="listbox" aria-label="Schools" hidden></ul><p id="school-picker-status" role="status">Choose a school to jump in.</p></form>`;
  shell.append(dialog);
  const search=dialog.querySelector('input'),results=dialog.querySelector('ul'),status=dialog.querySelector('[role=status]');
  const button=document.createElement('button');button.id='village-school';button.className='village-reset';button.type='button';button.textContent='Your school ↗';button.setAttribute('aria-haspopup','dialog');document.querySelector('.village-top-actions').prepend(button);
@@ -29,7 +29,7 @@ export function createNationalNavigation(){
    const name=document.createElement('span'),arrow=document.createElement('span');name.textContent=school.custom?`Fly to ${school.name}`:school.name;arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');item.append(name,arrow);results.append(item);
   });
   results.hidden=!choices.length;search.setAttribute('aria-expanded',String(Boolean(choices.length)));
-  status.textContent=search.value.trim()&&!choices.length?'Keep typing your school’s name.':'Your private jet is waiting.';
+  status.textContent=search.value.trim()&&!choices.length?'Keep typing your school’s name.':'Choose a school to jump in.';
  }
  function highlight(index){selected=index;[...results.children].forEach((item,i)=>item.setAttribute('aria-selected',String(i===index)));const item=results.children[index];if(item){search.setAttribute('aria-activedescendant',item.id);item.scrollIntoView({block:'nearest'});}}
  function open(message=''){

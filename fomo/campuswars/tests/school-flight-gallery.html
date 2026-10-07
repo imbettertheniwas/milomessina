@@ -1,15 +1,15 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>School flight motion preview</title>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>School jump motion preview</title>
 <style>body{margin:0;background:#eaedff;font:14px Arial}canvas{display:block}nav{position:fixed;bottom:12px;left:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;z-index:2}button{padding:10px;background:#516af6;color:#fff;border:0;border-radius:6px}output{position:fixed;top:12px;left:12px;color:#221d4b;background:#eaedff;padding:8px}</style>
-<nav><button id="play">Replay flight</button><button data-time=".92">Doorway</button><button data-time="1.9">Dive</button><button data-time="2.365">Opening</button><button data-time="2.85">Glide</button><button data-time="4.6">Arrival</button><button id="phone">Phone / desktop</button></nav><output>Loading</output><script type="module">
+<nav><button id="play">Replay jump</button><button data-time="0">Doorway</button><button data-time="1.05">Dive</button><button data-time="1.515">Opening</button><button data-time="2">Glide</button><button data-time="3.75">Arrival</button><button id="phone">Phone / desktop</button></nav><output>Loading</output><script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createSchoolFlight,SCHOOL_FLIGHT_DURATION} from '../village-school-flight.js?v=154';
+import {createSchoolFlight,SCHOOL_FLIGHT_DURATION} from '../village-school-flight.js?v=155';
 import {createVillage} from '../village-world.js?v=153';
 import {createFloatingIsland,islandFootprint,islandOverview} from '../village-island.js?v=153';
 const scene=new T.Scene();scene.background=new T.Color(0xb8d5e6);scene.add(new T.HemisphereLight(0xe0edff,0x877a61,1.55));const sun=new T.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);scene.add(sun);
 const camera=new T.PerspectiveCamera(48,innerWidth/innerHeight,.1,2200),renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;document.body.prepend(renderer.domElement);
 const chapters=[{id:'preview',name:'Sigma Chi',letters:'ΣΧ',school:'San Diego State University',joined:200,active:200}];
 const village=createVillage(T,chapters,{attachStreet:true,theme:{floating:true,primary:'#516af6',secondary:'#221d4b'}});scene.add(village.world);const island=createFloatingIsland(T,{id:"preview"},chapters);scene.add(island.root);
-const flight=createSchoolFlight(T,scene);let time=2.85,last=0,playing=false,phone=false;
+const flight=createSchoolFlight(T,scene);let time=0,last=0,playing=false,phone=false;
 function setup(){const width=phone?390:innerWidth,height=phone?844:innerHeight;renderer.setSize(width,height);renderer.domElement.style.margin='auto';camera.aspect=width/height;flight.begin({anchor:village.anchors[0],aspect:camera.aspect,overview:islandOverview(islandFootprint(chapters),camera.aspect)});}
 setup();document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=Number(b.dataset.time);playing=false;});document.querySelector('#play').onclick=()=>{time=0;playing=true;setup();};document.querySelector('#phone').onclick=()=>{phone=!phone;setup();};addEventListener('resize',setup);
 function frame(now){if(playing)time=Math.min(SCHOOL_FLIGHT_DURATION,time+Math.min(.05,(now-last)/1000));last=now;flight.update(time,camera);island.animate(time,0,0,camera);renderer.render(scene,camera);document.querySelector('output').textContent=`${phone?'Phone':'Desktop'} · ${time.toFixed(2)}s`;requestAnimationFrame(frame);}requestAnimationFrame(frame);
