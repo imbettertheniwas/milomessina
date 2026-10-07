@@ -3,7 +3,7 @@ import {islandFootprint,islandOverview} from './village-island.js?v=167';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=167';
 import {createLiveArrivals} from './village-arrivals.js?v=167';
-import {createHelipad} from './village-helipad.js?v=167';
+import {createHelipad} from './village-helipad.js?v=168';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=165';
 import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality,createResolutionBudget} from './village-quality.js?v=127';
@@ -12,11 +12,11 @@ import * as THREE from './vendor/three.module.min.js';
 import {createVillageRendererAsync} from './village-renderer.js?v=167';
 import {chapterSceneKey} from './village-startup.js?v=128';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
-import {createDistricts} from './village-districts.js?v=167';
+import {createDistricts} from './village-districts.js?v=168';
 import {clampCampusTarget} from './village-campus-bounds.js?v=167';
-import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=167';
+import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=168';
 import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=167';
-import {prewarmVillage} from './village-prewarm.js?v=167';
+import {prewarmVillage} from './village-prewarm.js?v=168';
 import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=153';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=167';
 
@@ -209,7 +209,6 @@ async function startVillage(){
     nearby.setSchool(activeSchool,schoolDestinations(allChapters,catalog),islandFootprint(chapters));nearby.setNight(litAtNight);
     camera.far=Math.max(camera.far,nearby.farDistance);camera.updateProjectionMatrix();
     population.root.visible=!activeSchool;helipad.root.visible=!activeSchool;blimp.root.visible=!activeSchool;
-    for(const id of ['village-stadium','village-helipad'])document.getElementById(id).hidden=Boolean(activeSchool);
     shell.dataset.renderedChapters=String(chapters.length);shell.dataset.renderedStreets=String(village.streetTotal);
     document.dispatchEvent(new CustomEvent('destination:changed',{detail:{school:activeSchool,chapters}}));
   }
@@ -284,16 +283,14 @@ async function startVillage(){
   const helipadDistance=()=>34/Math.min(1,camera.aspect);
   const leaderboardDistance=()=>Math.max(16,7/(Math.tan(camera.fov*Math.PI/360)*camera.aspect));
   function visitHelipad(){
-    takeControl();leaveStreet();wantedTarget.copy(helipad.root.position).add(new THREE.Vector3(-4,1.6,3));
-    helipadView=true;wantedTheta=-.78;wantedPhi=.38;wantedRadius=helipadDistance();
+    takeControl();leaveStreet();wantedTarget.copy(helipad.root.position).add(new THREE.Vector3(-4,1.6,3).applyAxisAngle(new THREE.Vector3(0,1,0),helipad.root.rotation.y));
+    helipadView=true;wantedTheta=-.78+helipad.root.rotation.y;wantedPhi=.38;wantedRadius=helipadDistance();
     helipad.restart(partyTime,paused||reduced);snapLongJump();viewDirty=true;wake();
   }
-  document.getElementById('village-helipad').addEventListener('click',visitHelipad);
   function visitStadium(){
     takeControl();leaveStreet();wantedTarget.copy(districts.stadium.root.position);wantedTarget.y=2;
     stadiumView=true;wantedTheta=-2.42;wantedPhi=.6;wantedRadius=stadiumDistance();snapLongJump();viewDirty=true;wake();
   }
-  document.getElementById('village-stadium').addEventListener('click',visitStadium);
   document.getElementById('village-leaderboard').addEventListener('click',()=>{
     takeControl();leaveStreet();const board=village.competition.board;
     leaderboardView=true;if(village.beacon)village.beacon.root.visible=false;

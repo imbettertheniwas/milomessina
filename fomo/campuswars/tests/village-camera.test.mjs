@@ -27,7 +27,7 @@ import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from '../village-
 
 async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650},initialChapters=[],duringBuild=null){
   const elements=new Map(),events=new Map(),selections=[],selectionDetails=[],lighting=[],builds=[],pixelRatios=[],warmups=[];let intersection,frame,camera,finishWarmup,blimp,helipad,mockVillage,moneyRain,renders=0,flightBegins=0;
-  function element(id){if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,dataset:{},style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
+  function element(id){if(['village-helipad','village-stadium'].includes(id))return null;if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,dataset:{},style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
   element('village-drawer').hidden=true;
   element('chapters-data').textContent=JSON.stringify({chapters:initialChapters});
   Object.assign(element('village-viewport'),{clientWidth:screen.width,clientHeight:screen.height});
@@ -480,15 +480,17 @@ test('lifting one finger after a pinch preserves the remaining drag without sele
   h.fire('canvas:pointerup',touch(1,160));assert.equal(h.selections.length,selected);
 });
 
- test('helipad control frames the arrival, pauses on the shared clock, and offers a still reduced-motion view',async()=>{
+ test('clicking the helipad frames the arrival, pauses on the shared clock, and offers a still reduced-motion view',async()=>{
   for(const reduced of [false,true]){
-    const h=await cameraHarness(reduced);h.show(true);h.step(.1);h.fire('village-helipad:click');h.step(2);
-    assert.equal(h.element('village-intro').hidden,true);assert(h.camera().position.x>40);assert(h.camera().position.z>HELIPAD_SITE.z);
+    const h=await cameraHarness(reduced);h.show(true);h.step(20);
+    const clickPad=()=>{h.helipad().root.updateMatrixWorld(true);const p=h.helipad().pickables[0].getWorldPosition(new THREE.Vector3()).project(h.camera()),pointer={button:0,pointerId:1,clientX:(p.x+1)*600,clientY:(1-p.y)*325};h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointerup',pointer);};
+    clickPad();h.step(2);
+    assert.equal(h.element('village-intro').hidden,true);assert(h.camera().position.x>HELIPAD_SITE.x);assert(h.camera().position.z>HELIPAD_SITE.z);
     if(reduced)assert(h.helipad().state.guests.every(g=>g.standing));
     else{
       const before=h.helipad().state.time;h.step(2);assert(h.helipad().state.time>before);
       h.fire('document:party:pause',{detail:{paused:true}});const paused=h.helipad().state.time;h.step(3);assert.equal(h.helipad().state.time,paused);
-      h.fire('village-helipad:click');h.step(.1);assert(h.helipad().state.guests.every(g=>g.standing));
+      clickPad();h.step(.1);assert(h.helipad().state.guests.every(g=>g.standing));
     }
   }
 });

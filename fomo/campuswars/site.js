@@ -41,7 +41,7 @@
     if(!extraControls.contains(event.target)&&!moreButton.contains(event.target))setMoreControls(false);
   });
   extraControls.addEventListener('click',event=>{
-    if(event.target.closest('#village-helipad,#village-stadium,#village-leaderboard,#village-overview,#village-expand')){setMoreControls(false);if(matchMedia('(max-width: 1280px), (pointer: coarse)').matches)moreButton.focus();}
+    if(event.target.closest('#village-leaderboard,#village-overview,#village-expand')){setMoreControls(false);if(matchMedia('(max-width: 1280px), (pointer: coarse)').matches)moreButton.focus();}
   });
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&moreButton.getAttribute('aria-expanded')==='true'){setMoreControls(false);moreButton.focus();}
@@ -197,7 +197,7 @@
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
   import('./village-national.js?v=158').then(m=>m.createNationalNavigation());
-  import('./village.js?v=167').catch(error => {
+  import('./village.js?v=168').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');

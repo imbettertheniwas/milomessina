@@ -5,8 +5,8 @@ import {createCampusKit} from './village-campus-kit.js?v=153';
 import {buildSkylineBuilding} from './village-skyline.js?v=101';
 import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=167';
 import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=167';
-import {HELIPAD_SITE,landmarkX,landmarkZ} from './village-landmarks.js?v=167';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=168';
+import {HELIPAD_SITE,landmarkX,landmarkZ} from './village-landmarks.js?v=168';
 import {campusDistrictExists} from './village-campus-bounds.js?v=167';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
@@ -151,17 +151,21 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     // Reserve this entire outlying block for the permanent stadium. No campus
     // buildings, through-path crowds or trees may be streamed into its bowl.
     if((cx===west||cx===east)&&(cz===0||cz===1)){
-      const side=cx===west?-1:1,kind=side<0?'stadium':'helipad';
+      const side=cx===west?-1:1,kind=side<0?'stadium':'garden';
       if(cz===0){
-        const site=side<0?STADIUM_SITE:HELIPAD_SITE,sz=landmarkZ(site,extension);
+        const sz=landmarkZ(STADIUM_SITE,extension);
         path(p,[side*39,-38],[side*39,38+extension],2.4);
-        path(p,[side*39,sz],[landmarkX(site,streets)-cx*BLOCK,sz],3);
-        if(side>0){
-          const drive=landmarkX(HELIPAD_SITE,streets)-12-cx*BLOCK,length=100+extension;
-          box(p,drive,.16,extension/2,7,.08,length,0xbfc0b5);
-          box(p,drive,.205,extension/2,5.8,.025,length,0x505a5a);
+        if(side<0)path(p,[side*39,sz],[landmarkX(STADIUM_SITE,streets)-cx*BLOCK,sz],3);
+        if(side<0){
+          // The rotated arrival lane joins the perimeter road beside the stadium.
+          const driveZ=landmarkZ(HELIPAD_SITE,extension)+12;
+          box(p,-47,.16,driveZ,12,.08,7,0xbfc0b5);
+          box(p,-47,.205,driveZ,12,.025,5.8,0x505a5a);
         }
-        for(const z of [-29,25+extension]){tree(p,side*31,z,112+z,.85);bench(p,side*35,z,side*Math.PI/2);lamp(p,side*39,z);}
+        for(const z of [-29,25+extension]){
+          if(side<0&&Math.hypot(cx*BLOCK+side*31-landmarkX(HELIPAD_SITE,streets),z-landmarkZ(HELIPAD_SITE,extension))<HELIPAD_SITE.radius+6)continue;
+          tree(p,side*31,z,112+z,.85);bench(p,side*35,z,side*Math.PI/2);lamp(p,side*39,z);
+        }
       }else p.position.z+=extension;
       kit.batch(p);
       const lights=new Set();p.traverse(o=>{if(o.material?.userData.placeLight)lights.add(o.material);});

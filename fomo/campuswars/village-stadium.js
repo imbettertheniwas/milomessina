@@ -4,8 +4,8 @@ import {footballState,footballPlayer,footballBall} from './village-football.js?v
 import {createStadiumFireworks} from './village-stadium-fireworks.js?v=1';
 import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
 
-import {STADIUM_SITE,landmarkX,landmarkZ,landmarkTarget} from './village-landmarks.js?v=167';
-export {STADIUM_SITE} from './village-landmarks.js?v=167';
+import {STADIUM_SITE,landmarkX,landmarkZ,landmarkTarget} from './village-landmarks.js?v=168';
+export {STADIUM_SITE} from './village-landmarks.js?v=168';
 export function createStadium(T,extension=0,streets=1){
   const root=new T.Group();root.name='Greek Village Memorial Stadium';root.position.set(landmarkX(STADIUM_SITE,streets),0,landmarkZ(STADIUM_SITE,extension));
   const resources=new Set(),batches=new Map(),materials=new Map(),dummy=new T.Object3D(),color=new T.Color();

@@ -4,8 +4,8 @@ import {createHelipadGuests} from './village-helipad-guests.js?v=153';
 import {createHelipadAircraft} from './village-helipad-aircraft.js?v=153';
 // Appearance references and modeling notes: helipad-references.md.
 // This scenery has its own identities; neither guest is a registered member.
-import {HELIPAD_SITE,landmarkX,landmarkZ,landmarkTarget} from './village-landmarks.js?v=167';
-export {HELIPAD_SITE} from './village-landmarks.js?v=167';
+import {HELIPAD_SITE,landmarkX,landmarkZ,landmarkTarget} from './village-landmarks.js?v=168';
+export {HELIPAD_SITE} from './village-landmarks.js?v=168';
 export const HELIPAD_CYCLE=96;
 const clamp=x=>Math.max(0,Math.min(1,x));
 const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
@@ -47,6 +47,7 @@ export function helipadState(seconds){
 
 export function createHelipad(T,extension=0,streets=1){
   const root=new T.Group();root.name='Rasmr & Orangie · helicopter arrival';root.position.set(landmarkX(HELIPAD_SITE,streets),0,landmarkZ(HELIPAD_SITE,extension));
+  root.rotation.y=HELIPAD_SITE.rotation;
   const resources=new Set(),own=r=>(resources.add(r),r),materials=new Map();let night=false;
   // A small local sky reflection gives polished paint, chrome and glazing a
   // shared outdoor response without another network asset or render pass.

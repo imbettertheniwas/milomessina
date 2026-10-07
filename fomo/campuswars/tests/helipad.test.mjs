@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import {createHelipad,helipadState,HELIPAD_CYCLE,HELIPAD_SITE} from '../village-helipad.js';
+import {STADIUM_SITE} from '../village-stadium.js';
 import {campusBounds} from '../village-campus-bounds.js';
 
 test('guests arrive, stand together, board before rotor startup, and return to the Maybach',()=>{
@@ -38,7 +39,7 @@ test('pause, replay, reduced motion and live roster relocation preserve the sequ
 test('helipad is clear of the stadium, inside campus bounds and has a bounded resource cost',()=>{
   const bounds=campusBounds(),h=createHelipad(T);
   try{
-    assert(HELIPAD_SITE.x-HELIPAD_SITE.radius>41);assert(HELIPAD_SITE.x+HELIPAD_SITE.radius<bounds.maxX);assert(HELIPAD_SITE.z+HELIPAD_SITE.radius<bounds.maxZ);
+    assert(HELIPAD_SITE.x-HELIPAD_SITE.radius>bounds.minX);assert(HELIPAD_SITE.x+HELIPAD_SITE.radius<-40);assert(HELIPAD_SITE.z+HELIPAD_SITE.radius<STADIUM_SITE.z-STADIUM_SITE.depth/2);assert(HELIPAD_SITE.x+HELIPAD_SITE.radius<bounds.maxX);assert(HELIPAD_SITE.z+HELIPAD_SITE.radius<bounds.maxZ);
     let meshes=0,triangles=0;h.root.traverse(o=>{if(o.isMesh){meshes++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;assert([...o.geometry.attributes.position.array].every(Number.isFinite));}});
     assert(meshes<140);assert(triangles<130000);assert.deepEqual(h.guests.map(g=>g.root.name),['Rasmr','Orangie']);
     const resource=[...h.resources][0];let disposed=false;resource.addEventListener('dispose',()=>disposed=true);h.dispose();assert(disposed);assert.equal(h.resources.size,0);
@@ -75,7 +76,7 @@ test('passenger doors swing away from the cabin and knees articulate without bre
 test('Maybach wheels stay inside the body and polished paint retains local reflections',()=>{
   const h=createHelipad(T);
   try{
-    h.root.position.set(0,0,0);h.car.position.set(0,0,0);h.car.rotation.set(0,0,0);h.root.updateMatrixWorld(true);
+    h.root.position.set(0,0,0);h.root.rotation.set(0,0,0);h.car.position.set(0,0,0);h.car.rotation.set(0,0,0);h.root.updateMatrixWorld(true);
     const wheels=[],paints=[];h.car.traverse(o=>{
       if(o.name==='Maybach wheel')wheels.push(o);
       if(o.isMesh&&o.material.clearcoat===1)paints.push(o.material);
