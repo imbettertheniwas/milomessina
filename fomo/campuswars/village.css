@@ -220,9 +220,8 @@ dialog::backdrop{backdrop-filter:none;background:#221d4bb3}
 /* Equal side columns keep the desktop view controls centered under invitations. */
 @media(min-width:1281px) and (pointer:fine){
   .village-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end}
-  .village-bottom .party-tools{justify-self:start}
-  .village-bottom .village-view-tools{justify-self:center}
-  .village-bottom .village-primary-controls{justify-self:end}
+  .village-bottom .village-view-tools{grid-column:2;justify-self:center}
+  .village-bottom .village-primary-controls{grid-column:3;justify-self:end}
 }
 
 /* Real nearby campus destinations, anchored to the distant islands. */

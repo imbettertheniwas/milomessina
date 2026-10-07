@@ -1,6 +1,6 @@
 import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
 import {villageQuality} from './village-quality.js?v=127';
-import {createVillage,buildVillageSteps} from './village-world.js?v=167';
+import {createVillage,buildVillageSteps} from './village-world.js?v=169';
 import {houseStandings} from './village-competition.js?v=167';
 import {rankedHouseSizes} from './village-house-sizing.js?v=167';
 import {assignHouseFinishes} from './village-house-colors.js?v=87';

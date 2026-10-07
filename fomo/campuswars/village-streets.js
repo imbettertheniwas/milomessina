@@ -96,10 +96,6 @@ export function createStreetNetwork(T,theme=null){
       if(x!==0){rect('#505a60',x+6,z+18,2.5,12);rect('#c7c3b2',x+6,z+18,.1,12);}
     }
     for(const side of [-1,1])line('#a5b4a4',[[side*4.55,-34],[side*4.55,34]],.08);
-    // Parking courts occur only behind academic blocks, not every house.
-    for(const [x,z] of [[125,-8],[-125,8],[123,108],[-128,-109]]){
-      rect('#626a6c',x-7,z-9,14,18);for(let row=0;row<5;row++)rect('#a5aaa3',x-6,z-8+row*3.7,4,.1);
-    }
     // Small cracks, manholes, chalk and damp spots provide scale at street level.
     for(const ox of [-100,0,100])for(const z of [-27,25]){
       circle('#485259',ox+.6,z,.37);circle('#788083',ox+.6,z,.27);

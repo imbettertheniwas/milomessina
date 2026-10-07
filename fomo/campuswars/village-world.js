@@ -18,7 +18,7 @@ import {createConstructionSite,createConstructionEquipment} from './village-cons
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=153';
 import {palettes,hash} from './village-district-layout.js?v=80';
 import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=167';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=167';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=169';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=167';
 import {createDistantCrowd} from './village-distant-crowd.js?v=165';
 import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';

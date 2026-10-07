@@ -26,8 +26,8 @@ import {createMoneyRain,MONEY_END} from '../village-money-rain.js';
 import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from '../village-intro.js';
 
 async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobile=false,screen={width:1200,height:650},initialChapters=[],duringBuild=null){
-  const elements=new Map(),events=new Map(),selections=[],selectionDetails=[],lighting=[],builds=[],pixelRatios=[],warmups=[];let intersection,frame,camera,finishWarmup,blimp,helipad,mockVillage,moneyRain,renders=0,flightBegins=0;
-  function element(id){if(['village-helipad','village-stadium'].includes(id))return null;if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,dataset:{},style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
+  const elements=new Map(),events=new Map(),selections=[],selectionDetails=[],lighting=[],builds=[],pixelRatios=[],warmups=[];let partyNight=false,intersection,frame,camera,finishWarmup,blimp,helipad,mockVillage,moneyRain,renders=0,flightBegins=0;
+  function element(id){if(['village-helipad','village-stadium','night-toggle','village-discord'].includes(id))return null;if(!elements.has(id))elements.set(id,{clientWidth:1200,clientHeight:650,hidden:false,dataset:{},style:{setProperty(){}},querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},getAttribute:()=> 'false',setAttribute(){},prepend(){},focus(){sandbox.document.activeElement=this;},setPointerCapture(){},click(){this.clicks=(this.clicks||0)+1;},addEventListener(type,fn){events.set(id+':'+type,fn);}});return elements.get(id);}
   element('village-drawer').hidden=true;
   element('chapters-data').textContent=JSON.stringify({chapters:initialChapters});
   Object.assign(element('village-viewport'),{clientWidth:screen.width,clientHeight:screen.height});
@@ -35,13 +35,13 @@ async function cameraHarness(reduced=false,initialHash='',deferWarmup=false,mobi
   // What sits under the finger when the tap ends: the village, unless a test puts a control there.
   let topmost=canvas;
   class Renderer{constructor(){this.domElement=canvas;this.shadowMap={};}setPixelRatio(ratio){pixelRatios.push(ratio);}setSize(){}compileAsync(){return Promise.resolve();}render(scene,view){renders++;scene.updateMatrixWorld(true);camera=view;}}
-  const sandbox={createNearbyIslands,islandFootprint,islandOverview,destinationChapters,schoolDestinations,routeFromHash,resolveDestination,destinationHash,schoolTheme,createSchoolDistricts,createSchoolFlight:(...args)=>{const flight=createSchoolFlight(...args);return {...flight,begin(options){flightBegins++;flight.begin(options);}}},SCHOOL_FLIGHT_DURATION,schoolFlightCaption,loadSchoolCatalog:async()=>[],yieldVillageBuild:()=>Promise.resolve(),chapterSceneKey,createResolutionBudget,createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(T,canvas,camera,blimp,options)=>createPointerHover(T,canvas,camera,blimp,{...options,schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:(...args)=>(warmups.push(args),{then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain:(...args)=>(moneyRain=createMoneyRain(...args)),MONEY_END,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),dispose(){},update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select'){selections.push(event.detail.id);selectionDetails.push(event.detail);}},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash,pathname:'/fomo/campuswars/',search:''},history:{pushState(){},replaceState(){}},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
+  const sandbox={isPartyNight:()=>partyNight,open(url){const link=element('discord-navigation');link.href=url;link.click();},createNearbyIslands,islandFootprint,islandOverview,destinationChapters,schoolDestinations,routeFromHash,resolveDestination,destinationHash,schoolTheme,createSchoolDistricts,createSchoolFlight:(...args)=>{const flight=createSchoolFlight(...args);return {...flight,begin(options){flightBegins++;flight.begin(options);}}},SCHOOL_FLIGHT_DURATION,schoolFlightCaption,loadSchoolCatalog:async()=>[],yieldVillageBuild:()=>Promise.resolve(),chapterSceneKey,createResolutionBudget,createVillagePopulation,setInterval:()=>1,clearInterval(){},backyardUnlocked,createHelipad:(...args)=>(helipad=createHelipad(...args)),createLiveArrivals,createPedestrianSpacing,createFramePacer,clampCampusTarget,createPointerHover:(T,canvas,camera,blimp,options)=>createPointerHover(T,canvas,camera,blimp,{...options,schedule:fn=>{fn();return 1;},cancel(){}}),releasedMouseDrag,DISCORD_INVITE,createFomoBlimp:T=>(blimp=createFomoBlimp(T)),villageQuality:()=>villageQuality(mobile),createStreetNavigation,streetStops,streetStep,prewarmVillage:(...args)=>(warmups.push(args),{then(done){finishWarmup=done;if(!deferWarmup)done();return {catch(){}};}}),createMoneyRain:(...args)=>(moneyRain=createMoneyRain(...args)),MONEY_END,INTRO_DURATION,openingView,introViewAt,introCaptionAt,THREE:{...THREE,WebGLRenderer:Renderer},createVillage:(_T,input)=>(builds.push(input),mockVillage={pedestrians:[],dispose(){},extension:0,world:new THREE.Group(),pickables:[],anchors:[{id:'sigma-chi-sdsu',point:new THREE.Vector3(-20,10,-19),lot:{x:-20,z:-19}}],selection:new THREE.Object3D(),competition:{badges:[]},nightLife:{setNight(night){lighting.push(night);}},animateCrowd(){},animateEffects(){}}),createDistricts:()=>({pedestrians:[],stadium:{root:new THREE.Group()},root:new THREE.Group(),dispose(){},update(){return false;},animate(){},setNight(){}}),CustomEvent:class{constructor(type,options={}){this.type=type;this.detail=options.detail;}},performance:{now:()=>0},console,document:{removeEventListener(type){events.delete('document:'+type);},getElementById:element,elementFromPoint:()=>topmost,addEventListener(type,fn){events.set('document:'+type,fn);},dispatchEvent(event){if(event.type==='village:select'){selections.push(event.detail.id);selectionDetails.push(event.detail);}},hidden:false},matchMedia:query=>({matches:query.includes('reduced-motion')&&reduced}),devicePixelRatio:2,location:{hash:initialHash,pathname:'/fomo/campuswars/',search:''},history:{pushState(){},replaceState(){}},URLSearchParams,ResizeObserver:class{observe(){}},IntersectionObserver:class{constructor(fn){intersection=fn;}observe(){}},addEventListener(type,fn){events.set('window:'+type,fn);},requestAnimationFrame:fn=>{frame=fn;return 1;},cancelAnimationFrame(){}};
   sandbox.createVillageRendererAsync=async (...args)=>{const result=sandbox.createVillage(...args);if(builds.length===1)duringBuild?.(event=>events.get('document:chapters:update')(event));return result;};
   const source=fs.readFileSync(new URL('../village.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source,sandbox);
   for(let i=0;i<24;i++)await Promise.resolve();
   let now=100;
-  return {flightBegins:()=>flightBegins,warmups,moneyRain:()=>moneyRain,helipad:()=>helipad,village:()=>mockVillage,blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,selectionDetails,lighting,lens:()=>camera.fov,element,fire(name,event){return events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
+  return {setPartyNight(value){partyNight=value;events.get('document:visibilitychange')();},flightBegins:()=>flightBegins,warmups,moneyRain:()=>moneyRain,helipad:()=>helipad,village:()=>mockVillage,blimp:()=>blimp,camera:()=>camera,builds,coverCanvas(id){topmost=id?element(id):canvas;},pixelRatios,renders:()=>renders,finishWarmup:()=>finishWarmup(),selections,selectionDetails,lighting,lens:()=>camera.fov,element,fire(name,event){return events.get(name)(event);},show(visible){intersection([{isIntersecting:visible}]);},step(seconds,fps=60){for(let t=0;t<seconds;t+=1/fps){now+=1000/fps;const fn=frame;frame=null;fn?.(now);}return camera?.position.clone();},drag(){events.get('canvas:pointerdown')({button:0,pointerId:1,clientX:0,clientY:0});},reset(){events.get('village-overview:click')();}};
 }
 test('phones lower resolution under sustained missed frames and recover when rendering is smooth',async()=>{
   const h=await cameraHarness(false,'',false,true);
@@ -244,11 +244,11 @@ test('the low flight stays on the boulevard, the orbit clears roofs, and caption
   assert.equal(introViewAt(9).night,1);
 });
 
-test('skipping a night flyby restores daylight and the ordinary camera lens',async()=>{
+test('the intro respects scheduled daylight and skipping restores the ordinary camera lens',async()=>{
   const h=await cameraHarness();h.show(true);h.step(9);
-  assert.equal(h.lighting.at(-1),true);assert(h.lens()>48);
+  assert(!h.lighting.includes(true));assert(h.lens()>48);
   h.fire('intro-skip:click');h.step(.02);
-  assert.equal(h.lighting.at(-1),false);assert.equal(h.lens(),48);
+  assert(!h.lighting.includes(true));assert.equal(h.lens(),48);
 });
 test('reduced motion never banks, changes the lens or runs the lighting transition',async()=>{
   const h=await cameraHarness(true);h.show(true);const start=h.step(.02);h.step(9);
@@ -275,7 +275,7 @@ test('the intro waits for GPU warmup and starts its clock only when ready',async
   h.finishWarmup();assert.equal(h.element('village-loading').hidden,true);
   assert(h.step(.02).y>75);
   assert.equal(h.element('intro-title').textContent,'GREEK WARS.');
-  h.step(9);assert.equal(h.lighting.at(-1),true);
+  h.step(9);assert(h.lens()>48);assert(!h.lighting.includes(true));
   h.step(5);assert.equal(h.element('village-intro').hidden,true);
 });
 
@@ -427,8 +427,8 @@ test('clicking or tapping the blimp opens Discord; dragging, pinching and covere
   const h=await cameraHarness(true);h.show(true);h.step(.02);h.fire('intro-skip:click');h.step(.02);
   const point=h.blimp().root.position.clone().project(h.camera());assert(Math.abs(point.x)<1&&Math.abs(point.y)<1);
   const pointer={button:0,pointerId:1,clientX:(point.x+1)*600,clientY:(1-point.y)*325};
-  const link=h.element('village-discord');assert.equal(link.href,DISCORD_INVITE);
-  h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointerup',pointer);assert.equal(link.clicks,1);
+  const link=h.element('discord-navigation');
+  h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointerup',pointer);assert.equal(link.clicks,1);assert.equal(link.href,DISCORD_INVITE);
   const touch={...pointer,pointerType:'touch'};h.fire('canvas:pointerdown',touch);h.fire('canvas:pointerup',touch);assert.equal(link.clicks,2);
   h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointermove',{...pointer,clientX:pointer.clientX+20});h.fire('canvas:pointerup',pointer);assert.equal(link.clicks,2);
   h.coverCanvas('village-more');h.fire('canvas:pointerdown',pointer);h.fire('canvas:pointerup',pointer);assert.equal(link.clicks,2);h.coverCanvas(null);
@@ -535,4 +535,10 @@ test('nearby island teleport opens the chosen campus without replaying an arriva
  assert.equal(h.builds.at(-1)[0].school,'University of California, San Diego');
  assert.equal(h.selectionDetails.at(-1).writeHash,false,'changing campus must not rewrite the departing history entry');
  assert.equal(h.element('village-loading').hidden,true);
+});
+
+test('the night schedule updates the scene after a hidden tab returns and survives intro completion',async()=>{
+  const h=await cameraHarness();h.show(true);h.step(2);h.setPartyNight(true);h.step(20);
+  assert.equal(h.lighting.at(-1),true);assert.equal(h.helipad().night,true);
+  h.setPartyNight(false);h.step(.1);assert.equal(h.lighting.at(-1),false);assert.equal(h.helipad().night,false);
 });

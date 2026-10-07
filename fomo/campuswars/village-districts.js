@@ -1,3 +1,4 @@
+import {createCampusCommons,addCampusEdgeDetails} from './village-campus-commons.js?v=169';
 import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=165';
 import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=167';
 import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=80';
@@ -151,17 +152,13 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     // Reserve this entire outlying block for the permanent stadium. No campus
     // buildings, through-path crowds or trees may be streamed into its bowl.
     if((cx===west||cx===east)&&(cz===0||cz===1)){
-      const side=cx===west?-1:1,kind=side<0?'stadium':'garden';
+      const side=cx===west?-1:1,kind=side<0?'stadium':'commons';
       if(cz===0){
         const sz=landmarkZ(STADIUM_SITE,extension);
+        if(side>0)createCampusCommons(T,kit,p,extension);
+        addCampusEdgeDetails(T,kit,p,side,extension);
         path(p,[side*39,-38],[side*39,38+extension],2.4);
         if(side<0)path(p,[side*39,sz],[landmarkX(STADIUM_SITE,streets)-cx*BLOCK,sz],3);
-        if(side<0){
-          // The rotated arrival lane joins the perimeter road beside the stadium.
-          const driveZ=landmarkZ(HELIPAD_SITE,extension)+12;
-          box(p,-47,.16,driveZ,12,.08,7,0xbfc0b5);
-          box(p,-47,.205,driveZ,12,.025,5.8,0x505a5a);
-        }
         for(const z of [-29,25+extension]){
           if(side<0&&Math.hypot(cx*BLOCK+side*31-landmarkX(HELIPAD_SITE,streets),z-landmarkZ(HELIPAD_SITE,extension))<HELIPAD_SITE.radius+6)continue;
           tree(p,side*31,z,112+z,.85);bench(p,side*35,z,side*Math.PI/2);lamp(p,side*39,z);

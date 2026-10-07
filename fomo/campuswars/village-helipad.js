@@ -14,7 +14,9 @@ const between=(t,a,b)=>ease((t-a)/(b-a));
 
 export function helipadState(seconds){
   const t=((seconds%HELIPAD_CYCLE)+HELIPAD_CYCLE)%HELIPAD_CYCLE;
-  const carZ=t<9?mix(45,10,between(t,0,9)):t<90?10:mix(10,-45,between(t,90,96));
+  // The Maybach follows the existing outer street and stops at the pad's walkway.
+  const carX=t<9?mix(35,-12,between(t,0,9)):t<90?-12:mix(-12,-45,between(t,90,96));
+  const carZ=-35.6,carHeading=-Math.PI/2;
   const doors=between(t,9,11)*(1-between(t,17,19))+between(t,84,86)*(1-between(t,89,90));
   const cabin=between(t,30,32)*(1-between(t,42,44))+between(t,72,74)*(1-between(t,81,83));
   const lift=between(t,45,51)*(1-between(t,64,71));
@@ -25,24 +27,26 @@ export function helipadState(seconds){
     const delay=i*1.4;
     // Both passengers use the pad-side doors. The front passenger waits for
     // the rear passenger at the same rendezvous, clear of the car and skids.
-    const seat={x:-12,z:10+(i?-.9:.9)},exit={x:-9.8,z:seat.z},stand={x:-3.8+i*1.25,z:4.6+i*.25},step={x:-1.65,z:.3};
+    const seat={x:-12+(i?.9:-.9),z:carZ},exit={x:seat.x,z:carZ+2.2},stand={x:-3.8+i*1.25,z:4.6+i*.25},step={x:-1.65,z:.3};
     let a=seat,b=seat,p=0,walking=0,boarded=false,y=.22,heading=Math.PI/2;
     const walk=(from,to,start,end)=>{a=from;b=to;p=between(t,start,end);walking=t>start&&t<end?Math.sin(Math.PI*clamp((t-start)/(end-start))):0;heading=Math.atan2(to.x-from.x,to.z-from.z);};
     if(t<11+delay){boarded=true;}
     else if(t<14+delay)walk(seat,exit,11+delay,14+delay);
-    else if(t<23+delay)walk(exit,stand,14+delay,23+delay);
+    else if(t<18.5+delay)walk(exit,{x:seat.x,z:-17},14+delay,18.5+delay);
+    else if(t<23+delay)walk({x:seat.x,z:-17},stand,18.5+delay,23+delay);
     else if(t<34+delay){a=b=stand;heading=-.35+i*.3;}
     else if(t<38+delay)walk(stand,step,34+delay,38+delay);
     else if(t<40+delay){walk(step,{x:-.4,z:.3},38+delay,40+delay);y+=between(t,38+delay,40+delay)*.7;}
     else if(t<74+delay){boarded=true;a=b={x:-.4,z:.3};}
     else if(t<77+delay){walk({x:-.4,z:.3},step,74+delay,77+delay);y+=(1-p)*.7;}
-    else if(t<85+delay)walk(step,exit,77+delay,85+delay);
+    else if(t<81.5+delay)walk(step,{x:seat.x,z:-17},77+delay,81.5+delay);
+    else if(t<85+delay)walk({x:seat.x,z:-17},exit,81.5+delay,85+delay);
     else if(t<88+delay)walk(exit,seat,85+delay,88+delay);
     else {boarded=true;}
     return {x:mix(a.x,b.x,p),z:mix(a.z,b.z,p),y,heading,walking,visible:!boarded,gait:t*7.4+i,standing:t>=23+delay&&t<34+delay};
   });
   const phase=t<9?'Arriving in the Maybach':t<18?'Stepping out':t<27?'Walking to the helicopter':t<34?'Rasmr & Orangie':t<43?'All aboard':t<51?'Taking off':t<64?'Over the village':t<74?'Coming in to land':t<90?'Back to the Maybach':'Until next time';
-  return {time:t,carZ,doors,cabin,helicopter,rotor,guests,phase};
+  return {time:t,carX,carZ,carHeading,doors,cabin,helicopter,rotor,guests,phase};
 }
 
 export function createHelipad(T,extension=0,streets=1){
@@ -79,14 +83,13 @@ export function createHelipad(T,extension=0,streets=1){
   // Compact paved apron, connected to the existing road at the front of this block.
   const fixed=group(root,'helipad-apron');
   box(fixed,mat(0xaaa69c),-3,.10,1,38,.2,38);
-  box(fixed,mat(0x505a5a),-12,.215,3,5.8,.025,94);
+  // A short pedestrian entrance meets the existing sidewalk; no through-road.
+  box(fixed,mat(0xbfc0b5),-12,.16,-25,3,.08,14);
   const pad=mesh(fixed,own(new T.CylinderGeometry(9.5,9.7,.18,64)),mat(0x39464a),0,.22,0);
   const ring=mesh(fixed,own(new T.RingGeometry(8.1,8.35,80)),white,0,.318,0);ring.rotation.x=-Math.PI/2;
   for(const x of [-1.6,1.6])box(fixed,white,x,.32,0,.48,.018,4.4);box(fixed,white,0,.32,0,3.2,.018,.48);
   const edgeLight=own(new T.MeshStandardMaterial({color:0xf4c780,emissive:0xf4c780,emissiveIntensity:0}));edgeLight.userData.lamp=true;
   for(let i=0;i<24;i++){const a=i*Math.PI/12;box(fixed,edgeLight,Math.cos(a)*9,.33,Math.sin(a)*9,.32,.06,.32);}
-  for(const x of [-15.05,-8.95])box(fixed,white,x,.232,2,.09,.012,92);
-  for(let z=-42;z<46;z+=5)box(fixed,gold,-12,.233,z,.10,.012,2.4);
   const groundTitle=label(fixed,'FOMO  /  HELIPORT',0,.325,12,14,1.7,'#f4efe0','#505a5a');groundTitle.rotation.x=-Math.PI/2;
   // Low planters, a windsock and a restrained entrance sign.
   for(const x of [-20,15])for(const z of [-16,16]){round(fixed,mat(0xb7b0a1),x,.5,z,2,.8,2);oval(fixed,mat(0x4c654b),x,1.1,z,.95,.7,.95);}
@@ -145,9 +148,9 @@ export function createHelipad(T,extension=0,streets=1){
   let epoch=0,lastTime=NaN,state;
   function update(time){
     if(time===lastTime)return state;lastTime=time;state=helipadState(time-epoch);
-    car.position.z=state.carZ;car.visible=state.time>.05&&state.time<95.95;
-    carShadow.position.set(-12,.34,state.carZ);carShadow.visible=car.visible;
-    for(const w of wheels)w.rotation.x=(state.carZ-45)/.39;
+    car.position.set(state.carX,.22,state.carZ);car.rotation.y=state.carHeading;car.visible=state.time>.05&&state.time<95.95;
+    carShadow.position.set(state.carX,.34,state.carZ);carShadow.rotation.z=-state.carHeading;carShadow.visible=car.visible;
+    for(const w of wheels)w.rotation.x=(state.carX-35)/.39;
     for(const d of doors)d.root.rotation.y=d.side<0?state.doors*1.13:0;
     heli.position.set(state.helicopter.x,state.helicopter.y,state.helicopter.z);heli.rotation.y=state.helicopter.heading;
     cabinDoor.position.z=-.1-state.cabin*1.40;

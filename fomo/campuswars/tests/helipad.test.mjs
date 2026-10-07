@@ -7,7 +7,7 @@ import {campusBounds} from '../village-campus-bounds.js';
 
 test('guests arrive, stand together, board before rotor startup, and return to the Maybach',()=>{
   const arrival=helipadState(0),parked=helipadState(9),outside=helipadState(27),boarded=helipadState(44),flight=helipadState(56),returned=helipadState(78);
-  assert.equal(arrival.carZ,45);assert.equal(parked.carZ,10);
+  assert.equal(arrival.carX,35);assert.equal(parked.carX,-12);assert.equal(arrival.carZ,-35.6);assert.equal(parked.carZ,-35.6);
   assert(arrival.guests.every(g=>!g.visible));assert(outside.guests.every(g=>g.visible&&g.standing));
   assert.equal(outside.rotor,0);assert.equal(outside.helicopter.y,0);
   assert(boarded.guests.every(g=>!g.visible));assert.equal(boarded.cabin,0);
@@ -20,6 +20,7 @@ test('visible walking and helicopter flight remain continuous across every phase
     for(let i=0;i<2;i++)if(a.guests[i].visible&&b.guests[i].visible){const p=a.guests[i],q=b.guests[i];assert(Math.hypot(p.x-q.x,p.y-q.y,p.z-q.z)<.03,`Guest discontinuity at ${t}`);}
     assert(Math.hypot(a.helicopter.x-b.helicopter.x,a.helicopter.y-b.helicopter.y,a.helicopter.z-b.helicopter.z)<.04);
     assert(Object.values(a.helicopter).every(Number.isFinite));
+    assert(Math.hypot(a.carX-b.carX,a.carZ-b.carZ)<.03);assert.equal(a.carHeading,-Math.PI/2);
   }
   assert.deepEqual(helipadState(27),helipadState(27+HELIPAD_CYCLE));
 });

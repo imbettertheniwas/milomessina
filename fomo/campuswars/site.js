@@ -16,17 +16,14 @@
   const panelClaim = document.getElementById('panel-claim');
   const canonicalUrl = new URL(location.pathname, location.origin).href;
   const drawer = document.getElementById('village-drawer');
-  const drawerToggle = document.getElementById('village-chapters');
   function setDrawer(open) {
     drawer.hidden = !open;
-    drawerToggle.setAttribute('aria-expanded', String(open));
     // The phone sheet shares the bottom edge with the controls, so they take turns.
     villageShell.classList.toggle('drawer-open', open);
     if(open){setMoreControls(false);chapterFeed?.refresh();}
     syncOverlay();
   }
-  drawerToggle.addEventListener('click', () => setDrawer(drawer.hidden));
-  document.getElementById('drawer-close').addEventListener('click', () => {setDrawer(false);drawerToggle.focus();});
+  document.getElementById('drawer-close').addEventListener('click', () => {setDrawer(false);document.querySelector('#village-viewport canvas')?.focus();});
   const moreButton=document.getElementById('village-more');
   const extraControls=document.getElementById('village-extra-controls');
   const villageShell=document.getElementById('village');
@@ -52,7 +49,7 @@
   about.addEventListener('close',syncOverlay);
   document.getElementById('about-close').addEventListener('click', () => about.close());
   document.getElementById('intro-replay').addEventListener('click', () => {about.close();setDrawer(false);document.dispatchEvent(new CustomEvent('village:replay'));});
-  document.addEventListener('keydown', event => {if(event.key === 'Escape' && !drawer.hidden){setDrawer(false);drawerToggle.focus();}});
+  document.addEventListener('keydown', event => {if(event.key === 'Escape' && !drawer.hidden){setDrawer(false);document.querySelector('#village-viewport canvas')?.focus();}});
   document.addEventListener('village:introstart', () => setDrawer(false));
   document.addEventListener('school:visibility',event=>{if(event.detail.open){setDrawer(false);setMoreControls(false);if(about.open)about.close();}});
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -197,9 +194,9 @@
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
   import('./village-national.js?v=158').then(m=>m.createNationalNavigation());
-  import('./village.js?v=168').catch(error => {
+  import('./village.js?v=169').catch(error => {
     console.error('Unable to load Greek village:', error);
-    document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
+    document.getElementById('village-loading').textContent = 'The village couldn’t load. Refresh the page or join Greek Wars using the link above.';
     document.getElementById('village').classList.remove('intro-playing');
     document.getElementById('village-intro').hidden = true;
     document.getElementById('village').classList.add('village-unavailable');

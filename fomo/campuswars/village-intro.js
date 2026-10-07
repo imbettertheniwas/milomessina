@@ -1,7 +1,7 @@
 // One visible-time clock drives the flight, lens, lighting and brief captions.
 export const INTRO_DURATION = 13.6;
 export const INTRO_PACE = .85;
-export const openingView = {target:[-25,4,45],theta:3.14,phi:.58,radius:205};
+export const openingView = {target:[0,4,35],theta:3.14,phi:.58,radius:250};
 export const introStages = [
   {start:0,end:2.72,title:'GREEK WARS.',description:'Your chapter. Your team. A trading competition on fomo.'},
   {start:2.72,end:5.95,title:"IF YOU'RE IN A FRAT.",description:'fomo has committed $500,000'},
