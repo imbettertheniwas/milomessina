@@ -1,12 +1,12 @@
 import {hasChapterHouse} from './village-backyards.js?v=112';
-import {conversation,personalClock} from './village-human-behavior.js?v=162';
+import {conversation,personalClock} from './village-human-behavior.js?v=165';
 import {rankedHouseSizes} from './village-house-sizing.js?v=153';
 import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=80';
-import {gaitPhase,smooth} from './village-human-motion.js?v=162';
+import {gaitPhase,smooth} from './village-human-motion.js?v=165';
 import {danceActivity} from './village-human-dance.js?v=162';
-import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=162';
-import {assignSocialLife,socialActivity} from './village-social-life.js?v=164';
-const lawnRoute=roundedLoop(-7.9,7,7.9,14.4,1.15);
+import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=165';
+import {assignSocialLife,socialActivity} from './village-social-life.js?v=165';
+const lawnRoute=roundedLoop(-8.25,7,8.25,14.2,1.15);
 // Ease over the low lawn/path edges; the walking loop clears the porch steps.
 export function lawnGround(x,z){const edge=smooth((12-z)/.25);return .045+.085*smooth((7.5-Math.abs(x))/.25)*edge+.07*smooth((.825-Math.abs(x))/.2)*edge;}
 export const LOTS = [
@@ -139,7 +139,7 @@ export function activityPose(member,time){
   if(member.action==='build')return constructionActivity(member,time);
   if(member.social)return socialActivity(member,time);
   if(member.walking){
-    const clock=personalClock(member,time);
+    const clock=member.constantRoamer?{time,motion:1,attention:Math.sin(time*.42+member.phase)*.10}:personalClock(member,time);
     const distance=clock.time*(member.motionProfile?.walkSpeed??.76)+member.walkPhase/(Math.PI*2)*lawnRoute.length,s=lawnRoute.sample(distance),ahead=lawnRoute.sample(distance+.24);
     const look=Math.atan2(Math.sin(ahead.angle-s.angle),Math.cos(ahead.angle-s.angle))*.45+clock.attention;
     return {...toWorld(member.lot,s.x,s.z),rotation:member.lot.rotation+s.angle,walking:clock.motion>.001,motion:clock.motion,ground:lawnGround(s.x,s.z),gait:gaitPhase(distance,member),look,speaking:false,gesture:0,breath:Math.sin(time*2+member.phase)*.007};

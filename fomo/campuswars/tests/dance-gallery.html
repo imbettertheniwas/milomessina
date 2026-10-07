@@ -3,7 +3,7 @@
 <nav><button id="close">On the lawn</button><button id="street">From the street</button><button id="next">Next house</button><button id="far">Overview</button><button id="pause">Pause</button></nav><output>Front lawn movement · sample chapter snapshot</output>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createVillage} from '../village-world.js?v=164';
+import {createVillage} from '../village-world.js?v=165';
 const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;document.body.append(renderer.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0xa7bacb);const camera=new T.PerspectiveCamera(45,innerWidth/innerHeight,.1,700);
 scene.add(new T.HemisphereLight(0xe7f1ff,0x77715a,2));const sun=new T.DirectionalLight(0xffe5c4,2.6);sun.position.set(10,40,20);scene.add(sun);

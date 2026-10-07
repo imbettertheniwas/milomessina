@@ -1,5 +1,5 @@
 import {palettes,hash} from './village-district-layout.js?v=80';
-import {schoolWardrobePalette} from './village-school-wardrobe.js?v=164';
+import {schoolWardrobePalette} from './village-school-wardrobe.js?v=165';
 
 // Dye lots, fading and fabric finish vary in value without changing school hue.
 function fabricShade(color,tone,warmth){

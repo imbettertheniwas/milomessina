@@ -27,18 +27,20 @@ export function humanPose(person,state,time){
   const seated=['sit','study','lawn'].includes(action),lawn=action==='lawn',skate=action==='skate',jog=action==='jog';
   const moving=Boolean(state.walking)&&!seated,amount=state.motion??(moving?1:0);
   const profile=person.motionProfile;
+  const social=Boolean(person.partyLook)&&!seated&&!state.dance&&!state.pong&&!state.arrival&&!state.construction;
+  const listen=social&&!moving?.09+.10*(.5+.5*Math.sin(time*.91+phase)):0;
   const idlePhase=profile?fract((time+profile.idleOffset)/profile.idlePeriod):0;
   const idle=profile?smooth(idlePhase/.10)*(1-smooth((idlePhase-.18)/.16))*profile.idleAmount:0;
   const breath=Math.sin(time*(profile?.breathRate??1.7)+phase)*(profile?.breathAmount??.006);
-  const weight=seated?0:moving?Math.sin(gait)*.017*amount:Math.sin(time*(profile?.shiftRate??.43)+phase)*(profile?.shiftAmount??.025);
+  const weight=seated?0:moving?Math.sin(gait)*.017*amount:Math.sin(time*(profile?.shiftRate??.43)+phase)*(profile?.shiftAmount??.025)*(social?1.7:1);
   const standingHip=.975-(moving?(jog?.105:.075)*amount:0);
   const build=state.construction;
   const hipY=(lawn?.25:seated?.65:standingHip)+breath+(moving&&!skate?Math.cos(gait*2)*(jog?.025:.012)*amount:0)-(build?.bend||0)*.16-(state.arrival?.crouch||0);
   const lean=(seated?.085:jog?.055:skate?.07:.012)+(build?.bend||0)*.18;
-  const twist=moving?Math.sin(gait)*.055*amount:Math.sin(time*(profile?.twistRate??.61)+phase)*(profile?.twistAmount??.024);
+  const twist=moving?Math.sin(gait)*.055*amount:Math.sin(time*(profile?.twistRate??.61)+phase)*(profile?.twistAmount??.024)*(social?2:1);
   const hip=[weight,hipY,0],chest=[weight*.65,hipY+.30,lean];
-  const head=[weight*.45,hipY+.72+Math.sin(time*(profile?.nodRate??(state.speaking?1.7:.8))+phase)*(profile?.nodAmount??.006),lean+.018];
-  const headYaw=twist+(state.look||0)+Math.sin(time*(profile?.lookRate??.57)+phase)*(profile?.lookAmount??.055)+idle;
+  const head=[weight*.45,hipY+.72+Math.sin(time*(profile?.nodRate??(state.speaking?1.7:.8))+phase)*(profile?.nodAmount??.006)*(social?2.2:1),lean+.018];
+  const headYaw=twist+(state.look||0)+Math.sin(time*(profile?.lookRate??.57)+phase)*(profile?.lookAmount??.055)*(social?2.1:1)+idle;
   const arms=[],legs=[];
   for(let j=0;j<2;j++){
     const side=j?1:-1,cycle=gait+j*Math.PI,step=footstep(cycle,jog);
@@ -48,9 +50,9 @@ export function humanPose(person,state,time){
     const joint=[hip[0]+side*.105,hipY,0];
     const knee=seated?[side*.13,hipY-.02,.36]:kneeBetween(joint,ankle);
     legs.push({hip:joint,knee,ankle,pitch:moving&&!skate?step.pitch:0});
-    const gesture=((state.gesture||0)+(!moving&&!state.pong?idle:0))*(j?1:.2),swing=moving&&!skate?Math.cos(cycle)*amount:0;
+    const gesture=((state.gesture||0)*(social?1.35:1)+listen+(!moving&&!state.pong?idle:0))*(j?1:.2),swing=moving&&!skate?Math.cos(cycle)*amount:0;
     const shoulder=[chest[0]+side*.19*buildWidth,chest[1]+.13,lean-side*twist*.19];
-    const upper=(jog?-.38:0)-swing*(jog?.55:.26)+gesture*.30;
+    const upper=(jog?-.38:0)-swing*(jog?.55:social?.34:.26)+gesture*.30;
     const elbow=[shoulder[0]+side*.025,shoulder[1]-.28*Math.cos(upper),shoulder[2]+.28*Math.sin(upper)];
     const lower=upper+(jog?1.25:.18)+gesture*3.0;
     const hand=[elbow[0]+side*gesture*.07,elbow[1]-.26*Math.cos(lower),elbow[2]+.26*Math.sin(lower)];

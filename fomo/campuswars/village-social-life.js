@@ -1,6 +1,6 @@
 import {hash} from './village-district-layout.js?v=80';
-import {conversation} from './village-human-behavior.js?v=162';
-import {gaitPhase,smooth} from './village-human-motion.js?v=162';
+import {conversation} from './village-human-behavior.js?v=165';
+import {gaitPhase,smooth} from './village-human-motion.js?v=165';
 
 const turn=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*smooth(t);
 const world=(lot,p)=>({x:lot.x+p.x*Math.cos(lot.rotation)+p.z*Math.sin(lot.rotation),z:lot.z-p.x*Math.sin(lot.rotation)+p.z*Math.cos(lot.rotation)});
@@ -39,24 +39,28 @@ export function assignSocialLife(people,groups,size){
     // Roughly one in six guests keeps dancing. Everyone else talks or mingles.
     p.danceGuest=!p.walking&&hash(p.identity,'likes-dancing')<.18;
   }
+  const roamers=people.filter(p=>p.walking);
   lawn.forEach((group,i)=>{
     const visitor=group.seats.filter(p=>!p.danceGuest).sort((a,b)=>b.local.z-a.local.z)[0];
     if(!visitor||lawn.length<2||group.seats.length<3)return;
-    const target=lawn[(i+1)%lawn.length],start=visitor.local;
+    if(i%3===0){visitor.constantRoamer=true;visitor.walking=true;visitor.ground=0;visitor.walkPhase=hash(visitor.identity,'roam-start')*Math.PI*2;visitor.danceGuest=false;return;}
+    if(i%3===2)return;
+    const target=lawn[(i+1)%lawn.length],start={...visitor.local,z:Math.min(visitor.local.z,12.6)};
     // Stand on the street-facing edge of the next group, facing its center.
-    const end={x:target.x,z:target.z+target.radius+.48};
+    const end={x:target.x,z:Math.min(target.z+target.radius+.48,12.6)};
     const speed=.62+hash(visitor.identity,'mingle-speed')*.22;
-    visitor.social={home:{...visitor},away:{...visitor,groupPhase:target.seats[0].groupPhase,turnDuration:target.seats[0].turnDuration,groupSize:target.seats.length+1,seat:target.seats.length,rotation:visitor.lot.rotation+Math.PI},out:leg([...route(start,{x:start.x,z:14.7}),{x:end.x,z:14.7},end],speed),back:leg([end,{x:end.x,z:14.7},{x:start.x,z:14.7},start],speed),homeWait:30+hash(visitor.identity,'home-chat')*30,awayWait:24+hash(visitor.identity,'away-chat')*30,offset:hash(visitor.identity,'social-offset')*130};
+    visitor.social={home:{...visitor},away:{...visitor,groupPhase:target.seats[0].groupPhase,turnDuration:target.seats[0].turnDuration,groupSize:target.seats.length+1,seat:target.seats.length,rotation:visitor.lot.rotation+Math.PI},out:leg([...route(start,{x:start.x,z:12.9}),{x:end.x,z:12.9},end],speed),back:leg([end,{x:end.x,z:12.9},{x:start.x,z:12.9},start],speed),homeWait:12+hash(visitor.identity,'home-chat')*14,awayWait:12+hash(visitor.identity,'away-chat')*16,offset:hash(visitor.identity,'social-offset')*130};
     visitor.danceGuest=false;
     for(const p of target.seats)p.groupSize=target.seats.length+1;
   });
   // Existing roaming guests occasionally enter the house, linger, then return.
-  people.filter(p=>p.walking).forEach((p,i)=>{
+  roamers.forEach((p,i)=>{
+    if(i%2===0){p.constantRoamer=true;return;}
     const target=lawn[i%lawn.length];if(!target)return;
-    const start={x:target.x,z:target.z+target.radius+.6},door={x:0,z:size.offsetZ+3.05*size.depthScale};
-    const path=[start,{x:start.x,z:14.7},{x:0,z:14.7},{x:0,z:7},door],speed=.72+hash(p.identity,'door-speed')*.16;
+    const start={x:target.x,z:Math.min(target.z+target.radius+.6,12.6)},door={x:0,z:size.offsetZ+3.05*size.depthScale};
+    const path=[start,{x:start.x,z:12.9},{x:0,z:12.9},{x:0,z:7},door],speed=.72+hash(p.identity,'door-speed')*.16;
     p.danceGuest=false;p.local=start;
-    p.social={home:{...p,groupPhase:target.seats[0].groupPhase,turnDuration:target.seats[0].turnDuration,groupSize:target.seats.length+1,seat:target.seats.length,rotation:p.lot.rotation+Math.PI},away:{...p},out:leg(path,speed),back:leg([...path].reverse(),speed),homeWait:36+hash(p.identity,'door-chat')*24,awayWait:14+hash(p.identity,'inside')*18,offset:hash(p.identity,'door-offset')*100,door:true,size};
+    p.social={home:{...p,groupPhase:target.seats[0].groupPhase,turnDuration:target.seats[0].turnDuration,groupSize:target.seats.length+1,seat:target.seats.length,rotation:p.lot.rotation+Math.PI},away:{...p},out:leg(path,speed),back:leg([...path].reverse(),speed),homeWait:16+hash(p.identity,'door-chat')*18,awayWait:10+hash(p.identity,'inside')*14,offset:hash(p.identity,'door-offset')*100,door:true,size};
     for(const host of target.seats)host.groupSize=target.seats.length+1;
   });
 }

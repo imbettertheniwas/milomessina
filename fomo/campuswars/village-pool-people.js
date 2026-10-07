@@ -1,6 +1,6 @@
 import {BACKYARD,backyardUnlocked} from './village-backyards.js?v=112';
 import {hash} from './village-district-layout.js?v=80';
-import {humanPose} from './village-human-motion.js?v=162';
+import {humanPose} from './village-human-motion.js?v=165';
 
 export const isPoolPerson=p=>Boolean(p.poolRole);
 const worldPoint=(lot,x,z)=>({x:lot.x+x*Math.cos(lot.rotation)+z*Math.sin(lot.rotation),z:lot.z-x*Math.sin(lot.rotation)+z*Math.cos(lot.rotation)});

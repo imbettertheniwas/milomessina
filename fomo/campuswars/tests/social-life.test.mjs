@@ -10,7 +10,7 @@ test('most guests socialize, a minority dance, and visitors have distinct schedu
   assert.equal(people.length,480);
   const dancers=people.filter(p=>p.danceGuest),visitors=people.filter(p=>p.social);
   assert(dancers.length>40&&dancers.length<110);
-  assert(visitors.length>60&&visitors.length<200);
+  assert(visitors.length>25&&visitors.length<150);
   assert.equal(new Set(visitors.map(p=>p.social.offset)).size,visitors.length);
   for(const p of visitors)assert(!p.danceGuest);
 });
@@ -41,4 +41,16 @@ test('each school gets its own majority wardrobe with neutral variety and stable
   }
   assert.notDeepEqual(schoolWardrobePalette('Western University'),schoolWardrobePalette('Coastal Carolina University'));
   assert.equal(schoolWardrobePalette('An unlisted school'),null);
+});
+
+test('a few guests continuously circulate at individual walking speeds',()=>{
+  const roamers=people.filter(p=>p.constantRoamer);
+  assert(roamers.length>=12&&roamers.length<people.length*.15);
+  assert(new Set(roamers.map(p=>p.motionProfile.walkSpeed)).size>5);
+  for(const p of roamers)for(let t=0;t<120;t+=.71){
+    const a=activityPose(p,t),b=activityPose(p,t+.001);
+    assert(a.walking&&a.motion===1);
+    assert(Math.hypot(b.x-a.x,b.z-a.z)>.0004);
+    assert.equal(a.dance,undefined);
+  }
 });

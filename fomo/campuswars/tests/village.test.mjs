@@ -51,13 +51,13 @@ test('repeated architecture is batched for a bounded draw count',()=>{
   let drawables=0;village.world.traverse(object=>{if(object.isMesh)drawables++;});assert(drawables<152,`Too many scene meshes: ${drawables}`);
 });
 
-test('completed houses retain conversations, a minority of dancers and five doorway visitors',()=>{
-  assert.equal(village.members.filter(m=>m.walking).length,5);
+test('completed houses retain conversations, a minority of dancers and roaming or doorway guests',()=>{
+  assert(village.members.filter(m=>m.walking).length>=5);
   const standing=village.members.filter(m=>!m.walking&&!m.social&&m.action!=='build');assert(standing.every(m=>m.groupSize>=2));
   for(const member of standing){const a=activityPose(member,0),b=activityPose(member,15);assert.equal(a.x,b.x);assert.equal(a.z,b.z);assert(Math.abs(a.breath)<.01&&Math.abs(b.breath)<.01);}
   const groups=Map.groupBy(standing.filter(m=>!['pong','die'].includes(m.action)),m=>m.chapter+':'+m.groupPhase);
   for(const t of [0,4,13,27])for(const group of groups.values())assert(group.filter(m=>activityPose(m,t).speaking).length<=1);
-  for(const member of village.members.filter(m=>m.walking))assert(member.social?.door);
+  for(const member of village.members.filter(m=>m.walking))assert(member.social?.door||member.constantRoamer);
 });
 
 test('the surrounding village streams a bounded number of repeatable blocks',()=>{
@@ -278,7 +278,7 @@ test('chapter members have independent, bounded movement ranges and timing with 
   for(const person of people){
     const samples=Array.from({length:240},(_,i)=>humanPose(person,{walking:false},i*.4));
     const x=samples.map(p=>p.hip[0]),range=Math.max(...x)-Math.min(...x);ranges.push(range);
-    assert(range>.02&&range<.09);assert(samples.every(p=>p.legs.every((l,i)=>l.ankle.every((v,j)=>v===samples[0].legs[i].ankle[j]))));
+    assert(range>.02&&range<(person.partyLook?.16:.09));assert(samples.every(p=>p.legs.every((l,i)=>l.ankle.every((v,j)=>v===samples[0].legs[i].ankle[j]))));
     signatures.push(samples.slice(0,20).map(p=>p.headYaw.toFixed(5)).join(','));
   }
   assert(Math.max(...ranges)-Math.min(...ranges)>.035);assert.equal(new Set(signatures).size,people.length);

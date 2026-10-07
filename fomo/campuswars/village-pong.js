@@ -1,5 +1,5 @@
-import {PONG_TABLE,pongTurn,activityPose} from './village-layout.js?v=164';
-import {humanPose} from './village-human-motion.js?v=162';
+import {PONG_TABLE,pongTurn,activityPose} from './village-layout.js?v=165';
+import {humanPose} from './village-human-motion.js?v=165';
 
 // The throwing hand in world space, shared by every lawn game's projectile.
 export function throwingHand(T,player,time){
