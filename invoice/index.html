@@ -6507,8 +6507,8 @@ function paintPerson(){
     (safeUrl(profile.link)?'<a href="'+esc(profile.link)+'" target="_blank" rel="noopener noreferrer">'+esc(profile.link.replace(/^https?:\/\//,''))+' ↗</a>':'')+'</div>';
   if(own(p)) h += '<form class="profile-form panel" id="profile-form" hidden><h3>Edit '+(isMe?'your':esc(p)+"’s")+' profile</h3><label>Headline<input id="profile-headline" maxlength="80" placeholder="What are you working on?" value="'+esc(profile.headline||'')+'"></label><label>Bio<textarea id="profile-bio" maxlength="600" rows="4" placeholder="A little about you…">'+esc(profile.bio||'')+'</textarea></label><label>Website<input id="profile-link" type="url" maxlength="300" placeholder="https://" value="'+esc(profile.link||'')+'"></label><span class="hint">Visible to the bootcamp team.</span><div class="profile-form-actions"><button class="btn btn-p" type="submit">Save profile</button><button class="mini" type="button" id="profile-cancel">Cancel</button></div><p id="profile-error" role="alert"></p></form>';
   h += '<div class="ppgrid">' +
-    '<div><span class="lbl">fronted</span><span class="v">' + esc(money(m.total)) + "</span>" +
-      '<span class="s">' + mine.length + (mine.length === 1 ? " line" : " lines") + " logged</span></div>" +
+    (isIntern ? '' : '<div><span class="lbl">fronted</span><span class="v">' + esc(money(m.total)) + "</span>" +
+      '<span class="s">' + mine.length + (mine.length === 1 ? " line" : " lines") + " logged</span></div>") +
     '<div><span class="lbl">still owed</span><span class="v' + (m.owed > 0.005 ? " owed" : " good") + '">' +
       esc(money(m.owed)) + "</span>" +
       '<span class="s">' + (m.owed > 0.005 ? m.lines + " waiting · oldest " + esc(agoText(daysBetween(m.oldest, today()))) : "all square") + "</span></div>" +

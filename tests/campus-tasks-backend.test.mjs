@@ -11,3 +11,48 @@ test('steps can be submitted independently, reviewed, reopened, and roll up into
 test('step evidence stays private and calendar submissions require dates or a file',()=>{const{h,call,join}=setup(),a=join(),b=join();h.ctx.ctWrite('files',h.ctx.CT_FILES,{id:'evidence',memberId:a.out.member.id,name:'menu.pdf',size:100,driveId:'secret-drive',hash:'hash'});const input={taskId:'dinner',step:2,draft:{notes:'',files:[{id:'evidence'}]}};assert.equal(call(b.token,'submitstep',input).ok,false);const result=call(a.token,'submitstep',input);assert(result.ok,result.error);assert(!JSON.stringify(result).includes('secret-drive'));assert.equal(call(b.token,'get').steps.length,0);assert.equal(call(a.token,'submitstep',{taskId:'calendar',step:0,draft:{notes:'Will add later',calendar:{events:[],file:null}}}).ok,false);assert(call(a.token,'submitstep',{taskId:'calendar',step:0,draft:{notes:'Social dates',calendar:{events:[{title:'Mixer',date:'2026-10-31',time:'20:00'}],file:null}}}).ok);assert.equal(call(a.token,'submitstep',{taskId:'host',step:9,draft:{notes:'bad'}}).ok,false);});
 test('editing a submitted step invalidates its review snapshot and rejects stale writers',()=>{const{call,join,admin}=setup(),a=join();const payload={taskId:'filmer',step:0,draft:{notes:'First candidate',files:[]}};assert(call(a.token,'submitstep',payload).ok);let out=call(a.token,'savestep',{...payload,revision:1,draft:{notes:'New candidate',files:[]}});assert.equal(out.steps[0].status,'draft');assert.equal(out.steps[0].snapshot.notes,'First candidate');assert.equal(admin('reviewstep',{memberId:a.out.member.id,taskId:'filmer',step:0,revision:2,decision:'approved'}).ok,false);assert.equal(call(a.token,'savestep',{...payload,revision:1}).code,'CONFLICT');});
 test('all approved steps across five tasks unlock the bonus and payment locks later step changes',()=>{const{call,join,admin}=setup(),a=join();for(const [taskId,count] of Object.entries({dinner:5,filmer:2,host:2,travel:2,calendar:1})){for(let step=0;step<count;step++){const d={notes:'Evidence for this step',files:[],...(taskId==='calendar'?{calendar:{events:[{title:'Mixer',date:'2026-11-01',time:''}],file:null}}:{})};let r=call(a.token,'submitstep',{taskId,step,draft:d});assert(r.ok,r.error);r=admin('reviewstep',{memberId:a.out.member.id,taskId,step,revision:1,decision:'approved'});assert(r.ok,r.error);}}assert(admin('bonuspaid',{memberId:a.out.member.id,reference:'QA paid record'}).ok);assert.equal(admin('reviewstep',{memberId:a.out.member.id,taskId:'dinner',step:0,revision:2,decision:'changes_requested',feedback:'Reopen paid work'}).ok,false);});
+
+test('deleting a signup is admin-only, idempotent, and hides only that member and their work',()=>{
+ const {h,call,join,admin}=setup(),a=join(),b=join(),id=a.out.member.id;
+ assert(call(a.token,'submitstep',{taskId:'host',step:0,draft:{notes:'Evidence',files:[]}}).ok);
+ assert(call(b.token,'submit',{taskId:'host',draft:draft('host')}).ok);
+ for(const who of ['Bijan','Jesse','Luchi'])assert.equal(admin('deleteSignup',{memberId:id},who).code,'FORBIDDEN');
+ assert.equal(call(a.token,'deleteSignup',{memberId:id}).code,'FORBIDDEN');
+ assert.equal(h.ctx.campusTasksApi({action:'deleteSignup',memberId:id,_key:h.ctx.CONFIG.INVOICE_KEY,who:'Milo'}).code,'FORBIDDEN');
+ assert.equal(admin('deleteSignup',{}).ok,false);
+ assert.equal(admin('deleteSignup',{memberId:'missing'}).ok,false);
+ let out=admin('deleteSignup',{memberId:id},'Arya');assert(out.ok,out.error);
+ assert.deepEqual(out.members.map(m=>m.id),[b.out.member.id]);
+ assert(out.tasks.every(t=>t.memberId===b.out.member.id));assert.equal(out.steps.length,0);assert(out.audit.every(r=>r.memberId!==id));
+ assert.equal(admin('deleteSignup',{memberId:id}).ok,true);
+ const deleted=h.ctx.ctRows('deleted',h.ctx.CT_DELETED);assert.equal(deleted.length,1);assert.equal(deleted[0].actor,'Arya');
+ assert.equal(h.ctx.ctRows('members',h.ctx.CT_MEMBERS).length,2);assert.equal(h.ctx.ctSteps(id).length,1);
+ assert.equal(call(b.token,'get').ok,true);
+});
+test('deleted signups lose sessions, password login, legacy migration, files, and stale admin actions',()=>{
+ const {h,call,join,admin}=setup(),a=join(),id=a.out.member.id;
+ assert(call(a.token,'submitstep',{taskId:'host',step:0,draft:{notes:'Evidence',files:[]}}).ok);
+ const credential=h.ctx.ctRows('credentials',h.ctx.CT_CREDENTIALS)[0];
+ h.ctx.ctWrite('files',h.ctx.CT_FILES,{id:'deleted-file',memberId:id,driveId:'private-drive'});
+ const legacy=token(),member=h.ctx.ctMembers()[0];member.tokenHash=h.ctx.ctHash(legacy);h.ctx.ctWrite('members',h.ctx.CT_MEMBERS,member);
+ assert(admin('deleteSignup',{memberId:id}).ok);
+ for(const [action,payload] of [['get',{}],['save',{taskId:'host',draft:draft('host')}],['savestep',{taskId:'host',step:0,draft:{notes:'Stale'}}],['upload',{file:{}}],['file',{fileId:'deleted-file'}]])assert.equal(call(a.token,action,payload).code,'AUTH_REQUIRED',action);
+ assert.equal(call('','login',{email:credential.email,proof:'b'.repeat(64)}).code,'INVALID_LOGIN');
+ assert.equal(call(legacy,'signup',{email:'legacy@example.com',name:'Legacy',schoolId:'duke',salt:'a'.repeat(32),proof:'b'.repeat(64)}).code,'LEGACY_NOT_FOUND');
+ assert.equal(admin('adminfile',{fileId:'deleted-file'}).ok,false);
+ assert.equal(admin('reviewstep',{memberId:id,taskId:'host',step:0,revision:1,decision:'approved'}).ok,false);
+ assert.equal(admin('bonuspaid',{memberId:id,reference:'stale'}).ok,false);
+ const fresh=call('','signup',{email:credential.email,name:'Fresh',schoolId:'duke',salt:'c'.repeat(32),proof:'d'.repeat(64)});assert(fresh.ok,fresh.error);assert.notEqual(fresh.member.id,id);assert.equal(fresh.tasks.length,0);assert.equal(fresh.steps.length,0);
+ assert.equal(call('','login',{email:credential.email,proof:'b'.repeat(64)}).ok,false);
+ assert.equal(call('','login',{email:credential.email,proof:'d'.repeat(64)}).ok,true);
+ assert.equal(call(a.token,'get').ok,false);
+});
+test('deletion preserves paid rewards and their audit records in storage',()=>{
+ const {h,call,join,admin}=setup(),a=join(),id=a.out.member.id;
+ assert(call(a.token,'submit',{taskId:'referral',draft:draft('referral')}).ok);
+ assert(admin('review',{memberId:id,taskId:'referral',revision:1,decision:'approved',rewardAmount:100}).ok);
+ assert(admin('referralpaid',{memberId:id,taskId:'referral',revision:2,reference:'existing payment'}).ok);
+ assert(admin('deleteSignup',{memberId:id}).ok);
+ assert.equal(h.ctx.ctTasks(id)[0].paymentReference,'existing payment');
+ assert.equal(h.ctx.ctRows('audit',h.ctx.CT_AUDIT).filter(r=>r.memberId===id&&r.action==='paid').length,1);
+});
