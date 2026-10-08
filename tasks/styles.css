@@ -145,3 +145,5 @@ body.campus-arriving{overflow:hidden}
 @media(prefers-reduced-motion:reduce){#campus-welcome,#campus-welcome *{animation:none!important;transition:none!important}.arrival-progress{display:none}}
 
 #campus-title:focus{outline:none}
+/* Keep the public account form compact and easy to scan. */
+#welcome{padding:26px}#welcome #welcome-title{font-size:30px}#welcome .auth-tabs{margin:16px 0 12px}#welcome #auth-context{margin:10px 0 14px}#welcome label{margin:12px 0 5px}#welcome input{min-height:44px;padding:10px 12px}#welcome .school-help{margin:6px 0 0;line-height:1.4}#welcome .welcome-actions{margin-top:18px}
