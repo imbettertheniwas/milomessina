@@ -50,7 +50,8 @@
         "You get to host the night and bring the creators together.",
         "Your dinner shows up in creators’ Stories or TikToks."
       ]
-    }
+    },
+    "companyId": "fomo"
   },
   {
     "title": "Find your chapter filmer",
@@ -74,18 +75,19 @@
     "perk": {
       "label": "FINAL CUT + PARTY FUNDING",
       "title": "Your parties. Your final cut.",
-      "description": "You get final cut of your chapter’s party footage and decide how fomo capital is spent on parties. Recruit a filmer from your chapter: they get paid to capture the night, with a fomo content monitor alongside them.",
+      "description": "Build your camera team. Recruit a paid camera operator from your chapter to film your parties, with a fomo content monitor alongside them. You get final cut and decide how fomo capital is spent on parties. They join your campus team and get internship experience too.",
       "highlights": [
-        "You get final cut",
-        "You decide how party funding is spent",
-        "Your filmer gets paid"
+        "Your camera operator, your team",
+        "You direct the party funding",
+        "Paid work + internship experience"
       ],
       "pitch": "Want to get paid to film our chapter’s parties? We’re finding an on-campus filmer from our chapter. You’d work alongside a person fomo sends to monitor the content.",
       "taskWins": [
         "You get final cut of your chapter’s party footage.",
         "You decide how fomo capital is spent on parties, with a fomo person on site to monitor content."
       ]
-    }
+    },
+    "companyId": "fomo"
   },
   {
     "title": "Recruit your campus media host",
@@ -109,10 +111,10 @@
     "perk": {
       "label": "A PAID ROLE TO OFFER",
       "title": "Put someone on as your campus host.",
-      "description": "Pick a popular, magnetic creator who can turn campus moments into content people share. They become the face of fomo on your campus, get a mic sent to them, get paid for views, and can earn from their fomo rewards link.",
+      "description": "Recruit the content lead for your campus team: a magnetic creator who turns campus moments into content people share. They get a mic, payment for views, and rewards-link earnings. You lead the campus; they get internship experience alongside you.",
       "highlights": [
-        "A mic for your host",
-        "Host gets paid for views",
+        "Build your content team",
+        "Paid for views + internship experience",
         "25% of referred fees for life"
       ],
       "pitch": "Want to be the fomo media host for our campus? fomo sends you a mic and pays you for views. You can also put a fomo rewards link in your bio and keep 25% of the fees it generates, for life.",
@@ -120,7 +122,8 @@
         "You help find the person who represents your campus on camera.",
         "Your host understands the mic, view-based pay, and lifetime referral share."
       ]
-    }
+    },
+    "companyId": "fomo"
   },
   {
     "title": "Take fomo to another campus",
@@ -155,7 +158,8 @@
         "You get to offer a creator a flight to visit friends and make content.",
         "An approved plan gets their campus visit ready for fomo to arrange the flight."
       ]
-    }
+    },
+    "companyId": "fomo"
   },
   {
     "id": "calendar",
@@ -181,6 +185,7 @@
       "taskWins": [
         "Keep your upcoming dates ready to share with fomo."
       ]
-    }
+    },
+    "companyId": "fomo"
   }
 ]
