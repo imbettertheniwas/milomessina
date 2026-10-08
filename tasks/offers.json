@@ -8,23 +8,28 @@
     "tasks": [
       {
         "title": "Find 10 sorority creators",
-        "detail": "Pick popular sorority creators with real campus reach, confident talking-to-camera content, and strong viral potential. Look for recent videos people watch, comment on, and share."
+        "detail": "Pick popular sorority creators with real campus reach, confident talking-to-camera content, and strong viral potential. Look for recent videos people watch, comment on, and share.",
+        "input": "Creators’ names, handles, and links to recent talking-to-camera videos…"
       },
       {
         "title": "Choose a restaurant",
-        "detail": "Find a spot on or near campus that can host your group."
+        "detail": "Find a spot on or near campus that can host your group.",
+        "input": "Restaurant name, location, proposed date, and group pricing…"
       },
       {
         "title": "Create a fixed custom menu",
-        "detail": "Agree on a set menu with the restaurant and put fomo logos on it."
+        "detail": "Agree on a set menu with the restaurant and put fomo logos on it.",
+        "input": "Upload the fomo-branded menu below, or paste its link…"
       },
       {
         "title": "Host the dinner",
-        "detail": "Bring your 10 creators together. fomo will pay for the dinner."
+        "detail": "Bring your 10 creators together. fomo will pay for the dinner.",
+        "input": "Dinner date, attendee list, photos, and a quick recap…"
       },
       {
         "title": "Get Instagram Stories or TikToks",
-        "detail": "Have creators post an Instagram Story showing the fomo menu or a “GRWM for a crypto dinner” TikTok. Collect links or Story screenshots for review."
+        "detail": "Have creators post an Instagram Story showing the fomo menu or a “GRWM for a crypto dinner” TikTok. Collect links or Story screenshots for review.",
+        "input": "Instagram Story screenshots or links to the creators’ TikToks…"
       }
     ],
     "id": "dinner",
@@ -56,11 +61,13 @@
     "tasks": [
       {
         "title": "Choose an in-chapter filmer",
-        "detail": "Find a chapter member who wants a paid role and has an eye for shareable party content: great moments, strong opening shots, and quick edits. Ask to see examples of their work."
+        "detail": "Find a chapter member who wants a paid role and has an eye for shareable party content: great moments, strong opening shots, and quick edits. Ask to see examples of their work.",
+        "input": "Filmer’s name, chapter, contact, and examples of their work…"
       },
       {
         "title": "Coordinate with the fomo monitor",
-        "detail": "Confirm that your filmer can work alongside the person fomo sends to monitor content."
+        "detail": "Confirm that your filmer can work alongside the person fomo sends to monitor content.",
+        "input": "Availability and how the filmer will coordinate with the fomo monitor…"
       }
     ],
     "id": "filmer",
@@ -89,11 +96,13 @@
     "tasks": [
       {
         "title": "Find your campus host",
-        "detail": "Pick a popular campus creator with personality, confident on-camera delivery, and strong viral potential. Look at recent video views, genuine comments, and shares. Choose someone people already watch and want to hear from."
+        "detail": "Pick a popular campus creator with personality, confident on-camera delivery, and strong viral potential. Look at recent video views, genuine comments, and shares. Choose someone people already watch and want to hear from.",
+        "input": "Creator’s name, contact, profile, and 2–3 recent videos…"
       },
       {
         "title": "Confirm they’re in",
-        "detail": "Make sure they understand the role, the mic, payment for views, and the fomo Rewards link opportunity."
+        "detail": "Make sure they understand the role, the mic, payment for views, and the fomo Rewards link opportunity.",
+        "input": "Confirm they want the role and understand the mic, view payments, and rewards link…"
       }
     ],
     "id": "host",
@@ -122,11 +131,13 @@
     "tasks": [
       {
         "title": "Find a talking-to-camera creator",
-        "detail": "Choose a popular talking-to-camera creator with real campus reach and strong viral potential, preferably a sorority member. They should have friends at another school and a track record of engaging, shareable videos."
+        "detail": "Choose a popular talking-to-camera creator with real campus reach and strong viral potential, preferably a sorority member. They should have friends at another school and a track record of engaging, shareable videos.",
+        "input": "Creator’s name, profile, recent videos, and friends at another school…"
       },
       {
         "title": "Plan the campus visit",
-        "detail": "Confirm which friends and school they’ll visit, proposed dates, and the content they’ll make. Submit the plan for fomo to review and arrange the flight."
+        "detail": "Confirm which friends and school they’ll visit, proposed dates, and the content they’ll make. Submit the plan for fomo to review and arrange the flight.",
+        "input": "Friends’ school, proposed travel dates, and the content plan…"
       }
     ],
     "id": "travel",
@@ -153,7 +164,8 @@
     "tasks": [
       {
         "title": "Add your calendar",
-        "detail": "Drop in a calendar file, or enter your event names and dates below."
+        "detail": "Drop in a calendar file, or enter your event names and dates below.",
+        "input": "Any context for your calendar or event dates…"
       }
     ],
     "perk": {

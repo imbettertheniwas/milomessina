@@ -21,3 +21,6 @@ Local drafts are kept during service failures. Existing device-only checklists i
 ## Validation
 
 `node --test tests/*.test.mjs` runs the repository tests, including task ownership, stale reviews, draft/submission separation, file access, bonus eligibility, and payment retry protection. `node tests/preview-campus-backend.mjs` starts an isolated in-memory end-to-end preview on port 5181, with synthetic accounts and files. It never writes test records to the production spreadsheet. `tests/preview-tasks.mjs` remains the basic static preview with the real read-only school source.
+
+## Step reviews
+Each checklist step has independent notes, up to five private attachments (10 MB each), and a review submission. `campus_tasks_steps` stores drafts, submitted snapshots, revisions and feedback. Admins review each step; approving every step automatically approves the task. All five approved tasks unlock the existing $100 payment record. Legacy whole-task submissions remain reviewable until a member starts using step submissions. Attachments support documents, images and short MP4/MOV files; larger videos use links. Unsynced step drafts and files stay in browser storage for retry.

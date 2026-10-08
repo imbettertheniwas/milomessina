@@ -1,11 +1,12 @@
 const MAX_FILE=10*1024*1024;
-const extensions=new Set(['pdf','csv','xlsx','xls','ics','doc','docx','png','jpg','jpeg','webp']);
+const extensions=new Set(['pdf','csv','xlsx','xls','ics','doc','docx','png','jpg','jpeg','webp','mp4','mov']);
 export function validEvent(event){return typeof event?.title==='string'&&event.title.trim().length>0&&/^\d{4}-\d{2}-\d{2}$/.test(event.date||'')&&Number.isFinite(Date.parse(event.date+'T12:00:00Z'))&&new Date(event.date+'T12:00:00Z').toISOString().slice(0,10)===event.date;}
 export function calendarReady(calendar){return Boolean(calendar?.file)||(Array.isArray(calendar?.events)&&calendar.events.length>0&&calendar.events.every(validEvent));}
 export function fileError(file){if(!extensions.has(file.name.split('.').pop().toLowerCase()))return'Choose a PDF, spreadsheet, calendar, document, or image file.';if(!file.size)return'This file is empty. Choose another file.';if(file.size>MAX_FILE)return'Please choose a file smaller than 10 MB.';return'';}
 function database(){return new Promise((resolve,reject)=>{const request=indexedDB.open('fomo-task-calendar-files',1);request.onupgradeneeded=()=>request.result.createObjectStore('files');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
 async function fileStore(id,action,file){const db=await database();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('files',action==='get'?'readonly':'readwrite'),store=tx.objectStore('files');let result;const request=action==='put'?store.put(file,id):action==='delete'?store.delete(id):store.get(id);request.onsuccess=()=>{result=request.result;};tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}}
 export const getCalendarFile=id=>fileStore(id,'get');
+export const storeTaskFile=(id,file)=>fileStore(id,'put',file);
 export function createCalendar({getProfile,save,onProgress,downloadShared}){
  const card=document.querySelector('[data-task="calendar"]'),eventsNode=document.querySelector('#calendar-events'),status=document.querySelector('#calendar-status'),fileInput=document.querySelector('#calendar-file'),drop=document.querySelector('#calendar-drop');
  let busy=false;
