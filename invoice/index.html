@@ -732,6 +732,7 @@ td.date.run{color:var(--good)}
 <link rel="stylesheet" href="/invoice/internal.css">
 <link rel="stylesheet" href="/invoice/overview-details.css">
 <link rel="stylesheet" href="/invoice/beta-manager.css">
+<link rel="stylesheet" href="/invoice/campus-tasks.css">
 <link rel="stylesheet" href="/invoice/beta-group-overview.css">
 </head>
 <body>
@@ -1665,7 +1666,8 @@ td.date.run{color:var(--good)}
         </div>
       </section>
 
-      <section class="view" data-view="beta">
+      <section class="view" data-view="tasks"><div class="toolbar"><span class="hint">Campus opportunities, submissions, and rewards.</span><span class="push"><a class="mini ghost" href="/tasks" target="_blank" rel="noopener">Open member tasks ↗</a><button class="mini ghost" id="ct-refresh" type="button">Refresh</button></span></div><div class="scroller"><div id="ct-root"><p id="ct-message" role="status"></p><div id="ct-summary" class="ct-summary"></div><div class="ct-filters"><label>Search members<input id="ct-search" type="search" placeholder="Name, school, or chapter"></label><label>School<select id="ct-school"><option value="">Every school</option></select></label><label>Status<select id="ct-filter"><option value="">Every status</option><option value="submitted">Needs review</option><option value="draft">In progress</option><option value="changes_requested">Changes requested</option><option value="approved">Approved tasks</option><option value="bonus">$100 ready to pay</option><option value="paid">Bonus paid</option></select></label></div><div class="ct-layout"><div id="ct-members"></div><div id="ct-detail"></div></div></div></div></section>
+<section class="view" data-view="beta">
         <div class="toolbar"><span class="hint">Your beta interns, in one place.</span><span class="push"><a class="mini ghost" href="/internal/beta" target="_blank" rel="noopener">Open intern workspace ↗</a><button class="mini ghost" id="bt-refresh" type="button">Refresh</button></span></div>
         <div class="scroller pad" id="bt-root">
           <div class="bt-intro"><div><span class="bt-eyebrow">ARYA’S BOOTCAMP</span><h2>Beta</h2><p>One group. Each intern’s first two weeks of showing up, building, and learning.</p></div></div>
@@ -5390,10 +5392,12 @@ var VIEWS = {
   portals:   {label:"Portals",        sub:"every public front door, and everything that has come through it"},
   referrals: {label:"Referrals",      sub:"who is sending people, how far those people got, and what we owe for it"},
   admin:     {label:"Console",        sub:"the roster, and the rows nobody else can reach"},
+  tasks:     {label:"Campus tasks", sub:"member progress, content submissions, calendars, and rewards"},
   beta:      {label:"Beta",     sub:"new interns, their progress, and their access"},
   person:    {label:"",               sub:""}
 };
 
+var initialTasksRoute = location.hash === "#/tasks";
 var initialBetaRoute = location.hash === "#/beta";
 var view = "overview", personOf = null, chargeOf = null, moneyHistory = [], recentMoneyUndo = null;
 
@@ -5437,7 +5441,7 @@ var NAV = [
      owe for it follows from that rather than the other way round, and
      the money on it is going out to students rather than back to the
      four of them, which is what everything under Money is. */
-  {id:"doors",  label:"Front doors", items:[["portals","Portals",1],["referrals","Referrals",1]], operator:true},
+  {id:"doors",  label:"Front doors", items:[["portals","Portals",1],["referrals","Referrals",1],["tasks","Campus tasks",1]], operator:true},
   {id:"beta",   label:"Pilot program", items:[["beta","Beta",0]], operator:true},
   {id:"admin",  label:"Maintenance", items:[["admin","Console",0]], operator:true}
 ];
@@ -5565,7 +5569,7 @@ function setView(id, who){
      only being left off the rail. The endpoint refuses the calls anyway;
      this is so the page does not offer a screenful of buttons that will
      all come back as no. */
-  if ((id === "admin" || id === "portals" || id === "referrals" || id === "beta") && !isOperator()) id = "overview";
+  if ((id === "admin" || id === "portals" || id === "referrals" || id === "beta" || id === "tasks") && !isOperator()) id = "overview";
   if (id === "person" && !who) id = "overview";
   var previousView = view;
   if (view !== id || personOf !== who) profileEditing=false;
@@ -5580,7 +5584,7 @@ function setView(id, who){
   markNav();
   /* Nothing on these three is a spend, so the one button that only ever
      logs one has no business sitting over them. */
-  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin","portals","referrals","beta"].indexOf(view) > -1 ? "none" : "";
+  $("btn-new").style.display = ["visits","applicants","campus","posts","schedules","admin","portals","referrals","beta","tasks"].indexOf(view) > -1 ? "none" : "";
   document.body.dataset.consoleView = view;
   closeSidebar();
   var hash = "#/" + view + (view === "person" ? "/" + encodeURIComponent(personOf) : (view === "posts" || view === "charge" || view === "portals") && who ? "/" + encodeURIComponent(who) : "");
@@ -6664,7 +6668,7 @@ function palBuild(q){
     if (k === "person") return;
     /* The two the rail hides from everybody else are hidden here too:
        jump-to must not offer a door setView will turn away. */
-    if ((k === "admin" || k === "portals" || k === "referrals" || k === "beta") && !isOperator()) return;
+    if ((k === "admin" || k === "portals" || k === "referrals" || k === "beta" || k === "tasks") && !isOperator()) return;
     out.push({t:VIEWS[k].label, s:VIEWS[k].sub, ic:ico(k), go:k});
   });
   PAYERS.forEach(function(p){
@@ -7410,6 +7414,7 @@ function signedIn(out, token){
   open_();
   window.dispatchEvent(new Event("fomo:identity"));
   if (initialBetaRoute && isOperator()) { initialBetaRoute=false; setView("beta"); }
+  if (initialTasksRoute && isOperator()) { initialTasksRoute=false; setView("tasks"); }
 }
 $("gate-form").addEventListener("submit",async function(ev){
   ev.preventDefault();
@@ -7449,5 +7454,6 @@ $("identity-switch").addEventListener("click",async function(){
 <script type="module" src="/invoice/portals.js"></script>
 <script type="module" src="/invoice/referrals.js"></script>
 <script type="module" src="/invoice/beta-manager.js"></script>
+<script type="module" src="/invoice/campus-tasks.js"></script>
 </body>
 </html>

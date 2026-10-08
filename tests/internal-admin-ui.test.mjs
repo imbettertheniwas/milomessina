@@ -33,7 +33,7 @@ function page(identity = null) {
     rows:[], subs:[], days:[], PEOPLE:['Milo','Jesse','Arya'],
     document:{body:{dataset:{}}}, sessionStorage:{setItem:(key,value) => storage.set(key,value)},
     $:node, buildNav(){}, applyRoster(){}, resetSplit(){}, open_(){},
-    whoBox:{children:[]}, bfWho:{}, view:'overview', personOf:'', initialBetaRoute:false,
+    whoBox:{children:[]}, bfWho:{}, view:'overview', personOf:'', initialTasksRoute:false,initialBetaRoute:false,
     window:{dispatchEvent(){}}, Event:class {}, location:{replace(url){context.redirect = url;}},
     byId:(list,id) => list.find(row => row.id === id), saveAll:() => true, setLive(){}, hideBanner(){}, render(){},
     reviewedCharge:r => JSON.stringify([r.id,r.who,r.amount]),

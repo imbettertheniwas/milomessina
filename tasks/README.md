@@ -1,21 +1,23 @@
 # Campus tasks
 
-Public, no-sign-in task offers for members who have already onboarded a chapter, served at `/tasks` and `/tasks/`. The page is excluded from search indexing; the URL is not access-controlled.
+Public member workspace: `/tasks`. Operator view: `/internal#/tasks` (Milo and Arya).
 
-Edit `offers.json`, then run `node tasks/build.mjs` from the repository root to regenerate the static HTML. `icons.json` contains the corresponding Lucide SVG icons. Brand assets and Aeonik fonts are served locally.
+`node tasks/build.mjs` generates the page from `offers.json` and `icons.json`. There are five optional core tasks and a separate chapter referral. Task card summaries include the entire header, reward description, and perks, so clicking anywhere on a closed card opens it.
 
-All opportunities are independent and optional. Checklists and draft updates are saved only in the visitor’s browser under `fomo-campus-tasks-v1`; this does not import or synchronize the earlier ChatGPT Site’s account progress. Visitors copy updates and send them to their existing fomo contact for review. The page does not submit, approve, or pay out rewards.
+## Shared tracking
 
-Manual verification: open the travel offer before the dinner, check an item, enter a draft, reload, and confirm the saved state. Copy the update and check the handoff message. Verify all offers and the referral bonus fit both mobile and desktop widths.
+`tasks/shared.js` talks to the existing internal Apps Script deployment using the `campusTasks` namespace. `fomo/setup/apps-script.gs` contains the complete backend. The existing deployment can also retain its existing `Code.gs` and duplicate `visit.gs`: route `body._api === 'campusTasks'` to `campusTasksApi(body)` in both and install the campus tasks section once as `campusTasks.gs`. Preserve existing CONFIG values, Script Properties, deployment URL, and access settings. Website and Apps Script releases are separate.
 
-## Remembered campus profiles
+The service creates four isolated tables in the existing spreadsheet: `campus_tasks_members`, `campus_tasks_progress`, `campus_tasks_files`, and `campus_tasks_audit`. It does not rewrite existing internal records. Drafts and review snapshots are separate. Reviews check the current revision, identify the reviewer, and record feedback. Approved tasks are locked until an operator requests changes. Five approved core tasks make the $100 bonus eligible; payment controls record a completed transfer and never send money. Referral rewards are separately approved at $50 or $100.
 
-The first visit asks for a name and a school. `/api/task-schools` reads the existing server-only `CAMPUSWARS_ADMIN_PASSWORD` / `CAMPUSWARS_ADMIN_USERNAME` configuration and returns only deduplicated school names and public brand fields. Every school registered in the admin is eligible; there is no 80% threshold. No credential, chapter contact, or individual member data is returned.
+Members remain passwordless. A random 72-character bearer token is stored in their local profile, hashed on the server, and included in a private return link's fragment for another device. A name and school alone never unlock an existing server record. Losing both the browser storage and private link means a new profile, rather than exposing another person's records. Internal listing, reviews, and payment records require the existing authenticated Milo/Arya operator session. Private calendar files are stored in a dedicated Drive folder and downloaded only after member ownership or operator authorization. Uploads are limited to 10 MB and 20 files per profile. Old files remain for submitted-review history.
 
-Names, selected schools, checklists, event-date drafts, and task updates are stored per profile in localStorage (`fomo-campus-task-profiles-v2`). Calendar files up to 10 MB are stored in IndexedDB (`fomo-task-calendar-files`) by profile ID. These are browser-local profiles, not authenticated accounts, and do not synchronize between devices. Existing v1 task drafts migrate to the first new profile. “Change person” keeps each name/school combination’s progress separate.
+Local drafts are kept during service failures. Existing device-only checklists import as drafts when that browser next opens the new site; they do not become approved submissions. Records from browsers that have not returned cannot be recovered centrally. New members see that progress saves with fomo. “Load saved progress” restores the shared version after a conflict; the user confirms replacement of their local draft.
 
-All five completed checklists make the visitor eligible for the stated $100 completion bonus; the interface asks them to send their updates to fomo for review. A checked item is not a server approval or payment. Calendar attachments must be sent to the fomo contact separately; the page stores them locally and provides a download.
+## Schools
 
-School brand coverage combines the existing 93-campus library with ESPN team metadata and official university homepage/brand assets. Additional source URLs are retained in `school-brands.js`. Colors with low text contrast are darkened for readable controls; original school colors remain in the brand accents. Current live coverage was checked against all 136 admin-listed schools.
+`/api/task-schools` reads the registered school names from fomo campus admin with server-only environment credentials. Any listed school is allowed, including schools with no joins. The Apps Script rechecks this same list at registration. `school-brands.js` reuses campus identities and stores source URLs for added ESPN/official university logos; no admin contact data or passwords are exposed. The picker recognizes common abbreviations, acronyms, nicknames, and partial names, but can select only a returned school.
 
-Validation: `node --test tests/tasks.test.mjs`. For local testing, provide the server environment and run `node tests/preview-tasks.mjs`. No test credentials belong in source.
+## Validation
+
+`node --test tests/*.test.mjs` runs the repository tests, including task ownership, stale reviews, draft/submission separation, file access, bonus eligibility, and payment retry protection. `node tests/preview-campus-backend.mjs` starts an isolated in-memory end-to-end preview on port 5181, with synthetic accounts and files. It never writes test records to the production spreadsheet. `tests/preview-tasks.mjs` remains the basic static preview with the real read-only school source.

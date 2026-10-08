@@ -29,7 +29,7 @@ function fixture({route='overview',seen=false,backend='auto'}={}){
   const c=vm.createContext({document,window,URL,AbortSignal,AbortController,Blob,JSON,Date,
     location:{origin:'https://example.invalid',hash:'#/'+(route==='beta'?'overview':route),replace(url){c.redirect=url;}},
     Event:class{constructor(type){this.type=type;}},CustomEvent:class{constructor(type){this.type=type;}},
-    identity:null,view:route==='beta'?'overview':route,initialBetaRoute:route==='beta',personOf:null,
+    identity:null,view:route==='beta'?'overview':route,initialTasksRoute:route==='tasks',initialBetaRoute:route==='beta',personOf:null,
     initialLedgerDeferred:false,deferredLedgerSnapshot:null,sheetReadAt:0,busy:false,mode:'device',poll:null,
     BACKEND:backend,ENDPOINT:'/sheet',PASSCODE:'test',PEOPLE:['Milo'],whoBox:{children:[]},bfWho:{},LS_DAYS:'days',
     rows:[],days:[],subs:[],profiles:[],listAhead:null,carried:null,sheetPayers:[],sheetCard:false,sheetGuests:false,sheetDays:false,
