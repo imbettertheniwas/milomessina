@@ -1,0 +1,154 @@
+[
+  {
+    "title": "Host the creator dinner",
+    "subtitle": "10 creators. One table. On us.",
+    "tag": "fomo covers the dinner",
+    "intro": "Bring together 10 standout sorority creators who are confident talking to the camera. Give them a night worth talking about.",
+    "evidence": "Share the 10 creators’ handles, restaurant, dinner date, branded menu, and dinner photos. Include links or screenshot links for Instagram Stories showing the menus, plus links to the “GRWM for a crypto dinner” TikToks.",
+    "tasks": [
+      {
+        "title": "Find 10 sorority creators",
+        "detail": "Look for engaging creators who actually speak to the camera in their content."
+      },
+      {
+        "title": "Choose a restaurant",
+        "detail": "Find a spot on or near campus that can host your group."
+      },
+      {
+        "title": "Create a fixed custom menu",
+        "detail": "Agree on a set menu with the restaurant and put fomo logos on it."
+      },
+      {
+        "title": "Host the dinner",
+        "detail": "Bring your 10 creators together. fomo will pay for the dinner."
+      },
+      {
+        "title": "Get Instagram Stories of the menus",
+        "detail": "Have creators post Instagram Stories showing the fomo-branded menus. Collect Story links or screenshots for review."
+      },
+      {
+        "title": "Get “GRWM for a crypto dinner” TikToks",
+        "detail": "Have creators make and post getting-ready TikToks for the crypto dinner. Collect the TikTok links for review."
+      }
+    ],
+    "id": "dinner",
+    "perk": {
+      "label": "A DINNER ON fomo",
+      "title": "You pick the girls. Dinner’s on us.",
+      "description": "Choose 10 sorority creators and be the one who invites them to a free dinner. You pick the people, help plan the night, and bring everyone together. fomo picks up the dinner bill. In return, collect menu Stories and “GRWM for a crypto dinner” TikToks.",
+      "highlights": [
+        "Your guest list",
+        "Your restaurant pick",
+        "Dinner paid for"
+      ],
+      "pitch": "I’m putting together a dinner for 10 sorority creators who talk to the camera. I’d love to invite you—fomo is paying for dinner. We’re asking creators to post an Instagram Story of the menu and a “GRWM for a crypto dinner” TikTok.",
+      "taskWins": [
+        "You choose who gets an invite to the free dinner.",
+        "You help choose where everyone gets together.",
+        "Your group gets its own fixed menu with fomo branding.",
+        "You get to host the night and bring the creators together.",
+        "Your dinner and the fomo menus show up in creators’ Stories.",
+        "Creators turn getting ready for your dinner into TikTok content."
+      ]
+    }
+  },
+  {
+    "title": "Find your chapter filmer",
+    "subtitle": "Your parties, captured properly.",
+    "tag": "Paid filmer · In-chapter · On campus",
+    "intro": "Find someone in your chapter, on your campus, who can get paid to film parties. They’ll work alongside a person fomo sends to monitor the content.",
+    "evidence": "Share the filmer’s name, contact or profile, and how they’ll coordinate with the fomo content monitor.",
+    "tasks": [
+      {
+        "title": "Choose an in-chapter filmer",
+        "detail": "Find a chapter member on campus who wants a paid role filming your parties."
+      },
+      {
+        "title": "Coordinate with the fomo monitor",
+        "detail": "Confirm that your filmer can work alongside the person fomo sends to monitor content."
+      }
+    ],
+    "id": "filmer",
+    "perk": {
+      "label": "FINAL CUT + PARTY FUNDING",
+      "title": "Your parties. Your final cut.",
+      "description": "You get final cut of your chapter’s party footage and decide how fomo capital is spent on parties. Recruit a filmer from your chapter: they get paid to capture the night, with a fomo content monitor alongside them.",
+      "highlights": [
+        "You get final cut",
+        "You decide how party funding is spent",
+        "Your filmer gets paid"
+      ],
+      "pitch": "Want to get paid to film our chapter’s parties? We’re finding an on-campus filmer from our chapter. You’d work alongside a person fomo sends to monitor the content.",
+      "taskWins": [
+        "You get final cut of your chapter’s party footage.",
+        "You decide how fomo capital is spent on parties, with a fomo person on site to monitor content."
+      ]
+    }
+  },
+  {
+    "title": "Recruit your campus media host",
+    "subtitle": "The face. The mic. The campus.",
+    "tag": "Mic provided + paid for views",
+    "intro": "Find a male or female content creator who wants to become the fomo media host for your campus. We’ll send them a mic, and they’ll get paid for views.",
+    "evidence": "Share the creator’s name, contact, profile, and confirmation that they want to be your campus host.",
+    "tasks": [
+      {
+        "title": "Find your campus host",
+        "detail": "Choose a male or female creator who is comfortable on camera and wants to represent fomo on campus."
+      },
+      {
+        "title": "Confirm they’re in",
+        "detail": "Make sure they understand the role, the mic, payment for views, and the fomo Rewards link opportunity."
+      }
+    ],
+    "id": "host",
+    "perk": {
+      "label": "A PAID ROLE TO OFFER",
+      "title": "Put someone on as your campus host.",
+      "description": "You get to bring a creator a real opportunity: become the face of fomo on your campus. Your chosen host gets a mic sent to them, gets paid for views, and can earn from their fomo rewards link.",
+      "highlights": [
+        "A mic for your host",
+        "Host gets paid for views",
+        "25% of referred fees for life"
+      ],
+      "pitch": "Want to be the fomo media host for our campus? fomo sends you a mic and pays you for views. You can also put a fomo rewards link in your bio and keep 25% of the fees it generates, for life.",
+      "taskWins": [
+        "You help find the person who represents your campus on camera.",
+        "Your host understands the mic, view-based pay, and lifetime referral share."
+      ]
+    }
+  },
+  {
+    "title": "Take fomo to another campus",
+    "subtitle": "Your creator. Their friends’ school. Our flight.",
+    "tag": "fomo covers the flight",
+    "intro": "Find a creator who makes content talking to the camera—preferably a sorority member. Send them to visit their friends at other schools and make content. fomo will pay for the flight.",
+    "evidence": "Share the creator’s name and profile, their friends’ school, proposed dates, and the content plan for the trip.",
+    "tasks": [
+      {
+        "title": "Find a talking-to-camera creator",
+        "detail": "Preferably a sorority member who has friends at other schools and wants to make content on the trip."
+      },
+      {
+        "title": "Plan the campus visit",
+        "detail": "Confirm which friends and school they’ll visit, proposed dates, and the content they’ll make. Submit the plan for fomo to review and arrange the flight."
+      }
+    ],
+    "id": "travel",
+    "perk": {
+      "label": "A FLIGHT ON fomo",
+      "title": "Send a creator to see their friends.",
+      "description": "Find a talking-to-camera creator—preferably a sorority member—and offer them a chance to visit friends at another school while making content. You help set up the trip. fomo pays for their flight.",
+      "highlights": [
+        "Their friends’ campus",
+        "Content from a new school",
+        "Their flight paid for"
+      ],
+      "pitch": "Have friends at another school? We’re looking for a creator to visit them and make talking-to-camera content. fomo will cover your flight.",
+      "taskWins": [
+        "You get to offer a creator a flight to visit friends and make content.",
+        "An approved plan gets their campus visit ready for fomo to arrange the flight."
+      ]
+    }
+  }
+]
