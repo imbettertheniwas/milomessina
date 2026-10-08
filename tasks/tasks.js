@@ -1,4 +1,4 @@
-import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from './welcome-reveal.js?v=20261008-entry3';
+import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from './welcome-reveal.js?v=20261008-entry4';
 import {approvedFomoTasks,experienceText} from './experience.js';
 import {newPasswordSalt,passwordProof} from './password.js';
 import {opportunityStatus,opportunityCounts} from './network.js';
@@ -58,7 +58,7 @@ form.addEventListener('submit',async event=>{
  if(signup&&(!name||!school)){error.textContent='Enter your name and choose a listed school.';return;}
  if(signup&&(password.length<12||password!==passwordConfirm.value)){error.textContent=password.length<12?'Use at least 12 characters for your password.':'Your passwords don’t match.';return;}
  authBusy=true;continueButton.disabled=true;continueButton.textContent=signup?'Creating your account…':'Signing in…';error.textContent='';
- beginCampusWelcome();
+ beginCampusWelcome(signup?{name,school}:active?.email===email?active:null);
  try{
   let out;
   if(signup){const salt=newPasswordSalt(),proof=await passwordProof(password,salt);const legacyToken=active?.token&&!active.account?active.token:new URLSearchParams(location.hash.slice(1)).get('profile')||'';out=await taskRequest(legacyToken,'signup',{email,name,schoolId:school.id,salt,proof});}
@@ -90,7 +90,7 @@ document.querySelector('#copy-experience').addEventListener('click',async()=>{if
 // Validate the session before exposing any saved profile or task workspace.
 openProfile();
 const savedProfile=active?.account&&active.token?active:null;
-if(savedProfile)beginCampusWelcome();
+if(savedProfile)beginCampusWelcome(savedProfile);
 void loadSchools();
 void (async()=>{
  if(savedProfile){try{await taskRequest(savedProfile.token,'get');if(active!==savedProfile)return;authenticated=true;await enterWorkspace(savedProfile);}catch(e){cancelCampusWelcome();error.textContent=e.code==='AUTH_REQUIRED'?'Sign in to continue.':e.message;}}

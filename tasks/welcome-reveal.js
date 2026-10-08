@@ -1,23 +1,34 @@
 import {readableAccent} from './profile.js';
 
 let entry=null;
-// Open immediately; authentication and workspace loading happen behind this shell.
-export function beginCampusWelcome(){
+function personalize(reveal,profile){
+ const school=profile?.school;
+ reveal.style.setProperty('--arrival-accent',school?.primary?readableAccent(school.primary):'#666674');
+ reveal.querySelector('[data-arrival-name]').textContent=profile?.name?`You’re in, ${profile.name.split(' ')[0]}.`:'You’re in.';
+ reveal.querySelector('#arrival-description').textContent='Your campus. Your call.';
+ reveal.querySelector('.arrival-campus').hidden=!school?.name;
+ reveal.querySelector('[data-arrival-school]').textContent=school?.name||'';
+ const logo=reveal.querySelector('[data-arrival-logo]');
+ const hasLogo=typeof school?.logo==='string'&&/^\/[^/]/.test(school.logo);
+ logo.hidden=!hasLogo;
+ if(hasLogo){logo.src=school.logo;logo.alt='';logo.parentElement.style.background=school.logoBackground==='primary'?readableAccent(school.primary):'#fff';}
+ logo.parentElement.hidden=!hasLogo;
+}
+// Play the welcome immediately; authentication gates entry, not the animation.
+export function beginCampusWelcome(profile){
  if(entry)return entry.finished;
  const reveal=document.querySelector('#campus-welcome');
  if(!reveal)return Promise.resolve(true);
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- const current={reveal,reduced,ready:false,leaving:false};
+ const current={reveal,reduced,ready:false,leaving:false,entryRequested:false};
  entry=current;
  current.finished=new Promise(resolve=>{current.resolve=resolve;});
- reveal.style.setProperty('--arrival-accent','#666674');
- reveal.querySelector('[data-arrival-name]').textContent='Opening your campus';
- reveal.querySelector('#arrival-description').textContent='Getting your workspace ready.';
+ personalize(reveal,profile);
  reveal.classList.remove('is-leaving');
- reveal.classList.add('is-loading');
  reveal.classList.toggle('is-reduced',reduced);
  const events=new AbortController();
  current.finish=()=>{
+  current.entryRequested=true;
   if(!current.ready||current.leaving)return;
   current.leaving=true;clearTimeout(current.advanceTimer);
   if(reduced){reveal.close();return;}
@@ -34,6 +45,7 @@ export function beginCampusWelcome(){
  },{once:true});
  document.body.classList.add('campus-arriving');
  reveal.showModal();
+ if(!reduced)current.advanceTimer=setTimeout(current.finish,1800);
  return current.finished;
 }
 export function cancelCampusWelcome(){
@@ -41,22 +53,12 @@ export function cancelCampusWelcome(){
  entry.cancelled=true;
  entry.reveal.close();
 }
-// The workspace must await this promise before exposing any member content.
+// Authentication completes without restarting the intro or adding another wait.
 export function showCampusWelcome(profile){
- const finished=beginCampusWelcome();
+ const finished=beginCampusWelcome(profile);
  if(!entry||entry.ready)return finished;
- const {reveal,reduced}=entry;
- reveal.style.setProperty('--arrival-accent',readableAccent(profile.school.primary));
- reveal.querySelector('[data-arrival-name]').textContent=`You’re in, ${profile.name.split(' ')[0]}.`;
- reveal.querySelector('#arrival-description').textContent='Your campus. Your call.';
- reveal.querySelector('[data-arrival-school]').textContent=profile.school.name;
- const logo=reveal.querySelector('[data-arrival-logo]');
- const hasLogo=typeof profile.school.logo==='string'&&/^\/[^/]/.test(profile.school.logo);
- logo.hidden=!hasLogo;
- if(hasLogo){logo.src=profile.school.logo;logo.alt='';logo.parentElement.style.background=profile.school.logoBackground==='primary'?readableAccent(profile.school.primary):'#fff';}
- logo.parentElement.hidden=!hasLogo;
+ personalize(entry.reveal,profile);
  entry.ready=true;
- reveal.classList.remove('is-loading');
- if(!reduced)entry.advanceTimer=setTimeout(entry.finish,1800);
+ if(entry.entryRequested)entry.finish();
  return finished;
 }

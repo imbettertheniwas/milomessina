@@ -173,6 +173,4 @@ body.campus-arriving>main,body.campus-arriving>.topbar,body.campus-arriving>.ski
 .topbar .profile-button{margin-left:auto}
 .topbar,body.has-school .topbar{min-height:64px;padding-top:10px;padding-bottom:10px}.topbar .profile-button{min-height:36px;padding:6px 14px}@media(max-width:650px){.topbar,body.has-school .topbar{min-height:56px;padding-top:8px;padding-bottom:8px}}
 
-/* Keep an immediate, neutral intro visible while sign-in is being checked. */
-#campus-welcome.is-loading .arrival-campus,#campus-welcome.is-loading .arrival-detail,#campus-welcome.is-loading .arrival-bottom,#campus-welcome.is-loading .arrival-progress{visibility:hidden;animation:none}
-#campus-welcome.is-loading h2,#campus-welcome.is-loading #arrival-description{animation:none}
+#campus-welcome .arrival-campus[hidden]{display:none}

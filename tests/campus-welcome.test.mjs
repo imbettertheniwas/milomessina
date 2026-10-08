@@ -45,16 +45,30 @@ test('reduced-motion welcome remains gated until explicit entry',async t=>{
  enter.dispatchEvent(new Event('click'));await entering;assert.equal(ready,true);
 });
 
-test('pending authentication shows an immediate shell but cannot expose the workspace',async t=>{
+test('welcome plays immediately while authentication still gates the workspace',async t=>{
  const {reveal,enter}=fixture(t);let resolved=false;
- const pending=beginCampusWelcome();pending.then(()=>{resolved=true;});
- assert.equal(reveal.open,true);assert.equal(reveal.classList.contains('is-loading'),true);
- assert.equal(reveal.querySelector('[data-arrival-name]').textContent,'Opening your campus');
+ const pending=beginCampusWelcome(profile);pending.then(()=>{resolved=true;});
+ assert.equal(reveal.open,true);
+ assert.equal(reveal.querySelector('[data-arrival-name]').textContent,'You’re in, Jordan.');
+ assert.equal(reveal.querySelector('[data-arrival-school]').textContent,profile.school.name);
  enter.dispatchEvent(new Event('click'));t.mock.timers.tick(20000);await Promise.resolve();
  assert.equal(resolved,false);
  assert.equal(showCampusWelcome(profile),pending);
- assert.equal(reveal.classList.contains('is-loading'),false);
- t.mock.timers.tick(1800);t.mock.timers.tick(220);assert.equal(await pending,true);
+ assert.equal(reveal.classList.contains('is-leaving'),true,'authentication finishes without replaying the intro');
+ t.mock.timers.tick(220);assert.equal(await pending,true);
+});
+test('fast authentication keeps the original animation clock',async t=>{
+ const {reveal}=fixture(t);const pending=beginCampusWelcome(profile);
+ t.mock.timers.tick(1000);showCampusWelcome(profile);
+ t.mock.timers.tick(800);assert.equal(reveal.classList.contains('is-leaving'),true);
+ t.mock.timers.tick(220);assert.equal(await pending,true);
+});
+test('new sign-in starts with the welcome, even before the name is known',async t=>{
+ const {reveal}=fixture(t);const pending=beginCampusWelcome();
+ assert.equal(reveal.querySelector('[data-arrival-name]').textContent,'You’re in.');
+ assert.equal(reveal.querySelector('.arrival-campus').hidden,true);
+ t.mock.timers.tick(1800);assert.equal(reveal.open,true);
+ showCampusWelcome(profile);t.mock.timers.tick(220);assert.equal(await pending,true);
 });
 test('failed authentication cancels the intro and allows a fresh attempt',async t=>{
  const {reveal}=fixture(t);const pending=beginCampusWelcome();cancelCampusWelcome();
