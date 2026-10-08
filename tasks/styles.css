@@ -147,3 +147,23 @@ body.campus-arriving{overflow:hidden}
 #campus-title:focus{outline:none}
 /* Keep the public account form compact and easy to scan. */
 #welcome{padding:26px}#welcome #welcome-title{font-size:30px}#welcome .auth-tabs{margin:16px 0 12px}#welcome #auth-context{margin:10px 0 14px}#welcome label{margin:12px 0 5px}#welcome input{min-height:44px;padding:10px 12px}#welcome .school-help{margin:6px 0 0;line-height:1.4}#welcome .welcome-actions{margin-top:18px}
+
+/* Keep the LinkedIn example separate from Campus Tasks eligibility controls. */
+.career-preview{min-width:0}
+.welcome-grid .career-preview .linkedin-card{padding:25px 24px 29px;border:1px solid #dedede;box-shadow:none;border-radius:12px;font-family:Arial,Helvetica,sans-serif}
+.career-preview .linkedin-heading{margin-bottom:40px}
+.career-preview .linkedin-heading h3{font-size:29px;font-weight:700;letter-spacing:-.6px}
+.career-preview .linkedin-profile-icons{gap:28px}.career-preview .linkedin-profile-icons svg{width:29px;height:29px}
+.welcome-grid .career-preview .linkedin-role{gap:13px}
+.career-preview .linkedin-company-icon{width:72px;height:72px;border-radius:12px}
+.welcome-grid .career-preview .linkedin-role h3{font-size:24px;font-weight:700;line-height:1.25;letter-spacing:-.3px;margin:1px 0 6px}
+.welcome-grid .career-preview .linkedin-company{font-size:21px;font-weight:600;line-height:1.4;margin:0 0 8px}
+.welcome-grid .career-preview .linkedin-meta{font-size:20px;font-weight:600;line-height:1.45;margin:3px 0;color:#666}
+.welcome-grid .career-preview .experience-unlock{font-family:Aeonik,Arial,sans-serif;margin:15px 3px 0;padding:0;border:0}
+.welcome-grid .career-preview .experience-requirement{font-size:14px;font-weight:500;line-height:1.5;color:var(--navy);margin:0 0 5px}
+.career-preview .experience-example-note{font-size:12px;color:var(--muted);margin:0 0 9px}
+.career-preview #experience-progress{font-size:12px;color:var(--blue);margin:0}
+.career-preview #copy-experience{margin-top:12px}
+.career-preview .linkedin-card.unlocked{border-color:#dedede}
+@media(max-width:1050px) and (min-width:761px){.welcome-grid .career-preview .linkedin-role h3{font-size:21px}.welcome-grid .career-preview .linkedin-meta{font-size:17px}.career-preview .linkedin-company-icon{width:60px;height:60px}}
+@media(max-width:500px){.welcome-grid .career-preview .linkedin-card{padding:22px 18px 25px}.career-preview .linkedin-heading{margin-bottom:29px}.career-preview .linkedin-heading h3{font-size:25px}.career-preview .linkedin-profile-icons{gap:20px}.career-preview .linkedin-profile-icons svg{width:25px;height:25px}.career-preview .linkedin-company-icon{width:52px;height:52px;border-radius:9px}.welcome-grid .career-preview .linkedin-role{gap:12px}.welcome-grid .career-preview .linkedin-role h3{font-size:19px}.welcome-grid .career-preview .linkedin-company{font-size:18px}.welcome-grid .career-preview .linkedin-meta{font-size:16px}.welcome-grid .career-preview .experience-requirement{font-size:13px}}
