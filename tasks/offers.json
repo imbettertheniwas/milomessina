@@ -150,5 +150,30 @@
         "An approved plan gets their campus visit ready for fomo to arrange the flight."
       ]
     }
+  },
+  {
+    "id": "calendar",
+    "title": "Upload your social calendar",
+    "evidence": "Include your upcoming social events and their dates, or attach your chapter’s calendar file. Send the file or copied event list to your fomo contact.",
+    "tasks": [
+      {
+        "title": "Add your calendar",
+        "detail": "Drop in a calendar file, or enter your event names and dates below."
+      }
+    ],
+    "perk": {
+      "label": "YOUR SOCIAL CALENDAR",
+      "title": "Put your events on fomo’s radar.",
+      "description": "Upload your chapter’s social calendar or add event dates manually. Keep your upcoming parties and events together in one place.",
+      "highlights": [
+        "Drop a calendar file",
+        "Or enter dates manually",
+        "Saved with your profile"
+      ],
+      "pitch": "Here’s our chapter’s upcoming social calendar so fomo can see what we have planned.",
+      "taskWins": [
+        "Keep your upcoming dates ready to share with fomo."
+      ]
+    }
   }
 ]
