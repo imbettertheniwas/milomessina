@@ -54,7 +54,7 @@ form.addEventListener('submit',async event=>{
   const profile=previous||{id:crypto.randomUUID(),progress:signup&&profiles.profiles.length===0?legacyProgress(storage):{}};
   profile.token=out.token;profile.account=true;profile.email=email;profile.name=out.member.name;profile.school=schools.find(s=>s.id===out.member.schoolId)||{id:out.member.schoolId,name:out.member.schoolName};
   if(!previous){profile.cloud={member:out.member,tasks:out.tasks,steps:out.steps||[]};profile.dirty=signup&&Object.keys(profile.progress).length>0;profiles.profiles.push(profile);}
-  active=profile;profiles.activeId=profile.id;authenticated=true;passwordInput.value='';passwordConfirm.value='';write();history.replaceState(null,'',location.pathname);dialog.close();render();if(signup)showCampusWelcome(profile);void shared.start(profile);
+  active=profile;profiles.activeId=profile.id;authenticated=true;passwordInput.value='';passwordConfirm.value='';write();history.replaceState(null,'',location.pathname);dialog.close();render();showCampusWelcome(profile);void shared.start(profile);
  }catch(e){error.textContent=e.message||'Couldn’t sign in. Please try again.';document.querySelector('#auth-new-profile').hidden=e.code!=='LEGACY_NOT_FOUND';}
  finally{authBusy=false;continueButton.disabled=authMode==='signup'&&!loaded;continueButton.textContent=authMode==='signup'?'Create account & enter':'Sign in';}
 });

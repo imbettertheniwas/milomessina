@@ -37,4 +37,4 @@ The LinkedIn experience card is a preview until all five distinct FOMO core task
 
 Local-only UI fixtures: visit /qa-member-preview or /qa-member-preview?approved=5 on the isolated preview server. These synthetic accounts never reach production.
 
-Successful password signup plays a school-colored welcome reveal (`welcome-reveal.js`); normal sign-in and session restoration skip it. Members can enter immediately or wait about six seconds. Reduced-motion users get a static welcome with manual entry. The public form stays concise. Preview the reveal with `/qa-member-preview?welcome=1`; add `&school=university-of-washington` to inspect another campus palette.
+Successful password signup and sign-in play a school-colored welcome reveal (`welcome-reveal.js`); automatic session restoration skips it. Members can enter immediately or wait about six seconds. Reduced-motion users get a static welcome with manual entry. The public form stays concise. Preview the reveal with `/qa-member-preview?welcome=1`; add `&school=university-of-washington` to inspect another campus palette.

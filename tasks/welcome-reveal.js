@@ -1,6 +1,6 @@
 import {readableAccent} from './profile.js';
 
-// Called only after the server has successfully created a password account.
+// Called after a successful password signup or sign-in.
 export function showCampusWelcome(profile){
  const reveal=document.querySelector('#campus-welcome');
  if(!reveal||reveal.open)return;
