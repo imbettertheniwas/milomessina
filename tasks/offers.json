@@ -4,7 +4,7 @@
     "subtitle": "10 creators. One table. On us.",
     "tag": "fomo covers the dinner",
     "intro": "Bring together 10 standout sorority creators who are confident talking to the camera. Give them a night worth talking about.",
-    "evidence": "Share the 10 creators’ handles, restaurant, dinner date, branded menu, and dinner photos. Include links or screenshot links for Instagram Stories showing the menus, plus links to the “GRWM for a crypto dinner” TikToks.",
+    "evidence": "Share the 10 creators’ handles, restaurant, dinner date, branded menu, and dinner photos. Include links or screenshot links for Instagram Stories showing the menus, or links to the “GRWM for a crypto dinner” TikToks.",
     "tasks": [
       {
         "title": "Find 10 sorority creators",
@@ -23,32 +23,27 @@
         "detail": "Bring your 10 creators together. fomo will pay for the dinner."
       },
       {
-        "title": "Get Instagram Stories of the menus",
-        "detail": "Have creators post Instagram Stories showing the fomo-branded menus. Collect Story links or screenshots for review."
-      },
-      {
-        "title": "Get “GRWM for a crypto dinner” TikToks",
-        "detail": "Have creators make and post getting-ready TikToks for the crypto dinner. Collect the TikTok links for review."
+        "title": "Get Instagram Stories or TikToks",
+        "detail": "Have creators post an Instagram Story showing the fomo menu or a “GRWM for a crypto dinner” TikTok. Collect links or Story screenshots for review."
       }
     ],
     "id": "dinner",
     "perk": {
       "label": "A DINNER ON fomo",
       "title": "You pick the girls. Dinner’s on us.",
-      "description": "Choose 10 sorority creators and be the one who invites them to a free dinner. You pick the people, help plan the night, and bring everyone together. fomo picks up the dinner bill. In return, collect menu Stories and “GRWM for a crypto dinner” TikToks.",
+      "description": "Choose 10 sorority creators and be the one who invites them to a free dinner. You pick the people, help plan the night, and bring everyone together. fomo picks up the dinner bill. In return, collect menu Stories or “GRWM for a crypto dinner” TikToks.",
       "highlights": [
         "Your guest list",
         "Your restaurant pick",
         "Dinner paid for"
       ],
-      "pitch": "I’m putting together a dinner for 10 sorority creators who talk to the camera. I’d love to invite you—fomo is paying for dinner. We’re asking creators to post an Instagram Story of the menu and a “GRWM for a crypto dinner” TikTok.",
+      "pitch": "I’m putting together a dinner for 10 sorority creators who talk to the camera. I’d love to invite you—fomo is paying for dinner. We’re asking creators to post an Instagram Story of the menu or a “GRWM for a crypto dinner” TikTok.",
       "taskWins": [
         "You choose who gets an invite to the free dinner.",
         "You help choose where everyone gets together.",
         "Your group gets its own fixed menu with fomo branding.",
         "You get to host the night and bring the creators together.",
-        "Your dinner and the fomo menus show up in creators’ Stories.",
-        "Creators turn getting ready for your dinner into TikTok content."
+        "Your dinner shows up in creators’ Stories or TikToks."
       ]
     }
   },
