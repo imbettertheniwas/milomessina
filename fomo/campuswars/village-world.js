@@ -1,6 +1,6 @@
 import {createSchoolBanner} from './village-school-banners.js?v=167';
 import {chapterGreekLetters} from './village-chapter-identity.js?v=167';
-import {islandFootprint} from './village-island.js?v=167';
+import {islandFootprint} from './village-island.js?v=170';
 import {createParachutes} from './village-parachutes.js?v=120';
 import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=165';
 import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=165';
@@ -18,7 +18,7 @@ import {createConstructionSite,createConstructionEquipment} from './village-cons
 import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=153';
 import {palettes,hash} from './village-district-layout.js?v=80';
 import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=167';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=169';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=170';
 import {createChapterBanner,bannerIdentity} from './village-banners.js?v=167';
 import {createDistantCrowd} from './village-distant-crowd.js?v=165';
 import {createCrowdVisibility} from './village-crowd-visibility.js?v=76';
@@ -91,12 +91,13 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   const plotsOnStreet=new Map();
   const selectedStreets=new Set(selectedLots.map(lot=>lot.street));
   for(const lot of lots)if(selectedStreets.has(lot.street))plotsOnStreet.set(lot.street,(plotsOnStreet.get(lot.street)||0)+1);
+  const onIslandStreet=z=>!theme?.floating||(z>=streetTheme.island.streetStart&&z<=streetTheme.island.streetEnd);
   for(const [street,plots] of plotsOnStreet){
     const ox=streetOriginX(street);
     [-1,1].forEach(side=>{
-      [-31,-10,10,31].forEach(z=>{const x=ox+side*7.6;cylinder(world,x,2,z,.07,4,0x3b3a46);box(world,x,4.1,z,.55,.12,.55,0x353444);const glow=box(world,x,3.82,z,.34,.45,.34,mat(0xffdea0,0xffbb55));glow.castShadow=false;const pool=new THREE.Mesh(new THREE.CircleGeometry(1.3,20),new THREE.MeshBasicMaterial({color:0xffd196,transparent:true,opacity:.07,depthWrite:false}));pool.rotation.x=-Math.PI/2;pool.position.set(x,.19,z);world.add(pool);});
-      [-33,-9.5,9.5,28.5].forEach(z=>tree(ox+side*24,z,.45));
-      [-9,10].forEach(z=>{box(world,ox+side*9,.6,z,1,.2,2.3,0x85694f);box(world,ox+side*9.4,1,z,.13,.65,2.3,0x85694f);[-.8,.8].forEach(d=>box(world,ox+side*9,.3,z+d,.8,.6,.12,0x333747));});
+      [-31,-10,10,31].filter(onIslandStreet).forEach(z=>{const x=ox+side*7.6;cylinder(world,x,2,z,.07,4,0x3b3a46);box(world,x,4.1,z,.55,.12,.55,0x353444);const glow=box(world,x,3.82,z,.34,.45,.34,mat(0xffdea0,0xffbb55));glow.castShadow=false;const pool=new THREE.Mesh(new THREE.CircleGeometry(1.3,20),new THREE.MeshBasicMaterial({color:0xffd196,transparent:true,opacity:.07,depthWrite:false}));pool.rotation.x=-Math.PI/2;pool.position.set(x,.19,z);world.add(pool);});
+      [-33,-9.5,9.5,28.5].filter(onIslandStreet).forEach(z=>tree(ox+side*24,z,.45));
+      [-9,10].filter(onIslandStreet).forEach(z=>{box(world,ox+side*9,.6,z,1,.2,2.3,0x85694f);box(world,ox+side*9.4,1,z,.13,.65,2.3,0x85694f);[-.8,.8].forEach(d=>box(world,ox+side*9,.3,z+d,.8,.6,.12,0x333747));});
     });
     for(let row=3;row<Math.ceil(plots/2);row++)for(const side of [-1,1]){
       const z=-19+row*19;landscapeKit.lamp(world,ox+side*7.6,z+9);tree(ox+side*24,z+9.5,.45);
@@ -316,7 +317,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     return updated;
   }
   animateCrowd(0);
-  const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors,metric,{schoolName:theme?.schoolName||''});world.add(competition.root);competition.board.position.z+=extension;
+  const competition=createCompetition(THREE,chapters,anchors,layout?.anchors||anchors,metric,{schoolName:theme?.schoolName||''});world.add(competition.root);if(theme?.floating)competition.board.position.z=streetTheme.island.streetEnd+5;else competition.board.position.z+=extension;
   if(!theme?.floating){const entrance=createVillageEntrance(THREE,extension);world.add(entrance);}
   // Batch repeated architectural parts so phones draw whole sets at once.
   world.updateMatrixWorld(true);
@@ -331,7 +332,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   const emptyAnchor=anchors.find(a=>a.id==='empty');
   const beacon=emptyAnchor?createLotBeacon(THREE,emptyAnchor.lot):null;
   if(beacon){world.add(beacon.root);pickables.push(beacon.board);}
-  const nightLife=createNightLife(THREE,world,layout?.anchors||anchors,chapters);world.add(nightLife.root);nightLife.fire.position.z+=extension;
+  const nightLife=createNightLife(THREE,world,layout?.anchors||anchors,chapters);world.add(nightLife.root);if(theme?.floating)nightLife.fire.position.z=streetTheme.island.streetEnd-1;else nightLife.fire.position.z+=extension;
   const setHouseNight=nightLife.setNight;nightLife.setNight=enabled=>{setHouseNight(enabled);backyards.setNight(enabled);};
   function animateEffects(time){backyards.animate(time);beacon?.animate(time);if(nightLife.root.visible)nightLife.animate(time);}
   collect();

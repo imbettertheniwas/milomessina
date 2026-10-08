@@ -1,4 +1,4 @@
-import {createFloatingIsland} from './village-island.js?v=167';
+import {createFloatingIsland} from './village-island.js?v=170';
 import {createCampusKit} from './village-campus-kit.js?v=153';
 import {createSchoolEntrance} from './village-school-signs.js?v=163';
 const themes={
@@ -21,7 +21,7 @@ const themes={
 export function schoolTheme(school){if(!school)return null;const base=themes[school.theme]||themes[school.region]||themes.midwest;return {...base,floating:true,schoolName:school.name,sky:0xa5d6f3,seed:school.id,description:school.character||`${base.label} · ${school.city||school.name}${school.state?', '+school.state:''}`};}
 export function createSchoolDistricts(T,school,extension=0,chapters=school.chapters||[]){
  const island=createFloatingIsland(T,school,chapters),kit=createCampusKit(T),theme=schoolTheme(school);
- const entrance=createSchoolEntrance(T,school,kit,theme.wall);entrance.scale.setScalar(.48);entrance.position.set(island.spec.x,0,-35);island.root.add(entrance);
+ const entrance=createSchoolEntrance(T,school,kit,theme.wall);entrance.scale.setScalar(.48);entrance.position.set(island.spec.x,0,island.spec.streetStart-5);island.root.add(entrance);
  const resources=new Set();entrance.traverse(o=>{if(o.geometry)resources.add(o.geometry);for(const m of [].concat(o.material||[])){resources.add(m);for(const v of Object.values(m))if(v?.isTexture)resources.add(v);}});Object.values(kit.geometries).forEach(g=>resources.add(g));kit.vehicles.resources.forEach(r=>resources.add(r));
  const dispose=island.dispose;island.dispose=()=>{dispose();for(const r of resources)if(!r.userData?.sharedResource)r.dispose();};return {...island,theme};
 }

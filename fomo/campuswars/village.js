@@ -1,6 +1,6 @@
 import {isPartyNight} from './village-party-schedule.js?v=169';
 import {createNearbyIslands} from './village-nearby-islands.js?v=159';
-import {islandFootprint,islandOverview} from './village-island.js?v=167';
+import {islandFootprint,islandOverview} from './village-island.js?v=170';
 import {backyardUnlocked} from './village-backyards.js?v=112';
 import {createVillagePopulation} from './village-population.js?v=167';
 import {createLiveArrivals} from './village-arrivals.js?v=167';
@@ -10,7 +10,7 @@ import {createFramePacer} from './village-frame-pacing.js?v=92';
 import {villageQuality,createResolutionBudget} from './village-quality.js?v=127';
 import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=169';
+import {createVillageRendererAsync} from './village-renderer.js?v=170';
 import {chapterSceneKey} from './village-startup.js?v=128';
 import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
 import {createDistricts} from './village-districts.js?v=169';
@@ -22,7 +22,7 @@ import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=153';
 import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=167';
 
 import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
-import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=167';
+import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=170';
 import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=156';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');

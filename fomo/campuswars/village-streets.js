@@ -1,4 +1,4 @@
-import {islandFloorGeometry} from './village-island.js?v=167';
+import {islandFloorGeometry} from './village-island.js?v=170';
 import {villageQuality} from './village-quality.js?v=127';
 import {createGrassMaterial} from './village-grass.js?v=167';
 import {hash} from './village-district-layout.js?v=80';
@@ -122,14 +122,17 @@ export function createStreetNetwork(T,theme=null){
     if(theme?.floating){
       // A short residential lane belongs to each island; no roads run over its edge.
       lawnPaint=true;rect('#718753',-150,-150,300,300);mask.fillStyle='#ffffff';mask.fillRect(0,0,300,300);lawnPaint=false;
+      const start=theme.island?.streetStart??-31,end=(theme.island?.streetEnd??43)-(theme.island?.extension??0);
       for(const ox of [-100,0,100]){
-        line('#bfc0b5',[[ox,-31],[ox,43]],15);
-        line('#505a60',[[ox,-31],[ox,43]],10);
-        for(let z=-25;z<39;z+=9)rect('#c5bea5',ox-.09,z,.18,2.6);
+        line('#bfc0b5',[[ox,start],[ox,end]],15);
+        line('#505a60',[[ox,start],[ox,end]],10);
+        for(let z=start+6;z<end-4;z+=9)rect('#c5bea5',ox-.09,z,.18,2.6);
       }
     }
     grassMask=new T.CanvasTexture(maskCanvas);grassMask.wrapS=grassMask.wrapT=T.RepeatWrapping;grassMask.anisotropy=8;
     map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;
+    // Island UVs already use the canvas north/south orientation.
+    if(theme?.floating){map.flipY=false;grassMask.flipY=false;}
   }
   const bounds=new T.Vector4(),material=createGrassMaterial(T,map,grassMask,bounds);material.userData.campusBounds=bounds;
   if(theme){

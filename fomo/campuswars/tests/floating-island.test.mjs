@@ -30,3 +30,12 @@ test('parachute arrival ends at the full island overview with a continuous orbit
  for(let i=0;i<vertices.count;i++){const point=new T.Vector3().fromBufferAttribute(vertices,i).project(camera);assert(Math.abs(point.x)<1&&Math.abs(point.y)<1,'the entire island must fit the viewport');}
  island.dispose();drop.dispose();}
 });
+
+test('school islands and their roads are centered on the occupied and claim rows',()=>{
+ for(const count of [0,1,2,3,6,19,20,40]){
+  const lots=createLots(count),first=Math.min(...lots.map(l=>l.z)),last=Math.max(...lots.map(l=>l.z)),spec=islandFootprint(chapters(count));
+  assert.equal(spec.z,(first+last)/2,'equal land on both ends of the chapter row');
+  assert.equal((spec.streetStart+spec.streetEnd)/2,spec.z,'the road follows the same center');
+  assert.equal(first-spec.streetStart,spec.streetEnd-last,'equal road beyond the first and last plots');
+ }
+});

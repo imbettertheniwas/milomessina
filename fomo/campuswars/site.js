@@ -194,7 +194,7 @@
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
   import('./village-national.js?v=158').then(m=>m.createNationalNavigation());
-  import('./village.js?v=169').catch(error => {
+  import('./village.js?v=170').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Refresh the page or join Greek Wars using the link above.';
     document.getElementById('village').classList.remove('intro-playing');

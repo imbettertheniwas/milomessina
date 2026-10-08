@@ -6,8 +6,9 @@ export function islandFootprint(chapters=[]){
  const lots=createLots(chapters.length),members=chapters.reduce((n,c)=>n+Math.max(0,Number(c.joined)||0),0),extension=rowExtension(chapters.length);
  const growth=2+Math.sqrt(members)*.16+chapters.length*.15;
  const minX=Math.min(-32,...lots.map(l=>l.x-23)),maxX=Math.max(32,...lots.map(l=>l.x+23));
- const minZ=-40,maxZ=Math.max(52+extension,...lots.map(l=>l.z+20));
- const spec={x:(minX+maxX)/2,z:(minZ+maxZ)/2,rx:(maxX-minX)/2,rz:(maxZ-minZ)/2,depth:36+Math.sqrt(chapters.length)*2+Math.sqrt(members)*.25,members,chapters:chapters.length};
+ const firstRow=Math.min(...lots.map(l=>l.z)),lastRow=Math.max(...lots.map(l=>l.z));
+ const minZ=firstRow-27,maxZ=lastRow+27;
+ const spec={x:(minX+maxX)/2,z:(minZ+maxZ)/2,rx:(maxX-minX)/2,rz:(maxZ-minZ)/2,depth:36+Math.sqrt(chapters.length)*2+Math.sqrt(members)*.25,members,chapters:chapters.length,extension,streetStart:firstRow-17,streetEnd:lastRow+17};
  let support=1;const power=2/.6;
  for(const lot of lots)for(const dx of [-20,20])for(const dz of [-9,9])support=Math.max(support,Math.pow(Math.pow(Math.abs(lot.x+dx-spec.x)/spec.rx,power)+Math.pow(Math.abs(lot.z+dz-spec.z)/spec.rz,power),1/power)/.94);
  spec.rx=spec.rx*support+growth;spec.rz=spec.rz*support+growth;return spec;
