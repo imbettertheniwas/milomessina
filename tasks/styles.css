@@ -111,7 +111,8 @@ button:hover{background:var(--campus-deep)}
 .linkedin-role h3,.linkedin-role .linkedin-company{color:#191919}
 
 /* A school-colored arrival, shown once after successful account creation. */
-body.campus-arriving{overflow:hidden}
+body.campus-arriving{overflow:hidden;background:#121215}
+body.campus-arriving>main,body.campus-arriving>.topbar,body.campus-arriving>.skip-link{visibility:hidden}
 #campus-welcome{--arrival-accent:var(--blue);position:fixed;inset:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:38px clamp(24px,5vw,76px);border:0;border-radius:0;overflow:hidden;background:#121215;color:white;box-shadow:none;isolation:isolate}
 #campus-welcome[open]{display:flex;flex-direction:column;justify-content:space-between;animation:arrival-open .4s ease-out both}
 #campus-welcome::backdrop{background:#121215;backdrop-filter:none}
