@@ -36,3 +36,5 @@ FOMO is the sole active company. Each offer has an explicit company ID so the pr
 The LinkedIn experience card is a preview until all five distinct FOMO core tasks are server-approved. Referral approval and checked boxes cannot unlock it. Once eligible, members can copy the experience text and add their actual dates. Team-building and internship copy describes the intended program; no team accounts or automatic job records are created.
 
 Local-only UI fixtures: visit /qa-member-preview or /qa-member-preview?approved=5 on the isolated preview server. These synthetic accounts never reach production.
+
+Successful password signup plays a school-colored welcome reveal (`welcome-reveal.js`); normal sign-in and session restoration skip it. Members can enter immediately or wait about six seconds. Reduced-motion users get a static welcome with manual entry. The public form stays concise. Preview the reveal with `/qa-member-preview?welcome=1`; add `&school=university-of-washington` to inspect another campus palette.
