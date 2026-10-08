@@ -20,7 +20,7 @@ const html=`<!doctype html>
 <dialog id="campus-welcome" aria-labelledby="arrival-title" aria-describedby="arrival-description">
 <div class="arrival-grid" aria-hidden="true"></div><div class="arrival-halo" aria-hidden="true"></div>
 <div class="arrival-top"><span>campus tasks.</span></div>
-<div class="arrival-content"><div class="arrival-eyes" aria-hidden="true"></div><p class="arrival-kicker">WELCOME TO CAMPUS TASKS</p><h2 id="arrival-title" data-arrival-name>You’re in.</h2><div class="arrival-campus"><span class="arrival-school-mark"><img data-arrival-logo alt="" width="32" height="32"></span><span data-arrival-school>Your campus</span><span class="arrival-verified" aria-label="Confirmed">✓</span></div><p id="arrival-description">Your campus. Your call.</p><p class="arrival-detail">Build your team. Choose your moves.<br>Make something happen.</p></div>
+<div class="arrival-content"><div class="arrival-eyes" aria-hidden="true"></div><p class="arrival-kicker">WELCOME TO CAMPUS TASKS</p><h2 id="arrival-title" data-arrival-name>You’re in.</h2><div class="arrival-campus"><span class="arrival-school-mark"><img data-arrival-logo alt="" width="32" height="32"></span><span data-arrival-school>Your campus</span><span class="arrival-verified" aria-label="Confirmed">✓</span></div><p id="arrival-description">Your campus. Your call.</p><p class="arrival-detail">Build your team.<br>Make something happen.</p></div>
 <div class="arrival-bottom"><span>ONE CAMPUS. YOUR LEAD.</span><button type="button" data-arrival-enter autofocus>Enter my campus <span aria-hidden="true">↗</span></button></div><div class="arrival-progress" aria-hidden="true"></div>
 </dialog>
 <a class="skip-link" href="#opportunities">Skip to opportunities</a>
