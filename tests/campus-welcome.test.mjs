@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {showCampusWelcome} from '../tasks/welcome-reveal.js';
+import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from '../tasks/welcome-reveal.js';
 
 const profile={name:'Jordan Carter',school:{name:'New York University',primary:'#57068c'}};
 function fixture(t,reduced=false){
@@ -26,16 +26,16 @@ test('workspace entry waits through the entire intro and exit animation',async t
  assert.equal(showCampusWelcome(profile),welcome,'concurrent entries share the same gate');
  const entering=welcome.then(()=>{ready=true;});
  await Promise.resolve();assert.equal(ready,false);assert.equal(reveal.open,true);
- t.mock.timers.tick(6200);await Promise.resolve();
+ t.mock.timers.tick(1800);await Promise.resolve();
  assert.equal(ready,false);assert.equal(reveal.classList.contains('is-leaving'),true);
- t.mock.timers.tick(550);await entering;
+ t.mock.timers.tick(220);await entering;
  assert.equal(ready,true);assert.equal(reveal.open,false);assert.equal(body.classList.contains('campus-arriving'),false);
 });
 test('Enter my campus resolves only after the closing transition',async t=>{
  const {enter}=fixture(t);let ready=false;
  const entering=showCampusWelcome(profile).then(()=>{ready=true;});
  enter.dispatchEvent(new Event('click'));
- t.mock.timers.tick(549);await Promise.resolve();assert.equal(ready,false);
+ t.mock.timers.tick(219);await Promise.resolve();assert.equal(ready,false);
  t.mock.timers.tick(1);await entering;assert.equal(ready,true);
 });
 test('reduced-motion welcome remains gated until explicit entry',async t=>{
@@ -43,4 +43,22 @@ test('reduced-motion welcome remains gated until explicit entry',async t=>{
  const entering=showCampusWelcome(profile).then(()=>{ready=true;});
  t.mock.timers.tick(20000);await Promise.resolve();assert.equal(ready,false);assert.equal(reveal.open,true);
  enter.dispatchEvent(new Event('click'));await entering;assert.equal(ready,true);
+});
+
+test('pending authentication shows an immediate shell but cannot expose the workspace',async t=>{
+ const {reveal,enter}=fixture(t);let resolved=false;
+ const pending=beginCampusWelcome();pending.then(()=>{resolved=true;});
+ assert.equal(reveal.open,true);assert.equal(reveal.classList.contains('is-loading'),true);
+ assert.equal(reveal.querySelector('[data-arrival-name]').textContent,'Opening your campus');
+ enter.dispatchEvent(new Event('click'));t.mock.timers.tick(20000);await Promise.resolve();
+ assert.equal(resolved,false);
+ assert.equal(showCampusWelcome(profile),pending);
+ assert.equal(reveal.classList.contains('is-loading'),false);
+ t.mock.timers.tick(1800);t.mock.timers.tick(220);assert.equal(await pending,true);
+});
+test('failed authentication cancels the intro and allows a fresh attempt',async t=>{
+ const {reveal}=fixture(t);const pending=beginCampusWelcome();cancelCampusWelcome();
+ assert.equal(await pending,false);assert.equal(reveal.open,false);
+ const retry=showCampusWelcome(profile);assert.equal(reveal.open,true);
+ t.mock.timers.tick(1800);t.mock.timers.tick(220);assert.equal(await retry,true);
 });

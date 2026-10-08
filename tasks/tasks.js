@@ -1,4 +1,4 @@
-import {showCampusWelcome} from './welcome-reveal.js?v=20261008-entry2';
+import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from './welcome-reveal.js?v=20261008-entry3';
 import {approvedFomoTasks,experienceText} from './experience.js';
 import {newPasswordSalt,passwordProof} from './password.js';
 import {opportunityStatus,opportunityCounts} from './network.js';
@@ -38,14 +38,15 @@ async function enterWorkspace(profile){
  document.querySelector('main').hidden=true;
  document.querySelector('.topbar').hidden=true;
  dialog.close();
- await showCampusWelcome(profile);
- if(!authenticated||active!==profile)return;
- workspaceReady=true;render();void shared.start(profile);
+ const welcome=showCampusWelcome(profile);
+ void shared.start(profile);
+ if(!await welcome||!authenticated||active!==profile)return;
+ workspaceReady=true;render();
  const heading=document.querySelector('#campus-title');
  heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});
 }
 function setAuthMode(mode){authMode=mode;const signup=mode==='signup';document.querySelector('#signup-fields').hidden=!signup;document.querySelector('#password-confirm-field').hidden=!signup;nameInput.required=signup;schoolInput.required=signup;passwordConfirm.required=signup;passwordConfirm.disabled=!signup;passwordInput.minLength=signup?12:1;passwordInput.autocomplete=signup?'new-password':'current-password';document.querySelector('#password-label').textContent=signup?'Create a password':'Password';document.querySelector('#password-help').textContent=signup?'At least 12 characters. Use a password you don’t use elsewhere.':'Use the password you created for Campus Tasks. If you need help getting back in, contact your fomo point of contact.';document.querySelector('#auth-context').textContent=signup?(active?.token&&!active.account?'Secure your existing profile. Your progress stays with you.':'Create an account to choose campus tasks and track your work.'):'Sign in to pick up where you left off.';continueButton.textContent=signup?'Create account & enter':'Sign in';continueButton.disabled=authBusy||(signup&&!loaded);document.querySelector('#auth-create').setAttribute('aria-pressed',String(signup));document.querySelector('#auth-signin').setAttribute('aria-pressed',String(!signup));error.textContent='';}
-function openProfile(){workspaceReady=false;error.textContent='';nameInput.value=active?.name||'';cancelButton.hidden=true;document.querySelector('main').hidden=true;document.querySelector('.topbar').hidden=true;setAuthMode(active?.account?'signin':'signup');if(loaded)schoolPicker.select(active?.school.id||new URL(location.href).searchParams.get('school')||'');if(!dialog.open)dialog.showModal();}
+function openProfile(){cancelCampusWelcome();workspaceReady=false;error.textContent='';nameInput.value=active?.name||'';cancelButton.hidden=true;document.querySelector('main').hidden=true;document.querySelector('.topbar').hidden=true;setAuthMode(active?.account?'signin':'signup');if(loaded)schoolPicker.select(active?.school.id||new URL(location.href).searchParams.get('school')||'');if(!dialog.open)dialog.showModal();}
 async function loadSchools(){if(loading)return;loading=true;retryButton.hidden=true;continueButton.disabled=authMode==='signup';schoolInput.disabled=true;error.textContent='';try{const r=await fetch('/api/task-schools');if(!r.ok)throw Error();const data=await r.json();if(!Array.isArray(data.schools)||!data.schools.length)throw Error();schools=data.schools.filter(s=>typeof s.id==='string'&&typeof s.name==='string');schoolPicker.setSchools(schools);schoolInput.placeholder='School name or abbreviation, e.g. SDSU';loaded=true;schoolInput.disabled=false;continueButton.disabled=authBusy;schoolPicker.select(active?.school.id||new URL(location.href).searchParams.get('school')||'');if(active){const current=schools.find(s=>s.id===active.school.id);if(current){active.school=current;render();write();}else if(authenticated){if(!dialog.open)openProfile();schoolPicker.select('');error.textContent='Your saved school is no longer in the current list. Choose a listed school to continue.';}}}catch{error.textContent='We couldn’t load the school list. Please try again.';retryButton.hidden=false;schoolInput.placeholder='School list unavailable';}finally{loading=false;}}
 document.querySelector('#auth-new-profile').addEventListener('click',()=>{if(active&&!active.account){delete active.token;delete active.cloud;active.dirty=true;write();}history.replaceState(null,'',location.pathname);document.querySelector('#auth-new-profile').hidden=true;error.textContent='Your browser drafts will be copied into your new account.';});
 document.querySelector('#auth-create').addEventListener('click',()=>{setAuthMode('signup');if(!loaded)void loadSchools();});
@@ -57,6 +58,7 @@ form.addEventListener('submit',async event=>{
  if(signup&&(!name||!school)){error.textContent='Enter your name and choose a listed school.';return;}
  if(signup&&(password.length<12||password!==passwordConfirm.value)){error.textContent=password.length<12?'Use at least 12 characters for your password.':'Your passwords don’t match.';return;}
  authBusy=true;continueButton.disabled=true;continueButton.textContent=signup?'Creating your account…':'Signing in…';error.textContent='';
+ beginCampusWelcome();
  try{
   let out;
   if(signup){const salt=newPasswordSalt(),proof=await passwordProof(password,salt);const legacyToken=active?.token&&!active.account?active.token:new URLSearchParams(location.hash.slice(1)).get('profile')||'';out=await taskRequest(legacyToken,'signup',{email,name,schoolId:school.id,salt,proof});}
@@ -66,7 +68,7 @@ form.addEventListener('submit',async event=>{
   profile.token=out.token;profile.account=true;profile.email=email;profile.name=out.member.name;profile.school=schools.find(s=>s.id===out.member.schoolId)||{id:out.member.schoolId,name:out.member.schoolName};
   if(!previous){profile.cloud={member:out.member,tasks:out.tasks,steps:out.steps||[]};profile.dirty=signup&&Object.keys(profile.progress).length>0;profiles.profiles.push(profile);}
   active=profile;profiles.activeId=profile.id;authenticated=true;passwordInput.value='';passwordConfirm.value='';write();history.replaceState(null,'',location.pathname);await enterWorkspace(profile);
- }catch(e){error.textContent=e.message||'Couldn’t sign in. Please try again.';document.querySelector('#auth-new-profile').hidden=e.code!=='LEGACY_NOT_FOUND';}
+ }catch(e){cancelCampusWelcome();if(!dialog.open)dialog.showModal();error.textContent=e.message||'Couldn’t sign in. Please try again.';document.querySelector('#auth-new-profile').hidden=e.code!=='LEGACY_NOT_FOUND';}
  finally{authBusy=false;continueButton.disabled=authMode==='signup'&&!loaded;continueButton.textContent=authMode==='signup'?'Create account & enter':'Sign in';}
 });
 dialog.addEventListener('cancel',event=>event.preventDefault());retryButton.addEventListener('click',()=>void loadSchools());
@@ -87,9 +89,11 @@ document.querySelector('#chapter-referral').addEventListener('submit',async even
 document.querySelector('#copy-experience').addEventListener('click',async()=>{if(!authenticated||approvedFomoTasks(active)!==5)return;const text=experienceText(active.school.name);try{await navigator.clipboard.writeText(text);document.querySelector('#experience-message').textContent='Copied. Add your actual dates and adjust the details to match your work.';}catch{const field=document.querySelector('#experience-copy-fallback');field.hidden=false;field.value=text;field.select();document.querySelector('#experience-message').textContent='Select and copy your experience below.';}});
 // Validate the session before exposing any saved profile or task workspace.
 openProfile();
+const savedProfile=active?.account&&active.token?active:null;
+if(savedProfile)beginCampusWelcome();
+void loadSchools();
 void (async()=>{
- await loadSchools();
- if(active?.account&&active.token){try{await taskRequest(active.token,'get');authenticated=true;await enterWorkspace(active);}catch(e){error.textContent=e.code==='AUTH_REQUIRED'?'Sign in to continue.':e.message;}}
+ if(savedProfile){try{await taskRequest(savedProfile.token,'get');if(active!==savedProfile)return;authenticated=true;await enterWorkspace(savedProfile);}catch(e){cancelCampusWelcome();error.textContent=e.code==='AUTH_REQUIRED'?'Sign in to continue.':e.message;}}
  paintBoard();
 })();
 window.addEventListener('campus-auth-required',event=>{if(event.detail?.token!==active?.token)return;authenticated=false;openProfile();});
