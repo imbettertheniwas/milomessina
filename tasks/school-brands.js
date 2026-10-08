@@ -1488,5 +1488,13 @@ export const schoolBrands=[
     "secondary": "#FFFFFF",
     "logoBackground": "white",
     "source": "https://www.kenyon.edu/favicons/apple-touch-icon.png"
+  },
+  {
+    "name": "Towson University",
+    "logo": "/tasks/assets/schools/towson.png",
+    "primary": "#FFC229",
+    "secondary": "#000000",
+    "logoBackground": "white",
+    "source": "https://a.espncdn.com/i/teamlogos/ncaa/500/119.png"
   }
 ];
