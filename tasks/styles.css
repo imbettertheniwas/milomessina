@@ -10,3 +10,58 @@
 [hidden]{display:none!important}dialog{max-width:470px;width:calc(100% - 32px);border:1px solid #CDD2F0;border-radius:18px;padding:30px;color:var(--navy);background:#FAFBFF;box-shadow:0 24px 90px #221D4B40}dialog::backdrop{background:#171335b8;backdrop-filter:blur(5px)}dialog h2{font-size:30px;line-height:1.2}dialog p{color:var(--muted);font-size:16px;line-height:1.5}dialog label{display:block;font-weight:500;font-size:14px;margin:18px 0 7px}dialog input,dialog select{width:100%;min-height:48px;padding:11px 12px;background:white;color:#221D4B;border:1px solid #B5BDE8;border-radius:8px;font:inherit}dialog select{white-space:normal}dialog .school-help{font-size:13px;margin:8px 0 0}#welcome-error{color:#ab2038;font-size:14px}#welcome-error:empty{display:none}.welcome-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:24px}.welcome-actions button{flex:1}.quiet-button{color:var(--navy);background:#EAEDFF}.quiet-button:hover{color:white}.profile-button{margin-left:auto;background:#ffffff18;color:#fff;border:1px solid #ffffff40}.profile-button:hover{background:#ffffff28}.campus-identity{display:flex;align-items:center;gap:20px;margin:0 0 25px}.school-logo-wrap{display:grid;place-items:center;width:108px;height:108px;padding:13px;background:white;border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 28px #221D4B0A;flex-shrink:0}.school-logo-wrap img{width:100%;height:100%;object-fit:contain}#member-greeting{font-size:18px;font-weight:500;margin:0}body.has-school{background:color-mix(in srgb,var(--school-primary) 5%,white)}body.has-school .topbar{background:var(--school-ink);border-bottom:5px solid var(--school-secondary)}body.has-school .task-card{background:#fff;border-color:color-mix(in srgb,var(--school-primary) 20%,white)}body.has-school .status{background:color-mix(in srgb,var(--school-primary) 10%,white)}body.has-school .reward-icon,body.has-school .pitch,body.has-school .referral{background:var(--school-ink)}body.has-school .referral-top,body.has-school .referral p,body.has-school .bonus-note,body.has-school .bonus-amount span,body.has-school .referral li::marker,body.has-school .pitch>span{color:#ffffffd9}body.has-school .referral .bonus-amount,body.has-school .referral strong{color:white}body.has-school #campus-title{max-width:1000px}body.has-school .eyebrow{color:var(--blue)}.task-card.is-complete{border-color:var(--blue);box-shadow:inset 4px 0 var(--blue)}.task-card.is-complete .status{background:var(--blue);color:white}button:disabled{opacity:.55;cursor:wait}
 @media(max-width:650px){dialog{padding:23px}.topbar{gap:14px;flex-wrap:wrap}.topbar>span{padding-left:14px}.profile-button{font-size:13px;padding:8px 12px;min-height:36px}.campus-identity{gap:15px;margin-bottom:22px}.school-logo-wrap{width:80px;height:80px;padding:10px}#member-greeting{font-size:16px}}
 .bonus-column{display:flex;flex-direction:column;gap:20px;position:sticky;top:24px}.bonus-column .referral{position:static}.completion-bonus{padding:23px;border:1px solid var(--border);border-radius:14px;background:white}.completion-bonus .completion-amount{font-size:52px;font-weight:700;letter-spacing:-2px;margin:12px 0;line-height:1;color:var(--blue)}.completion-bonus h2{font-size:22px}.completion-bonus>p:not(.kicker):not(.completion-amount){font-size:14px;color:var(--muted);line-height:1.5}#bonus-progress{font-weight:500;border-top:1px solid var(--border);padding-top:16px}.calendar-panel{margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:22px}.file-drop{position:relative;margin-top:15px;border:2px dashed var(--border);border-radius:12px;padding:22px;text-align:center;background:#FAFBFF}.file-drop.drag-over{border-color:var(--blue);background:#EAEDFF}.file-drop>label{font-size:16px;font-weight:500;display:block}.file-drop>label>span{color:var(--blue);text-decoration:underline}.file-drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.file-drop:focus-within{outline:3px solid var(--blue);outline-offset:3px}.file-drop p,.calendar-help{font-size:13px;color:var(--muted);margin:10px 0 0}.calendar-divider{font-size:14px;font-weight:500;margin:24px 0 14px}.calendar-event{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:10px;padding:14px 0;border-top:1px solid var(--border);align-items:end}.calendar-event label{font-size:13px}.calendar-event input{width:100%;min-width:0;font:inherit;font-size:16px;border:1px solid var(--border);border-radius:7px;padding:10px;margin-top:6px}.calendar-event button{padding:11px;font-size:13px}#calendar-attachment{padding:15px;border:1px solid var(--border);border-radius:9px;margin-top:12px;overflow-wrap:anywhere}#calendar-attachment>div{display:flex;gap:8px;margin-top:10px}#calendar-status{font-size:14px;color:var(--blue)}#calendar-status:empty{display:none}.completion-bonus.earned{border-color:var(--blue);box-shadow:inset 0 4px var(--blue)}@media(max-width:1000px){.calendar-event{grid-template-columns:1fr 1fr}.calendar-event label:first-child{grid-column:1/-1}}@media(max-width:760px){.bonus-column{position:static}}@media(max-width:450px){.calendar-event{grid-template-columns:1fr}.calendar-event label:first-child{grid-column:auto}}
+/* Lighter, more delicate campus cards. */
+:root{--border:#E2E3ED;--white:#F7F8FD;--muted:#69677C}
+body{background:#F7F8FD}
+main{max-width:1190px;padding-top:48px}
+h1{font-size:40px;font-weight:500;letter-spacing:-1.2px}
+h2{font-weight:500}
+.eyebrow,.kicker{font-weight:500;font-size:11px;letter-spacing:1.25px}
+.topbar{min-height:72px;padding-top:18px;padding-bottom:18px}
+.topbar img{width:110px;height:21px}
+.topbar>span{font-size:11px}
+body.has-school .topbar{border-bottom-width:2px}
+.tasks-grid{gap:32px}
+.offers{gap:24px}
+.task-card{border-radius:20px;background:white}
+body.has-school{background:color-mix(in srgb,var(--school-primary) 2%,#FAFAFC)}
+body.has-school .task-card{border-color:color-mix(in srgb,var(--school-primary) 10%,white)}
+.card-top{padding:25px 28px 0;font-size:13px}
+.status{font-size:12px;padding:4px 10px;border-radius:20px}
+.reward{padding:22px 28px 26px;gap:18px}
+.reward-icon,body.has-school .reward-icon{width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--blue) 6%,white);color:var(--blue);border:1px solid color-mix(in srgb,var(--blue) 10%,white)}
+.reward-icon svg{width:22px;height:22px;stroke-width:1.5}
+.reward h2{font-size:24px;line-height:1.25}
+.description{font-size:15px;line-height:1.7}
+.perks{font-size:13px;font-weight:400;gap:8px 15px}
+summary{margin:0 28px;border-color:var(--border);font-size:13px;padding:17px 0}
+.task-body{padding:28px;border-color:var(--border)}
+.pitch,body.has-school .pitch{background:color-mix(in srgb,var(--blue) 4%,white);color:var(--navy);border:1px solid color-mix(in srgb,var(--blue) 10%,white);border-radius:14px}
+.pitch>span,body.has-school .pitch>span{color:var(--muted);font-size:10px;letter-spacing:1.2px}
+.pitch blockquote{font-size:17px;font-weight:400;line-height:1.65}
+button{border-radius:22px;font-weight:400;padding:11px 18px}
+.profile-button{font-size:12px;border-color:#ffffff35}
+.quiet-button{background:color-mix(in srgb,var(--blue) 6%,white)}
+.referral,body.has-school .referral{background:color-mix(in srgb,var(--blue) 4%,white);color:var(--navy);border:1px solid var(--border);border-radius:20px;padding:25px}
+.referral-top,body.has-school .referral-top{color:var(--blue);font-size:10px;letter-spacing:1.1px}
+.referral p,body.has-school .referral p,.bonus-note,body.has-school .bonus-note{color:var(--muted);font-size:14px}
+.referral .bonus-amount,body.has-school .referral .bonus-amount{color:var(--blue);font-size:36px;letter-spacing:-1.3px;font-weight:400;margin:23px 0 18px}
+.bonus-amount span,body.has-school .bonus-amount span{font-size:26px;color:var(--blue)}
+.referral strong,body.has-school .referral strong{color:var(--navy)}
+.referral li::marker,body.has-school .referral li::marker{color:var(--blue)}
+.referral h2{font-size:21px;line-height:1.3}
+.bonus-note{border-color:var(--border);font-size:12px}
+.completion-bonus{padding:25px;border-radius:20px}
+.completion-bonus .completion-amount{font-size:44px;font-weight:400;letter-spacing:-1.5px;margin:16px 0}
+.completion-bonus h2{font-size:21px;line-height:1.3}
+.task-card.is-complete{box-shadow:none}
+body.has-school .task-card.is-complete{border-color:color-mix(in srgb,var(--blue) 30%,white)}
+.completion-bonus.earned{box-shadow:none}
+.school-logo-wrap{width:84px;height:84px;padding:12px;border-radius:20px;box-shadow:none}
+#member-greeting{font-size:16px;font-weight:400}
+dialog{border-color:var(--border);border-radius:24px;padding:34px;background:#FDFDFF;box-shadow:0 20px 80px #221D4B22}
+dialog::backdrop{background:#17133570;backdrop-filter:blur(7px)}
+dialog h2{font-size:29px;font-weight:500}
+dialog input,dialog select{border-color:var(--border);border-radius:12px}
+.file-drop{border-width:1px;background:#FCFCFF;border-radius:15px}
+@media(max-width:650px){main{padding-top:30px}h1{font-size:32px}.card-top{padding:22px 21px 0;flex-direction:row;align-items:center}.reward{padding:20px 21px 23px}.reward h2{font-size:23px}.task-body{padding:21px}summary{margin:0 21px}.pitch{padding:18px}.pitch blockquote{font-size:16px}.school-logo-wrap{width:68px;height:68px;padding:9px}.campus-identity{gap:14px}dialog{padding:26px}.referral .bonus-amount{font-size:36px}.perks{gap:8px}.topbar{gap:14px}}
