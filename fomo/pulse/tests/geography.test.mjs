@@ -31,3 +31,11 @@ test('the five previously unconfirmed campuses contribute to their verified loca
  assert.deepEqual(marketRows(rows,{geography:'KS'}).map(c=>c.school),['University of Kansas']);
  assert.equal(schoolLocation('The George Washington University').id,schoolLocation('George Washington University').id);
 });
+test('the eleven campuses flagged as unconfirmed on 2026-10-08 resolve to their verified states',()=>{
+ const locations=[['Austin Community College','TX'],['CUNY City College of NY','NY'],['Indiana University of Pennsylvania','PA'],['Kenyon College','OH'],['Loyola University Chicago','IL'],['Towson University','MD'],['State University of New York College at New Paltz','NY'],['University of Chicago','IL'],['University of Virginia, Charlottesville','VA'],['University of Washington','WA'],['University of Wisconsin - Madison','WI']];
+ for(const [name,state] of locations)assert.equal(schoolLocation(name)?.state,state,name);
+ const result=summarizeStates(locations.map(([name],i)=>c(String(i),name,1)));
+ assert.equal(result.other.length,0);assert.equal(result.regions.reduce((sum,s)=>sum+s.chapters,0),11);
+ assert.equal(schoolLocation('Indiana University of Pennsylvania').state,'PA');assert.equal(schoolLocation('Indiana University').state,'IN');
+ assert.equal(schoolLocation('Washington State University').state,'WA');assert.notEqual(schoolLocation('University of Washington').id,schoolLocation('Washington State University').id);
+});

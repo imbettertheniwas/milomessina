@@ -1062,5 +1062,104 @@ export const schoolStates = [
     ],
     "state": "RI",
     "source": "https://www.uri.edu/about/"
+  },
+  // Previously unconfirmed live-feed schools verified against official university locations, 2026-10-08.
+  {
+    "id": "us-cuny-city-college",
+    "name": "CUNY City College of NY",
+    "aliases": [
+      "CUNY City College",
+      "City College of New York",
+      "The City College of New York"
+    ],
+    "state": "NY",
+    "source": "https://www.ccny.cuny.edu/about"
+  },
+  {
+    "id": "us-indiana-pennsylvania",
+    "name": "Indiana University of Pennsylvania",
+    "aliases": [
+      "Indiana University of Pennsylvania-Main Campus"
+    ],
+    "state": "PA",
+    "source": "https://www.iup.edu/about/"
+  },
+  {
+    "id": "us-kenyon",
+    "name": "Kenyon College",
+    "aliases": [],
+    "state": "OH",
+    "source": "https://www.kenyon.edu/about-kenyon/"
+  },
+  {
+    "id": "us-loyola-chicago",
+    "name": "Loyola University Chicago",
+    "aliases": [],
+    "state": "IL",
+    "source": "https://www.luc.edu/about/"
+  },
+  {
+    "id": "us-suny-new-paltz",
+    "name": "State University of New York College at New Paltz",
+    "aliases": [
+      "SUNY New Paltz",
+      "SUNY at New Paltz"
+    ],
+    "state": "NY",
+    "source": "https://www.newpaltz.edu/about/"
+  },
+  {
+    "id": "us-uchicago",
+    "name": "University of Chicago",
+    "aliases": [
+      "The University of Chicago"
+    ],
+    "state": "IL",
+    "source": "https://www.uchicago.edu/en/about"
+  },
+  {
+    "id": "us-uva",
+    "name": "University of Virginia, Charlottesville",
+    "aliases": [
+      "University of Virginia",
+      "University of Virginia-Main Campus"
+    ],
+    "state": "VA",
+    "source": "https://www.virginia.edu/aboutuva"
+  },
+  {
+    "id": "us-uw-seattle",
+    "name": "University of Washington",
+    "aliases": [
+      "University of Washington-Seattle Campus",
+      "University of Washington - Seattle"
+    ],
+    "state": "WA",
+    "source": "https://www.washington.edu/about/"
+  },
+  {
+    "id": "us-uw-madison",
+    "name": "University of Wisconsin - Madison",
+    "aliases": [
+      "University of Wisconsin-Madison"
+    ],
+    "state": "WI",
+    "source": "https://www.wisc.edu/about/"
+  },
+  {
+    "id": "us-austin-cc",
+    "name": "Austin Community College",
+    "aliases": [
+      "Austin Community College District"
+    ],
+    "state": "TX",
+    "source": "https://www.austincc.edu/about-acc"
+  },
+  {
+    "id": "us-towson",
+    "name": "Towson University",
+    "aliases": [],
+    "state": "MD",
+    "source": "https://www.towson.edu/about/"
   }
 ];
