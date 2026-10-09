@@ -194,6 +194,7 @@ function doGet() {
     hint: 'fomo campus form receiver is live',
     identity: true,
     campusTasks: true,
+    campusTasksOperatorTools: true,
     beta: typeof betaApi === 'function',
     betaPasswordless: true,
     betaPermanentGroup: true,
@@ -4514,7 +4515,66 @@ function ctDeleteSignup(body,actor){
   if(ctRows('deleted',CT_DELETED).some(function(d){return d.id===id;}))return ctManagerList();
   if(!ctMembers().some(function(m){return m.id===id;}))throw new Error('Member not found.');
   ctWrite('deleted',CT_DELETED,{id:id,actor:actor,at:ctNow()});
+  ctAudit(id,'','deleted',actor,{});
   return ctManagerList();
+}
+/* Operator tools (campusTasks version 5). The payment ledger reads every
+   member row, including tombstoned ones, so a deletion never hides money
+   that was already recorded as paid. Restoring a signup removes its
+   tombstone, but its old sessions stay revoked and the member signs in again. */
+var CT_NOTES=['id','notes','updatedBy','updatedAt'];
+function ctActiveMember(id){var member=ctMembers().filter(function(m){return m.id===String(id||'');})[0];if(!member)throw new Error('Member not found.');return member;}
+function ctPayouts(){
+  var deleted=ctRows('deleted',CT_DELETED),byId={},out=[];
+  var entry=function(m,kind,taskId,amount,paidAt,paidBy,reference){return{memberId:m.id,name:m.name,schoolName:m.schoolName,kind:kind,taskId:taskId,amount:Number(amount)||0,paidAt:paidAt,paidBy:paidBy,reference:reference,deleted:deleted.some(function(d){return d.id===m.id;})};};
+  ctRows('members',CT_MEMBERS).forEach(function(m){byId[m.id]=m;if(m.bonusPaidAt)out.push(entry(m,'bonus','',100,m.bonusPaidAt,m.bonusPaidBy,m.bonusReference));});
+  ctRows('progress',CT_TASKS).forEach(function(t){var m=byId[t.memberId];if(m&&t.paidAt)out.push(entry(m,'referral',t.taskId,t.rewardAmount,t.paidAt,t.paidBy,t.paymentReference));});
+  return out.sort(function(a,b){return String(a.paidAt).localeCompare(String(b.paidAt));});
+}
+function ctRestoreSignup(body,actor){
+  var id=String(body.memberId||''),tombstones=ctRows('deleted',CT_DELETED).filter(function(d){return d.id===id;});
+  if(!tombstones.length){if(id&&ctMembers().some(function(m){return m.id===id;}))return ctManagerList();throw new Error('Member not found.');}
+  if(!ctRows('members',CT_MEMBERS).some(function(m){return m.id===id;}))throw new Error('Member not found.');
+  // The email may have opened a fresh account after the deletion; two live accounts must never share a login.
+  var active=ctMembers(),credentials=ctRows('credentials',CT_CREDENTIALS);
+  if(credentials.some(function(c){return c.memberId===id&&credentials.some(function(o){return o.email===c.email&&o.memberId!==id&&active.some(function(m){return m.id===o.memberId;});});}))throw new Error('This email now belongs to a newer account. Delete that account before restoring this one.');
+  ctRevoke(id);
+  var sheet=betaTable('campus_tasks_deleted',CT_DELETED,false);
+  tombstones.sort(function(a,b){return b._row-a._row;}).forEach(function(d){sheet.deleteRow(d._row);});
+  ctAudit(id,'','restored',actor,{});
+  return ctManagerList();
+}
+function ctRevoke(memberId){var now=Date.now(),count=0;ctRows('sessions',CT_SESSIONS).forEach(function(s){if(s.memberId===memberId&&Number(s.expiresAt)>now){s.expiresAt=0;ctWrite('sessions',CT_SESSIONS,s);count++;}});return count;}
+function ctRevokeSessions(body,actor){var member=ctActiveMember(body.memberId),count=ctRevoke(member.id);if(count)ctAudit(member.id,'','signed_out',actor,{sessions:count});return ctManagerList();}
+function ctSaveNote(body,actor){
+  var member=ctActiveMember(body.memberId),notes=ctText(body.notes,4000),row=ctRows('notes',CT_NOTES).filter(function(n){return n.id===member.id;})[0]||{id:member.id};
+  if(String(row.notes||'')===notes)return ctManagerList();
+  if(String(body.since||'')!==String(row.updatedAt||''))throw new Error('These notes changed since you opened them. Refresh before saving.');
+  row.notes=notes;row.updatedBy=actor;row.updatedAt=ctNow();ctWrite('notes',CT_NOTES,row);
+  return ctManagerList();
+}
+// Rewrites a table in place without the rows `keep` rejects. Stored values, including the formula guard, are copied unchanged.
+function ctPruneTable(table,columns,keep){
+  var sheet=betaTable('campus_tasks_'+table,columns,false);if(!sheet)return 0;
+  var last=sheet.getLastRow();if(last<2)return 0;
+  var range=sheet.getRange(2,1,last-1,columns.length),values=range.getValues();
+  var kept=values.filter(function(v){var row={};columns.forEach(function(k,i){row[k]=v[i];});return !!row.id&&keep(row);});
+  if(kept.length===values.length)return 0;
+  var blank=columns.map(function(){return '';});
+  range.setValues(kept.concat(values.slice(kept.length).map(function(){return blank;})));
+  return values.length-kept.length;
+}
+function ctPrune(){
+  internalRequireWrite();
+  var now=Date.now();
+  return{sessions:ctPruneTable('sessions',CT_SESSIONS,function(s){return Number(s.expiresAt)>now;}),
+    authLimits:ctPruneTable('auth_limits',CT_AUTH_LIMITS,function(r){return now-Number(r.windowStart)<=900000;})};
+}
+// Time-driven trigger entry point: in the Apps Script editor, Triggers → Add trigger → campusTasksMaintenance → Day timer.
+function campusTasksMaintenance(){
+  var lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{internalRequestBegin(false);return ctPrune();}
+  finally{internalRequestState=null;lock.releaseLock();}
 }
 function ctText(value,max){return String(value===undefined?'':value).trim().slice(0,max);}
 function ctJSON(value,fallback){try{return JSON.parse(value||'');}catch(e){return fallback;}}
@@ -4534,9 +4594,23 @@ function ctCalendarReady(c){return !!c.file||c.events.length>0&&c.events.every(f
 function ctSave(body,member){var task=String(body.taskId||'');if(!Object.prototype.hasOwnProperty.call(CT_COUNTS,task))throw new Error('Unknown task.');var existing=ctTasks(member.id).filter(function(t){return t.taskId===task;})[0],draft=ctClean(body,member,task),serialized=JSON.stringify(draft),submit=body.action==='submit';if(existing&&existing.draft===serialized&&(body.action==='save'||existing.status==='submitted'||existing.status==='approved'))return ctResponse(member);if(existing&&(existing.status==='approved'||existing.paidAt))throw new Error('This task has been approved. Ask fomo to request changes before editing.');if(Number(body.revision||0)!==Number(existing&&existing.revision||0))return reply(false,'This task changed on another device. Reload before editing.',{code:'CONFLICT'});if(submit&&(!draft.checks.every(Boolean)||!draft.chapter||task!=='calendar'&&!draft.notes))throw new Error('Complete the checklist and add your chapter and supporting details before submitting.');var row=existing||{id:member.id+':'+task,memberId:member.id,taskId:task,revision:0},now=ctNow();row.draft=serialized;row.revision=Number(row.revision||0)+1;row.updatedAt=now;if(submit){row.snapshot=serialized;row.status='submitted';row.submittedAt=now;row.reviewedAt='';row.reviewedBy='';row.feedback='';}else if(row.status!=='changes_requested')row.status='draft';ctWrite('progress',CT_TASKS,row);member.updatedAt=now;ctWrite('members',CT_MEMBERS,member);return ctResponse(member);}
 function ctUpload(body,member){var f=body.file||{},name=ctText(f.name,180),ext=name.split('.').pop().toLowerCase(),types={pdf:'application/pdf',csv:'text/csv',ics:'text/calendar',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',xls:'application/vnd.ms-excel',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',mp4:'video/mp4',mov:'video/quicktime'};if(!types[ext]||/[\x00-\x1f/\\]/.test(name))throw new Error('Choose a supported attachment.');if(typeof f.data!=='string'||!f.data||f.data.length>13981016||!/^[A-Za-z0-9+/]*={0,2}$/.test(f.data))throw new Error('Upload a file of at most 10 MB.');var bytes=Utilities.base64Decode(f.data);if(!bytes.length||bytes.length>10485760)throw new Error('Upload a file of at most 10 MB.');var hash=internalDigest(f.data),files=ctRows('files',CT_FILES).filter(function(v){return v.memberId===member.id;}),same=files.filter(function(v){return v.hash===hash&&v.name===name;})[0];if(same)return reply(true,null,{file:ctPublicFile(same)});if(files.length>=100)throw new Error('This profile has reached its file limit. Contact fomo for help.');var folderId=internalProperty('CAMPUS_TASKS_FOLDER'),folder;if(folderId)folder=DriveApp.getFolderById(folderId);else{folder=DriveApp.createFolder('fomo campus — private task calendars');internalSetProperty('CAMPUS_TASKS_FOLDER',folder.getId());}var file=folder.createFile(Utilities.newBlob(bytes,types[ext],name));var row={id:Utilities.getUuid(),memberId:member.id,driveId:file.getId(),name:name,type:types[ext],size:bytes.length,hash:hash,createdAt:ctNow()};ctWrite('files',CT_FILES,row);return reply(true,null,{file:ctPublicFile(row)});}
 function ctFile(body,member,manager){var row=ctRows('files',CT_FILES).filter(function(f){return f.id===body.fileId&&(manager||f.memberId===member.id);})[0];if(!row||!ctMembers().some(function(m){return m.id===row.memberId;}))throw new Error('File not found.');var file=DriveApp.getFileById(row.driveId);if(file.isTrashed())throw new Error('File unavailable.');var bytes=file.getBlob().getBytes(),data=Utilities.base64Encode(bytes);if(bytes.length>10485760||internalDigest(data)!==row.hash)throw new Error('The stored file changed.');var result=ctPublicFile(row);result.data=data;return reply(true,null,{file:result});}
-function ctManagerList(){var members=ctMembers(),active=function(r){return members.some(function(m){return m.id===r.memberId;});};return reply(true,null,{manager:true,members:members.map(ctPublicMember),tasks:ctRows('progress',CT_TASKS).filter(active).map(ctPublicTask),steps:ctSteps().filter(active).map(ctPublicStep),audit:ctRows('audit',CT_AUDIT).filter(active).slice(-300).map(function(r){var out={};CT_AUDIT.forEach(function(k){out[k]=r[k];});return out;})});}
+function ctManagerList(extra){
+  var members=ctMembers(),ids={},now=Date.now(),sessions={},seen={},audit=[];members.forEach(function(m){ids[m.id]=true;});
+  var active=function(r){return ids[r.memberId]===true;};
+  ctRows('sessions',CT_SESSIONS).forEach(function(s){if(active(s)&&Number(s.expiresAt)>now)sessions[s.memberId]=(sessions[s.memberId]||0)+1;});
+  // The newest 100 audit records per member, so a busy member never pushes out everyone else's review history.
+  ctRows('audit',CT_AUDIT).filter(active).reverse().forEach(function(r){seen[r.memberId]=(seen[r.memberId]||0)+1;if(seen[r.memberId]<=100){var out={};CT_AUDIT.forEach(function(k){out[k]=r[k];});audit.unshift(out);}});
+  var all=ctRows('members',CT_MEMBERS),out={manager:true,
+    members:members.map(function(m){var p=ctPublicMember(m);p.activeSessions=sessions[m.id]||0;return p;}),
+    tasks:ctRows('progress',CT_TASKS).filter(active).map(ctPublicTask),steps:ctSteps().filter(active).map(ctPublicStep),audit:audit,
+    notes:ctRows('notes',CT_NOTES).filter(function(n){return ids[n.id]===true;}).map(function(n){return{memberId:n.id,notes:n.notes,updatedBy:n.updatedBy,updatedAt:n.updatedAt};}),
+    payouts:ctPayouts(),
+    deleted:ctRows('deleted',CT_DELETED).map(function(d){var m=all.filter(function(m){return m.id===d.id;})[0]||{};return{id:d.id,name:m.name||'',schoolName:m.schoolName||'',deletedBy:d.actor,deletedAt:d.at};})};
+  if(extra)Object.keys(extra).forEach(function(k){out[k]=extra[k];});
+  return reply(true,null,out);
+}
 function ctManage(body,actor){var member=ctMembers().filter(function(m){return m.id===body.memberId;})[0];if(!member)throw new Error('Member not found.');var tasks=ctTasks(member.id),task=tasks.filter(function(t){return t.taskId===body.taskId;})[0],now=ctNow();if(body.action==='bonuspaid'){if(member.bonusPaidAt)return ctManagerList();if(!['dinner','filmer','host','travel','calendar'].every(function(id){return tasks.some(function(t){return t.taskId===id&&t.status==='approved';});}))throw new Error('Approve all five tasks before recording the $100 bonus payment.');var ref=ctText(body.reference,300);if(!ref)throw new Error('Add the payment reference.');ctAudit(member.id,'bonus','paid',actor,{amount:100,reference:ref});member.bonusPaidAt=now;member.bonusPaidBy=actor;member.bonusReference=ref;member.updatedAt=now;ctWrite('members',CT_MEMBERS,member);return ctManagerList();}if(!task)throw new Error('Task not found.');if(body.action==='review'&&ctSteps(member.id).some(function(s){return s.taskId===task.taskId;}))throw new Error('Review this task one step at a time.');if(body.action==='referralpaid'&&task.taskId==='referral'&&task.paidAt)return ctManagerList();if(Number(body.revision)!==Number(task.revision))throw new Error('This task changed. Refresh before reviewing.');if(body.action==='referralpaid'){if(task.taskId!=='referral'||task.status!=='approved'||[50,100].indexOf(Number(task.rewardAmount))<0)throw new Error('Approve a $50 or $100 referral first.');if(task.paidAt)return ctManagerList();var reference=ctText(body.reference,300);if(!reference)throw new Error('Add the payment reference.');task.paidAt=now;task.paidBy=actor;task.paymentReference=reference;ctAudit(member.id,task.taskId,'paid',actor,{amount:task.rewardAmount,reference:reference});}else{var decision=String(body.decision||'');if(['approved','changes_requested'].indexOf(decision)<0)throw new Error('Choose approve or request changes.');if(task.paidAt||member.bonusPaidAt&&task.taskId!=='referral')throw new Error('A reward was already recorded as paid. This review is locked.');if(!task.snapshot||['submitted','approved','changes_requested'].indexOf(task.status)<0)throw new Error('Wait for a submitted update.');if(decision==='approved'&&task.status!=='submitted')throw new Error('Ask the member to resubmit before approving.');var feedback=ctText(body.feedback,3000);if(decision==='changes_requested'&&!feedback)throw new Error('Explain what needs to change.');if(task.taskId==='referral'&&decision==='approved'){if([50,100].indexOf(Number(body.rewardAmount))<0)throw new Error('Choose a $50 or $100 referral reward.');task.rewardAmount=Number(body.rewardAmount);}ctAudit(member.id,task.taskId,decision,actor,{revision:task.revision,feedback:feedback});task.status=decision;task.reviewedAt=now;task.reviewedBy=actor;task.feedback=feedback;}task.updatedAt=now;task.revision=Number(task.revision)+1;ctWrite('progress',CT_TASKS,task);return ctManagerList();}
-function campusTasksApi(body){try{if(body.action==='version')return reply(true,null,{campusTasks:true,version:4,passwordRequired:true,deleteSignup:true});var action=String(body.action||'get'),manager=['deleteSignup','list','review','reviewstep','bonuspaid','referralpaid','adminfile'].indexOf(action)>=0;if(manager){var actor=internalActor(body);if(!internalIsAdmin(actor))return reply(false,'Only Milo and Arya can review campus tasks.',{code:'FORBIDDEN'});if(action==='deleteSignup')return ctDeleteSignup(body,actor);if(action==='list')return ctManagerList();if(action==='reviewstep')return ctReviewStep(body,actor);if(action==='adminfile')return ctFile(body,null,true);return ctManage(body,actor);}if(action==='challenge')return ctAuthChallenge(body);if(action==='signup')return ctSignup(body);if(action==='login')return ctLogin(body);if(action==='logout')return ctLogout(body);if(action==='join')return reply(false,'Create an account with a password to continue.',{code:'PASSWORD_SETUP_REQUIRED'});var member=ctMember(body);if(action==='get')return ctResponse(member);if(action==='savestep'||action==='submitstep')return ctSaveStep(body,member);if(action==='save'||action==='submit')return ctSave(body,member);if(action==='upload')return ctUpload(body,member);if(action==='file')return ctFile(body,member,false);return reply(false,'Unknown task action.');}catch(e){return reply(false,String(e&&e.message||e),e.ctCode?{code:e.ctCode}:{});}}
+function campusTasksApi(body){try{if(body.action==='version')return reply(true,null,{campusTasks:true,version:5,passwordRequired:true,deleteSignup:true,operatorTools:true});var action=String(body.action||'get'),manager=['deleteSignup','restoreSignup','revokeSessions','note','maintenance','list','review','reviewstep','bonuspaid','referralpaid','adminfile'].indexOf(action)>=0;if(manager){var actor=internalActor(body);if(!internalIsAdmin(actor))return reply(false,'Only Milo and Arya can review campus tasks.',{code:'FORBIDDEN'});if(action==='deleteSignup')return ctDeleteSignup(body,actor);if(action==='restoreSignup')return ctRestoreSignup(body,actor);if(action==='revokeSessions')return ctRevokeSessions(body,actor);if(action==='note')return ctSaveNote(body,actor);if(action==='maintenance')return ctManagerList({pruned:ctPrune()});if(action==='list')return ctManagerList();if(action==='reviewstep')return ctReviewStep(body,actor);if(action==='adminfile')return ctFile(body,null,true);return ctManage(body,actor);}if(action==='challenge')return ctAuthChallenge(body);if(action==='signup')return ctSignup(body);if(action==='login')return ctLogin(body);if(action==='logout')return ctLogout(body);if(action==='join')return reply(false,'Create an account with a password to continue.',{code:'PASSWORD_SETUP_REQUIRED'});var member=ctMember(body);if(action==='get')return ctResponse(member);if(action==='savestep'||action==='submitstep')return ctSaveStep(body,member);if(action==='save'||action==='submit')return ctSave(body,member);if(action==='upload')return ctUpload(body,member);if(action==='file')return ctFile(body,member,false);return reply(false,'Unknown task action.');}catch(e){return reply(false,String(e&&e.message||e),e.ctCode?{code:e.ctCode}:{});}}
 
 /* ── Visit requests and visiting hours ──────────────────────────
    Included in this complete deployment file. No separate visits.gs is needed.

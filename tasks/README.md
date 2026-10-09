@@ -44,3 +44,16 @@ Successful signup, password sign-in, and validated saved sessions all await the 
 Milo and Arya can select a member in `/internal#/tasks` and choose **Delete signup**. A confirmation identifies the member and school. Deletion immediately removes the profile, progress, steps, and review queue entries from the active console and blocks password login, existing sessions, legacy account migration, and attachment downloads. The school filters and summary counts refresh from the server response.
 
 An idempotent tombstone in `campus_tasks_deleted` records the member ID, deleting operator, and timestamp. Original records and private attachments remain in storage for review/payment history; this is not a personal-data purge. The email can create a fresh account without restoring old progress. Deploy the updated Apps Script (campusTasks version 4) and website together.
+
+## Operator tools (campusTasks version 5)
+
+`/internal#/tasks` adds these, all limited to Milo and Arya:
+
+- **Payment ledger.** The `list` response includes `payouts`: every recorded $100 bonus and referral reward, including those of deleted signups (`deleted: true`). "Rewards marked paid" totals this ledger, so deleting a signup no longer lowers it. **Export payouts** downloads it as CSV. Cells that start with `=`, `+`, `-` or `@` get a leading apostrophe so a spreadsheet treats them as text.
+- **Restore a deleted signup.** Deleted signups are listed under the member list. **Restore** removes the tombstone and brings back the profile, progress, steps, files and history. Sessions from before the deletion stay revoked, so the member signs in again. Restoring is refused if the email has since opened a newer account. Deletions and restores are now written to `campus_tasks_audit`.
+- **Sign out everywhere.** Each member shows how many devices are signed in. **Sign out everywhere** expires every session for that member and records the action in the audit log.
+- **Operator notes.** Private notes per member, stored in `campus_tasks_notes` and never returned to members. A save is refused if the other operator edited the notes after this page loaded.
+- **Review history.** The listing keeps the newest 100 audit records per member instead of the newest 300 across all members.
+- **Housekeeping.** `campusTasksMaintenance()` deletes expired sessions and rate-limit windows older than 15 minutes, keeping every live row unchanged. To run it daily, open the Apps Script editor and go to Triggers → Add trigger → `campusTasksMaintenance` → Day timer. Operators can also run it by posting the `maintenance` action.
+
+Website and Apps Script releases are independent. Until the Apps Script answers `version: 5` (the `/exec` health check also reports `campusTasksOperatorTools`), the console hides these controls and computes the paid total the old way. Saving in the Apps Script editor does not change what a deployment serves. Confirm the flag on the exact `/exec` URL that `/internal` calls.

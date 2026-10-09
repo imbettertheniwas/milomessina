@@ -4,3 +4,6 @@
 
 #ct-root .ct-delete{color:var(--bad);border-color:var(--bad);flex-shrink:0}
 @media(max-width:480px){.ct-member-head>header{flex-wrap:wrap}}
+
+.ct-deleted{margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:14px 18px;font-size:13px;color:var(--muted)}.ct-deleted summary{cursor:pointer}.ct-deleted>div{display:grid;gap:5px;padding:14px 0;border-bottom:1px solid var(--line)}.ct-deleted>div:last-child{border-bottom:0;padding-bottom:4px}.ct-deleted strong{color:var(--text)}.ct-deleted small{font-size:12px}.ct-deleted button{justify-self:start;margin-top:4px}
+.ct-member-head p>button{margin-left:8px}
