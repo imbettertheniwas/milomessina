@@ -1,0 +1,215 @@
+/* ══════════════════════════════════════════════════════════════
+   The console's finish — loaded last, so it restyles rather than
+   restructures. The rail, the pane, the views and every id are the
+   ones index.html already draws; this file only changes how they
+   sit and how they answer a hand. console.js adds the behaviour:
+   the narrow rail, the numbers that count, the card spotlight,
+   the g-chords and the shortcut sheet.
+   ══════════════════════════════════════════════════════════════ */
+
+:root{--cx-ease:cubic-bezier(.2,.8,.2,1);--cx-r:14px;--cx-gap:8px}
+
+/* ---------- the pane floats on the rail's ground ---------- */
+@media(min-width:861px){
+  body{background:var(--ink)}
+  .shell{transition:grid-template-columns .26s var(--cx-ease)}
+  .pane{margin:var(--cx-gap) var(--cx-gap) var(--cx-gap) 0;border:1px solid var(--line);
+    border-radius:var(--cx-r);overflow:hidden;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 60px -36px rgba(0,0,0,.7)}
+  .side{border-right:0}
+}
+:root[data-theme="light"] .pane{box-shadow:0 1px 2px rgba(20,18,50,.04),0 20px 50px -34px rgba(20,18,50,.22)}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme]) .pane{box-shadow:0 1px 2px rgba(20,18,50,.04),0 20px 50px -34px rgba(20,18,50,.22)}
+}
+
+/* ---------- the topbar ---------- */
+.topbar{gap:9px;background:color-mix(in srgb,var(--surface) 82%,transparent);
+  backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);position:relative;z-index:4}
+.cx-ico{width:26px;height:26px;flex:none;border-radius:8px;display:grid;place-items:center;
+  background:var(--violet-soft);color:var(--violet-hi)}
+.cx-ico svg{width:15px;height:15px}
+.cx-ico .av{width:22px;height:22px}
+.cx-ico:empty{display:none}
+#pg-title{animation:cx-fade .3s var(--cx-ease)}
+.topbar .sub{transition:opacity .2s}
+#cx-rail{display:grid}
+@media(max-width:860px){#cx-rail{display:none}}
+/* A phone has no keyboard to teach and no room to spare beside the title. */
+@media(max-width:600px){#cx-keys,.cx-ico{display:none}}
+#cx-keys .kbd{pointer-events:none}
+
+/* ---------- the rail ---------- */
+.nav-i{transition:background .14s,color .14s,padding .2s var(--cx-ease)}
+.nav-i:not(.on):hover{background:color-mix(in srgb,var(--raise) 70%,transparent);padding-left:11px}
+.nav-i.on{background:linear-gradient(90deg,var(--violet-soft),color-mix(in srgb,var(--raise) 60%,transparent))}
+.nav-i.on::before{content:"";position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:0 3px 3px 0;
+  background:var(--violet-hi);box-shadow:0 0 10px var(--violet);animation:cx-bar-in .28s var(--cx-ease)}
+.nav-i .ct:not(:empty){padding:0 6px;border-radius:99px;background:var(--raise);line-height:17px;min-width:20px;text-align:center}
+.nav-i.on .ct:not(:empty){background:color-mix(in srgb,var(--violet) 22%,transparent);color:var(--violet-hi)}
+.nav-i:active{transform:scale(.985)}
+.side-top .mark{transition:transform .3s var(--cx-ease)}
+.side-top:hover .mark{transform:rotate(-6deg) scale(1.06)}
+
+/* The narrow rail: icons only, every name still there for the tooltip
+   and the screen reader. Folded headings become a hairline. */
+@media(min-width:861px){
+  body.cx-mini{--side-w:62px}
+  .cx-mini .side-top{justify-content:center;padding:13px 0 12px}
+  .cx-mini .side-top .nmz,.cx-mini .nav-i .tx,.cx-mini .nav-i .ct,.cx-mini .nav-i .oa,
+  .cx-mini .side-foot .who3,.cx-mini .nav-sec>span,.cx-mini .nav-sec .cv{display:none}
+  .cx-mini .identity-switch{margin:0 9px 8px;padding:0;height:30px;font-size:0;display:grid;place-items:center}
+  .cx-mini .identity-switch::before{content:"⏻";font-size:13px}
+  .cx-mini .side-scroll{padding:0 9px 10px}
+  .cx-mini .nav-sec{justify-content:center;padding:10px 0 6px}
+  .cx-mini .nav-sec::after{content:"";display:block;width:18px;height:1px;background:var(--line-2)}
+  .cx-mini .nav-sec .spot{position:absolute;margin-left:28px}
+  .cx-mini .nav-i{justify-content:center;padding:8px 0}
+  .cx-mini .nav-i:not(.on):hover{padding-left:0}
+  .cx-mini .nav-i svg,.cx-mini .nav-i .av{width:17px;height:17px;opacity:.85}
+  .cx-mini .nav-i.on::before{left:-9px}
+  .cx-mini .side-foot{flex-direction:column;padding:10px 0;gap:4px}
+}
+#cx-tip{position:fixed;z-index:97;pointer-events:none;padding:5px 9px;border-radius:7px;font-size:12px;
+  background:var(--text);color:var(--surface);white-space:nowrap;opacity:0;transform:translateX(-4px);
+  transition:opacity .12s,transform .12s;box-shadow:var(--shadow)}
+#cx-tip.on{opacity:1;transform:none}
+
+/* ---------- a view arrives rather than appears ---------- */
+.view.on{animation:cx-fade .22s ease-out}
+.view.on.cx-enter>.scroller>*,.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr{animation:cx-rise .46s var(--cx-ease) both}
+.view.on.cx-enter>.scroller>:nth-child(2){animation-delay:.03s}
+.view.on.cx-enter>.scroller>:nth-child(3){animation-delay:.06s}
+.view.on.cx-enter>.scroller>:nth-child(4){animation-delay:.09s}
+.view.on.cx-enter>.scroller>:nth-child(5){animation-delay:.12s}
+.view.on.cx-enter>.scroller>:nth-child(6){animation-delay:.15s}
+.view.on.cx-enter>.scroller>:nth-child(7){animation-delay:.18s}
+.view.on.cx-enter>.scroller>:nth-child(n+8){animation-delay:.21s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(-n+14){animation-duration:.4s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(2){animation-delay:.02s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(3){animation-delay:.04s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(4){animation-delay:.06s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(5){animation-delay:.08s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(6){animation-delay:.1s}
+.view.on.cx-enter>.scroller>.tbl-scroll tbody>tr:nth-child(n+7){animation-delay:.12s}
+/* bars grow from their baseline the first time a view is shown */
+.view.cx-enter :is(.ov-cat .bar i,.share .bar i,.stcard .track i,.row-b .track,.spend-day .spend-dot){animation:cx-grow-x .8s var(--cx-ease) both;transform-origin:left center}
+.view.cx-enter .mbars .stk,.view.cx-enter .wkbars .stk{animation:cx-grow-y .7s var(--cx-ease) both;transform-origin:bottom center}
+.view.cx-enter .strip7>*{animation:cx-pop .4s var(--cx-ease) both}
+.view.cx-enter .strip7>:nth-child(2){animation-delay:.03s}.view.cx-enter .strip7>:nth-child(3){animation-delay:.06s}
+.view.cx-enter .strip7>:nth-child(4){animation-delay:.09s}.view.cx-enter .strip7>:nth-child(5){animation-delay:.12s}
+.view.cx-enter .strip7>:nth-child(6){animation-delay:.15s}.view.cx-enter .strip7>:nth-child(7){animation-delay:.18s}
+.view.cx-enter .cal .cell:not(.void){animation:cx-pop .5s var(--cx-ease) both}
+
+/* the toolbar lifts once the view scrolls under it */
+.view>.toolbar,.view>.vtabs{position:relative;z-index:3;background:var(--surface);transition:box-shadow .2s}
+:root[data-theme="fomo"] .view>.toolbar,:root[data-theme="fomo"] .view>.vtabs{background:transparent}
+.view.cx-scrolled>.toolbar:last-of-type,.view.cx-scrolled>.vtabs:only-of-type{box-shadow:0 10px 18px -14px rgba(0,0,0,.55)}
+
+/* ---------- cards answer the pointer ---------- */
+.rail>.overview-stat,.stcard,.gh-big,.ppgrid>div,.clock-card,.panel{
+  transition:border-color .18s,transform .22s var(--cx-ease),box-shadow .22s;--mx:50%;--my:50%}
+:is(.rail>.overview-stat,.stcard,.gh-big,.ppgrid>div,.clock-card:not(.on)):hover{
+  background-image:radial-gradient(260px circle at var(--mx) var(--my),color-mix(in srgb,var(--violet) 13%,transparent),transparent 70%)}
+.panel:hover{border-color:var(--line-2);
+  background-image:radial-gradient(520px circle at var(--mx) var(--my),color-mix(in srgb,var(--violet) 6%,transparent),transparent 70%)}
+:is(a,button).overview-stat:hover,.stcard:hover,.clock-card:hover,.gh-big:hover{
+  transform:translateY(-2px);border-color:color-mix(in srgb,var(--violet) 40%,var(--line-2));
+  box-shadow:0 14px 28px -20px color-mix(in srgb,var(--violet) 60%,#000)}
+:is(a,button).overview-stat:active{transform:translateY(0) scale(.99)}
+:is(a,button).overview-stat .lbl::after{content:" →";opacity:0;transition:opacity .15s,margin .15s;margin-left:-4px}
+:is(a,button).overview-stat:hover .lbl::after{opacity:1;margin-left:0}
+.rail .v,.stcard .big,.ppgrid .v,.gh-big .v{transition:color .2s}
+
+/* the bands that cut the overview into subjects */
+.ov-band .lbl{display:inline-flex;align-items:center;gap:7px;color:var(--muted)}
+.ov-band .lbl::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--violet-hi);
+  box-shadow:0 0 8px var(--violet)}
+.ov-band>i{background:linear-gradient(90deg,var(--line-2),transparent)}
+.ov-eyes{flex:none;gap:7px;height:24px}
+.ov-eyes .live-dot,.nav-i[href="/eyes"] svg{color:var(--good)}
+.ov-eyes .live-dot{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good)}
+@media (prefers-reduced-motion:no-preference){.ov-eyes .live-dot{animation:pulse 2.2s infinite}}
+
+/* ---------- tables ---------- */
+thead th{background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.panel thead th{background:color-mix(in srgb,var(--surface-2) 88%,transparent)}
+tbody tr{transition:background .12s}
+tbody tr:hover>td:first-child{box-shadow:inset 2px 0 0 var(--violet-hi)}
+tbody tr:hover .av{transform:scale(1.08)}
+.av{transition:transform .18s var(--cx-ease)}
+
+/* ---------- the row of views inside a view ---------- */
+.vtab{position:relative;transition:color .14s}
+.vtab::after{content:"";position:absolute;left:9px;right:9px;bottom:-1px;height:1.5px;border-radius:2px;
+  background:var(--violet-hi);transform:scaleX(0);transition:transform .25s var(--cx-ease)}
+.vtab.on{border-bottom-color:transparent}
+.vtab.on::after{transform:scaleX(1)}
+.vtab:hover:not(.on)::after{transform:scaleX(.35);opacity:.5}
+.vtab .n:not(:empty){padding:0 5px;border-radius:99px;background:var(--raise)}
+
+/* ---------- controls press ---------- */
+.btn,.mini,.chip,.icon-b,.settle,.clock-btn{transition:background .12s,border-color .12s,color .12s,transform .12s var(--cx-ease),box-shadow .2s}
+:is(.btn,.mini,.chip,.icon-b,.settle,.clock-btn):active:not([disabled]){transform:scale(.96)}
+.btn-p{background:linear-gradient(180deg,color-mix(in srgb,var(--violet) 88%,#fff),var(--violet));
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 16px -8px var(--violet)}
+.btn-p:hover{background:linear-gradient(180deg,var(--violet-hi),var(--violet));box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 8px 22px -8px var(--violet)}
+.srch{transition:border-color .15s,box-shadow .2s,width .25s var(--cx-ease)}
+.srch:focus-within{box-shadow:0 0 0 3px var(--violet-soft)}
+.srch input{transition:width .25s var(--cx-ease)}
+.srch:focus-within input{width:220px}
+select:focus,input:focus{box-shadow:0 0 0 3px var(--violet-soft)}
+
+/* ---------- overlays ---------- */
+#pal .box{animation:cx-pop-in .2s var(--cx-ease)}
+#pal{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#pal .it{transition:background .1s}
+#pal .it.sel{box-shadow:inset 2px 0 0 var(--violet-hi)}
+
+#cx-help{position:fixed;inset:0;z-index:88;display:grid;place-items:center;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:16px}
+#cx-help .box{width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--surface-2);border:1px solid var(--line-2);
+  border-radius:14px;box-shadow:var(--shadow);animation:cx-pop-in .2s var(--cx-ease)}
+#cx-help header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+#cx-help header h2{font-size:14px}
+#cx-help header .mini{margin-left:auto}
+#cx-help .cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;padding:12px 16px 16px}
+@media(max-width:560px){#cx-help .cols{grid-template-columns:1fr}}
+#cx-help h3{grid-column:1/-1;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2);
+  font-weight:600;margin:10px 0 2px}
+#cx-help .k{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:12.5px;
+  color:var(--muted);border-bottom:1px dashed var(--line)}
+#cx-help .k span:last-child{display:flex;gap:3px}
+#cx-help .kbd{font-size:10.5px;min-width:18px;justify-content:center;padding:1px 5px;color:var(--text);background:var(--raise)}
+
+/* the chord in progress, so a stray g never leaves you guessing */
+#cx-chord{position:fixed;left:50%;bottom:calc(22px + var(--foot-clear));z-index:96;transform:translate(-50%,8px);
+  opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;background:var(--ink);border:1px solid var(--line-2);
+  border-radius:99px;padding:6px 12px;font-size:12px;color:var(--muted);box-shadow:var(--shadow);white-space:nowrap}
+#cx-chord.on{opacity:1;transform:translate(-50%,0)}
+#cx-chord .kbd{color:var(--text)}
+
+#cx-top{position:fixed;right:22px;bottom:calc(22px + var(--foot-clear));z-index:50;width:36px;height:36px;border-radius:50%;
+  display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line-2);color:var(--text);
+  box-shadow:var(--shadow);opacity:0;transform:translateY(10px) scale(.9);pointer-events:none;
+  transition:opacity .2s,transform .25s var(--cx-ease),background .12s}
+#cx-top.on{opacity:1;transform:none;pointer-events:auto}
+#cx-top:hover{background:var(--raise)}
+#cx-top svg{width:15px;height:15px}
+
+#gate .box{animation:cx-pop-in .35s var(--cx-ease)}
+#gate{background:radial-gradient(ellipse 80% 50% at 50% 0%,var(--violet-soft),transparent 70%),var(--surface)}
+
+/* ---------- motion ---------- */
+@keyframes cx-fade{from{opacity:0}to{opacity:1}}
+@keyframes cx-rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:none}}
+@keyframes cx-grow-x{from{transform:scaleX(0)}to{transform:none}}
+@keyframes cx-grow-y{from{transform:scaleY(0)}to{transform:none}}
+@keyframes cx-pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+@keyframes cx-pop-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes cx-bar-in{from{transform:scaleY(0)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:.001ms!important}
+  :is(a,button).overview-stat:hover,.stcard:hover,.clock-card:hover,.gh-big:hover{transform:none}
+}

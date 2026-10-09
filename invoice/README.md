@@ -88,6 +88,18 @@ tell the two apart without reading the toast.
 spends. Picking a spend puts it in the ledger's search box rather than
 pretending to open a record that doesn't exist.
 
+**`?`** opens the shortcut sheet. **`g`** followed by a letter jumps to a
+view (`g l` the ledger, `g r` reimbursements, `g y` your page, `g e` Eyes),
+**`/`** searches the view you're on, **`[`** folds the rail down to icons and
+**`⇧T`** cycles the theme. The look and these behaviours live in
+`console.css` and `console.js`, loaded last; they read and write no records,
+so removing those two tags leaves the console exactly as it was. Headline
+figures count up when a view opens and count from old to new when a read
+changes them.
+
+**Eyes** — the live campus pulse at `/eyes` — is linked from the rail under
+*The campus*, from the overview's campus band, and from ⌘K.
+
 There are three themes, and the button in the corner of the rail cycles
 them: dark, light, and **fomo** — the bootcamp's own colours off
 fomo.family, down to the commit map leaving GitHub's green for the brand
