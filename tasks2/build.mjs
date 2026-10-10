@@ -6,7 +6,7 @@ const companyById=new Map(companies.map(company=>[company.id,company]));
 for(const offer of offers){if(!companyById.has(offer.companyId))throw Error('Unknown company for '+offer.id);}
 const icons=JSON.parse(fs.readFileSync(new URL('./icons.json',import.meta.url),'utf8'));
 const e=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const V='20261009-book3';
+const V='20261009-book4';
 // Two-tone headline: first sentence dark, the rest grey.
 function split(text){const m=text.match(/^(.+?[.?!])\s+(.+)$/);if(m)return[m[1],m[2]];const w=text.split(' ');const k=Math.min(3,Math.ceil(w.length/2));return[w.slice(0,k).join(' '),w.slice(k).join(' ')];}
 const title=text=>{const[a,b]=split(text);return`<h2 class="title">${e(a)}<br><span>${e(b)}</span></h2>`;};
@@ -49,11 +49,11 @@ const html=`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Campus Tasks</title><meta name="description" content="Choose campus tasks, build your team, and lead your campus with fomo."><meta name="robots" content="noindex,nofollow"><link rel="icon" href="/tasks/assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap"><link rel="stylesheet" href="/tasks2/book.css?v=${V}"><script type="module" src="/tasks2/book.js?v=${V}"></script><script type="module" src="/tasks2/tasks.js?v=${V}"></script></head><body><noscript><p class="notice">Enable JavaScript to open Campus Tasks.</p></noscript>
 <div class="scene">
 <div class="desk" aria-hidden="true"></div>
-<div class="props" aria-hidden="true"><div class="pad" data-prop="pad"></div><div class="mug" data-prop="mug"><i></i></div><div class="notepad" data-prop="notepad"><div class="pencil pencil-rest"><i class="tip"></i></div></div></div>
+<div class="props" aria-hidden="true"><div class="pad" data-prop="pad"></div><div class="mug" data-prop="mug"><i></i></div><div class="keychain" data-prop="keychain"><span class="key-metal"></span><span class="key-ring"></span><span class="key-link"></span><span class="key-tag"><span class="key-logo"><img alt="" width="40" height="40"><i></i></span><span class="key-name">fomo</span></span></div><div class="notepad" data-prop="notepad"><div class="pencil pencil-rest"><i class="tip"></i></div></div></div>
 <section class="hero" aria-labelledby="hero-title"><h1 id="hero-title">Campus tasks<br><span>you can read</span></h1><p>Six tasks bound in one book. Open the cover and turn the pages.</p></section>
 <div class="corner corner-l" aria-hidden="true"><small>Edition</small>Vol. 01, fourteen pages</div><div class="corner corner-r" aria-hidden="true">Open the cover</div>
 <div class="book-wrap"><div class="book" id="book">
-<div class="board board-l" aria-hidden="true"></div><div class="board board-r" aria-hidden="true"></div><div class="stack stack-l" aria-hidden="true"></div><div class="stack stack-r" aria-hidden="true"></div>
+<div class="board board-l" aria-hidden="true"></div><div class="board board-r" aria-hidden="true"></div><div class="edge edge-side edge-l" aria-hidden="true"></div><div class="edge edge-side edge-r" aria-hidden="true"></div><div class="edge edge-bottom edge-lb" aria-hidden="true"></div><div class="edge edge-bottom edge-rb" aria-hidden="true"></div>
 <div class="ribbon" aria-hidden="true"></div>
 <nav class="tabs" aria-label="Tasks">${chapters.filter(c=>c.tab).map((c,i)=>`<button type="button" class="tab tab-${tabColors[i]}" data-goto="${c.page}" style="--i:${i}">${e(c.tab)}</button>`).join('')}</nav>
 <div class="leaves3d" id="pages">

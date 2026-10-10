@@ -17,7 +17,9 @@ Contents rows expand to show the task's reward, with a button to its page. Under
 
 - Turning: arrow keys, dragging a page edge, swiping on touch screens, the side tabs, the pager on phones, or clicking empty space on a page (left page or left half goes back, right goes forward).
 - Resizing: drag the round handle on the book's corner (arrow keys work on it; double-click resets), the − / + buttons, or the - and = keys. The size changes the real page dimensions, so text reflows.
-- The mug, notepad and pad can be dragged around the desk. Double-click one to put it back.
+- The book has real 3D thickness: page-edge faces along its sides and bottom (`.edge-*`), thicker when closed via the registered `--thick` property.
+- Signed in, `body.is-school` themes the paper, dark and accent pages, cover, board, tabs, pad, pencil, ribbon and buttons from the school colors that tasks.js sets on `body`. The desk keychain shows the school logo, initials and colors (a fomo tag when signed out).
+- The mug, notepad, keychain and pad can be dragged around the desk. Double-click one to put it back.
 - Book size and object positions are saved in this browser only (`tasks2-book-zoom`, `tasks2-desk-v1`).
 
 ## Shared modules

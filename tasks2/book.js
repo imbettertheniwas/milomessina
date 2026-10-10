@@ -246,5 +246,24 @@ for(const el of document.querySelectorAll('[data-prop]')){
  });
 }
 
+// The keychain, cover and page colors follow the signed-in school.
+const keychain=$('.keychain'),keyImg=keychain.querySelector('img'),keyName=keychain.querySelector('.key-name'),coverVol=$('.cover-vol'),schoolLogo=$('#school-logo'),schoolName=$('#pass-school');
+const initials=name=>name.replace(/[^A-Za-z\s&-]/g,'').split(/[\s-]+/).filter(w=>/^[A-Z]/.test(w)&&!/^(Of|The|At|And|In)$/.test(w)).map(w=>w[0]).join('').slice(0,5);
+function paintSchool(){
+ const on=!main.hidden&&body.classList.contains('has-school'),src=schoolLogo.getAttribute('src'),name=schoolName.textContent.trim(),short=initials(name)||name;
+ body.classList.toggle('is-school',on);
+ keychain.classList.toggle('has-logo',on&&!schoolLogo.hidden&&!!src);
+ if(on&&src){keyImg.src=src;keychain.querySelector('.key-logo').style.background=schoolLogo.parentElement.style.background||'#fff';}
+ keyName.textContent=on?short:'fomo';
+ coverVol.textContent=on?`Vol. 01 · ${short}`:'Vol. 01';
+ if(on)keychain.style.setProperty('--key-ink',readableOn(getComputedStyle(body).getPropertyValue('--school-primary').trim()));
+}
+// White or near-black text, whichever reads better on the tag color.
+function readableOn(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex);if(!m)return'#fff';const n=parseInt(m[1],16),l=[n>>16,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4;});return .2126*l[0]+.7152*l[1]+.0722*l[2]>.45?'#16151a':'#fff';}
+new MutationObserver(paintSchool).observe(schoolLogo,{attributes:true,attributeFilter:['src','hidden']});
+new MutationObserver(paintSchool).observe(schoolName,{childList:true,characterData:true,subtree:true});
+new MutationObserver(paintSchool).observe(main,{attributes:true,attributeFilter:['hidden']});
+paintSchool();
+
 narrow.addEventListener('change',()=>{if(!busy)paint();});
 paint();
