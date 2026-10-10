@@ -92,6 +92,25 @@
     return c;
   }
 
+  // fish: a = (x, y, heading, length), b = (opacity, wag phase, wag amount, blur)
+  uniform vec4 u_fishA[4]; uniform vec4 u_fishB[4];
+  float fish(vec2 p, vec4 a, vec4 b){
+    if (b.x < 0.002) return 0.0;
+    vec2 d = p - a.xy;
+    float cs = cos(a.z), sn = sin(a.z);
+    vec2 q = vec2(cs * d.x + sn * d.y, -sn * d.x + cs * d.y) / a.w;   // +x is the nose
+    float tail = clamp(0.55 - q.x, 0.0, 2.2);
+    q.y -= sin(b.y - q.x * 2.4) * b.z * tail * tail * 0.45;
+    float w = 0.27 * sqrt(max(0.0, 1.0 - pow((q.x - 0.12) / 0.92, 2.0)));
+    w *= mix(0.45, 1.0, smoothstep(-0.8, 0.25, q.x));
+    float body = max(abs(q.y) - w, abs(q.x - 0.12) - 0.92);
+    float fw = 0.05 + max(0.0, -0.72 - q.x) * 0.5;
+    float fin = max(abs(q.y) - fw, max(q.x + 0.66, -1.3 - q.x));
+    float side = length((q - vec2(0.30, 0.0)) * vec2(2.4, 1.0)) - 0.33;    // pectoral fins
+    float dist = min(min(body, fin), side) * a.w;
+    return (1.0 - smoothstep(-b.w, b.w, dist)) * b.x;
+  }
+
   void main(){
     float h  = texture(u_state, v_uv).r;
     float hl = texture(u_state, v_uv - vec2(u_texel.x, 0.0)).r;
@@ -103,6 +122,11 @@
 
     vec2 p = vec2(v_uv.x * u_aspect, v_uv.y);
     vec3 col = murk(p + n.xy * 0.06, u_time);
+
+    vec2 pf = p + n.xy * 0.08;
+    float lit = 1.0;
+    for (int i = 0; i < 4; i++) lit *= 1.0 - fish(pf, u_fishA[i], u_fishB[i]);
+    col = mix(col * vec3(0.20, 0.25, 0.24), col, lit);
 
     vec3 L = normalize(vec3(-0.45, 0.65, 0.65));
     vec3 V = vec3(0.0, 0.0, 1.0);
@@ -241,6 +265,80 @@
     segments.length = 0;
   }
 
+  // fish: hidden -> fade in and drift -> a few darts, often flipping direction -> sink away
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const fishes = Array.from({ length: 3 }, (_, i) => ({ state: 'wait', t: rand(1.5, 5) + i * 3, op: 0 }));
+  const fishA = new Float32Array(16), fishB = new Float32Array(16);
+
+  function spawn(f){
+    const depth = Math.random();
+    const scale = Math.min(1, 0.55 + 0.45 * Math.min(aspect, 1.6) / 1.6);
+    f.size = (0.13 - 0.05 * depth) * scale;
+    f.maxOp = 0.88 - 0.3 * depth;
+    f.blur = 0.013 + 0.02 * depth;
+    f.x = rand(0.2, aspect - 0.2);
+    f.y = rand(0.18, 0.82);
+    f.angle = f.target = (Math.random() < 0.5 ? 0 : Math.PI) + rand(-0.3, 0.3);
+    f.speed = 0.02;
+    f.phase = rand(0, 6);
+    f.darts = 1 + Math.floor(Math.random() * 3);
+    f.state = 'drift';
+    f.t = rand(1.2, 3.2);
+    f.op = 0;
+  }
+
+  function updateFish(f, dt){
+    if (f.state === 'wait') { f.t -= dt; if (f.t <= 0) spawn(f); return; }
+    f.t -= dt;
+    if (f.state === 'drift') {
+      f.op = Math.min(f.maxOp, f.op + dt * 0.5);
+      f.speed += (0.025 - f.speed) * Math.min(1, dt * 2);
+      if (f.t <= 0) {
+        f.state = 'dart';
+        f.t = rand(0.5, 0.9);
+        if (Math.random() < 0.7) f.target += Math.PI;
+        f.target += rand(-0.35, 0.35);
+        f.speed = rand(0.6, 1.05);
+      }
+    } else if (f.state === 'dart') {
+      f.op = Math.min(f.maxOp, f.op + dt * 0.5);
+      f.speed = Math.max(0.03, f.speed * Math.exp(-dt * 3.2));
+      if (f.t <= 0) {
+        f.darts--;
+        f.state = f.darts > 0 ? 'drift' : 'sink';
+        f.t = rand(0.6, 2.2);
+      }
+    } else if (f.state === 'sink') {
+      f.op -= dt * 0.45;
+      f.blur += dt * 0.012;
+      f.speed += (0.015 - f.speed) * Math.min(1, dt * 2);
+      if (f.op <= 0) { f.op = 0; f.state = 'wait'; f.t = rand(4, 12); return; }
+    }
+    let diff = f.target - f.angle;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    f.angle += diff * Math.min(1, dt * 11);
+    f.x += Math.cos(f.angle) * f.speed * dt;
+    f.y += Math.sin(f.angle) * f.speed * dt;
+    f.phase += dt * (3 + Math.min(f.speed, 1) * 34 + Math.abs(diff) * 8);
+    f.wag = 0.12 + Math.min(f.speed, 1) * 0.3 + Math.min(Math.abs(diff), 1.5) * 0.25;
+    // keep them in the pond: turn back near an edge, vanish if one gets out
+    const m = 0.12;
+    if ((f.x < m && Math.cos(f.target) < 0) || (f.x > aspect - m && Math.cos(f.target) > 0)) f.target = Math.PI - f.target;
+    if ((f.y < m && Math.sin(f.target) < 0) || (f.y > 1 - m && Math.sin(f.target) > 0)) f.target = -f.target;
+    if (f.x < -0.3 || f.x > aspect + 0.3 || f.y < -0.3 || f.y > 1.3) { f.op = 0; f.state = 'wait'; f.t = rand(3, 8); }
+  }
+
+  function fishUniforms(dt){
+    fishes.forEach((f, i) => {
+      updateFish(f, dt);
+      const visible = f.state !== 'wait';
+      fishA.set(visible ? [f.x, f.y, f.angle, f.size] : [0, 0, 0, 1], i * 4);
+      fishB.set(visible ? [f.op, f.phase, f.wag, f.blur] : [0, 0, 0, 0.01], i * 4);
+    });
+    gl.uniform4fv(render.u['u_fishA[0]'], fishA);
+    gl.uniform4fv(render.u['u_fishB[0]'], fishB);
+  }
+
   resize();
   window.addEventListener('resize', resize);
 
@@ -249,6 +347,7 @@
   const DT = 1000 / 60;
 
   function frame(now){
+    const dt = Math.min(now - lastT, 100) / 1000;
     acc = Math.min(acc + (now - lastT), DT * 4);
     lastT = now;
     applySegments();
@@ -265,6 +364,7 @@
     gl.uniform2f(render.u.u_texel, 1 / simW, 1 / simH);
     gl.uniform1f(render.u.u_time, (now - t0) / 1000);
     gl.uniform1f(render.u.u_aspect, aspect);
+    fishUniforms(dt);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     requestAnimationFrame(frame);
   }
