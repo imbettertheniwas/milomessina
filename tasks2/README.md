@@ -17,7 +17,7 @@ Contents rows expand to show the task's reward, with a button to its page. Under
 
 - Turning: arrow keys, dragging a page edge, swiping on touch screens, the side tabs, the pager on phones, or clicking empty space on a page (left page or left half goes back, right goes forward).
 - Resizing: drag the round handle on the book's corner (arrow keys work on it; double-click resets), the − / + buttons, or the - and = keys. The size changes the real page dimensions, so text reflows.
-- The mug, stones, notepad and pad can be dragged around the desk. Double-click one to put it back.
+- The mug, notepad and pad can be dragged around the desk. Double-click one to put it back.
 - Book size and object positions are saved in this browser only (`tasks2-book-zoom`, `tasks2-desk-v1`).
 
 ## Shared modules

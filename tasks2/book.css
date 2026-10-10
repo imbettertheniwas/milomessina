@@ -25,12 +25,6 @@ body.is-open .pad{opacity:0;transform:rotate(-8deg) scale(1.2)}
 .mug{position:absolute;right:17%;top:12%;width:clamp(58px,5.8vw,86px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 47% 45%,#1d0f07 0 46%,#3a2112 54%,#5a3b25 58%,#fffdfa 60%,#efebe5 78%,#d9d3cb 100%);box-shadow:-20px 22px 22px #4e3a2650,-4px 6px 6px #4e3a2630}
 .mug:before{content:'';position:absolute;left:30%;top:28%;width:22%;height:12%;border-radius:50%;background:#ffffff26;transform:rotate(-25deg)}
 .mug i{position:absolute;right:-20%;bottom:6%;width:36%;height:30%;border:clamp(5px,.5vw,8px) solid #f1ede7;border-left-color:transparent;border-radius:50%;transform:rotate(38deg);box-shadow:-6px 8px 10px #4e3a2630}
-.stones{position:absolute;left:10%;bottom:16%;width:12vw;height:12vw;max-width:170px;max-height:170px}
-.stones i{position:absolute;border-radius:50%;box-shadow:-14px 16px 18px #4e3a2650}
-.stones i:nth-child(1){left:0;top:20%;width:46%;aspect-ratio:1;background:radial-gradient(circle at 38% 30%,#fffdf7,#ebe4d6 50%,#bfb3a1 100%)}
-.stones i:nth-child(2){left:50%;top:6%;width:34%;aspect-ratio:1;background:radial-gradient(circle at 38% 30%,#9d978f,#6c665f 55%,#433f3a 100%)}
-.stones i:nth-child(3){left:42%;top:56%;width:14%;aspect-ratio:1;background:radial-gradient(circle at 38% 30%,#fffaf0,#d9d0c1 60%,#aa9e8c)}
-.stones i:nth-child(4){left:28%;top:72%;width:10%;aspect-ratio:1;background:radial-gradient(circle at 38% 30%,#a8a39b,#76716a 60%,#4f4b46)}
 .notepad{position:absolute;right:15%;bottom:12%;width:clamp(96px,9.6vw,142px);aspect-ratio:.75;background:#f7f5f0;border-radius:3px;transform:rotate(-13deg);box-shadow:-18px 22px 24px #4e3a2645,0 0 0 1px #e4ded4;background-image:linear-gradient(90deg,transparent 18%,#b9c4ff80 18.5%,transparent 19%),repeating-linear-gradient(#0000 0 15px,#d8d4cc 15px 16px)}
 .pencil{position:absolute;width:clamp(150px,15vw,230px);height:clamp(9px,.9vw,13px);border-radius:0 4px 4px 0;background:linear-gradient(#8a72ff,#6747ff 45%,#5333e6);box-shadow:-10px 14px 12px #3b2a7033}
 .pencil:before{content:'';position:absolute;left:-15%;top:0;width:15%;height:100%;background:linear-gradient(90deg,#3a3430 0 22%,#e8cfa8 22%);clip-path:polygon(0 50%,100% 0,100% 100%)}
@@ -361,7 +355,6 @@ body.is-resizing .book{transition:none}
  .deskbar{padding:14px 16px}
  .pad{width:min(70vw,280px);margin:calc(min(70vw,280px) * -.42) 0 0 calc(min(70vw,280px) * -.5);transform:rotate(-9deg)}
  .mug{right:6%;top:9%;width:52px}
- .stones{left:-6%;bottom:7%;width:30vw;height:30vw}
  .notepad{right:-8%;bottom:6%;width:92px}
  .pencil{width:130px;height:9px}
  body.is-open .desk,body.is-open .props{transform:scale(1.06)}
