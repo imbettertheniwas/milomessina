@@ -91,6 +91,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/1", "destination": "/1/index.html" },
+    { "source": "/1/", "destination": "/1/index.html" },
     { "source": "/tasks", "destination": "/tasks/index.html" },
     { "source": "/tasks/", "destination": "/tasks/index.html" },
     { "source": "/tasks2", "destination": "/tasks2/index.html" },

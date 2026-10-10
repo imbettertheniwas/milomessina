@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#060b09">
+<meta name="robots" content="noindex">
+<title>&#8203;</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #060b09; overflow: hidden; overscroll-behavior: none; }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block;
+           touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, premultipliedAlpha: false, powerPreference: 'high-performance' });
+  if (!gl) return;
+  if (!gl.getExtension('EXT_color_buffer_float') && !gl.getExtension('EXT_color_buffer_half_float')) return;
+
+  const VERT = `#version 300 es
+  in vec2 p; out vec2 v_uv;
+  void main(){ v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }`;
+
+  // r = height, g = velocity
+  const STEP = `#version 300 es
+  precision highp float;
+  uniform sampler2D u_state; uniform vec2 u_texel;
+  in vec2 v_uv; out vec4 o;
+  void main(){
+    vec4 s = texture(u_state, v_uv);
+    float avg = ( texture(u_state, v_uv + vec2(u_texel.x, 0.0)).r
+                + texture(u_state, v_uv - vec2(u_texel.x, 0.0)).r
+                + texture(u_state, v_uv + vec2(0.0, u_texel.y)).r
+                + texture(u_state, v_uv - vec2(0.0, u_texel.y)).r ) * 0.25;
+    s.g += (avg - s.r) * 2.0;
+    s.g *= 0.996;
+    s.r += s.g;
+    s.r *= 0.9992;
+    o = s;
+  }`;
+
+  // pushes the surface down along a segment (the path the pointer took this frame)
+  const DROP = `#version 300 es
+  precision highp float;
+  uniform sampler2D u_state; uniform vec2 u_a; uniform vec2 u_b;
+  uniform float u_radius; uniform float u_strength; uniform float u_aspect;
+  in vec2 v_uv; out vec4 o;
+  void main(){
+    vec4 s = texture(u_state, v_uv);
+    vec2 p = vec2(v_uv.x * u_aspect, v_uv.y);
+    vec2 a = vec2(u_a.x * u_aspect, u_a.y), b = vec2(u_b.x * u_aspect, u_b.y);
+    vec2 ab = b - a;
+    float t = clamp(dot(p - a, ab) / max(dot(ab, ab), 1e-8), 0.0, 1.0);
+    float d = length(p - (a + ab * t));
+    float k = max(0.0, 1.0 - d / u_radius);
+    k = 0.5 - cos(k * 3.14159265) * 0.5;
+    s.r += k * u_strength;
+    o = s;
+  }`;
+
+  const RENDER = `#version 300 es
+  precision highp float;
+  uniform sampler2D u_state; uniform vec2 u_texel; uniform float u_time; uniform float u_aspect;
+  in vec2 v_uv; out vec4 o;
+
+  float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+  float noise(vec2 p){
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1,0)), u.x), mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x), u.y);
+  }
+  float fbm(vec2 p){
+    float v = 0.0, a = 0.5;
+    mat2 r = mat2(0.8, 0.6, -0.6, 0.8);
+    for (int i = 0; i < 5; i++){ v += a * noise(p); p = r * p * 2.03 + 11.7; a *= 0.5; }
+    return v;
+  }
+  vec3 murk(vec2 p, float t){
+    vec2 q = vec2(fbm(p * 1.6 + vec2(0.0, t * 0.020)), fbm(p * 1.6 + vec2(5.2, 1.3) - t * 0.016));
+    float f = fbm(p * 2.2 + q * 1.8 + vec2(t * 0.010, -t * 0.007));
+    float silt = fbm(p * 7.0 + q * 3.0 - t * 0.03);
+    vec3 deep = vec3(0.030, 0.050, 0.044);
+    vec3 mid  = vec3(0.090, 0.120, 0.098);
+    vec3 haze = vec3(0.160, 0.175, 0.130);
+    vec3 c = mix(deep, mid, smoothstep(0.25, 0.75, f));
+    c = mix(c, haze, smoothstep(0.55, 0.95, f * 0.6 + q.x * 0.5) * 0.55);
+    c *= 0.85 + 0.3 * silt;
+    return c;
+  }
+
+  void main(){
+    float h  = texture(u_state, v_uv).r;
+    float hl = texture(u_state, v_uv - vec2(u_texel.x, 0.0)).r;
+    float hr = texture(u_state, v_uv + vec2(u_texel.x, 0.0)).r;
+    float hd = texture(u_state, v_uv - vec2(0.0, u_texel.y)).r;
+    float hu = texture(u_state, v_uv + vec2(0.0, u_texel.y)).r;
+    vec2 grad = vec2(hr - hl, hu - hd);
+    vec3 n = normalize(vec3(-grad * 45.0, 1.0));
+
+    vec2 p = vec2(v_uv.x * u_aspect, v_uv.y);
+    vec3 col = murk(p + n.xy * 0.06, u_time);
+
+    vec3 L = normalize(vec3(-0.45, 0.65, 0.65));
+    vec3 V = vec3(0.0, 0.0, 1.0);
+    float shade = dot(n, L) - L.z;
+    col *= 1.0 + shade * 3.2;
+    col += vec3(0.020, 0.026, 0.022) * clamp(h * 6.0, -1.0, 1.0);
+
+    float spec = pow(max(dot(n, normalize(L + V)), 0.0), 140.0);
+    col += vec3(0.50, 0.58, 0.54) * spec * 0.8;
+    col += vec3(0.05, 0.065, 0.06) * (1.0 - n.z) * 9.0;
+
+    vec2 c = (v_uv - 0.5) * vec2(u_aspect, 1.0);
+    col *= mix(0.55, 1.0, smoothstep(1.15, 0.2, length(c) * (1.4 / max(u_aspect, 1.0) + 0.6)));
+
+    col += (hash(gl_FragCoord.xy + fract(u_time) * 97.0) - 0.5) / 255.0;
+    o = vec4(max(col, 0.0), 1.0);
+  }`;
+
+  function program(fs){
+    const p = gl.createProgram();
+    for (const [type, src] of [[gl.VERTEX_SHADER, VERT], [gl.FRAGMENT_SHADER, fs]]) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      gl.attachShader(p, s);
+    }
+    gl.bindAttribLocation(p, 0, 'p');
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const name = gl.getActiveUniform(p, i).name; u[name] = gl.getUniformLocation(p, name); }
+    return { p, u };
+  }
+
+  const step = program(STEP), drop = program(DROP), render = program(RENDER);
+
+  const vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  let simW = 0, simH = 0, aspect = 1, targets = [], cur = 0;
+
+  function makeTarget(w, h){
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    return { tex, fb };
+  }
+
+  function resize(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    aspect = w / h;
+    const long = 512;
+    const sw = aspect >= 1 ? long : Math.round(long * aspect);
+    const sh = aspect >= 1 ? Math.round(long / aspect) : long;
+    if (sw === simW && sh === simH) return;
+    for (const t of targets) { gl.deleteTexture(t.tex); gl.deleteFramebuffer(t.fb); }
+    simW = sw; simH = sh;
+    targets = [makeTarget(simW, simH), makeTarget(simW, simH)];
+    cur = 0;
+  }
+
+  function pass(prog, setUniforms){
+    const src = targets[cur], dst = targets[1 - cur];
+    gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fb);
+    gl.viewport(0, 0, simW, simH);
+    gl.useProgram(prog.p);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, src.tex);
+    gl.uniform1i(prog.u.u_state, 0);
+    setUniforms(prog.u);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    cur = 1 - cur;
+  }
+
+  // pointer -> segments
+  const segments = [];
+  const last = new Map();
+  function toUV(e){
+    const r = canvas.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
+  }
+  function onMove(e){
+    const p = toUV(e);
+    const prev = last.get(e.pointerId);
+    const pressed = e.buttons > 0 || e.pointerType === 'touch';
+    if (prev) segments.push({ a: prev, b: p, pressed });
+    last.set(e.pointerId, p);
+  }
+  canvas.addEventListener('pointerdown', e => {
+    const p = toUV(e);
+    last.set(e.pointerId, p);
+    segments.push({ a: p, b: p, pressed: true, plop: true });
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  canvas.addEventListener('pointermove', onMove);
+  const forget = e => { if (e.pointerType !== 'mouse') last.delete(e.pointerId); };
+  canvas.addEventListener('pointerup', forget);
+  canvas.addEventListener('pointercancel', e => last.delete(e.pointerId));
+  canvas.addEventListener('pointerleave', e => last.delete(e.pointerId));
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+  function applySegments(){
+    const radius = 0.02;
+    const n = Math.min(segments.length, 24);
+    for (let i = 0; i < n; i++) {
+      const s = segments[i];
+      const dx = (s.b[0] - s.a[0]) * aspect, dy = s.b[1] - s.a[1];
+      const len = Math.hypot(dx, dy);
+      if (!s.plop && len < 1e-4) continue;
+      const speed = Math.min(1, s.plop ? 1 : len / radius);
+      const strength = -(s.pressed ? 0.030 : 0.016) * (s.plop ? 1.6 : 0.35 + 0.65 * speed);
+      pass(drop, u => {
+        gl.uniform2f(u.u_a, s.a[0], s.a[1]);
+        gl.uniform2f(u.u_b, s.b[0], s.b[1]);
+        gl.uniform1f(u.u_radius, s.pressed ? radius : radius * 0.8);
+        gl.uniform1f(u.u_strength, strength);
+        gl.uniform1f(u.u_aspect, aspect);
+      });
+    }
+    segments.length = 0;
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  const t0 = performance.now();
+  let lastT = t0, acc = 0;
+  const DT = 1000 / 60;
+
+  function frame(now){
+    acc = Math.min(acc + (now - lastT), DT * 4);
+    lastT = now;
+    applySegments();
+    while (acc >= DT) {
+      for (let k = 0; k < 3; k++) pass(step, u => gl.uniform2f(u.u_texel, 1 / simW, 1 / simH));
+      acc -= DT;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(render.p);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, targets[cur].tex);
+    gl.uniform1i(render.u.u_state, 0);
+    gl.uniform2f(render.u.u_texel, 1 / simW, 1 / simH);
+    gl.uniform1f(render.u.u_time, (now - t0) / 1000);
+    gl.uniform1f(render.u.u_aspect, aspect);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
