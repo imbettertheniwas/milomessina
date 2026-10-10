@@ -1,0 +1,3 @@
+export const FOMO_CORE_TASKS=['dinner','filmer','host','travel','calendar'];
+export function approvedFomoTasks(profile){return FOMO_CORE_TASKS.filter(id=>profile?.cloud?.tasks?.some(task=>task.taskId===id&&task.status==='approved')).length;}
+export function experienceText(school){return `Campus Lead Intern\nfomo · Internship\n${school}\n\n• Led fomo’s campus presence and recruited a team of camera operators and content leads.\n• Coordinated company-funded creator dinners, party content, campus media, and creator travel plans.\n• Managed campus relationships, social calendars, and deliverables for review.\n\nAdd the actual dates you worked with fomo.`;}

@@ -1,0 +1,191 @@
+[
+  {
+    "title": "Host the creator dinner",
+    "subtitle": "10 creators. One table. On us.",
+    "tag": "fomo covers the dinner",
+    "intro": "Bring together 10 standout sorority creators who are confident talking to the camera. Give them a night worth talking about.",
+    "evidence": "Share the 10 creators’ handles and a recent video from each that shows their reach and viral potential, plus the restaurant, date, branded menu, and dinner photos. Include Instagram Story screenshots of the menus or links to “GRWM for a crypto dinner” TikToks.",
+    "tasks": [
+      {
+        "title": "Find 10 sorority creators",
+        "detail": "Pick popular sorority creators with real campus reach, confident talking-to-camera content, and strong viral potential. Look for recent videos people watch, comment on, and share.",
+        "input": "Creators’ names, handles, and links to recent talking-to-camera videos…"
+      },
+      {
+        "title": "Choose a restaurant",
+        "detail": "Find a spot on or near campus that can host your group.",
+        "input": "Restaurant name, location, proposed date, and group pricing…"
+      },
+      {
+        "title": "Create a fixed custom menu",
+        "detail": "Agree on a set menu with the restaurant and put fomo logos on it.",
+        "input": "Upload the fomo-branded menu below, or paste its link…"
+      },
+      {
+        "title": "Host the dinner",
+        "detail": "Bring your 10 creators together. fomo will pay for the dinner.",
+        "input": "Dinner date, attendee list, photos, and a quick recap…"
+      },
+      {
+        "title": "Get Instagram Stories or TikToks",
+        "detail": "Have creators post an Instagram Story showing the fomo menu or a “GRWM for a crypto dinner” TikTok. Collect links or Story screenshots for review.",
+        "input": "Instagram Story screenshots or links to the creators’ TikToks…"
+      }
+    ],
+    "id": "dinner",
+    "perk": {
+      "label": "A DINNER ON fomo",
+      "title": "You pick the girls. Dinner’s on us.",
+      "description": "Curate 10 popular sorority creators with real campus reach and content people want to share. You pick the people, plan the night, and invite them to a free dinner. fomo covers the bill. Collect menu Stories or “GRWM for a crypto dinner” TikToks.",
+      "highlights": [
+        "Your guest list",
+        "Your restaurant pick",
+        "Dinner paid for"
+      ],
+      "pitch": "I’m putting together a dinner for 10 sorority creators who talk to the camera. I’d love to invite you—fomo is paying for dinner. We’re asking creators to post an Instagram Story of the menu or a “GRWM for a crypto dinner” TikTok.",
+      "taskWins": [
+        "You choose who gets an invite to the free dinner.",
+        "You help choose where everyone gets together.",
+        "Your group gets its own fixed menu with fomo branding.",
+        "You get to host the night and bring the creators together.",
+        "Your dinner shows up in creators’ Stories or TikToks."
+      ]
+    },
+    "companyId": "fomo"
+  },
+  {
+    "title": "Find your chapter filmer",
+    "subtitle": "Your parties, captured properly.",
+    "tag": "Paid filmer · In-chapter · On campus",
+    "intro": "Find someone in your chapter, on your campus, who can get paid to film parties. They’ll work alongside a person fomo sends to monitor the content.",
+    "evidence": "Share the filmer’s name, contact or profile, examples of their strongest work, and how they’ll coordinate with the fomo content monitor.",
+    "tasks": [
+      {
+        "title": "Choose an in-chapter filmer",
+        "detail": "Find a chapter member who wants a paid role and has an eye for shareable party content: great moments, strong opening shots, and quick edits. Ask to see examples of their work.",
+        "input": "Filmer’s name, chapter, contact, and examples of their work…"
+      },
+      {
+        "title": "Coordinate with the fomo monitor",
+        "detail": "Confirm that your filmer can work alongside the person fomo sends to monitor content.",
+        "input": "Availability and how the filmer will coordinate with the fomo monitor…"
+      }
+    ],
+    "id": "filmer",
+    "perk": {
+      "label": "FINAL CUT + PARTY FUNDING",
+      "title": "Your parties. Your final cut.",
+      "description": "Build your camera team. Recruit a paid camera operator from your chapter to film your parties, with a fomo content monitor alongside them. You get final cut and decide how fomo capital is spent on parties. They join your campus team and get internship experience too.",
+      "highlights": [
+        "Your camera operator, your team",
+        "You direct the party funding",
+        "Paid work + internship experience"
+      ],
+      "pitch": "Want to get paid to film our chapter’s parties? We’re finding an on-campus filmer from our chapter. You’d work alongside a person fomo sends to monitor the content.",
+      "taskWins": [
+        "You get final cut of your chapter’s party footage.",
+        "You decide how fomo capital is spent on parties, with a fomo person on site to monitor content."
+      ]
+    },
+    "companyId": "fomo"
+  },
+  {
+    "title": "Recruit your campus media host",
+    "subtitle": "The face. The mic. The campus.",
+    "tag": "Mic provided + paid for views",
+    "intro": "Find a male or female content creator who wants to become the fomo media host for your campus. We’ll send them a mic, and they’ll get paid for views.",
+    "evidence": "Share the creator’s name, contact, profile, and 2–3 recent videos that show their campus reach and viral potential. Confirm that they want to be your campus host.",
+    "tasks": [
+      {
+        "title": "Find your campus host",
+        "detail": "Pick a popular campus creator with personality, confident on-camera delivery, and strong viral potential. Look at recent video views, genuine comments, and shares. Choose someone people already watch and want to hear from.",
+        "input": "Creator’s name, contact, profile, and 2–3 recent videos…"
+      },
+      {
+        "title": "Confirm they’re in",
+        "detail": "Make sure they understand the role, the mic, payment for views, and the fomo Rewards link opportunity.",
+        "input": "Confirm they want the role and understand the mic, view payments, and rewards link…"
+      }
+    ],
+    "id": "host",
+    "perk": {
+      "label": "A PAID ROLE TO OFFER",
+      "title": "Put someone on as your campus host.",
+      "description": "Recruit the content lead for your campus team: a magnetic creator who turns campus moments into content people share. They get a mic, payment for views, and rewards-link earnings. You lead the campus; they get internship experience alongside you.",
+      "highlights": [
+        "Build your content team",
+        "Paid for views + internship experience",
+        "25% of referred fees for life"
+      ],
+      "pitch": "Want to be the fomo media host for our campus? fomo sends you a mic and pays you for views. You can also put a fomo rewards link in your bio and keep 25% of the fees it generates, for life.",
+      "taskWins": [
+        "You help find the person who represents your campus on camera.",
+        "Your host understands the mic, view-based pay, and lifetime referral share."
+      ]
+    },
+    "companyId": "fomo"
+  },
+  {
+    "title": "Take fomo to another campus",
+    "subtitle": "Your creator. Their friends’ school. Our flight.",
+    "tag": "fomo covers the flight",
+    "intro": "Find a creator who makes content talking to the camera—preferably a sorority member. Send them to visit their friends at other schools and make content. fomo will pay for the flight.",
+    "evidence": "Share the creator’s name and profile, 2–3 recent videos that show their reach and viral potential, their friends’ school, proposed dates, and the trip’s content plan.",
+    "tasks": [
+      {
+        "title": "Find a talking-to-camera creator",
+        "detail": "Choose a popular talking-to-camera creator with real campus reach and strong viral potential, preferably a sorority member. They should have friends at another school and a track record of engaging, shareable videos.",
+        "input": "Creator’s name, profile, recent videos, and friends at another school…"
+      },
+      {
+        "title": "Plan the campus visit",
+        "detail": "Confirm which friends and school they’ll visit, proposed dates, and the content they’ll make. Submit the plan for fomo to review and arrange the flight.",
+        "input": "Friends’ school, proposed travel dates, and the content plan…"
+      }
+    ],
+    "id": "travel",
+    "perk": {
+      "label": "A FLIGHT ON fomo",
+      "title": "Send a creator to see their friends.",
+      "description": "Offer a popular talking-to-camera creator a trip to visit friends at another school. Pick someone with on-camera personality, an engaged audience, and strong viral potential—preferably a sorority member. You help plan the content. fomo pays for their flight.",
+      "highlights": [
+        "Their friends’ campus",
+        "Content from a new school",
+        "Their flight paid for"
+      ],
+      "pitch": "Have friends at another school? We’re looking for a creator to visit them and make talking-to-camera content. fomo will cover your flight.",
+      "taskWins": [
+        "You get to offer a creator a flight to visit friends and make content.",
+        "An approved plan gets their campus visit ready for fomo to arrange the flight."
+      ]
+    },
+    "companyId": "fomo"
+  },
+  {
+    "id": "calendar",
+    "title": "Upload your social calendar",
+    "evidence": "Include your upcoming social events and their dates, or attach your chapter’s calendar file. Send the file or copied event list to your fomo contact.",
+    "tasks": [
+      {
+        "title": "Add your calendar",
+        "detail": "Drop in a calendar file, or enter your event names and dates below.",
+        "input": "Any context for your calendar or event dates…"
+      }
+    ],
+    "perk": {
+      "label": "YOUR SOCIAL CALENDAR",
+      "title": "Put your events on fomo’s radar.",
+      "description": "Upload your chapter’s social calendar or add event dates manually. Keep your upcoming parties and events together in one place.",
+      "highlights": [
+        "Drop a calendar file",
+        "Or enter dates manually",
+        "Saved with your profile"
+      ],
+      "pitch": "Here’s our chapter’s upcoming social calendar so fomo can see what we have planned.",
+      "taskWins": [
+        "Keep your upcoming dates ready to share with fomo."
+      ]
+    },
+    "companyId": "fomo"
+  }
+]
