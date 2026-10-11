@@ -1,0 +1,20 @@
+IcyBox Campus concept. Source assets collected from https://www.icybox.io on 2026-10-11.
+Original sources and rights remain with their respective owners.
+
+logo-white.svg <- logos/icybox-wordmark-white.svg
+logo-black.svg <- logos/icybox-wordmark-black.svg
+app-icon.svg <- website-assets/app-icon.svg
+favicon.png <- logos/icon.png
+box-icy.png <- website-assets/how-it-works/box-carousel/box-icy.png
+box-silver.png <- website-assets/how-it-works/box-carousel/box-silver.png
+box-gold.png <- website-assets/how-it-works/box-carousel/box-gold.png
+royal-oak.png <- product-images/audemars-piguet-15510ST.OO.1320ST.06-16e74ce35b5d8061.png
+rolex.png <- product-images/rolex-126710BLRO-8c35d258f88a4eda.png
+patek.png <- product-images/patek-philippe-5167A-001-3f48fffa9592d2d8.png
+hermes.png <- product-images/hermes-BW1938418-8f34e6b9bf436137.png
+chanel.png <- product-images/small_classic_handbag_black.png
+chanel-yellow.png <- product-images/chanel-25-mini-handbag-grained-calfskin-gold-tone-metal-light-yellow-front-view-405fde5ea9ac8079.png
+phone.png <- website-assets/how-it-works/unbox/phone-front.png
+display.woff2 <- fonts/SpecialGothic_Variable-s.p.16x-y-_b_xfqb.woff2
+manrope.woff2 <- fonts/a343f882a40d2cc9-s.p.1sj6eobyi31rd.woff2
+mono.woff2 <- fonts/36363bfb06833f56-s.p.38hmww4cj4vme.woff2

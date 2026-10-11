@@ -91,6 +91,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/icybox", "destination": "/icybox/index.html" },
+    { "source": "/icybox/", "destination": "/icybox/index.html" },
     { "source": "/1", "destination": "/1/index.html" },
     { "source": "/1/", "destination": "/1/index.html" },
     { "source": "/tasks", "destination": "/tasks/index.html" },
