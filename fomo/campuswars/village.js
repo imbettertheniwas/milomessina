@@ -1,25 +1,25 @@
-import {isPartyNight} from './village-party-schedule.js?v=181';
-import {backyardUnlocked} from './village-backyards.js?v=181';
-import {createVillagePopulation} from './village-population.js?v=181';
-import {createLiveArrivals} from './village-arrivals.js?v=181';
-import {createHelipad} from './village-helipad.js?v=181';
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=181';
-import {createFramePacer} from './village-frame-pacing.js?v=181';
-import {villageQuality,createResolutionBudget} from './village-quality.js?v=181';
-import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=181';
+import {isPartyNight} from './village-party-schedule.js?v=182';
+import {backyardUnlocked} from './village-backyards.js?v=182';
+import {createVillagePopulation} from './village-population.js?v=182';
+import {createLiveArrivals} from './village-arrivals.js?v=182';
+import {createHelipad} from './village-helipad.js?v=182';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=182';
+import {createFramePacer} from './village-frame-pacing.js?v=182';
+import {villageQuality,createResolutionBudget} from './village-quality.js?v=182';
+import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=182';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=181';
-import {chapterSceneKey} from './village-startup.js?v=181';
-import {yieldVillageBuild} from './village-build-scheduler.js?v=181';
-import {createDistricts} from './village-districts.js?v=181';
-import {clampCampusTarget} from './village-campus-bounds.js?v=181';
-import {INTRO_DURATION,aimIntroCamera,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=181';
-import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=181';
-import {prewarmVillage} from './village-prewarm.js?v=181';
-import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=181';
-import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=181';
+import {createVillageRendererAsync} from './village-renderer.js?v=182';
+import {chapterSceneKey} from './village-startup.js?v=182';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=182';
+import {createDistricts} from './village-districts.js?v=182';
+import {clampCampusTarget} from './village-campus-bounds.js?v=182';
+import {INTRO_DURATION,aimIntroCamera,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=182';
+import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=182';
+import {prewarmVillage} from './village-prewarm.js?v=182';
+import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=182';
+import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=182';
 
-import {destinationChapters,routeFromHash,destinationHash} from './village-destinations.js?v=181';
+import {destinationChapters,routeFromHash,destinationHash} from './village-destinations.js?v=182';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
 const loading=document.getElementById('village-loading');
@@ -220,12 +220,12 @@ async function startVillage(){
     applyLighting(Number(scheduledNight));
     renderer.shadowMap.needsUpdate=true;viewDirty=true;wake();return true;
   }
-  function followChapterLink(){
+  function followChapterLink({focus=true}={}){
     const requested=routeFromHash(location.hash).chapter;
     const id=chapters.some(c=>c.id===requested)?requested:'';
     history.replaceState(null,'',location.pathname+location.search+destinationHash('',id));
-    if(ready&&id)choose(id,true,true,true);
-    else if(ready)resetView();
+    if(ready&&id)choose(id,focus,true,true);
+    else if(ready&&focus)resetView();
   }
   addEventListener('popstate',followChapterLink);
   document.removeEventListener('chapters:update',queueChapterUpdate);
@@ -510,7 +510,8 @@ async function startVillage(){
     if(visible&&entrancePending){if(overlayOpen){finishIntro();resetView();}else beginIntro();}
     if(!entrancePending&&!entranceActive)arrivals.start(chapters,partyTime,reduced);
     wake();
-    followChapterLink();
+    // Restore selection without treating page startup as a camera interaction.
+    followChapterLink({focus:false});
     // A response that arrived during GPU compilation is a normal live refresh.
     // Present the complete, warmed village now and keep it usable while the
     // updated houses build, instead of restarting the entire loading sequence.

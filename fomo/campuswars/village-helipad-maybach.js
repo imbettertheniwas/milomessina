@@ -1,4 +1,4 @@
-import {createMaybachWheels} from './village-maybach-wheels.js?v=181';
+import {createMaybachWheels} from './village-maybach-wheels.js?v=182';
 // A compact, articulated long-wheelbase sedan. +Z is the nose; the wheels
 // remain 0.39 units in radius so the arrival controller can roll them exactly.
 export function createMaybach(kit){

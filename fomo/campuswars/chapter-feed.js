@@ -1,4 +1,4 @@
-import {recentArrivalHistory,arrivalRanges} from './chapter-arrival-history.js?v=181';
+import {recentArrivalHistory,arrivalRanges} from './chapter-arrival-history.js?v=182';
 export function validateSnapshot(value) {
   if (!value || !Array.isArray(value.chapters) || value.live !== true || !Number.isFinite(Date.parse(value.updatedAt))) throw new Error('Invalid chapter update');
   const ids = new Set();

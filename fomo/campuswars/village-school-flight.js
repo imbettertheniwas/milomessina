@@ -1,4 +1,4 @@
-import {createSchoolDrop,SCHOOL_DROP_DURATION} from './village-school-drop.js?v=181';
+import {createSchoolDrop,SCHOOL_DROP_DURATION} from './village-school-drop.js?v=182';
 
 // Selecting a school starts directly in the original parachute drop.
 export const SCHOOL_FLIGHT_DURATION=SCHOOL_DROP_DURATION;

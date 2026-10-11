@@ -1,5 +1,5 @@
-import {createLots,rowExtension} from './village-layout.js?v=181';
-import {hash} from './village-district-layout.js?v=181';
+import {createLots,rowExtension} from './village-layout.js?v=182';
+import {hash} from './village-district-layout.js?v=182';
 
 // Keep every house, backyard and claim lot supported, then add land as members join.
 export function islandFootprint(chapters=[]){

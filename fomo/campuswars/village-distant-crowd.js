@@ -1,4 +1,4 @@
-import {palettes,hash} from './village-district-layout.js?v=181';
+import {palettes,hash} from './village-district-layout.js?v=182';
 
 // People smaller than twenty-two CSS pixels use one articulated silhouette. Their
 // actual routes, height, build and clothing colors are retained; small features

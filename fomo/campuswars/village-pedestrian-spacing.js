@@ -1,7 +1,7 @@
 // One world-space spatial grid covers chapter members and campus visitors.
 // Steering uses swept circles, so fast walkers cannot skip through a neighbour
 // between frames. Rendering/LOD never determines who occupies a walking lane.
-import {gaitPhase} from './village-human-motion.js?v=181';
+import {gaitPhase} from './village-human-motion.js?v=182';
 
 const CELL=2,STEP=1/30,GAP=.025;
 const turns=[0,.35,-.35,.7,-.7,1.15,-1.15,1.55,-1.55].map(angle=>({angle,cos:Math.cos(angle),sin:Math.sin(angle)}));
@@ -109,6 +109,16 @@ export function createPedestrianSpacing(){
       if(a.hidden){remove(a);a.x=target.x;a.z=target.z;continue;}
       if(wasHidden){place(a,target);a.oldX=a.x;a.oldZ=a.z;a.gaitOrigin=a.pose.gait||0;a.heading=a.pose.rotation??a.pose.angle??0;}
       if(!a.mobile){a.vx=a.vz=0;continue;}
+      // A resting guest with no displacement cannot move in this step. Keep
+      // their exact gesture, heading and gait without sampling a future route
+      // or searching neighbours for a zero-length movement.
+      if(!a.pose.walking&&Math.hypot(target.x-a.x,target.z-a.z)<=.7){
+        a.vx=a.vz=0;
+        a.pose={...a.pose,walking:false,motion:0,gait:gaitPhase(a.travel,a.person,a.person.action==='jog')+a.gaitOrigin-a.person.phase};
+        const facing=a.pose.rotation??a.heading;
+        a.heading+=Math.max(-dt*2,Math.min(dt*2,Math.atan2(Math.sin(facing-a.heading),Math.cos(facing-a.heading))));
+        a.pose.rotation=a.heading;a.pose.angle=a.heading;continue;
+      }
       const future=a.group.sample(a.person,time-a.delay+.55,a.index),fx=(future.x-a.pose.x)/.55,fz=(future.z-a.pose.z)/.55,routeSpeed=Math.hypot(fx,fz);
       const dx=target.x-a.x,dz=target.z-a.z,error=Math.hypot(dx,dz),px=fx+dx*.8,pz=fz+dz*.8,length=Math.hypot(px,pz);
       const speed=a.pose.walking?Math.min(length,Math.max(1.15,(a.person.speed??1)*(a.person.action==='jog'?1.45:1))*1.15):error>.7?.45:0;

@@ -1,7 +1,7 @@
-import {createVehicleKit} from './village-vehicles.js?v=181';
-import {createCampusBannerTexture} from './village-floor-logo.js?v=181';
-import {hash,pick} from './village-district-layout.js?v=181';
-import {buildPlace} from './village-places.js?v=181';
+import {createVehicleKit} from './village-vehicles.js?v=182';
+import {createCampusBannerTexture} from './village-floor-logo.js?v=182';
+import {hash,pick} from './village-district-layout.js?v=182';
+import {buildPlace} from './village-places.js?v=182';
 // Shared architectural parts, textures and landscape geometry. All static parts
 // are instanced per streamed block; texture resources live across block changes.
 export function createCampusKit(T){

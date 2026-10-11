@@ -1,5 +1,5 @@
-import {bannerIdentity} from './village-banner-art.js?v=181';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=181';
+import {bannerIdentity} from './village-banner-art.js?v=182';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=182';
 
 export const LEADERBOARD_LIMIT=10;
 export const ROW_HEIGHT=230;

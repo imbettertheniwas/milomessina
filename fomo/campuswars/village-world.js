@@ -1,33 +1,33 @@
-import {createSchoolBanner} from './village-school-banners.js?v=181';
-import {chapterGreekLetters} from './village-chapter-identity.js?v=181';
-import {islandFootprint} from './village-island.js?v=181';
-import {createParachutes} from './village-parachutes.js?v=181';
-import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=181';
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=181';
-import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=181';
-import {rankedHouseSizes} from './village-house-sizing.js?v=181';
-import {assignHouseFinishes} from './village-house-colors.js?v=181';
-import {createVillageEntrance} from './village-entrance.js?v=181';
-import {createPongGames} from './village-pong.js?v=181';
-import {createDieGames} from './village-die.js?v=181';
-import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=181';
-import {createCompetition,houseStandings} from './village-competition.js?v=181';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=181';
-import {humanPose} from './village-human-motion.js?v=181';
-import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=181';
-import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=181';
-import {palettes,hash} from './village-district-layout.js?v=181';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=181';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=181';
-import {createChapterBanner,bannerIdentity} from './village-banners.js?v=181';
-import {createDistantCrowd} from './village-distant-crowd.js?v=181';
-import {createCrowdVisibility} from './village-crowd-visibility.js?v=181';
-import {createBackyards,hasChapterHouse} from './village-backyards.js?v=181';
+import {createSchoolBanner} from './village-school-banners.js?v=182';
+import {chapterGreekLetters} from './village-chapter-identity.js?v=182';
+import {islandFootprint} from './village-island.js?v=182';
+import {createParachutes} from './village-parachutes.js?v=182';
+import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=182';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=182';
+import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=182';
+import {rankedHouseSizes} from './village-house-sizing.js?v=182';
+import {assignHouseFinishes} from './village-house-colors.js?v=182';
+import {createVillageEntrance} from './village-entrance.js?v=182';
+import {createPongGames} from './village-pong.js?v=182';
+import {createDieGames} from './village-die.js?v=182';
+import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=182';
+import {createCompetition,houseStandings} from './village-competition.js?v=182';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=182';
+import {humanPose} from './village-human-motion.js?v=182';
+import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=182';
+import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=182';
+import {palettes,hash} from './village-district-layout.js?v=182';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=182';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=182';
+import {createChapterBanner,bannerIdentity} from './village-banners.js?v=182';
+import {createDistantCrowd} from './village-distant-crowd.js?v=182';
+import {createCrowdVisibility} from './village-crowd-visibility.js?v=182';
+import {createBackyards,hasChapterHouse} from './village-backyards.js?v=182';
 
 export function createVillage(THREE,chapters,options={}){
   const steps=buildVillageSteps(THREE,chapters,options);let result;do{result=steps.next();}while(!result.done);return result.value;
 }
-export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={},arrivals=null,metric='progress',theme=null,deferCrowd=false}={}){
+export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,packCrowd=false,control={},arrivals=null,metric='progress',theme=null,deferCrowd=false}={}){
   // Physical addresses follow the same percentage standings as the rank badges.
   if(layout){chapters=layout.chapters;metric=layout.metric??metric;theme=layout.theme??theme;}
   else {const ranked=houseStandings(chapters,metric),rankedIds=new Set(ranked.map(c=>c.id));chapters=[...ranked,...chapters.filter(c=>!rankedIds.has(c.id)).sort((a,b)=>a.id.localeCompare(b.id))];}
@@ -215,15 +215,29 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
       const color=poolSkin?palettes.skin[m.skin]:isPoolPerson(m)&&['torso','pelvis','legL','legR'].includes(name)?m.swimColor:shirt?(m.action==='build'?0xe5a13f:m.shirtColor??palettes.shirts[m.shirt]):skin?palettes.skin[m.skin]:name.startsWith('hair')?palettes.hair[m.hair]:name==='cup'?0xd54f56:name.startsWith('shoe')?m.shoeColor:name==='backpack'?m.bagColor:m.bottomColor??palettes.pants[m.pants];
       mesh.setColorAt(i,new THREE.Color(color));
     });
+    yield;
   }
   const parachutes=arrivals?createParachutes(THREE,members.length):null;if(parachutes)world.add(parachutes.mesh);
-  const partColors=compactCrowd?Object.fromEntries(Object.entries(parts).map(([name,mesh])=>[name,mesh.instanceColor?.array.slice()])):null;
+  const packedCrowd=compactCrowd||packCrowd;
+  const partColors=packedCrowd?Object.fromEntries(Object.entries(parts).map(([name,mesh])=>[name,mesh.instanceColor?.array.slice()])):null;
   const distantCrowd=compactCrowd?createDistantCrowd(THREE,members.length):null;
   if(distantCrowd)world.add(distantCrowd.mesh);
   let visibleKey='';
-  const dummy=new THREE.Object3D(),up=new THREE.Vector3(0,1,0),a=new THREE.Vector3(),b=new THREE.Vector3(),direction=new THREE.Vector3();
-  function posePart(name,i,x,y,z,sx,sy,sz,rotation=0,pitch=0,roll=0){dummy.position.set(x,y,z);dummy.rotation.set(pitch,rotation,roll,'YXZ');if(sx===0||sy===0||sz===0)dummy.scale.set(0,0,0);else dummy.scale.set(sx,sy,sz);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
-  function limb(name,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);dummy.position.copy(a).add(b).multiplyScalar(.5);const length=direction.length();dummy.quaternion.setFromUnitVectors(up,direction.normalize());dummy.scale.set(r,length+.025,r);dummy.updateMatrix();parts[name].setMatrixAt(i,dummy.matrix);}
+  const bodyPosition=new THREE.Vector3(),bodyScale=new THREE.Vector3(),bodyRotation=new THREE.Euler(0,0,0,'YXZ'),bodyQuaternion=new THREE.Quaternion(),bodyMatrix=new THREE.Matrix4(),up=new THREE.Vector3(0,1,0),a=new THREE.Vector3(),b=new THREE.Vector3(),direction=new THREE.Vector3();
+  function posePart(name,i,x,y,z,sx,sy,sz,rotation=0,pitch=0,roll=0){
+    // Most body parts rotate only around Y. Write that same transform directly
+    // instead of converting Euler -> quaternion -> matrix for every instance.
+    if((pitch===0&&roll===0)||sx===0||sy===0||sz===0){
+      const e=parts[name].instanceMatrix.array,o=i*16;
+      if(sx===0||sy===0||sz===0)sx=sy=sz=0;
+      const c=Math.cos(rotation),s=Math.sin(rotation);
+      e[o]=c*sx;e[o+1]=0;e[o+2]=-s*sx;e[o+3]=0;
+      e[o+4]=0;e[o+5]=sy;e[o+6]=0;e[o+7]=0;
+      e[o+8]=s*sz;e[o+9]=0;e[o+10]=c*sz;e[o+11]=0;
+      e[o+12]=x;e[o+13]=y;e[o+14]=z;e[o+15]=1;return;
+    }
+    bodyPosition.set(x,y,z);bodyRotation.set(pitch,rotation,roll,'YXZ');bodyQuaternion.setFromEuler(bodyRotation);if(sx===0||sy===0||sz===0)bodyScale.set(0,0,0);else bodyScale.set(sx,sy,sz);bodyMatrix.compose(bodyPosition,bodyQuaternion,bodyScale);parts[name].setMatrixAt(i,bodyMatrix);}
+  function limb(name,i,from,to,r){a.set(...from);b.set(...to);direction.subVectors(b,a);bodyPosition.copy(a).add(b).multiplyScalar(.5);const length=direction.length();bodyQuaternion.setFromUnitVectors(up,direction.normalize());bodyScale.set(r,length+.025,r);bodyMatrix.compose(bodyPosition,bodyQuaternion,bodyScale);parts[name].setMatrixAt(i,bodyMatrix);}
   const crowdVisibility=createCrowdVisibility(THREE,members);
   const localPoint=(m,x,z)=>{const dx=x-m.lot.x,dz=z-m.lot.z,c=Math.cos(m.lot.rotation),s=Math.sin(m.lot.rotation);return {x:dx*c-dz*s,z:dx*s+dz*c};};
   const pongChapters=new Set(members.filter(m=>m.action==='pong').map(m=>m.chapter)),dieChapters=new Set(members.filter(m=>m.action==='die').map(m=>m.chapter));
@@ -262,13 +276,13 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
     for(const batch of crowdVisibility.batches){const airborne=arrivals?.has(batch.chapter);batch.bounds.center.y=airborne?18:4;batch.bounds.radius=airborne?42:backyards.has(batch.chapter)?32:24;}
     const arrivalPose=(member,state)=>arrivals?arrivals.pose(member,state,time):state;
     const allVisible=crowdVisibility.visible(camera,world.matrixWorld),visibleBatches=allVisible.filter(batch=>!distantCrowd?.distant(batch,camera,world.matrixWorld));
-    const key=visibleBatches.map(b=>b.chapter).join('|'),repack=compactCrowd&&key!==visibleKey;
+    const key=visibleBatches.map(b=>b.chapter).join('|'),repack=packedCrowd&&key!==visibleKey;
     if(distantCrowd){distantCrowd.begin(time);for(const batch of allVisible)if(batch.distant)for(let i=batch.start;i<batch.start+batch.count;i++){const member=members[i];distantCrowd.add(member,arrivalPose(member,poses[i]));}distantCrowd.finish();}
     if(parachutes){parachutes.begin();for(const batch of allVisible)if(arrivals.has(batch.chapter))for(let i=batch.start;i<batch.start+batch.count;i++)parachutes.add(members[i],arrivalPose(members[i],poses[i]));parachutes.finish();}
     visibleKey=key;let packedStart=0;
-    if(compactCrowd){const count=visibleBatches.reduce((n,b)=>n+b.count,0);for(const [name,mesh] of Object.entries(parts))mesh.count=count*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1);}
+    if(packedCrowd){const count=visibleBatches.reduce((n,b)=>n+b.count,0);for(const [name,mesh] of Object.entries(parts))mesh.count=count*(name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1);}
     for(const batch of visibleBatches){
-      const start=compactCrowd?packedStart:batch.start;packedStart+=batch.count;
+      const start=packedCrowd?packedStart:batch.start;packedStart+=batch.count;
       if(batch.time===time&&!repack&&!posesChanged)continue;
       if(repack)for(const [name,mesh] of Object.entries(parts)){const stride=name==='backpack'?DETAIL_COUNT+1:name==='hair'?2:1;if(partColors[name]){mesh.instanceColor.array.set(partColors[name].subarray(batch.start*stride*3,(batch.start+batch.count)*stride*3),start*stride*3);mesh.instanceColor.needsUpdate=true;}}
       for(let i=batch.start;i<batch.start+batch.count;i++){

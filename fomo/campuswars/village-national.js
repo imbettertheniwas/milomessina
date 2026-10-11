@@ -1,6 +1,6 @@
-import {schoolDestinations,loadSchoolCatalog} from './village-destinations.js?v=181';
-import {schoolChoices} from './village-school-search.js?v=181';
-import {createSchoolPromptTimer} from './village-school-prompt.js?v=181';
+import {schoolDestinations,loadSchoolCatalog} from './village-destinations.js?v=182';
+import {schoolChoices} from './village-school-search.js?v=182';
+import {createSchoolPromptTimer} from './village-school-prompt.js?v=182';
 
 export function createNationalNavigation(){
  const shell=document.getElementById('village'),source=document.getElementById('chapters-data');

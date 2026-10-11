@@ -1,8 +1,8 @@
-import {paintFomoWordmark} from './village-brand.js?v=181';
-import {hash} from './village-district-layout.js?v=181';
-import {footballState,footballPlayer,footballBall} from './village-football.js?v=181';
-import {createStadiumFireworks} from './village-stadium-fireworks.js?v=181';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=181';
+import {paintFomoWordmark} from './village-brand.js?v=182';
+import {hash} from './village-district-layout.js?v=182';
+import {footballState,footballPlayer,footballBall} from './village-football.js?v=182';
+import {createStadiumFireworks} from './village-stadium-fireworks.js?v=182';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=182';
 
 export const STADIUM_SITE={x:-67,z:79,width:82,depth:84,scale:.55};
 export function createStadium(T,extension=0){

@@ -1,4 +1,4 @@
-import {hash} from './village-district-layout.js?v=181';
+import {hash} from './village-district-layout.js?v=182';
 
 // Traditional masonry and subdued exterior paint, independent of rank or fraternity.
 const finishes=[

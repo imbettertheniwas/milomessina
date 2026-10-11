@@ -1,8 +1,8 @@
-import {paintFomoWordmark} from './village-brand.js?v=181';
-import {createHelipadFans} from './village-helipad-fans.js?v=181';
-import {createMaybach} from './village-helipad-maybach.js?v=181';
-import {createHelipadGuests} from './village-helipad-guests.js?v=181';
-import {createHelipadAircraft} from './village-helipad-aircraft.js?v=181';
+import {paintFomoWordmark} from './village-brand.js?v=182';
+import {createHelipadFans} from './village-helipad-fans.js?v=182';
+import {createMaybach} from './village-helipad-maybach.js?v=182';
+import {createHelipadGuests} from './village-helipad-guests.js?v=182';
+import {createHelipadAircraft} from './village-helipad-aircraft.js?v=182';
 // Appearance references and modeling notes: helipad-references.md.
 // This scenery has its own identities; neither guest is a registered member.
 export const HELIPAD_SITE={x:-67,z:145,radius:24,scale:.78};

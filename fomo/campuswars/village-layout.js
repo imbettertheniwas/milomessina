@@ -1,11 +1,11 @@
-import {hasChapterHouse} from './village-backyards.js?v=181';
-import {conversation,personalClock} from './village-human-behavior.js?v=181';
-import {rankedHouseSizes} from './village-house-sizing.js?v=181';
-import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=181';
-import {gaitPhase,smooth} from './village-human-motion.js?v=181';
-import {danceActivity} from './village-human-dance.js?v=181';
-import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=181';
-import {assignSocialLife,socialActivity} from './village-social-life.js?v=181';
+import {hasChapterHouse} from './village-backyards.js?v=182';
+import {conversation,personalClock} from './village-human-behavior.js?v=182';
+import {rankedHouseSizes} from './village-house-sizing.js?v=182';
+import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=182';
+import {gaitPhase,smooth} from './village-human-motion.js?v=182';
+import {danceActivity} from './village-human-dance.js?v=182';
+import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=182';
+import {assignSocialLife,socialActivity} from './village-social-life.js?v=182';
 const lawnRoute=roundedLoop(-8.25,7,8.25,14.2,1.15);
 // Ease over the low lawn/path edges; the walking loop clears the porch steps.
 export function lawnGround(x,z){const edge=smooth((12-z)/.25);return .045+.085*smooth((7.5-Math.abs(x))/.25)*edge+.07*smooth((.825-Math.abs(x))/.2)*edge;}
@@ -59,7 +59,7 @@ export const DIE_TABLE={x:-3.9,z:9.8,width:2.44,depth:1.22,height:.76,playerDist
 export const dieSeat=seat=>({side:seat<2?-1:1,dz:(seat%2?1:-1)*DIE_TABLE.seatOffset});
 export const dieSeatSpot=seat=>{const {side,dz}=dieSeat(seat);return {x:DIE_TABLE.x+side*DIE_TABLE.playerDistance,z:DIE_TABLE.z+dz,rotation:side<0?Math.PI/2:-Math.PI/2};};
 export const dieCup=seat=>{const {side,dz}=dieSeat(seat);return {x:DIE_TABLE.x+side*(DIE_TABLE.width/2-DIE_TABLE.cupBack),z:DIE_TABLE.z+Math.sign(dz)*(DIE_TABLE.depth/2-DIE_TABLE.cupInset)};};
-export {motionProfile} from './village-district-layout.js?v=181';
+export {motionProfile} from './village-district-layout.js?v=182';
 export function pongTurn(chapter,time){
   const period=3.8+hash(chapter,'pong-period')*2.1,clock=time+hash(chapter,'pong-offset')*19,turn=Math.floor(clock/period);
   return {seat:((turn%2)+2)%2,elapsed:clock-turn*period,release:1.15,flight:.85,turn};

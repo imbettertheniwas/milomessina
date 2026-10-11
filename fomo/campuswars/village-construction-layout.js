@@ -1,5 +1,5 @@
-import {hash} from './village-district-layout.js?v=181';
-import {gaitPhase,smooth} from './village-human-motion.js?v=181';
+import {hash} from './village-district-layout.js?v=182';
+import {gaitPhase,smooth} from './village-human-motion.js?v=182';
 
 const forms=['longhouse','twin-wing','courtyard','townhouse','pavilion'];
 const roles=['hammer','masonry','drill','saw'];

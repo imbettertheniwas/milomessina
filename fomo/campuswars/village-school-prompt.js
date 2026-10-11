@@ -1,4 +1,4 @@
-import {SCHOOL_PROMPT_DELAY} from './village-school-search.js?v=181';
+import {SCHOOL_PROMPT_DELAY} from './village-school-search.js?v=182';
 
 // Count visible time only, starting after the opening intro completes or is skipped.
 export function createSchoolPromptTimer({show,now=()=>performance.now(),schedule=setTimeout,cancel=clearTimeout}){

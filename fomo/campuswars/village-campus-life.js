@@ -1,14 +1,14 @@
-import {createTrafficSpacing} from './village-traffic-spacing.js?v=181';
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=181';
-import {createDistantCrowd} from './village-distant-crowd.js?v=181';
-import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=181';
-import {personalClock,conversation} from './village-human-behavior.js?v=181';
-import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=181';
-import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=181';
-import {gaitPhase,humanPose,smooth} from './village-human-motion.js?v=181';
-import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=181';
-import {journeyPose} from './village-place-layout.js?v=181';
-import {placePeople} from './village-place-life.js?v=181';
+import {createTrafficSpacing} from './village-traffic-spacing.js?v=182';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=182';
+import {createDistantCrowd} from './village-distant-crowd.js?v=182';
+import {DETAIL_COUNT,detailSlots,hairShape,detailColors,dressPerson,backHair} from './village-human-style.js?v=182';
+import {personalClock,conversation} from './village-human-behavior.js?v=182';
+import {campusGroundHeight,isCampusHill,campusRamp} from './village-campus-hill.js?v=182';
+import {FOMO_VEHICLE_COLOR} from './village-vehicles.js?v=182';
+import {gaitPhase,humanPose,smooth} from './village-human-motion.js?v=182';
+import {roundedLoop,mod,hash,appearance,palettes,districtSpecs} from './village-district-layout.js?v=182';
+import {journeyPose} from './village-place-layout.js?v=182';
+import {placePeople} from './village-place-life.js?v=182';
 
 // Physical routes keep activity on sidewalks, lawns and bike lanes.
 export function campusPeople(kind,cx,cz,streets=1,extension=0){

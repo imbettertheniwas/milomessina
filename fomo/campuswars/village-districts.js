@@ -1,13 +1,13 @@
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=181';
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=181';
-import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=181';
-import {createCampusKit} from './village-campus-kit.js?v=181';
-import {buildSkylineBuilding} from './village-skyline.js?v=181';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=181';
-import {dressNeighborhood} from './village-places.js?v=181';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=181';
-import {HELIPAD_SITE} from './village-helipad.js?v=181';
-import {campusDistrictExists} from './village-campus-bounds.js?v=181';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=182';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=182';
+import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=182';
+import {createCampusKit} from './village-campus-kit.js?v=182';
+import {buildSkylineBuilding} from './village-skyline.js?v=182';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=182';
+import {dressNeighborhood} from './village-places.js?v=182';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=182';
+import {HELIPAD_SITE} from './village-helipad.js?v=182';
+import {campusDistrictExists} from './village-campus-bounds.js?v=182';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;

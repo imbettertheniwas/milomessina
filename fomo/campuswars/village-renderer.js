@@ -1,12 +1,12 @@
-import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=181';
-import {villageQuality} from './village-quality.js?v=181';
-import {createVillage,buildVillageSteps} from './village-world.js?v=181';
-import {houseStandings} from './village-competition.js?v=181';
-import {rankedHouseSizes} from './village-house-sizing.js?v=181';
-import {assignHouseFinishes} from './village-house-colors.js?v=181';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=181';
-import {unoccludedHouses} from './village-occlusion.js?v=181';
-import {yieldVillageBuild} from './village-build-scheduler.js?v=181';
+import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=182';
+import {villageQuality} from './village-quality.js?v=182';
+import {createVillage,buildVillageSteps} from './village-world.js?v=182';
+import {houseStandings} from './village-competition.js?v=182';
+import {rankedHouseSizes} from './village-house-sizing.js?v=182';
+import {assignHouseFinishes} from './village-house-colors.js?v=182';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=182';
+import {unoccludedHouses} from './village-occlusion.js?v=182';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=182';
 
 export const STREAMING_THRESHOLD=80;
 export function villageRenderLayout(T,input,previousFinishes,metric='progress',theme=null){
@@ -27,6 +27,9 @@ export function visibleHouseIndices(T,layout,camera,margin=0){
   return unoccludedHouses(T,layout,camera,indices);
 }
 function startingIndices(T,layout,options){
+  // A compact campus stays resident through the whole intro and camera orbit.
+  // Streaming it by angle repeatedly rebuilt the same houses and crowds.
+  if(layout.chapters.length<=STREAMING_THRESHOLD)return new Set(layout.lots.map((_,i)=>i));
   if(options.camera)return visibleHouseIndices(T,layout,options.camera,24);
   // Cover the actual intro flight as well as the resting view before lifting
   // the loading cover. No school artwork for houses outside the camera is created.
@@ -47,7 +50,7 @@ export async function createVillageRendererAsync(T,chapters,options={}){
   const compactCrowd=chapters.length>STREAMING_THRESHOLD||villageQuality().mobile;
   const layout=streaming?villageRenderLayout(T,chapters,options.houseFinishes,options.metric,options.theme):null;
   const indices=streaming?startingIndices(T,layout,options):null;
-  const steps=buildVillageSteps(T,layout?.chapters||chapters,{...options,layout,indices,attachStreet:!streaming&&(options.attachStreet??false),compactCrowd});
+  const steps=buildVillageSteps(T,layout?.chapters||chapters,{...options,layout,indices,attachStreet:!streaming&&(options.attachStreet??false),packCrowd:true,compactCrowd});
   let result;
   do{
     const start=performance.now();do{result=steps.next();}while(!result.done&&performance.now()-start<4);
@@ -65,7 +68,7 @@ function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arri
   function request(indices){
     if(pending&&contains(pending.indices,indices))return;
     discard();const control={};
-    pending={indices,control,steps:buildVillageSteps(T,layout.chapters,{streets,layout,indices,attachStreet:false,compactCrowd,control,arrivals})};
+    pending={indices,control,steps:buildVillageSteps(T,layout.chapters,{streets,layout,indices,attachStreet:false,packCrowd:true,compactCrowd,control,arrivals})};
   }
   function advance(budget=4){
     if(!pending||disposed)return false;

@@ -1,4 +1,4 @@
-import {hash} from './village-district-layout.js?v=181';
+import {hash} from './village-district-layout.js?v=182';
 
 const TAU=Math.PI*2,profiles=new WeakMap();
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};

@@ -104,3 +104,23 @@ test('a small village can open its houses before filling the same full-detail cr
     assert(focused);assert(village.world.getObjectByName(`chapter-house-${last.id}`));
   }finally{village.dispose();}
 });
+
+ test('the compact campus stays resident while the camera turns',async()=>{
+  const v=await createVillageRendererAsync(T,rows.slice(0,37),{camera:cameraAt(),progressive:true,deferCrowd:true});
+  try{while(v.building)v.advance(Infinity);const revision=v.revision;
+    assert.equal(v.residentCount,38);
+    for(const [x,z] of [[0,120],[140,0],[0,-120],[-140,0]]){const c=cameraAt(x,z,0);c.lookAt(0,3,0);c.updateMatrixWorld();v.updateView(c);assert.equal(v.building,false);}
+    assert.equal(v.revision,revision,'turning never replaces houses or resets pedestrian groups');
+  }finally{v.dispose();}
+ });
+
+ test('desktop draw packing retains full-detail geometry and every visible pose',()=>{
+  const input=rows.slice(0,16),reference=createVillage(T,input),packed=createVillage(T,input,{packCrowd:true}),camera=cameraAt();
+  try{reference.animateCrowd(23);packed.animateCrowd(23,camera);assert.equal(packed.distantCrowd,null);
+    let offset=0;for(const batch of packed.crowdVisibility.visible(camera,packed.world.matrixWorld)){
+      for(const [name,mesh] of Object.entries(packed.parts)){const original=reference.parts[name],stride=original.instanceMatrix.count/reference.members.length;
+        assert.equal(mesh.geometry.attributes.position.count,original.geometry.attributes.position.count);
+        assert.deepEqual(mesh.instanceMatrix.array.slice(offset*stride*16,(offset+batch.count)*stride*16),original.instanceMatrix.array.slice(batch.start*stride*16,(batch.start+batch.count)*stride*16));}
+      offset+=batch.count;}assert.equal(packed.parts.torso.count,offset);assert(offset<packed.members.length);
+  }finally{reference.dispose();packed.dispose();}
+ });

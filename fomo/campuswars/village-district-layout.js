@@ -1,4 +1,4 @@
-import {marketShops} from './village-place-layout.js?v=181';
+import {marketShops} from './village-place-layout.js?v=182';
 // Stable per-instance hashing: unrelated objects do not repeat in stripes or shift
 // when another instance is inserted. No runtime randomness or network state.
 const hashPrefixes=new Map();

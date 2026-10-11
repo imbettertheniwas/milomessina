@@ -1,4 +1,4 @@
-import {campusIdentity} from './village-school-identities.js?v=181';
+import {campusIdentity} from './village-school-identities.js?v=182';
 // Apparel colors supplement the school artwork catalog. These are cloth colors,
 // not new logo assets; small fabric-tone variations are intentional.
 const normalize=value=>String(value||'').split(' · ')[0].normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/^the /,'').replace(/[^a-z0-9]+/g,' ').trim();
