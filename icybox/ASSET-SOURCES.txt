@@ -18,3 +18,5 @@ phone.png <- website-assets/how-it-works/unbox/phone-front.png
 display.woff2 <- fonts/SpecialGothic_Variable-s.p.16x-y-_b_xfqb.woff2
 manrope.woff2 <- fonts/a343f882a40d2cc9-s.p.1sj6eobyi31rd.woff2
 mono.woff2 <- fonts/36363bfb06833f56-s.p.38hmww4cj4vme.woff2
+Sorority redesign: added Dior Himalayan Mini Lady Dior, Louis Vuitton Cherry Blossom Capucines Mini, Hermès Birkin 30 Rouge Casaque, and ruby/bronze box renders from the scraped public IcyBox kit.
+Named reward tiers and thresholds were supplied by the user. The public site did not establish tier-specific bag pools or named packaging; renders and interactive bag carousel are explicitly illustrative.
