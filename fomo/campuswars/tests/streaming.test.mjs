@@ -84,3 +84,23 @@ test('the same view loads the same houses regardless of the total addresses beyo
     assert(village.renderAnchors.some(anchor=>anchor.id===destination.id));
   }finally{village?.dispose();if(previous)globalThis.requestAnimationFrame=previous;else delete globalThis.requestAnimationFrame;}
  });
+
+test('a small village can open its houses before filling the same full-detail crowd',async()=>{
+  const input=rows.slice(0,35).map((c,i)=>({...c,joined:31+i%5}));
+  const village=await createVillageRendererAsync(T,input,{camera:cameraAt(),progressive:true,deferCrowd:true,attachStreet:true});
+  try{
+    assert.equal(village.anchors.length,36);
+    assert.equal(village.members.length,0);
+    assert(village.building);
+    const initialIds=village.renderAnchors.map(a=>a.id);
+    while(village.building)village.advance(Infinity);
+    assert.deepEqual(village.renderAnchors.map(a=>a.id),initialIds);
+    const expected=input.filter(c=>initialIds.includes(c.id)).reduce((sum,c)=>sum+c.joined,0);
+    assert.equal(village.members.length,expected,'every member appears after the deferred build');
+    assert.equal(village.distantCrowd,null,'desktop keeps its existing full-detail crowd');
+    assert.equal(village.streets.parent,village.world);
+    let focused=false;const last=village.anchors[34];village.focus(last.id,()=>focused=true);
+    while(village.building)village.advance(Infinity);
+    assert(focused);assert(village.world.getObjectByName(`chapter-house-${last.id}`));
+  }finally{village.dispose();}
+});

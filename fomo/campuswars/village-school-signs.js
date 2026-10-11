@@ -1,4 +1,4 @@
-import {campusIdentity} from './village-school-identities.js?v=180';
+import {campusIdentity} from './village-school-identities.js?v=181';
 
 const images=new Map();
 export function loadCampusLogo(identity){

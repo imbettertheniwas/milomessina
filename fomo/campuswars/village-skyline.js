@@ -1,4 +1,4 @@
-import {hash,pick} from './village-district-layout.js?v=180';
+import {hash,pick} from './village-district-layout.js?v=181';
 
 // Coordinated real-world materials, with a stable finish for every address.
 const finishes=[

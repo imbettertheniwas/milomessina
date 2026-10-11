@@ -2,21 +2,39 @@
 export const HELIPAD_FAN_COUNT=48;
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
 const seed=(i,k)=>{const n=Math.sin(i*127.1+k*311.7)*43758.5453;return n-Math.floor(n);};
-export function helipadFanPose(i,time){
-  const t=((time%134)+134)%134,delay=seed(i,1)*4.2;
-  const arrive=smooth((t-8.5-delay)/(7+seed(i,2)*5)),leave=smooth((t-107-delay)/(8+seed(i,3)*3)),amount=arrive*(1-leave);
+function fanPath(i,time){
+  const t=((time%134)+134)%134,delay=seed(i,1)*6.2;
   const alongCarpet=i>=32,ringAngle=-2.5+(i%16)/15*5,ringRadius=12.8+Math.floor(i/16)*2.2;
   const targetX=alongCarpet?-27+(i%8)*2.05:Math.cos(ringAngle)*ringRadius;
   const targetZ=alongCarpet?.3+(i<40?-2.6:2.6):Math.sin(ringAngle)*ringRadius;
-  const startX=35.3+Math.floor(i/16)*2.4,startZ=Math.sign(targetZ)*(6+(i%16)*2),startAngle=Math.atan2(startZ,startX),targetAngle=Math.atan2(targetZ,targetX);
+  // These same students are on the campus paths before and after the car
+  // arrives. Their small, individually phased routes loop without a reset pop.
+  const idleAngle=t/134*Math.PI*2*(1+i%3)+seed(i,13)*Math.PI*2;
+  const strolling=i%3!==0;
+  const east=i<24,curb=i>=24&&i<36;
+  const homeX=east?35.3+(seed(i,14)-.5)*2:curb?-33+(seed(i,14)-.5): -29+(i-36)/11*61;
+  const homeZ=east?-55+i/23*84:curb?Math.sign(targetZ)*(11+(i%6)*3.2):35+(seed(i,15)-.5);
+  const startX=homeX+(strolling?Math.sin(idleAngle)*.4:0);
+  const startZ=homeZ+(strolling?Math.cos(idleAngle)*(east?2.2:.7):0);
+  const startAngle=Math.atan2(startZ,startX),targetAngle=Math.atan2(targetZ,targetX);
+  const approachDistance=Math.hypot(Math.hypot(startX,startZ)-Math.hypot(targetX,targetZ),(Math.hypot(startX,startZ)+Math.hypot(targetX,targetZ))*.5*(targetAngle-startAngle));
+  const travel=Math.max(7,approachDistance/(4.5+seed(i,2)));
+  const arrive=smooth((t-8.5-delay)/travel),leave=smooth((t-107-delay)/(12+seed(i,3)*5)),amount=arrive*(1-leave);
   const angle=startAngle+(targetAngle-startAngle)*amount,radius=Math.hypot(startX,startZ)*(1-amount)+Math.hypot(targetX,targetZ)*amount;
-  const x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,moving=amount>.001&&amount<.999,excited=amount>.98;
-  const phase=t*(7.5+seed(i,4)*3.5)+seed(i,5)*Math.PI*2,beat=(t+seed(i,6)*19)%(6+seed(i,7)*9),gesture=smooth(beat/.8)*(1-smooth((beat-2.2)/1.1));
+  const x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,gathering=amount>.001&&amount<.999,moving=gathering||(amount<=.001&&strolling),excited=amount>.98;
+  return {t,x,z,amount,moving,excited,strolling,alongCarpet};
+}
+export function helipadFanPose(i,time){
+  const {t,x,z,amount,moving,excited,strolling,alongCarpet}=fanPath(i,time);
+  const next=fanPath(i,time+.02),toward=Math.atan2(-x,alongCarpet?.3-z:-z);
+  const direction=Math.atan2(next.x-x,next.z-z),settle=smooth((amount-.96)/.04);
+  const heading=moving?direction+Math.atan2(Math.sin(toward-direction),Math.cos(toward-direction))*settle:toward;
+  const phase=time*(7.5+seed(i,4)*3.5)+seed(i,5)*Math.PI*2,beat=(t+seed(i,6)*19)%(6+seed(i,7)*9),gesture=smooth(beat/.8)*(1-smooth((beat-2.2)/1.1));
   const behavior=i%5,phoneRaise=behavior===0?.92:behavior===1?gesture:behavior===2?.65:behavior===3?.3+gesture*.65:gesture*.55;
   // Most spectators keep their feet on the ground. Only a few occasionally
   // hop; each person's recording, waving and weight shifts have their own beat.
   const hop=excited&&i%13===0&&beat<.65?Math.sin(beat/.65*Math.PI)*.12:0;
-  return {x,z,heading:Math.atan2(-x,alongCarpet?.3-z:-z)+(excited?Math.sin(t*.23+seed(i,8)*6)*.09:0),moving,excited,visible:t>8&&t<123,phase,
+  return {x,z,heading:heading+(excited?Math.sin(t*.23+seed(i,8)*6)*.09:0),moving,excited,visible:true,phase:strolling&&amount<=.001?phase*.35:phase,
     height:.92+seed(i,9)*.16,hop,lean:excited?Math.sin(t*(.45+seed(i,10)*.3)+i)*.018:0,
     phoneRaise:excited?phoneRaise:0,wave:excited&&behavior===2?gesture:0,twoHands:behavior===0||behavior===1,
     headTurn:excited?Math.sin(t*(.3+seed(i,11)*.3)+i)*.16:0,headTilt:excited?Math.sin(t*.4+i)*.045:0,

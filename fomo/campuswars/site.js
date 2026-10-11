@@ -50,7 +50,7 @@
   document.addEventListener('village:introstart',()=>setMoreControls(false));
   const profile=document.getElementById('chapter-profile');let profileChapter='';
   let lookupSchoolIdentity;
-  const profileIdentity=import('./village-school-identities.js?v=180').then(module=>(lookupSchoolIdentity=module.campusIdentity));
+  const profileIdentity=import('./village-school-identities.js?v=181').then(module=>(lookupSchoolIdentity=module.campusIdentity));
   const about = document.getElementById('about-dialog');
   function syncOverlay(){document.dispatchEvent(new CustomEvent('village:overlay',{detail:{open:!drawer.hidden||moreButton.getAttribute('aria-expanded')==='true'||Boolean(about.open)||profile.open}}));}
   document.addEventListener('chapter:profile',async event=>{
@@ -221,14 +221,14 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village.js?v=180').catch(error => {
+  import('./village.js?v=181').catch(error => {
     console.error('Unable to load Greek village:', error);
     document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
     document.getElementById('village-intro').hidden = true;
     document.getElementById('village').classList.add('village-unavailable');
   });
-  import('./village-chapter-search.js?v=180').then(({installChapterSearch})=>{
+  import('./village-chapter-search.js?v=181').then(({installChapterSearch})=>{
     chapterSearch=installChapterSearch({input:document.getElementById('chapter-search'),clear:document.getElementById('chapter-search-clear'),status:document.getElementById('chapter-search-status'),list:document.getElementById('house-track'),getChapters:()=>chapters,getCards:()=>cards,onSelect:id=>{selectChapter(id);setDrawer(false);}});
   });
   let lastUpdated=savedSnapshot.updatedAt;
@@ -269,7 +269,7 @@
     selectChapter(selectedId,{writeHash:false,emit:false});
     if (focusedChapter) cards.find(card => card.dataset.chapter === focusedChapter)?.focus({preventScroll:true});
   }
-  Promise.all([import('./chapter-feed.js?v=180'),import('./village-competition.js?v=180'),import('./village-backyards.js?v=180'),profileIdentity]).then(([{startChapterFeed},{houseStandings},houses]) => {
+  Promise.all([import('./chapter-feed.js?v=181'),import('./village-competition.js?v=181'),import('./village-backyards.js?v=181'),profileIdentity]).then(([{startChapterFeed},{houseStandings},houses]) => {
     rankChapters=chapters=>houseStandings(chapters,'members');
     backyardStatus=houses.backyardStatus;
     updateChapters(savedSnapshot);

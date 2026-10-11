@@ -1,4 +1,4 @@
-import {createVehicleLogoTexture} from './village-floor-logo.js?v=180';
+import {createVehicleLogoTexture} from './village-floor-logo.js?v=181';
 
 export const FOMO_VEHICLE_COLOR=0x516af6;
 

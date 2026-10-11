@@ -1,4 +1,4 @@
-import {applyDancePose} from './village-human-dance.js?v=180';
+import {applyDancePose} from './village-human-dance.js?v=181';
 // Shared, absolute-time poses keep chapter members and campus visitors in scale.
 // One cycle is two steps; measuring it in distance prevents treadmill feet.
 const TAU=Math.PI*2;

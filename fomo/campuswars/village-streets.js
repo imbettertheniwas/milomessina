@@ -1,8 +1,8 @@
-import {islandFloorGeometry} from './village-island.js?v=180';
-import {villageQuality} from './village-quality.js?v=180';
-import {createGrassMaterial} from './village-grass.js?v=180';
-import {hash} from './village-district-layout.js?v=180';
-import {campusBounds} from './village-campus-bounds.js?v=180';
+import {islandFloorGeometry} from './village-island.js?v=181';
+import {villageQuality} from './village-quality.js?v=181';
+import {createGrassMaterial} from './village-grass.js?v=181';
+import {hash} from './village-district-layout.js?v=181';
+import {campusBounds} from './village-campus-bounds.js?v=181';
 // Insert road sections in the one opaque floor. UVs repeat the straight part
 // while the original end junction and the campus beyond it move outward.
 export function setStreetExtension(T,streets,extension=0,streetTotal=1) {

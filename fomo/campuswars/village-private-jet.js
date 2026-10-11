@@ -1,4 +1,4 @@
-import {paintFomoWordmark} from './village-brand.js?v=180';
+import {paintFomoWordmark} from './village-brand.js?v=181';
 // Lightweight, reusable jet and cabin geometry for the school-arrival film.
 export function createPrivateJet(T){
  const root=new T.Group();root.name='fomo-private-jet';

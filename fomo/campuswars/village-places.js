@@ -1,5 +1,5 @@
-import {hash,pick} from './village-district-layout.js?v=180';
-import {marketPaths,greenTrail} from './village-place-layout.js?v=180';
+import {hash,pick} from './village-district-layout.js?v=181';
+import {marketPaths,greenTrail} from './village-place-layout.js?v=181';
 
 export function buildPlace(T,k,g,s){
   const {box,bar,cylinder,mesh,sign,roof,bench,material}=k,{width:w,depth:d,height:h}=s;

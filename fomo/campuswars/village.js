@@ -1,25 +1,25 @@
-import {isPartyNight} from './village-party-schedule.js?v=180';
-import {backyardUnlocked} from './village-backyards.js?v=180';
-import {createVillagePopulation} from './village-population.js?v=180';
-import {createLiveArrivals} from './village-arrivals.js?v=180';
-import {createHelipad} from './village-helipad.js?v=180';
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=180';
-import {createFramePacer} from './village-frame-pacing.js?v=180';
-import {villageQuality,createResolutionBudget} from './village-quality.js?v=180';
-import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=180';
+import {isPartyNight} from './village-party-schedule.js?v=181';
+import {backyardUnlocked} from './village-backyards.js?v=181';
+import {createVillagePopulation} from './village-population.js?v=181';
+import {createLiveArrivals} from './village-arrivals.js?v=181';
+import {createHelipad} from './village-helipad.js?v=181';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=181';
+import {createFramePacer} from './village-frame-pacing.js?v=181';
+import {villageQuality,createResolutionBudget} from './village-quality.js?v=181';
+import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=181';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=180';
-import {chapterSceneKey} from './village-startup.js?v=180';
-import {yieldVillageBuild} from './village-build-scheduler.js?v=180';
-import {createDistricts} from './village-districts.js?v=180';
-import {clampCampusTarget} from './village-campus-bounds.js?v=180';
-import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=180';
-import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=180';
-import {prewarmVillage} from './village-prewarm.js?v=180';
-import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=180';
-import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=180';
+import {createVillageRendererAsync} from './village-renderer.js?v=181';
+import {chapterSceneKey} from './village-startup.js?v=181';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=181';
+import {createDistricts} from './village-districts.js?v=181';
+import {clampCampusTarget} from './village-campus-bounds.js?v=181';
+import {INTRO_DURATION,aimIntroCamera,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=181';
+import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=181';
+import {prewarmVillage} from './village-prewarm.js?v=181';
+import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=181';
+import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=181';
 
-import {destinationChapters,routeFromHash,destinationHash} from './village-destinations.js?v=180';
+import {destinationChapters,routeFromHash,destinationHash} from './village-destinations.js?v=181';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
 const loading=document.getElementById('village-loading');
@@ -37,6 +37,8 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
 }
 if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';shell.classList.add('village-unavailable');});
 async function startVillage(){
+  const startupMark=stage=>{performance.mark('village:'+stage);if(location.search.includes('startup-profile'))console.info('Village startup',stage,Math.round(performance.now()));};
+  startupMark('modules-ready');
   const pedestrianSpacing=createPedestrianSpacing(),arrivals=createLiveArrivals();
   arrivals.enqueue(JSON.parse(document.getElementById('chapters-data').textContent).arrivals);
   let ready=false,pendingChapterUpdate=null;
@@ -45,7 +47,7 @@ async function startVillage(){
   const flightKeys=new Set();
   allChapters=JSON.parse(document.getElementById('chapters-data').textContent).chapters;
   chapters=destinationChapters(allChapters);
-  function makeDistricts(extension,streets){return createDistricts(THREE,extension,streets,{incremental:quality.mobile});}
+  function makeDistricts(extension,streets){return createDistricts(THREE,extension,streets,{incremental:true});}
   const resolutionBudget=createResolutionBudget(quality,devicePixelRatio);
   let renderScale=resolutionBudget.ratio;
   renderer.setPixelRatio(renderScale);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
@@ -56,7 +58,10 @@ async function startVillage(){
   const ambient=new THREE.HemisphereLight(0xe0edff,0x877a61,1.55);scene.add(ambient);
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
   const fill=new THREE.DirectionalLight(0xb7d2f5,.6);fill.position.set(30,15,-25);scene.add(fill);
-  let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals,metric:'members'});scene.add(village.world);
+  camera.aspect=viewport.clientWidth/viewport.clientHeight;
+  aimIntroCamera(camera,reduced?INTRO_DURATION:0);
+  let village=await createVillageRendererAsync(THREE,chapters,{camera,progressive:true,deferCrowd:true,aspect:camera.aspect,attachStreet:true,arrivals,metric:'members'});scene.add(village.world);
+  startupMark('houses-built');
   const populationSource=document.getElementById('chapters-data');
   const populationSnapshot=JSON.parse(populationSource.textContent);
   const population=createVillagePopulation(THREE,populationSnapshot.chapters,{live:populationSource.dataset.feedLive==='true',updatedAt:populationSource.dataset.feedUpdatedAt||populationSnapshot.updatedAt});scene.add(population.root);
@@ -69,6 +74,7 @@ async function startVillage(){
   let streetMode=false,streetZ=28.5,streetWantedZ=28.5;
   const streetButton=document.getElementById('village-street'),streetControls=document.getElementById('street-controls');
   let districts=makeDistricts(village.extension,village.streetTotal);scene.add(districts.root);
+  startupMark('scenery-built');
   const dusk={sky:new THREE.Color(0x25233f),ambient:new THREE.Color(0x9a9fdc),ground:new THREE.Color(0x453649),sun:new THREE.Color(0xc49ab1),fill:new THREE.Color(0x858dff)};
   let litAtNight=false,scheduledNight=isPartyNight();
   function applyLighting(amount){
@@ -199,7 +205,7 @@ async function startVillage(){
       arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);
       if(event.detail.selectedId)choose(event.detail.selectedId,false);return true;
     }
-    const next=await createVillageRendererAsync(THREE,nextChapters,{houseFinishes:previous.houseFinishes,aspect:camera.aspect,attachStreet:true,metric:'members',arrivals});
+    const next=await createVillageRendererAsync(THREE,nextChapters,{camera,progressive:true,houseFinishes:previous.houseFinishes,aspect:camera.aspect,attachStreet:true,metric:'members',arrivals});
     if(buildRevision!==chapterBuildRevision){next.dispose();return false;}
     chapters=nextChapters;
     arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);
@@ -460,7 +466,8 @@ async function startVillage(){
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
     arrivals.advance(partyTime);
-    helipad.update(partyTime);
+    // One clock speeds up the car, chauffeur, carpet, aircraft and crowd together.
+    helipad.update(partyTime*1.15);
     districts.traffic.setObstacles(helipad.car.visible?[{x:helipad.root.position.x+helipad.state.carX*helipad.root.scale.x,z:helipad.root.position.z+helipad.state.carZ*helipad.root.scale.z,length:6*helipad.root.scale.z}]:[]);
     const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
     village.animateCrowd(partyTime,camera,pedestrianPoses);
@@ -487,21 +494,15 @@ async function startVillage(){
   const initial=new URLSearchParams(location.hash.slice(1)).get('chapter');choose(village.anchors.some(a=>a.id===initial)?initial:selected,false,false);
   camera.position.set(0,104,104);camera.lookAt(target);camera.updateMatrixWorld();
   async function prepare(){
-    // Use the latest available roster before compiling. Previously the first
-    // live response made us warm the saved world, throw it away, then warm the
-    // replacement again while the loading cover stayed up.
-    // Let already-completed feed requests dispatch after synchronous scenery
-    // construction, then drain updates again after every district build.
-    await yieldVillageBuild();
-    do{
-      while(pendingChapterUpdate){
-        const event=pendingChapterUpdate;pendingChapterUpdate=null;
-        await updateChapters(event);
-      }
-      while(districts.building){await yieldVillageBuild();districts.update(target.x,target.z);}
-    }while(pendingChapterUpdate);
-    return prewarmVillage(THREE,renderer,scene,camera,applyLighting,moneyRain,{mobile:quality.mobile||Boolean(village.streaming),variantRoots:[districts.stadium.root,helipad.root]}).then(()=>{
+    // The saved roster is immediately usable. A live response must never
+    // restart the loader; apply it after the first painted frame instead.
+    applyLighting(Number(scheduledNight));
+    startupMark('warmup-start');
+    return prewarmVillage(renderer,scene,camera).then(async painted=>{
+    if(!painted)return;
     if(renderer.getContext?.().isContextLost())return;
+    startupMark('interactive');
+    shell.dataset.startupMs=String(Math.round(performance.now()));
     ready=true;lastTime=0;lastRender=0;framePacer.reset();
     applyLighting(Number(scheduledNight));
     loading.hidden=true;shell.classList.remove('village-unavailable');shell.classList.add('village-ready');
@@ -515,6 +516,7 @@ async function startVillage(){
     // updated houses build, instead of restarting the entire loading sequence.
     if(pendingChapterUpdate){
       const event=pendingChapterUpdate;pendingChapterUpdate=null;
+      await yieldVillageBuild();
       return updateChapters(event);
     }
   });}

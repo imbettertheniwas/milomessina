@@ -1,7 +1,26 @@
-import {marketShops} from './village-place-layout.js?v=180';
+import {marketShops} from './village-place-layout.js?v=181';
 // Stable per-instance hashing: unrelated objects do not repeat in stripes or shift
 // when another instance is inserted. No runtime randomness or network state.
-export function hash(...keys){let h=2166136261;for(const key of keys){for(const c of String(key)){h=Math.imul(h^c.charCodeAt(0),16777619);}h=Math.imul(h^255,16777619);}h^=h>>>16;h=Math.imul(h,0x7feb352d);h^=h>>>15;h=Math.imul(h,0x846ca68b);return ((h^(h>>>16))>>>0)/4294967296;}
+const hashPrefixes=new Map();
+export function hash(...keys){
+  let h=2166136261,start=0;
+  // Chapter UUIDs and member identities are hashed thousands of times while
+  // placing a crowd. Reuse their exact FNV prefix; all suffixes and the final
+  // avalanche remain identical. Bound the cache as live chapters change.
+  const first=keys[0];
+  if(typeof first==='string'&&first.length>12){
+    if(hashPrefixes.has(first))h=hashPrefixes.get(first);
+    else{
+      for(const c of first)h=Math.imul(h^c.charCodeAt(0),16777619);
+      h=Math.imul(h^255,16777619);
+      if(hashPrefixes.size>=1024)hashPrefixes.delete(hashPrefixes.keys().next().value);
+      hashPrefixes.set(first,h);
+    }
+    start=1;
+  }
+  for(let i=start;i<keys.length;i++){for(const c of String(keys[i]))h=Math.imul(h^c.charCodeAt(0),16777619);h=Math.imul(h^255,16777619);}
+  h^=h>>>16;h=Math.imul(h,0x7feb352d);h^=h>>>15;h=Math.imul(h,0x846ca68b);return ((h^(h>>>16))>>>0)/4294967296;
+}
 export const pick=(list,...keys)=>list[Math.floor(hash(...keys)*list.length)];
 export const palettes={shirts:[0xe7decc,0x5f7397,0x984d47,0x43594c,0xc4a36a,0xa8b8bb,0x5e5274,0xd8dce1,0x7b8064,0x879cab,0xc27c5d,0xbba1a5,0x313d52,0xb2b692,0x85817c,0xe4ba83,0x734645,0x9bada2,0x4a656d,0xbbc5d4,0x7c6388,0xc7b7a4,0x8d9659,0xddd6b7],skin:[0xe5b28a,0xba8662,0x835c43,0xd7a074,0x684a38,0xc78c66,0xf0c3a0,0x9f7151],hair:[0x352a23,0x735036,0xc4a779,0x211f20,0x987149,0x554035,0xb69768,0x6e4c38],pants:[0x314357,0x63686b,0xab9576,0x393c49,0x727767,0x495d70]};
 export function appearance(id,index){

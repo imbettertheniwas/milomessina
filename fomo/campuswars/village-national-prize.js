@@ -1,5 +1,5 @@
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=180';
-import {createBanknoteTexture} from './village-money-art.js?v=180';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=181';
+import {createBanknoteTexture} from './village-money-art.js?v=181';
 
 export const NATIONAL_PRIZE_SITE={x:33,y:6,z:-90};
 export const NATIONAL_PRIZE_COPY=['NATIONAL CHAMPION'];

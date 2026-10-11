@@ -1,4 +1,4 @@
-import {flightMotionAt} from './village-flight-motion.js?v=180';
+import {flightMotionAt} from './village-flight-motion.js?v=181';
 // Original V13 dive, canopy snatch, and suspended glide, retimed for school arrivals.
 export const SCHOOL_DROP_DURATION=2.95;
 export function createSchoolDrop(T,scene){

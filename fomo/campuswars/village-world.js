@@ -1,33 +1,33 @@
-import {createSchoolBanner} from './village-school-banners.js?v=180';
-import {chapterGreekLetters} from './village-chapter-identity.js?v=180';
-import {islandFootprint} from './village-island.js?v=180';
-import {createParachutes} from './village-parachutes.js?v=180';
-import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=180';
-import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=180';
-import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=180';
-import {rankedHouseSizes} from './village-house-sizing.js?v=180';
-import {assignHouseFinishes} from './village-house-colors.js?v=180';
-import {createVillageEntrance} from './village-entrance.js?v=180';
-import {createPongGames} from './village-pong.js?v=180';
-import {createDieGames} from './village-die.js?v=180';
-import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=180';
-import {createCompetition,houseStandings} from './village-competition.js?v=180';
-import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=180';
-import {humanPose} from './village-human-motion.js?v=180';
-import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=180';
-import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=180';
-import {palettes,hash} from './village-district-layout.js?v=180';
-import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=180';
-import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=180';
-import {createChapterBanner,bannerIdentity} from './village-banners.js?v=180';
-import {createDistantCrowd} from './village-distant-crowd.js?v=180';
-import {createCrowdVisibility} from './village-crowd-visibility.js?v=180';
-import {createBackyards,hasChapterHouse} from './village-backyards.js?v=180';
+import {createSchoolBanner} from './village-school-banners.js?v=181';
+import {chapterGreekLetters} from './village-chapter-identity.js?v=181';
+import {islandFootprint} from './village-island.js?v=181';
+import {createParachutes} from './village-parachutes.js?v=181';
+import {assignPoolPeople,isPoolPerson,poolActivityPose,poolPersonAllowed,poolHumanPose,createSwimWakes} from './village-pool-people.js?v=181';
+import {createPedestrianSpacing,pedestrianGroup} from './village-pedestrian-spacing.js?v=181';
+import {DETAIL_COUNT,hairShape,detailColors,dressPerson,backHair,greekPartyStyle} from './village-human-style.js?v=181';
+import {rankedHouseSizes} from './village-house-sizing.js?v=181';
+import {assignHouseFinishes} from './village-house-colors.js?v=181';
+import {createVillageEntrance} from './village-entrance.js?v=181';
+import {createPongGames} from './village-pong.js?v=181';
+import {createDieGames} from './village-die.js?v=181';
+import {createLotBeacon,createNightLife} from './village-atmosphere.js?v=181';
+import {createCompetition,houseStandings} from './village-competition.js?v=181';
+import {createGrassMaterial,createLawnBlades} from './village-grass.js?v=181';
+import {humanPose} from './village-human-motion.js?v=181';
+import {createConstructionSite,createConstructionEquipment} from './village-construction.js?v=181';
+import {batchCampusGeometrySteps,createCampusKit} from './village-campus-kit.js?v=181';
+import {palettes,hash} from './village-district-layout.js?v=181';
+import {createLots,rowExtension,streetCount,streetOriginX,toWorld,crowdMembers,activityPose,lawnGround,PONG_TABLE,DIE_TABLE} from './village-layout.js?v=181';
+import {createStreetNetwork,setStreetExtension} from './village-streets.js?v=181';
+import {createChapterBanner,bannerIdentity} from './village-banners.js?v=181';
+import {createDistantCrowd} from './village-distant-crowd.js?v=181';
+import {createCrowdVisibility} from './village-crowd-visibility.js?v=181';
+import {createBackyards,hasChapterHouse} from './village-backyards.js?v=181';
 
 export function createVillage(THREE,chapters,options={}){
   const steps=buildVillageSteps(THREE,chapters,options);let result;do{result=steps.next();}while(!result.done);return result.value;
 }
-export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={},arrivals=null,metric='progress',theme=null}={}){
+export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseFinishes:previousFinishes,layout=null,indices=null,attachStreet=true,compactCrowd=false,control={},arrivals=null,metric='progress',theme=null,deferCrowd=false}={}){
   // Physical addresses follow the same percentage standings as the rank badges.
   if(layout){chapters=layout.chapters;metric=layout.metric??metric;theme=layout.theme??theme;}
   else {const ranked=houseStandings(chapters,metric),rankedIds=new Set(ranked.map(c=>c.id));chapters=[...ranked,...chapters.filter(c=>!rankedIds.has(c.id)).sort((a,b)=>a.id.localeCompare(b.id))];}
@@ -193,7 +193,7 @@ export function* buildVillageSteps(THREE,chapters,{streets:existingStreet,houseF
   // cull a row of people that is still on screen.
   const crowdReach=Math.max(...lots.map(lot=>Math.abs(lot.originX)))+40;
   const members=[],parts={};
-  for(let i=0;i<selectedChapters.length;i++){members.push(...crowdMembers([selectedChapters[i]],[houseLots[i]],houseSizes).map(person=>greekPartyStyle(person,selectedChapters[i])));yield;}
+  for(let i=0;i<(deferCrowd?0:selectedChapters.length);i++){members.push(...crowdMembers([selectedChapters[i]],[houseLots[i]],houseSizes).map(person=>greekPartyStyle(person,selectedChapters[i])));yield;}
   assignPoolPeople(members,selectedChapters);
   const swimWakes=createSwimWakes(THREE,members);world.add(swimWakes.mesh);
   const pong=createPongGames(THREE,members);world.add(pong.root);

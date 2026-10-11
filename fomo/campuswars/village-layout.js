@@ -1,11 +1,11 @@
-import {hasChapterHouse} from './village-backyards.js?v=180';
-import {conversation,personalClock} from './village-human-behavior.js?v=180';
-import {rankedHouseSizes} from './village-house-sizing.js?v=180';
-import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=180';
-import {gaitPhase,smooth} from './village-human-motion.js?v=180';
-import {danceActivity} from './village-human-dance.js?v=180';
-import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=180';
-import {assignSocialLife,socialActivity} from './village-social-life.js?v=180';
+import {hasChapterHouse} from './village-backyards.js?v=181';
+import {conversation,personalClock} from './village-human-behavior.js?v=181';
+import {rankedHouseSizes} from './village-house-sizing.js?v=181';
+import {hash,appearance,roundedLoop,motionProfile} from './village-district-layout.js?v=181';
+import {gaitPhase,smooth} from './village-human-motion.js?v=181';
+import {danceActivity} from './village-human-dance.js?v=181';
+import {constructionAssignment,constructionActivity} from './village-construction-layout.js?v=181';
+import {assignSocialLife,socialActivity} from './village-social-life.js?v=181';
 const lawnRoute=roundedLoop(-8.25,7,8.25,14.2,1.15);
 // Ease over the low lawn/path edges; the walking loop clears the porch steps.
 export function lawnGround(x,z){const edge=smooth((12-z)/.25);return .045+.085*smooth((7.5-Math.abs(x))/.25)*edge+.07*smooth((.825-Math.abs(x))/.2)*edge;}
@@ -59,7 +59,7 @@ export const DIE_TABLE={x:-3.9,z:9.8,width:2.44,depth:1.22,height:.76,playerDist
 export const dieSeat=seat=>({side:seat<2?-1:1,dz:(seat%2?1:-1)*DIE_TABLE.seatOffset});
 export const dieSeatSpot=seat=>{const {side,dz}=dieSeat(seat);return {x:DIE_TABLE.x+side*DIE_TABLE.playerDistance,z:DIE_TABLE.z+dz,rotation:side<0?Math.PI/2:-Math.PI/2};};
 export const dieCup=seat=>{const {side,dz}=dieSeat(seat);return {x:DIE_TABLE.x+side*(DIE_TABLE.width/2-DIE_TABLE.cupBack),z:DIE_TABLE.z+Math.sign(dz)*(DIE_TABLE.depth/2-DIE_TABLE.cupInset)};};
-export {motionProfile} from './village-district-layout.js?v=180';
+export {motionProfile} from './village-district-layout.js?v=181';
 export function pongTurn(chapter,time){
   const period=3.8+hash(chapter,'pong-period')*2.1,clock=time+hash(chapter,'pong-offset')*19,turn=Math.floor(clock/period);
   return {seat:((turn%2)+2)%2,elapsed:clock-turn*period,release:1.15,flight:.85,turn};
@@ -70,6 +70,22 @@ export function dieTurn(chapter,time){
   const period=4.6+hash(chapter,'die-period')*1.9,clock=time+hash(chapter,'die-offset')*23,turn=Math.floor(clock/period);
   const seat=((turn%4)+4)%4;
   return {seat,target:(seat<2?2:0)+Math.abs(turn%2),sink:hash(chapter,turn,'die-sink')>.74,elapsed:clock-turn*period,release:1.1,toss:.82,settle:.74,turn};
+}
+// A balanced spatial index makes candidate spacing depend on nearby guests,
+// rather than comparing every seat with every table marker and every guest.
+function occupiedTree(points,depth=0){
+  if(!points.length)return null;
+  const axis=depth%2?'z':'x',sorted=[...points].sort((a,b)=>a[axis]-b[axis]),mid=sorted.length>>1;
+  return {point:sorted[mid],axis,left:occupiedTree(sorted.slice(0,mid),depth+1),right:occupiedTree(sorted.slice(mid+1),depth+1)};
+}
+function nearestClearance(node,seat,clearance){
+  if(!node)return clearance;
+  const dx=seat.x-node.point.x,dz=seat.z-node.point.z;
+  if(dx*dx+dz*dz<clearance*clearance)clearance=Math.min(clearance,Math.hypot(dx,dz));
+  const delta=seat[node.axis]-node.point[node.axis],near=delta<0?node.left:node.right,far=delta<0?node.right:node.left;
+  clearance=nearestClearance(near,seat,clearance);
+  if(Math.abs(delta)<clearance)clearance=nearestClearance(far,seat,clearance);
+  return clearance;
 }
 export function crowdMembers(chapters,lots=createLots(chapters.length),houseSizes=rankedHouseSizes(chapters),options={}){
   return chapters.flatMap((chapter,index)=>{
@@ -97,18 +113,23 @@ export function crowdMembers(chapters,lots=createLots(chapters.length),houseSize
     }
     sizes.forEach((size,g)=>{
       const isPorch=porch&&g===sizes.length-1,radius=isPorch?.57:.62+size*.105,phase=hash(chapter.id,g,'angle')*Math.PI*2;
+      // Ring geometry is fixed across all 250 candidate centers. Calculate
+      // each seat's deterministic offsets once, rather than rehashing and
+      // evaluating trigonometry for every candidate.
+      const offsets=Array.from({length:size},(_,seat)=>{const a=phase+seat*Math.PI*2/size,r=radius*(.92+hash(chapter.id,g,seat,'radius')*.16);return {x:Math.sin(a)*r,z:Math.cos(a)*r,a};});
+      const neighbors=occupiedTree(occupied);
       let best=null,bestScore=-Infinity;
       for(let attempt=0;attempt<(isPorch?1:250);attempt++){
         const gx=isPorch?2.05:(hash(chapter.id,g,attempt,'x')-.5)*(14.4-2*radius),gz=isPorch?5.05:7.7+radius+hash(chapter.id,g,attempt,'z')*(5.6-2*radius);
-        const seats=Array.from({length:size},(_,seat)=>{const a=phase+seat*Math.PI*2/size,r=radius*(.92+hash(chapter.id,g,seat,'radius')*.16);return {x:gx+Math.sin(a)*r,z:gz+Math.cos(a)*r,a};});
+        const seats=offsets.map(offset=>({x:gx+offset.x,z:gz+offset.z,a:offset.a}));
         const centerGap=groups.length?Math.min(...groups.map(other=>Math.hypot(other.x-gx,other.z-gz)-other.radius-radius)):2;
         const centerBonus=Math.max(-1,Math.min(.5,centerGap))*.3,centerPenalty=Math.abs(gx)<.7?.15:0;
         let clearance=3;
         // Clearance only decreases. Once even this upper-bound score cannot
         // win, remaining distances cannot change the chosen people or poses.
-        candidate:for(const seat of seats)for(const other of occupied){
-          clearance=Math.min(clearance,Math.hypot(seat.x-other.x,seat.z-other.z));
-          if(clearance*4+centerBonus-centerPenalty<=bestScore)break candidate;
+        for(const seat of seats){
+          clearance=nearestClearance(neighbors,seat,clearance);
+          if(clearance*4+centerBonus-centerPenalty<=bestScore)break;
         }
         const score=clearance*4+centerBonus-centerPenalty;
         if(score>bestScore){bestScore=score;best={x:gx,z:gz,radius,seats};}

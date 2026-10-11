@@ -1,12 +1,12 @@
-import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=180';
-import {villageQuality} from './village-quality.js?v=180';
-import {createVillage,buildVillageSteps} from './village-world.js?v=180';
-import {houseStandings} from './village-competition.js?v=180';
-import {rankedHouseSizes} from './village-house-sizing.js?v=180';
-import {assignHouseFinishes} from './village-house-colors.js?v=180';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=180';
-import {unoccludedHouses} from './village-occlusion.js?v=180';
-import {yieldVillageBuild} from './village-build-scheduler.js?v=180';
+import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=181';
+import {villageQuality} from './village-quality.js?v=181';
+import {createVillage,buildVillageSteps} from './village-world.js?v=181';
+import {houseStandings} from './village-competition.js?v=181';
+import {rankedHouseSizes} from './village-house-sizing.js?v=181';
+import {assignHouseFinishes} from './village-house-colors.js?v=181';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=181';
+import {unoccludedHouses} from './village-occlusion.js?v=181';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=181';
 
 export const STREAMING_THRESHOLD=80;
 export function villageRenderLayout(T,input,previousFinishes,metric='progress',theme=null){
@@ -43,18 +43,19 @@ export function createVillageRenderer(T,chapters,options={}){
   return streamedRenderer(T,layout,active,indices,true,options.arrivals);
 }
 export async function createVillageRendererAsync(T,chapters,options={}){
-  const streaming=chapters.length>STREAMING_THRESHOLD;
+  const streaming=options.progressive===true||chapters.length>STREAMING_THRESHOLD;
+  const compactCrowd=chapters.length>STREAMING_THRESHOLD||villageQuality().mobile;
   const layout=streaming?villageRenderLayout(T,chapters,options.houseFinishes,options.metric,options.theme):null;
   const indices=streaming?startingIndices(T,layout,options):null;
-  const steps=buildVillageSteps(T,layout?.chapters||chapters,{...options,layout,indices,attachStreet:!streaming&&(options.attachStreet??false),compactCrowd:streaming||villageQuality().mobile});
+  const steps=buildVillageSteps(T,layout?.chapters||chapters,{...options,layout,indices,attachStreet:!streaming&&(options.attachStreet??false),compactCrowd});
   let result;
   do{
     const start=performance.now();do{result=steps.next();}while(!result.done&&performance.now()-start<4);
     if(!result.done)await yieldVillageBuild();
   }while(!result.done);
-  return streaming?streamedRenderer(T,layout,result.value,indices,options.attachStreet??false,options.arrivals):result.value;
+  return streaming?streamedRenderer(T,layout,result.value,indices,options.attachStreet??false,options.arrivals,compactCrowd,options.deferCrowd):result.value;
 }
-function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arrivals){
+function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arrivals,compactCrowd=true,deferCrowd=false){
   const world=new T.Group();world.name='streamed-greek-village';world.add(initial.world);if(attachStreet)world.add(initial.streets);
   const streets=initial.streets;
   let active=initial,resident=initialIndices,pending=null,night=false,disposed=false,revision=0,focusPending=null,lastViewCheck=-Infinity;
@@ -64,7 +65,7 @@ function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arri
   function request(indices){
     if(pending&&contains(pending.indices,indices))return;
     discard();const control={};
-    pending={indices,control,steps:buildVillageSteps(T,layout.chapters,{streets,layout,indices,attachStreet:false,compactCrowd:true,control,arrivals})};
+    pending={indices,control,steps:buildVillageSteps(T,layout.chapters,{streets,layout,indices,attachStreet:false,compactCrowd,control,arrivals})};
   }
   function advance(budget=4){
     if(!pending||disposed)return false;
@@ -93,6 +94,9 @@ function streamedRenderer(T,layout,initial,initialIndices,attachStreet=true,arri
     layout.lots.forEach((candidate,i)=>{if(Math.abs(candidate.x-lot.x)<90&&Math.abs(candidate.z-lot.z)<85)indices.add(i);});
     focusPending={id,ready};request(indices);
   }
+  // Make the houses usable first, then fill their crowds in ordinary frame
+  // budgets. The replacement keeps the same geometry and every live member.
+  if(deferCrowd)request(initialIndices);
   return {
     world,streets,...layout,updateView,advance,focus,cancelFocus(){focusPending=null;},
     get streaming(){return true;},get building(){return Boolean(pending);},get revision(){return revision;},get residentCount(){return resident.size;},get residentIndices(){return new Set(resident);},

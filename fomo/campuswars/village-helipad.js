@@ -1,8 +1,8 @@
-import {paintFomoWordmark} from './village-brand.js?v=180';
-import {createHelipadFans} from './village-helipad-fans.js?v=180';
-import {createMaybach} from './village-helipad-maybach.js?v=180';
-import {createHelipadGuests} from './village-helipad-guests.js?v=180';
-import {createHelipadAircraft} from './village-helipad-aircraft.js?v=180';
+import {paintFomoWordmark} from './village-brand.js?v=181';
+import {createHelipadFans} from './village-helipad-fans.js?v=181';
+import {createMaybach} from './village-helipad-maybach.js?v=181';
+import {createHelipadGuests} from './village-helipad-guests.js?v=181';
+import {createHelipadAircraft} from './village-helipad-aircraft.js?v=181';
 // Appearance references and modeling notes: helipad-references.md.
 // This scenery has its own identities; neither guest is a registered member.
 export const HELIPAD_SITE={x:-67,z:145,radius:24,scale:.78};
@@ -195,7 +195,7 @@ export function createHelipad(T,extension=0){
     for(const seg of carpetSegments){const q=clamp(distance/seg.length),{a,b,nx,nz,strip,edges}=seg;distance-=seg.length;strip.visible=q>0;edges.forEach(edge=>edge.visible=q>0);const end={x:mix(a.x,b.x,q),y:mix(a.y,b.y,q),z:mix(a.z,b.z,q)};const positions=strip.geometry.attributes.position;positions.setXYZ(1,end.x+nx,end.y,end.z+nz);positions.setXYZ(2,end.x-nx,end.y,end.z-nz);positions.needsUpdate=true;strip.geometry.computeBoundingSphere();for(let i=0;i<2;i++){const side=i?1:-1,v=new T.Vector3(a.x+nx*side,a.y+.01,a.z+nz*side),w=new T.Vector3(end.x+nx*side,end.y+.01,end.z+nz*side);edges[i].position.copy(v).add(w).multiplyScalar(.5);edges[i].scale.y=v.distanceTo(w);}}
     carpetRoll.visible=(state.time>=12&&state.time<25)||(state.time>=116&&state.time<127.5);carpetRoll.position.set(state.carpetTip.x,.56,state.carpetTip.z);carpetRoll.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(Math.cos(state.carpetTip.heading),0,-Math.sin(state.carpetTip.heading)));carpetRoll.rotateY(state.carpetProgress*total/.25);
     if(dp.carrying)carpetRoll.position.set(dp.x+Math.sin(dp.heading)*.4,1.15,dp.z+Math.cos(dp.heading)*.4);
-    fans.update(state.time);
+    fans.update(time-epoch);
 
     heli.position.set(state.helicopter.x,state.helicopter.y,state.helicopter.z);heli.rotation.y=state.helicopter.heading;
     cabinDoor.position.z=-.1-state.cabin*1.40;
