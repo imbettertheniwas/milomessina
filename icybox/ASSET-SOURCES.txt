@@ -20,3 +20,5 @@ manrope.woff2 <- fonts/a343f882a40d2cc9-s.p.1sj6eobyi31rd.woff2
 mono.woff2 <- fonts/36363bfb06833f56-s.p.38hmww4cj4vme.woff2
 Sorority redesign: added Dior Himalayan Mini Lady Dior, Louis Vuitton Cherry Blossom Capucines Mini, Hermès Birkin 30 Rouge Casaque, and ruby/bronze box renders from the scraped public IcyBox kit.
 Named reward tiers and thresholds were supplied by the user. The public site did not establish tier-specific bag pools or named packaging; renders and interactive bag carousel are explicitly illustrative.
+
+2026-10-11 mobile redesign: named box selectors synchronize artwork and app lookup guidance. Unverified bag pools are not displayed. Public bag catalog is separately labelled and never assigned to a tier. Referral bonuses: Wonder for a smaller referred chapter, Everyday for a larger referred chapter; cutoff and qualifying onboarding remain program-team decisions. Portal v2 stores referral codes locally only.
