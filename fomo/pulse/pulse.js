@@ -1,16 +1,18 @@
+import {registrationSceneSummary} from './registration-scene.mjs';
 import {startFeed,summarize} from './model.mjs';
 import {createScene} from './scene.js';
 import {createTerminal} from './terminal.js';
 import {createChimePlayer} from './sound.js';
 const $=id=>document.getElementById(id),fmt=n=>n.toLocaleString('en-US'),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let sceneDataset='chapters',sceneMode='eyes',sceneHistory=null,sceneInfo=null,selectedMemberDate=null;
 let chapters=[],selected=null,scene,paused=reduced,latest=null,isLive=false,toastTimer,eventQueue=[],eventBusy=false,shownEvents=[];
-try{scene=createScene({container:$('scene'),labels:$('labels'),tooltip:$('tooltip'),onSelect:select,reduced});}catch{$('loading-text').textContent='3D unavailable — live chapter details remain below';$('loading').querySelector('.loader-ring').hidden=true;}
+try{scene=createScene({container:$('scene'),labels:$('labels'),tooltip:$('tooltip'),onSelect:select,onSelectMemberDay:inspectMemberDay,reduced});}catch{$('loading-text').textContent='3D unavailable — live chapter details remain below';$('loading').querySelector('.loader-ring').hidden=true;}
 const terminal=createTerminal({select,getSelected:()=>selected,openDirectory,scene});
-function select(id){const c=chapters.find(c=>c.id===id);if(!c)return;selected=id;scene?.select(id);$('chapter-symbol').textContent=c.letters;$('chapter-name').textContent=c.name;$('chapter-school').textContent=c.school;$('selected-joined').textContent=fmt(c.joined);$('selected-active').textContent=fmt(c.active);$('selected-target').textContent=fmt(Math.ceil(c.active*.8));$('selected-remaining').textContent=fmt(Math.max(0,Math.ceil(c.active*.8)-c.joined));$('selected-date').textContent=new Date(c.registered+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit',timeZone:'UTC'});$('selected-type').textContent=c.type;$('ring-value').style.strokeDashoffset=427.26*(1-Math.min(1,c.joined/c.active));terminal.selection();}
+function select(id){const c=chapters.find(c=>c.id===id);if(!c)return;selected=id;if(sceneDataset==='chapters')scene?.select(id);$('chapter-symbol').textContent=c.letters;$('chapter-name').textContent=c.name;$('chapter-school').textContent=c.school;$('selected-joined').textContent=fmt(c.joined);$('selected-active').textContent=fmt(c.active);$('selected-target').textContent=fmt(Math.ceil(c.active*.8));$('selected-remaining').textContent=fmt(Math.max(0,Math.ceil(c.active*.8)-c.joined));$('selected-date').textContent=new Date(c.registered+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit',timeZone:'UTC'});$('selected-type').textContent=c.type;$('ring-value').style.strokeDashoffset=427.26*(1-Math.min(1,c.joined/c.active));terminal.selection();}
 function render(s,events){
- const changed=JSON.stringify(chapters)!==JSON.stringify(s.chapters);chapters=s.chapters;latest=s.updatedAt;
+ const changed=JSON.stringify(chapters)!==JSON.stringify(s.chapters),historyChanged=JSON.stringify(sceneHistory)!==JSON.stringify(s.memberHistory);chapters=s.chapters;sceneHistory=s.memberHistory;latest=s.updatedAt;
  terminal.update(s);const totals=summarize(chapters);$('total').textContent=fmt(totals.joined);$('total-note').textContent='Across the collective';$('schools').textContent=fmt(totals.schools);$('chapters').textContent=fmt(totals.chapters);$('node-count').textContent=fmt(totals.chapters);$('participation').textContent=(totals.participation*100).toFixed(1)+'%';$('participation-bar').style.width=Math.min(100,totals.participation*100)+'%';$('roster-caption').textContent=fmt(totals.joined)+' joined / '+fmt(totals.active)+' active roster';
- if(scene){$('loading').hidden=true;if(changed){const info=scene.update(chapters);document.querySelector('.encoding p').lastChild.textContent=info.particleStep===1?' An eye particle = a member':' An eye particle ≈ '+info.particleStep+' members';}}
+ if(scene){$('loading').hidden=true;if(changed||historyChanged||!sceneInfo)sceneInfo=scene.update(chapters,sceneHistory);}renderSceneDescription();
  if(changed){renderLeaders();renderGrowth();if($('directory').open)renderDirectory();}
  if(!chapters.some(c=>c.id===selected))selected=[...chapters].sort((a,b)=>b.joined-a.joined)[0]?.id;
  if(selected)select(selected);else{$('chapter-name').textContent='No chapters yet';$('chapter-school').textContent='Waiting for the first registration.';}
@@ -21,8 +23,31 @@ function renderGrowth(){terminal.chart();}
 function renderDirectory(){const query=$('search').value.trim().toLowerCase(),filtered=[...chapters].filter(c=>[c.name,c.school,c.type,c.letters,c.registered].some(v=>v.toLowerCase().includes(query))).sort((a,b)=>b.joined-a.joined);$('results-count').textContent=filtered.length+' CHAPTER RECORDS';$('directory-results').replaceChildren();if(!filtered.length){const p=document.createElement('p');p.className='muted';p.textContent='No matching chapters. Try another name or school.';$('directory-results').append(p);}filtered.forEach(c=>{const b=document.createElement('button');b.className='directory-row';const div=document.createElement('div'),name=document.createElement('strong'),school=document.createElement('small'),n=document.createElement('b');name.textContent=c.letters+' · '+c.name;school.textContent=c.school+' · '+c.registered;n.textContent=fmt(c.joined)+' / '+fmt(c.active);div.append(name,school);b.append(div,n);b.onclick=()=>{select(c.id);$('directory').close();$('stage').scrollIntoView({behavior:reduced?'instant':'smooth',block:'center'});};$('directory-results').append(b);});}
 function openDirectory(){$('directory').showModal();$('search').value='';renderDirectory();$('search').focus();}
 $('open-directory').onclick=openDirectory;$('close-directory').onclick=()=>$('directory').close();$('search').oninput=renderDirectory;$('directory').addEventListener('click',e=>{if(e.target===$('directory')){const r=$('directory').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('directory').close();}});
-const descriptions={eyes:'01 — FOMO NEURAL CORE',organism:'02 — THE CHAPTER NETWORK',constellation:'03 — SCHOOL CONSTELLATIONS',helix:'04 — REGISTRATION TIMELINE'};
-document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{scene?.setMode(b.dataset.mode);document.querySelectorAll('[data-mode]').forEach(el=>{el.classList.toggle('selected',el===b);el.setAttribute('aria-pressed',String(el===b));});$('view-caption').textContent=descriptions[b.dataset.mode];$('view-explanation').textContent={eyes:'The FOMO eyes, built from your live membership. Select a chapter to trace its signal.',organism:'Chapters orbit a shared core. Larger nuclei hold more registrations.',constellation:'Chapter records cluster by school. Colors stay with their school.',helix:'Chapter registration dates spiral upward: earliest below, newest above.'}[b.dataset.mode];});
+function inspectMemberDay(day){selectedMemberDate=day.registered;$('scene-registration-detail').textContent=day.registered+' · '+fmt(day.joined)+' member registrations · UTC';}
+function renderSceneDescription(){
+ const members=sceneDataset==='members';
+ $('stage').setAttribute('aria-label',members?'Interactive 3D member registrations':'Interactive 3D chapter network');
+ $('node-count').textContent=fmt(members?(sceneInfo?.nodeCount||0):chapters.length);$('node-unit').textContent=members?'SIGNUP DAYS':'CHAPTERS';
+ $('view-caption').textContent=({eyes:'01 — FOMO EYES',organism:'02 — REGISTRATION NETWORK',constellation:members?'03 — SIGNUPS BY MONTH':'03 — SCHOOL CONSTELLATIONS',helix:'04 — REGISTRATION TIMELINE'})[sceneMode];
+ const descriptions=members?{eyes:'The FOMO eyes, built from member registrations. Each surrounding cluster is a signup day.',organism:'Member registrations grouped by signup day. Larger clusters mean more members joined.',constellation:'Signup days cluster by month. Color connects dates in the same month.',helix:'Actual member signup dates spiral upward: earliest below, newest above. Dates use UTC.'}:{eyes:'The FOMO eyes, built from your live membership. Select a chapter to trace its signal.',organism:'Chapters orbit a shared core. Larger nuclei hold more registrations.',constellation:'Chapter records cluster by school. Colors stay with their school.',helix:'Chapter registration dates spiral upward: earliest below, newest above.'};
+ $('view-explanation').textContent=descriptions[sceneMode];
+ document.querySelector('[data-mode="constellation"]').innerHTML='<span>03</span> '+(members?'By month':'Schools');
+ $('scene-particle-legend').textContent=(sceneInfo?.particleStep||1)===1?'A particle = a member':'A particle ≈ '+sceneInfo.particleStep+' members';
+ $('scene-node-legend').textContent=members?'A nucleus = a signup day':'A nucleus = a chapter record';
+ $('scene-color-legend').textContent=members?'Color connects the same month':'Color connects the same school';
+ $('scene-legend-note').textContent=members?'Actual member join dates · UTC. Counts are real. Motion is expressive.':'Motion is expressive. Counts are real. School names follow the source exactly.';
+ $('focus-chapter').disabled=members;
+ $('scene-registration-detail').hidden=!members;
+ if(members){const day=sceneHistory?.days.find(d=>d.date===selectedMemberDate);$('scene-registration-detail').textContent=day?day.date+' · '+fmt(day.count)+' member registrations · UTC':registrationSceneSummary(sceneHistory);}
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{sceneMode=b.dataset.mode;scene?.setMode(sceneMode);document.querySelectorAll('[data-mode]').forEach(el=>{el.classList.toggle('selected',el===b);el.setAttribute('aria-pressed',String(el===b));});renderSceneDescription();});
+document.querySelectorAll('[data-scene-dataset]').forEach(b=>b.onclick=()=>{
+ sceneDataset=b.dataset.sceneDataset;selectedMemberDate=null;sceneInfo=scene?.setDataset(sceneDataset);
+ document.querySelectorAll('[data-scene-dataset]').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));
+ if($('focus-chapter').getAttribute('aria-pressed')==='true')$('focus-chapter').click();
+ if(sceneDataset==='chapters'&&selected)scene?.select(selected);
+ renderSceneDescription();
+});
 function updateMotion(){document.body.classList.toggle('paused',paused);$('motion').textContent=paused?'Resume motion':'Pause motion';$('motion').setAttribute('aria-pressed',String(paused));scene?.setPaused(paused);}updateMotion();$('motion').onclick=()=>{paused=!paused;updateMotion();};$('reset').onclick=()=>scene?.reset();
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{$('fullscreen').title='Fullscreen unavailable in this browser';}};
 const chimes=createChimePlayer();

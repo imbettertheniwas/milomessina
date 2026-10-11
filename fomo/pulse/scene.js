@@ -1,9 +1,10 @@
 import * as T from '../campuswars/vendor/three.module.min.js';
 import {COLORS,hash} from './model.mjs';
+import {registrationSceneRecords} from './registration-scene.mjs';
 import {createEyes} from './eyes.js';
 import {createIdleMotion,signalStrength,SIGNAL_SECONDS} from './scene-motion.mjs';
 const TAU=Math.PI*2, clamp=T.MathUtils.clamp;
-export function createScene({container,labels,tooltip,onSelect,reduced=false}){
+export function createScene({container,labels,tooltip,onSelect,onSelectMemberDay=()=>{},reduced=false}){
  const renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));container.append(renderer.domElement);
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,1,.1,200),root=new T.Group();scene.add(root);
@@ -19,6 +20,7 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
   }});
  }
  const themeObserver=new MutationObserver(syncTheme);themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+ let sourceChapters=[],memberHistory=null,dataset='chapters';
  let width=1,height=1,chapters=[],nodes=[],particles=null,filaments=null,mode='eyes',paused=reduced,time=0,last=performance.now(),yaw=.1,pitch=.23,zoom=24,drag=null,selected=null,hover=-1,frame,disposed=false,arrivals=new Map();
  const idle=createIdleMotion();let orbitTime=0;const localCamera=new T.Vector3();
  const raycaster=new T.Raycaster(),pointer=new T.Vector2(),temp=new T.Object3D(),v=new T.Vector3(),color=new T.Color();
@@ -57,9 +59,9 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
    n.target.multiplyScalar(spread);
   });
  }
- function update(ch){
+ function rebuild(ch){
   const old=new Map(nodes.map(n=>[n.chapter.id,n]));chapters=ch;nodes=ch.map((c,i)=>({chapter:c,index:i,position:old.get(c.id)?.position.clone()??new T.Vector3(0,0,0),display:new T.Vector3(),target:new T.Vector3(),color:new T.Color(COLORS[Math.floor(hash(c.school)*COLORS.length)]),size:.06+Math.sqrt(c.joined)*.022,phase:hash(c.id)*TAU}));targets();
-  for(const obj of [nuclei,halos,particles,filaments])if(obj){root.remove(obj);if(obj===particles||obj===filaments)obj.geometry.dispose();obj.material.dispose();}
+  for(const obj of [nuclei,halos,particles,filaments])if(obj){root.remove(obj);if(obj===nuclei||obj===halos)obj.dispose();if(obj===particles||obj===filaments)obj.geometry.dispose();obj.material.dispose();}
   nuclei=new T.InstancedMesh(sphere,new T.MeshBasicMaterial({color:0xffffff}),nodes.length);halos=new T.InstancedMesh(haloGeo,new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.065,depthWrite:false,blending:T.AdditiveBlending}),nodes.length);root.add(nuclei,halos);nuclei.instanceMatrix.setUsage(T.DynamicDrawUsage);halos.instanceMatrix.setUsage(T.DynamicDrawUsage);
   nodes.forEach((n,i)=>{nuclei.setColorAt(i,n.color);halos.setColorAt(i,n.color);});
   particleInfo=[];const total=ch.reduce((s,c)=>s+c.joined,0),step=Math.max(1,Math.ceil(total/18000));
@@ -70,8 +72,10 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
   const linePos=new Float32Array(nodes.length*24*6),lineColors=new Float32Array(linePos.length);nodes.forEach((n,i)=>{for(let j=0;j<48;j++)n.color.clone().multiplyScalar(.72).toArray(lineColors,i*144+j*3);});const lg=new T.BufferGeometry();lg.setAttribute('position',new T.BufferAttribute(linePos,3).setUsage(T.DynamicDrawUsage));lg.setAttribute('color',new T.BufferAttribute(lineColors,3));filaments=new T.LineSegments(lg,new T.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.36,blending:T.AdditiveBlending,depthWrite:false}));root.add(filaments);
   labels.replaceChildren();labelItems=[];const top=[...nodes].sort((a,b)=>b.chapter.joined-a.chapter.joined).slice(0,6);top.forEach(n=>{const el=document.createElement('span');el.className='scene-label';el.textContent=n.chapter.letters+' / '+n.chapter.joined;labels.append(el);labelItems.push({id:n.chapter.id,el});});
   for(const a of arrivals.values())labels.append(a.label);
-  if(selected)select(selected);syncTheme();return {particleStep:step};
+  reticle.visible=false;if(selected)select(selected);syncTheme();return {particleStep:step,nodeCount:nodes.length};
  }
+ function update(ch,history=null){sourceChapters=ch;memberHistory=history;return rebuild(dataset==='members'?registrationSceneRecords(history):ch);}
+ function setDataset(value){dataset=value;hover=-1;tooltip.hidden=true;focus=false;selected=null;for(const [id,a] of arrivals)removeArrival(id,a);return rebuild(dataset==='members'?registrationSceneRecords(memberHistory):sourceChapters);}
  function select(id){selected=id;const n=nodes.find(n=>n.chapter.id===id);if(n){reticle.visible=true;labelItems.forEach(l=>l.el.classList.toggle('selected',l.id===id));}}
  function setMode(value){mode=value;eyes.group.visible=mode==='eyes';targets();core.visible=mode==='organism';orbitLines.visible=mode!=='helix';helixRails.visible=mode==='helix';}
  function removeArrival(id,a){
@@ -79,6 +83,7 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
   a.label.remove();arrivals.delete(id);
  }
  function pulse(id,count=1,{preview=false}={}){
+  if(dataset==='members')return;
   const n=nodes.find(n=>n.chapter.id===id);if(!n||!Number.isSafeInteger(count)||count<1)return;
   let a=arrivals.get(id);
   if(a&&preview&&!a.preview)return;
@@ -94,8 +99,8 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
  function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);return nuclei?raycaster.intersectObject(nuclei)[0]?.instanceId:undefined;}
  const canvas=renderer.domElement;
  canvas.addEventListener('pointerdown',e=>{idle.activity();hover=-1;drag={x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};canvas.setPointerCapture(e.pointerId);});
- canvas.addEventListener('pointermove',e=>{idle.activity();if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;yaw+=dx*.006;pitch=clamp(pitch+dy*.004,-1.1,1.1);drag.moved ||=Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5;drag.x=e.clientX;drag.y=e.clientY;tooltip.hidden=true;return;}const i=pick(e);hover=i??-1;canvas.style.cursor=i===undefined?'grab':'pointer';tooltip.hidden=i===undefined;if(i!==undefined){const c=nodes[i].chapter;tooltip.replaceChildren();const title=document.createElement('div');title.textContent=c.name;const school=document.createElement('small');school.textContent=c.school;const count=document.createElement('b');count.textContent=c.joined+' joined / '+c.active+' roster';tooltip.append(title,school,count);const rect=container.getBoundingClientRect();tooltip.style.left=Math.min(width-230,Math.max(6,e.clientX-rect.left+12))+'px';tooltip.style.top=Math.max(40,e.clientY-rect.top-60)+'px';}});
- canvas.addEventListener('pointerup',e=>{idle.activity();if(drag&&!drag.moved){const i=pick(e);if(i!==undefined)onSelect(nodes[i].chapter.id);}drag=null;});canvas.addEventListener('pointercancel',()=>{drag=null;idle.activity();});canvas.addEventListener('lostpointercapture',()=>drag=null);canvas.addEventListener('pointerleave',()=>{tooltip.hidden=true;hover=-1;});canvas.addEventListener('wheel',e=>{idle.activity();e.preventDefault();zoom=clamp(zoom+e.deltaY*.013,12,40);},{passive:false});
+ canvas.addEventListener('pointermove',e=>{idle.activity();if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;yaw+=dx*.006;pitch=clamp(pitch+dy*.004,-1.1,1.1);drag.moved ||=Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5;drag.x=e.clientX;drag.y=e.clientY;tooltip.hidden=true;return;}const i=pick(e);hover=i??-1;canvas.style.cursor=i===undefined?'grab':'pointer';tooltip.hidden=i===undefined;if(i!==undefined){const c=nodes[i].chapter;tooltip.replaceChildren();const title=document.createElement('div');title.textContent=c.name;const school=document.createElement('small');school.textContent=c.memberDay?'Member registrations · UTC':c.school;const count=document.createElement('b');count.textContent=c.memberDay?c.joined.toLocaleString('en-US')+' members registered':c.joined+' joined / '+c.active+' roster';tooltip.append(title,school,count);const rect=container.getBoundingClientRect();tooltip.style.left=Math.min(width-230,Math.max(6,e.clientX-rect.left+12))+'px';tooltip.style.top=Math.max(40,e.clientY-rect.top-60)+'px';}});
+ canvas.addEventListener('pointerup',e=>{idle.activity();if(drag&&!drag.moved){const i=pick(e);if(i!==undefined){const c=nodes[i].chapter;if(c.memberDay){select(c.id);onSelectMemberDay(c);}else onSelect(c.id);}}drag=null;});canvas.addEventListener('pointercancel',()=>{drag=null;idle.activity();});canvas.addEventListener('lostpointercapture',()=>drag=null);canvas.addEventListener('pointerleave',()=>{tooltip.hidden=true;hover=-1;});canvas.addEventListener('wheel',e=>{idle.activity();e.preventDefault();zoom=clamp(zoom+e.deltaY*.013,12,40);},{passive:false});
  function animate(now){
   if(disposed)return;frame=requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.05);last=now;if(document.hidden)return;
   const t=idle.advance(dt,{held:!!drag||hover>=0,paused,reduced});if(drift)orbitTime+=t-time;time=t;
@@ -138,9 +143,9 @@ export function createScene({container,labels,tooltip,onSelect,reduced=false}){
    a.label.style.transform=`translate(${labelX}px,${labelY}px)`;
    if(!hidden)occupied.push({x:labelX,y:labelY});
   }
-  [...labelItems].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected)).forEach(l=>{const n=nodes.find(n=>n.chapter.id===l.id);if(!n)return;v.copy(n.display).applyMatrix4(root.matrixWorld).project(camera);const x=(v.x*.5+.5)*width,y=(-v.y*.5+.5)*height;l.el.style.transform=`translate(${x+9}px,${y-12}px)`;const collides=occupied.some(p=>Math.abs(p.x-x)<110&&Math.abs(p.y-y)<24);const hidden=arrivals.has(l.id)||v.z>1||x<0||x>width-90||y<72||y>height-108||collides;l.el.style.display=hidden?'none':'';if(!hidden)occupied.push({x,y});});
+  [...labelItems].sort((a,b)=>Number(b.id===selected)-Number(a.id===selected)).forEach(l=>{const n=nodes.find(n=>n.chapter.id===l.id);if(!n)return;v.copy(n.display).applyMatrix4(root.matrixWorld).project(camera);const x=(v.x*.5+.5)*width,y=(-v.y*.5+.5)*height;l.el.style.transform=`translate(${x+9}px,${y-12}px)`;const collides=occupied.some(p=>Math.abs(p.x-x)<110&&Math.abs(p.y-y)<24);const hidden=arrivals.has(l.id)||v.z>1||x<0||x>width-90||y<178||y>height-150||collides;l.el.style.display=hidden?'none':'';if(!hidden)occupied.push({x,y});});
   renderer.render(scene,camera);
  }
  syncTheme();frame=requestAnimationFrame(animate);
- return {update,select,setMode,pulse,setFocus(v){focus=v;},setSpread(v){spread=v;targets();},setDrift(v){drift=v;},setPaused(v){paused=v;},reset(){yaw=.1;pitch=.23;zoom=24;},dispose(){for(const [id,a] of arrivals)removeArrival(id,a);disposed=true;cancelAnimationFrame(frame);observer.disconnect();themeObserver.disconnect();renderer.dispose();}};
+ return {update,select,setMode,setDataset,pulse,setFocus(v){focus=v;},setSpread(v){spread=v;targets();},setDrift(v){drift=v;},setPaused(v){paused=v;},reset(){yaw=.1;pitch=.23;zoom=24;},dispose(){for(const [id,a] of arrivals)removeArrival(id,a);disposed=true;cancelAnimationFrame(frame);observer.disconnect();themeObserver.disconnect();renderer.dispose();}};
 }
