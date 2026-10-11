@@ -1,7 +1,7 @@
 // One visible-time clock drives the flight, lens, lighting and brief captions.
 export const INTRO_DURATION = 13.6;
 export const INTRO_PACE = .85;
-export const openingView = {target:[0,4,35],theta:3.14,phi:.58,radius:250};
+export const openingView = {target:[4,5,25],theta:3.05,phi:.40,radius:110};
 export const introStages = [
   {start:0,end:2.72,title:'GREEK WARS.',description:'Your chapter. Your team. A trading competition on fomo.'},
   {start:2.72,end:5.95,title:"IF YOU'RE IN A FRAT.",description:'fomo has committed $500,000'},
@@ -39,10 +39,10 @@ export function introViewAt(seconds,aspect=1){
   const offset=position.map((value,i)=>value-target[i]),radius=Math.hypot(...offset);
   // Ease into a portrait framing that includes the arrival court beside the row.
   const portrait=smooth((seconds-10)/(INTRO_DURATION-10));
-  target[0]-=Math.max(0,1-aspect)*8*portrait;
-  const framedRadius=radius*(1+(1/Math.min(1,aspect)-1)*1.5*portrait);
+  target[0]+=Math.max(0,1-aspect)*10*portrait;
+  const framedRadius=radius*(1+(1/Math.min(1,aspect)-1)*portrait);
   const night=smooth((time-6.8)/1.1)*(1-smooth((time-11.5)/1.4));
-  return {target,theta:Math.atan2(offset[0],offset[2]),phi:Math.asin(offset[1]/radius),radius:framedRadius,fov:interpolate(a.fov,b.fov,0,0,t,span),roll:interpolate(a.roll,b.roll,0,0,t,span),night};
+  return {target,theta:Math.atan2(offset[0],offset[2])+(aspect<1?.19*portrait:0),phi:Math.asin(offset[1]/radius),radius:framedRadius,fov:interpolate(a.fov,b.fov,0,0,t,span),roll:interpolate(a.roll,b.roll,0,0,t,span),night};
 }
 export function introCaptionAt(seconds){
   const time=Math.max(0,Math.min(INTRO_DURATION,seconds));

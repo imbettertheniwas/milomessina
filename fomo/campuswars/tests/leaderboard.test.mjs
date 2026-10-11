@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
 import {houseStandings,createCompetition} from '../village-competition.js';
+import {ROWS_HEIGHT} from '../village-leaderboard-art.js';
 
 test('percentage ties award higher ranks to larger joined totals, with stable genuine ties',()=>{
   const input=[{id:'small',joined:40,active:50},{id:'large',joined:80,active:100},{id:'equal',joined:80,active:100},{id:'higher',joined:9,active:10},{id:'empty',joined:0,active:0}];
@@ -14,7 +15,7 @@ test('percentage ties award higher ranks to larger joined totals, with stable ge
 
 test('scroll cycles all ten chapters seamlessly, freezes at the same time, and exposes all rows with reduced motion',t=>{
   // Use real Three.js textures and UV transforms; only the canvas painter is stubbed.
-  const context=new Proxy({},{get:()=>()=>{}});
+  const context=new Proxy({},{get:(_o,key)=>key==='createLinearGradient'?()=>({addColorStop(){}}):()=>{}});
   const originalDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),originalPath=Object.getOwnPropertyDescriptor(globalThis,'Path2D');
   Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>({getContext:()=>context})}});
   Object.defineProperty(globalThis,'Path2D',{configurable:true,value:class{}});
@@ -25,6 +26,9 @@ test('scroll cycles all ten chapters seamlessly, freezes at the same time, and e
   assert.deepEqual(competition.topChapters.map(c=>c.id),chapters.slice(0,10).map(c=>c.id));
   const rowAtTop=()=>{map.updateMatrix();return Math.floor(map.transformUv(new T.Vector2(.5,.999999)).y*10);};
   for(let row=0;row<10;row++){competition.animate(row*3.2);assert.equal(rowAtTop(),row);}
+  competition.restart(50);competition.animate(50);assert.equal(competition.chapterAtUV(new T.Vector2(.5,.999999)).id,chapters[0].id);
+  competition.animate(56.4);const picked=competition.chapterAtUV(new T.Vector2(.5,.999999));assert.equal(picked.id,chapters[2].id);
+  competition.setPaused(true,56.4);const stopped=map.offset.y;competition.animate(70);assert.equal(map.offset.y,stopped);competition.setPaused(false,70);competition.animate(70);assert.equal(map.offset.y,stopped);competition.restart(0);
   competition.animate(0);const start=map.offset.y;
   competition.animate(32);assert.equal(map.offset.y,start);
   competition.animate(13);const frozen=map.offset.y,version=map.version;
@@ -40,14 +44,21 @@ test('scroll cycles all ten chapters seamlessly, freezes at the same time, and e
 });
 
 test('campus boards keep one through five rows at natural height and never scroll a short list',t=>{
- const calls=[],context=new Proxy({fillText:text=>calls.push(String(text))},{get:(obj,key)=>obj[key]||(()=>{})});
+ const calls=[],context=new Proxy({fillText:text=>calls.push(String(text))},{get:(obj,key)=>obj[key]||(key==='createLinearGradient'?()=>({addColorStop(){}}):()=>{})});
  const originalDocument=Object.getOwnPropertyDescriptor(globalThis,'document'),originalPath=Object.getOwnPropertyDescriptor(globalThis,'Path2D');
  Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>({getContext:()=>context})}});Object.defineProperty(globalThis,'Path2D',{configurable:true,value:class{}});
  t.after(()=>{for(const [key,d] of [['document',originalDocument],['Path2D',originalPath]]){if(d)Object.defineProperty(globalThis,key,d);else delete globalThis[key];}});
  for(const count of [1,2,3,5]){
-  const rows=Array.from({length:count},(_,i)=>({id:'c'+i,name:'Chapter '+i,letters:'Χ',school:'Campus A',joined:40-i,active:100}));
+  const rows=Array.from({length:count},(_,i)=>({id:'c'+i,name:'Chapter '+i,letters:'C',school:'Campus A',joined:40-i,active:100}));
   const board=createCompetition(T,rows,[],[],'members',{schoolName:'Campus A'}),map=board.board.getObjectByName('leaderboard-scrolling-rows').material.map;
-  assert.equal(map.image.height,830,'short rosters must pad the row texture rather than stretch it');assert.equal(map.repeat.y,1);board.animate(9.1);assert.equal(map.offset.y,0);board.animate(20,true);assert.equal(map.repeat.y,1);assert.equal(map.offset.y,0);assert.equal(board.board.userData.scope,'Campus A');
+  assert.equal(map.image.height,ROWS_HEIGHT,'short rosters must pad the row texture rather than stretch it');assert.equal(map.repeat.y,1);board.animate(9.1);assert.equal(map.offset.y,0);board.animate(20,true);assert.equal(map.repeat.y,1);assert.equal(map.offset.y,0);assert.equal(board.board.userData.scope,'Campus A');
  }
- assert(calls.includes('CAMPUS A'));assert(calls.includes('CAMPUS LEADERBOARD'));assert(calls.includes('MEMBERS'));assert(calls.includes('40'));assert(!calls.includes('40 / 80'));
+ assert(calls.includes('Chapters'));assert(calls.includes('Campus A'));assert(calls.includes('40 members'));assert(!calls.includes('Clans'));assert(!calls.includes('40 / 80'));
+});
+
+test('leaderboard is a solid portrait iPhone with front glass, side buttons and rear lenses',()=>{
+ const c=createCompetition(T,[],[]),board=c.board;board.updateMatrixWorld(true);
+ for(const name of ['iphone-titanium-frame','iphone-front-glass','iphone-rear-glass','iphone-side-button','iphone-camera-lens','iphone-dynamic-island'])assert(board.getObjectByName(name),name);
+ const body=board.getObjectByName('iphone-titanium-frame');body.geometry.computeBoundingBox();const size=body.geometry.boundingBox.getSize(new T.Vector3());assert(size.y>size.x*2);assert(size.z>.5);
+ assert(board.getObjectByName('leaderboard-display').position.z>body.position.z);
 });

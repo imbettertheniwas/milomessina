@@ -2,7 +2,8 @@
 (() => {
   const savedSnapshot=JSON.parse(document.getElementById('chapters-data').textContent);
   let {chapters}=savedSnapshot;
-  let chapterFeed,rankChapters,backyardStatus;
+  let chapterFeed,rankChapters,backyardStatus,chapterSearch;
+  const visibleChapter=chapter=>chapter.joined>30;
   const byId = new Map(chapters.map(chapter => [chapter.id, chapter]));
   const neighborhood = document.getElementById('neighborhood');
   let cards = [...document.querySelectorAll('.house-card')];
@@ -16,14 +17,17 @@
   const panelClaim = document.getElementById('panel-claim');
   const canonicalUrl = new URL(location.pathname, location.origin).href;
   const drawer = document.getElementById('village-drawer');
+  const drawerToggle = document.getElementById('village-chapters');
   function setDrawer(open) {
     drawer.hidden = !open;
+    drawerToggle.setAttribute('aria-expanded', String(open));
     // The phone sheet shares the bottom edge with the controls, so they take turns.
     villageShell.classList.toggle('drawer-open', open);
     if(open){setMoreControls(false);chapterFeed?.refresh();}
     syncOverlay();
   }
-  document.getElementById('drawer-close').addEventListener('click', () => {setDrawer(false);document.querySelector('#village-viewport canvas')?.focus();});
+  drawerToggle.addEventListener('click', () => setDrawer(drawer.hidden));
+  document.getElementById('drawer-close').addEventListener('click', () => {setDrawer(false);drawerToggle.focus();});
   const moreButton=document.getElementById('village-more');
   const extraControls=document.getElementById('village-extra-controls');
   const villageShell=document.getElementById('village');
@@ -44,12 +48,35 @@
     if(event.key==='Escape'&&moreButton.getAttribute('aria-expanded')==='true'){setMoreControls(false);moreButton.focus();}
   });
   document.addEventListener('village:introstart',()=>setMoreControls(false));
+  const profile=document.getElementById('chapter-profile');let profileChapter='';
+  let lookupSchoolIdentity;
+  const profileIdentity=import('./village-school-identities.js?v=180').then(module=>(lookupSchoolIdentity=module.campusIdentity));
   const about = document.getElementById('about-dialog');
-  function syncOverlay(){document.dispatchEvent(new CustomEvent('village:overlay',{detail:{open:!drawer.hidden||moreButton.getAttribute('aria-expanded')==='true'||Boolean(about.open)}}));}
+  function syncOverlay(){document.dispatchEvent(new CustomEvent('village:overlay',{detail:{open:!drawer.hidden||moreButton.getAttribute('aria-expanded')==='true'||Boolean(about.open)||profile.open}}));}
+  document.addEventListener('chapter:profile',async event=>{
+    const chapter=byId.get(event.detail.id);if(!chapter)return;profileChapter=chapter.id;setDrawer(false);setMoreControls(false);
+    const identity=(await profileIdentity)({name:chapter.school||chapter.shortSchool});
+    const ink=color=>{const rgb=color.match(/[a-f0-9]{2}/gi).map(hex=>parseInt(hex,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.179?'#080b14':'#ffffff';};
+    profile.style.setProperty('--profile-primary',identity.primary);profile.style.setProperty('--profile-secondary',identity.secondary);profile.style.setProperty('--profile-primary-ink',ink(identity.primary));profile.style.setProperty('--profile-secondary-ink',ink(identity.secondary));
+    document.getElementById('chapter-profile-name').textContent=chapter.name;
+    document.getElementById('chapter-profile-school').textContent=chapter.school;
+    const crest=document.getElementById('chapter-profile-crest');crest.style.background=identity.logoBackground==='primary'?identity.primary:'#ffffff';
+    if(identity.logo){const logo=document.createElement('img');logo.src='/fomo/campuswars/assets/schools/'+identity.logo;logo.alt=identity.name+' logo';crest.replaceChildren(logo);}else crest.textContent=identity.name.replace(/^the /i,'').split(/\s+/).map(word=>word[0]).slice(0,4).join('');
+    document.getElementById('chapter-profile-rank').textContent=event.detail.rank?'#'+event.detail.rank:'CHAPTER';
+    document.getElementById('chapter-profile-members').textContent=chapter.joined.toLocaleString();
+    const remaining=Math.max(0,Math.ceil(chapter.active*.8)-chapter.joined);
+    document.getElementById('chapter-profile-upgrade').textContent=!visibleChapter(chapter)?`${31-chapter.joined} more members to appear in the village.`:remaining?remaining+' more members to unlock the pool.':'Pool unlocked';
+    document.getElementById('chapter-profile-house').hidden=!visibleChapter(chapter);
+    profile.showModal();syncOverlay();
+  });
+  profile.addEventListener('close',()=>{document.dispatchEvent(new CustomEvent('chapter:profileclose'));syncOverlay();});
+  document.getElementById('chapter-profile-close').addEventListener('click',()=>profile.close());
+  document.getElementById('chapter-profile-house').addEventListener('click',()=>{profile.close();selectChapter(profileChapter);});
+  profile.addEventListener('click',event=>{if(event.target===profile){const r=profile.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)profile.close();}});
   about.addEventListener('close',syncOverlay);
   document.getElementById('about-close').addEventListener('click', () => about.close());
   document.getElementById('intro-replay').addEventListener('click', () => {about.close();setDrawer(false);document.dispatchEvent(new CustomEvent('village:replay'));});
-  document.addEventListener('keydown', event => {if(event.key === 'Escape' && !drawer.hidden){setDrawer(false);document.querySelector('#village-viewport canvas')?.focus();}});
+  document.addEventListener('keydown', event => {if(event.key === 'Escape' && !drawer.hidden){setDrawer(false);drawerToggle.focus();}});
   document.addEventListener('village:introstart', () => setDrawer(false));
   document.addEventListener('school:visibility',event=>{if(event.detail.open){setDrawer(false);setMoreControls(false);if(about.open)about.close();}});
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -60,11 +87,12 @@
   function selectChapter(id, { writeHash = true, scroll = false, emit = true } = {}) {
     const chapter = byId.get(id);
     if (id !== 'empty' && !chapter) return;
+    if(chapter&&!visibleChapter(chapter)){if(emit)document.dispatchEvent(new CustomEvent('chapter:profile',{detail:{id:chapter.id,rank:chapter.rank}}));return;}
     selectedId = id;
     cards.forEach(card => {
       const selected = card.dataset.chapter === id;
       card.classList.toggle('selected', selected);
-      card.setAttribute('aria-pressed', String(selected));
+      card.setAttribute('aria-pressed', String(selected));card.setAttribute('aria-selected',String(selected));
       if (selected && scroll) {
         neighborhood.scrollTo({
           left: Math.max(0, neighborhood.scrollLeft + card.getBoundingClientRect().left - neighborhood.getBoundingClientRect().left - (neighborhood.clientWidth - card.offsetWidth) / 2),
@@ -93,7 +121,7 @@
       text('panel-target', 'Be the first.');
       text('panel-detail', 'Bring your chapter. Get paid.');
     }
-    if (writeHash) {const route=new URLSearchParams(location.hash.slice(1));route.set('chapter',id);history.replaceState(null,'',location.pathname+location.search+'#'+route);}
+    if (writeHash) {const route=new URLSearchParams();route.set('chapter',id);history.replaceState(null,'',location.pathname+location.search+'#'+route);}
     if (emit) document.dispatchEvent(new CustomEvent('chapter:select', {detail: {id, focus: true}}));
   }
 
@@ -193,20 +221,15 @@
   addEventListener('hashchange', readHash);
   selectChapter(selectedId, {writeHash: false, emit: false});
   readHash();
-  import('./village-national.js?v=158').then(m=>m.createNationalNavigation());
-  import('./village.js?v=170').catch(error => {
+  import('./village.js?v=180').catch(error => {
     console.error('Unable to load Greek village:', error);
-    document.getElementById('village-loading').textContent = 'The village couldn’t load. Refresh the page or join Greek Wars using the link above.';
+    document.getElementById('village-loading').textContent = 'The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     document.getElementById('village').classList.remove('intro-playing');
     document.getElementById('village-intro').hidden = true;
     document.getElementById('village').classList.add('village-unavailable');
   });
-  let activeSchoolId='';
-  document.addEventListener('destination:changed',event=>{
-    activeSchoolId=event.detail.school?.id||'';const visible=new Set(event.detail.chapters.map(c=>c.id));
-    const localRanks=new Map((rankChapters?.(event.detail.chapters)||[]).map(c=>[c.id,c.rank]));
-    cards.forEach(card=>{card.hidden=Boolean(activeSchoolId&&card.dataset.chapter!=='empty'&&!visible.has(card.dataset.chapter));const badge=card.querySelector('.house-rank');const chapter=byId.get(card.dataset.chapter),rank=activeSchoolId?localRanks.get(card.dataset.chapter):chapter?.rank;if(badge)badge.textContent='#'+rank;if(chapter&&rank)card.setAttribute('aria-label',`Rank ${rank}: ${chapter.name}, ${chapter.school}: ${chapter.joined} members onboarded`);});
-    const heading=document.querySelector('#village-drawer h2');if(heading)heading.textContent='Chapters';
+  import('./village-chapter-search.js?v=180').then(({installChapterSearch})=>{
+    chapterSearch=installChapterSearch({input:document.getElementById('chapter-search'),clear:document.getElementById('chapter-search-clear'),status:document.getElementById('chapter-search-status'),list:document.getElementById('house-track'),getChapters:()=>chapters,getCards:()=>cards,onSelect:id=>{selectChapter(id);setDrawer(false);}});
   });
   let lastUpdated=savedSnapshot.updatedAt;
   function updateChapters(snapshot) {
@@ -220,8 +243,12 @@
     for (const chapter of chapters) {
       let card = existing.get(chapter.id);
       if (!card) {card = cardTemplate.cloneNode(true);card.dataset.chapter = chapter.id;bindCard(card);}
-      card.querySelector('.house-label strong').textContent = chapter.letters;
-      card.querySelector('.house-label span').textContent = chapter.name;
+      const badge=card.querySelector('.house-label strong'),identity=lookupSchoolIdentity({name:chapter.school||chapter.shortSchool});
+      badge.classList.add('school-logo');badge.title=identity.name;badge.style.background=identity.logoBackground==='primary'?identity.primary:'#ffffff';
+      if(identity.logo){const source='/fomo/campuswars/assets/schools/'+identity.logo;if(badge.dataset.logo!==source){const image=document.createElement('img');image.src=source;image.alt=identity.name+' logo';image.loading='lazy';image.decoding='async';badge.replaceChildren(image);badge.dataset.logo=source;}}
+      else{badge.textContent=(chapter.shortSchool||chapter.school).split(' ').filter(word=>!['the','of','and'].includes(word.toLowerCase())).map(word=>word[0]).join('').slice(0,4);badge.style.background=identity.primary;}
+
+      const name=card.querySelector('.house-label span');name.textContent=chapter.name;const school=document.createElement('small');school.textContent=chapter.shortSchool||chapter.school;name.append(school);
       card.querySelector('.house-rank').textContent = `#${chapter.rank}`;
 
       const progress = chapter.joined / chapter.active * 100,target = Math.ceil(chapter.active*.8);
@@ -232,8 +259,8 @@
       card.setAttribute('aria-label',`Rank ${chapter.rank}: ${chapter.name}, ${chapter.school}: ${chapter.joined} of ${target} members toward the 80% target`);
       track.insertBefore(card,empty);
     }
-    cards = [...track.querySelectorAll('.house-card')];
-    const current = {...snapshot,chapters};
+    cards = [...track.querySelectorAll('.house-card')];chapterSearch?.refresh();
+    const current = {...snapshot,chapters:snapshot.chapters};
     const requestedChapter = new URLSearchParams(location.hash.slice(1)).get('chapter');
     if (requestedChapter === 'empty' || byId.has(requestedChapter)) selectedId = requestedChapter;
     if (selectedId !== 'empty' && !byId.has(selectedId)) selectedId = chapters[0]?.id || 'empty';
@@ -242,7 +269,7 @@
     selectChapter(selectedId,{writeHash:false,emit:false});
     if (focusedChapter) cards.find(card => card.dataset.chapter === focusedChapter)?.focus({preventScroll:true});
   }
-  Promise.all([import('./chapter-feed.js?v=167'),import('./village-competition.js?v=167'),import('./village-backyards.js?v=112')]).then(([{startChapterFeed},{houseStandings},houses]) => {
+  Promise.all([import('./chapter-feed.js?v=180'),import('./village-competition.js?v=180'),import('./village-backyards.js?v=180'),profileIdentity]).then(([{startChapterFeed},{houseStandings},houses]) => {
     rankChapters=chapters=>houseStandings(chapters,'members');
     backyardStatus=houses.backyardStatus;
     updateChapters(savedSnapshot);

@@ -1,6 +1,6 @@
-import {hash} from './village-district-layout.js?v=80';
-import {conversation} from './village-human-behavior.js?v=165';
-import {gaitPhase,smooth} from './village-human-motion.js?v=165';
+import {hash} from './village-district-layout.js?v=180';
+import {conversation} from './village-human-behavior.js?v=180';
+import {gaitPhase,smooth} from './village-human-motion.js?v=180';
 
 const turn=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*smooth(t);
 const world=(lot,p)=>({x:lot.x+p.x*Math.cos(lot.rotation)+p.z*Math.sin(lot.rotation),z:lot.z-p.x*Math.sin(lot.rotation)+p.z*Math.cos(lot.rotation)});

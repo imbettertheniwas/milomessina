@@ -1,4 +1,4 @@
-import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
+import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=180';
 // Conservative whole-house occlusion. Only a solid wall that covers the entire
 // projected lot (including its lawn and badge) can hide a distant house. A
 // nearer building's screen bounding box alone is NOT an occluder: its corners

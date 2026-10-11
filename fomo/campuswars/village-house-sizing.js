@@ -1,6 +1,6 @@
-import {houseStandings} from './village-competition.js?v=167';
-import {bannerIdentity} from './village-banner-art.js?v=167';
-import {hash} from './village-district-layout.js?v=80';
+import {houseStandings} from './village-competition.js?v=180';
+import {bannerIdentity} from './village-banner-art.js?v=180';
+import {hash} from './village-district-layout.js?v=180';
 
 function houseStyle(chapter){
   const original=['blue-and-gold','star-and-crescent','azure-academic','cardinal-rose','cherry-varsity'].indexOf(bannerIdentity(chapter).key);
@@ -11,9 +11,12 @@ export function rankedHouseSizes(chapters,metric='progress'){
   return new Map(chapters.map(chapter=>{
     const rank=ranks.get(chapter.id)||standings.length+1,advantage=1/(1+.55*(rank-1));
     const style=houseStyle(chapter),width=[11,12.2,10.5,12.2,10.5][style],height=style===4?9.1:7.4;
-    // Rank controls all three dimensions. Equal ranks receive equal dimensions.
-    // The largest footprint stays within the existing lot and walking routes.
-    const footprint=8.5+5.1*advantage,roofline=7+8*advantage,depthScale=.76+.24*advantage;
+    // Member counts drive a broad, continuous size range in the main village.
+    // A chapter keeps its size when other chapters join or change rank.
+    const growth=1-Math.exp(-Math.max(0,(Number(chapter.joined)||0)-30)/85);
+    const footprint=metric==='members'?7+6.6*growth:8.5+5.1*advantage;
+    const roofline=metric==='members'?5.5+9.5*growth:7+8*advantage;
+    const depthScale=metric==='members'?.6+.4*growth:.76+.24*advantage;
     return [chapter.id,{rank,style,width,height,footprint,roofline,depthScale,scaleX:footprint/(width+1),scaleY:roofline/(height+2.82),offsetZ:6.2*(1-depthScale)}];
   }));
 }

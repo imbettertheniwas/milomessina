@@ -1,5 +1,5 @@
-import {hash} from './village-district-layout.js?v=80';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
+import {hash} from './village-district-layout.js?v=180';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=180';
 
 // One sheet of plywood art serves every die table in the village: houses tell
 // themselves apart by the stain each table is tinted with, so any number of

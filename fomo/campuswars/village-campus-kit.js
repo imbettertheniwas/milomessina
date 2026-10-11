@@ -1,7 +1,7 @@
-import {createVehicleKit} from './village-vehicles.js?v=153';
-import {createCampusBannerTexture} from './village-floor-logo.js?v=153';
-import {hash,pick} from './village-district-layout.js?v=80';
-import {buildPlace} from './village-places.js?v=80';
+import {createVehicleKit} from './village-vehicles.js?v=180';
+import {createCampusBannerTexture} from './village-floor-logo.js?v=180';
+import {hash,pick} from './village-district-layout.js?v=180';
+import {buildPlace} from './village-places.js?v=180';
 // Shared architectural parts, textures and landscape geometry. All static parts
 // are instanced per streamed block; texture resources live across block changes.
 export function createCampusKit(T){
@@ -32,7 +32,7 @@ export function createCampusKit(T){
   function bar(p,a,b,r,color){const d=new T.Vector3().subVectors(new T.Vector3(...b),new T.Vector3(...a));const m=mesh(p,'cylinder',(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2,r,d.length(),r,color);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return m;}
   function sign(p,words,x,y,z,w,h){
     if(typeof document==='undefined'||!words)return;
-    const c=document.createElement('canvas');c.width=1024;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#e4ddc9';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#323c46';ctx.font='600 57px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(words,512,67,955);
+    const c=document.createElement('canvas');c.width=Math.max(1024,Math.ceil(96*w/h));c.height=Math.round(c.width*h/w);const ctx=c.getContext('2d');ctx.fillStyle='#e4ddc9';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#323c46';let size=c.height*.7;ctx.font=`600 ${size}px Georgia`;size*=Math.min(1,c.width*.92/ctx.measureText(words).width);ctx.font=`600 ${size}px Georgia`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(words,c.width/2,c.height*.53);
     const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;const m=mesh(p,new T.PlaneGeometry(w,h),x,y,z,1,1,1,new T.MeshLambertMaterial({map}));m.userData.ownedTexture=true;return m;
   }
   function roof(p,w,d,y,height=3,color=0x414b54){
@@ -91,7 +91,7 @@ export function createCampusKit(T){
       // banner is the one the village is meant to see. Every other library
       // still names itself.
       const bannerLibrary=s.x===0&&s.z===-120;
-      if(!bannerLibrary)sign(g,'UNIVERSITY LIBRARY',0,11.73,d/2+3.8,23,.6);
+      if(!bannerLibrary)sign(g,'UNIVERSITY LIBRARY',0,11.73,d/2+3.8,23,1.0);
       if(bannerLibrary){
         const map=createCampusBannerTexture(T),banner=instances(g,geometries.box,1);
         banner.name='fomo-campus-building-banner';banner.material=new T.MeshLambertMaterial({color:0xffffff,...(map?{map}:{color:0x12111a})});banner.userData={ownedMaterial:true,ownedMap:Boolean(map)};
@@ -125,7 +125,7 @@ export function createCampusKit(T){
       const colors=[0xb5896a,0xd0c3a7,0x8c9c92,0xb8a199];
       for(let i=0;i<4;i++){const x=(i-1.5)*w/4;box(g,x,h/2+.5,d/2+.1,w/4-.1,h,.2,colors[(s.seed+i)%4]);box(g,x,1.9,d/2+.25,w/4-.8,2.5,.12,0x49636c);for(let y=5;y<h;y+=3)box(g,x,y,d/2+.25,w/4-1.7,1.6,.12,0x59707a);box(g,x,3.6,d/2+1,w/4-.25,.2,2, i%2?0xb48360:0xe2d6ba);}
     }else{for(const x of [-3.4,3.4])cylinder(g,x,2.15,d/2+1,.2,3.8,0xe6deca);box(g,0,4.2,d/2+1,8,.35,2.8,0xe6deca);}
-    if(s.type!=='library')sign(g,s.label,0,modern?6.85:4.7,d/2+.72,Math.min(19,w-2),.62);
+    if(s.type!=='library')sign(g,s.label,0,modern?6.85:4.7,d/2+.72,Math.min(19,w-2),1.05);
     roofDetails(g,s);
     return g;
   }

@@ -1,5 +1,13 @@
 # fomo Campus Wars
 
+## Main village — October 11, 2026
+
+The active experience now opens one grounded home village. Every chapter with more than 30 members has a house; the Chapters search still includes the full roster, with school logos, abbreviations, and school-colored profile cards. The leaderboard is an interactive 3D phone.
+
+The stadium and helipad occupy the main lawn. Spectators form the FOMO wordmark and eyes in the stadium, while 48 individual spectators gather around the helicopter and straight red carpet. The chauffeur lays out and collects the carpet, traffic queues behind the Maybach, and selecting the helicopter preserves playback. Small campus accents, hoop nets, rear-wall repairs, and connected walkways complete the scene.
+
+The island sections below document the previous experience; those navigation modules are no longer loaded by the production page.
+
 ## Floating school islands — October 6, 2026
 
 Each school destination contains its chapter houses and claim lot on a bounded

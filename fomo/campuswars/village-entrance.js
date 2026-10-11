@@ -1,5 +1,5 @@
-import {createEntranceEyesTexture} from './village-floor-logo.js?v=153';
-import {districtSpecs} from './village-district-layout.js?v=80';
+import {createEntranceEyesTexture} from './village-floor-logo.js?v=180';
+import {districtSpecs} from './village-district-layout.js?v=180';
 
 export function createVillageEntrance(T,extension=0){
   const buildings=districtSpecs(0,1),gym=buildings.find(b=>b.type==='gym'),residence=buildings.find(b=>b.type==='residence');

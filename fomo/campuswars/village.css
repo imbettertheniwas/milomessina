@@ -220,8 +220,9 @@ dialog::backdrop{backdrop-filter:none;background:#221d4bb3}
 /* Equal side columns keep the desktop view controls centered under invitations. */
 @media(min-width:1281px) and (pointer:fine){
   .village-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end}
-  .village-bottom .village-view-tools{grid-column:2;justify-self:center}
-  .village-bottom .village-primary-controls{grid-column:3;justify-self:end}
+  .village-bottom .party-tools{justify-self:start}
+  .village-bottom .village-view-tools{justify-self:center}
+  .village-bottom .village-primary-controls{justify-self:end}
 }
 
 /* Real nearby campus destinations, anchored to the distant islands. */
@@ -231,3 +232,15 @@ dialog::backdrop{backdrop-filter:none;background:#221d4bb3}
 .nearby-school-label span{display:block;margin-top:4px;font-size:10px;color:#eaedffbb}
 .nearby-school-label:hover,.nearby-school-label:focus-visible{background:var(--fomo-secondary);border-color:var(--fomo-white)}
 .intro-playing .nearby-school-labels,.controls-open .nearby-school-labels,.drawer-open .nearby-school-labels{visibility:hidden}
+
+/* Compact chapter autocomplete with keyboard selection. */
+.village-drawer{max-height:320px}.chapter-search{position:relative;margin:4px 0 8px;flex-shrink:0}.chapter-search input{display:block;width:100%;height:36px;padding:7px 34px 7px 12px;border:1px solid #eaedff30;border-radius:9px;background:#ffffff07;font-size:12px;outline-offset:1px}.chapter-search input::placeholder{color:#eaedff88}.chapter-search input::-webkit-search-cancel-button{display:none}.chapter-search button{position:absolute;right:3px;top:2px;width:31px;height:31px;border:0;background:transparent;font-size:20px}.chapter-search-status{font-size:12px;color:#eaedff99;padding:9px 4px}.village-drawer .house-label small{display:block;font-size:10px;line-height:1.2;color:#eaedff88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.village-drawer .house-card.search-active{background:#516af640;outline:1px solid #eaedff66;outline-offset:-1px}
+@media(max-width:700px){.village-drawer{max-height:292px}.chapter-search input{font-size:16px;height:37px}.village-drawer .house-label small{font-size:9px}}
+
+.chapter-profile{position:fixed;margin:auto;width:min(380px,calc(100% - 32px));padding:30px;border:1px solid #eaedff38;border-radius:24px;background:#221d4b;color:#eaedff;text-align:center;box-shadow:0 22px 90px #07061088}.chapter-profile::backdrop{background:#07061077;backdrop-filter:blur(7px)}.chapter-profile .close-button{position:absolute;right:12px;top:12px}.profile-crest{display:grid;place-items:center;width:68px;height:68px;margin:6px auto 20px;border-radius:19px;background:#4a36ff;font-size:24px}.profile-eyebrow{font-size:10px;letter-spacing:.12em;color:#eaedff99}.chapter-profile h2{font-size:29px;line-height:1.08;margin:12px 0 8px}.profile-school{font-size:14px;color:#eaedffb0;line-height:1.4}.profile-members{display:flex;flex-direction:column;gap:4px;margin:26px 0}.profile-members strong{font-size:56px;line-height:1}.profile-members span,.profile-upgrade{font-size:13px;color:#eaedff99}.chapter-profile .button{display:block;width:100%;margin-top:24px}.profile-upgrade{border-top:1px solid #eaedff20;padding-top:18px}
+
+.chapter-profile{--profile-primary:#26384a;--profile-secondary:#d4d8de;background:linear-gradient(145deg,color-mix(in srgb,var(--profile-primary) 72%,#080b14),color-mix(in srgb,var(--profile-primary) 25%,#080b14));border-color:color-mix(in srgb,var(--profile-secondary) 60%,transparent);border-top:4px solid var(--profile-secondary);color:#fff}.chapter-profile .profile-crest{background:var(--profile-primary);color:var(--profile-primary-ink);border:2px solid var(--profile-secondary);box-shadow:0 8px 30px #0003}.chapter-profile .button{background:var(--profile-secondary);color:var(--profile-secondary-ink);border-color:transparent}.chapter-profile .button:hover{filter:brightness(1.1)}.chapter-profile .profile-upgrade{border-color:color-mix(in srgb,var(--profile-secondary) 35%,transparent)}
+
+.village-drawer .house-label strong.school-logo{padding:3px;overflow:hidden;border-color:#ffffff35}.school-logo img{display:block;width:100%;height:100%;object-fit:contain}
+
+#chapter-profile-crest img{width:78%;height:78%;object-fit:contain;display:block}

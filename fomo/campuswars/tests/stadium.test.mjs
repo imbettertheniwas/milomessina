@@ -5,17 +5,16 @@ import {createStadium,STADIUM_SITE} from '../village-stadium.js';
 import {createDistricts} from '../village-districts.js';
 import {PLAY_SECONDS,footballState,footballPlayer,footballBall} from '../village-football.js';
 
-test('stadium sits behind the west houses and its reserved site survives streaming and growth',()=>{
-  assert(STADIUM_SITE.x+STADIUM_SITE.width/2<-40);
+test('stadium occupies the open lawn beside the houses and survives streaming and growth',()=>{
+  assert(STADIUM_SITE.x-STADIUM_SITE.width*STADIUM_SITE.scale/2>-91);assert(STADIUM_SITE.x+STADIUM_SITE.width*STADIUM_SITE.scale/2<-41);
   for(const extension of [0,133]){
     const d=createDistricts(T,extension,5);
     try{
       const stadium=d.stadium;
-      assert.equal(stadium.root.position.z,STADIUM_SITE.z+extension*STADIUM_SITE.extensionFactor);
-      d.update(stadium.root.position.x,stadium.root.position.z);const site=d.chunks.get('-3,0');
-      assert.equal(site.kind,'stadium');assert.deepEqual(site.specs,[]);assert.equal(site.people.length,0);
+      assert.equal(stadium.root.position.z,STADIUM_SITE.z);
+      d.update(STADIUM_SITE.x,STADIUM_SITE.z);
       d.setNight(true);d.animate(19);assert(stadium.night);assert.equal(stadium.crowdUniforms.stadiumRoar.value,1);
-      d.update(500,500);d.update(0,200+extension);assert.equal(d.stadium,stadium);assert(stadium.night);
+      d.update(500,500);d.update(STADIUM_SITE.x,STADIUM_SITE.z);assert.equal(d.stadium,stadium);assert(stadium.night);
       d.setNight(false);assert.equal(stadium.night,false);
     }finally{d.dispose();}
   }
@@ -84,9 +83,9 @@ test('thousands of cheering fans use one static instance buffer, with a fixed st
 test('offscreen games catch up exactly when visible, including a paused camera move',()=>{
   const d=createDistricts(T),camera=new T.PerspectiveCamera(48,16/9,1,650);
   try{
-    camera.position.set(0,8,38);camera.lookAt(0,2,-80);camera.updateMatrixWorld();
+    camera.position.set(0,8,-38);camera.lookAt(0,2,-80);camera.updateMatrixWorld();
     d.animate(19,0,0,camera);assert.equal(d.stadium.crowdUniforms.stadiumTime.value,0);
-    camera.position.set(STADIUM_SITE.x,35,STADIUM_SITE.z-65);camera.lookAt(STADIUM_SITE.x,2,STADIUM_SITE.z);camera.updateMatrixWorld();
+    camera.position.set(0,35,35);camera.lookAt(STADIUM_SITE.x,2,STADIUM_SITE.z);camera.updateMatrixWorld();
     d.animate(19,0,200,camera);assert.equal(d.stadium.crowdUniforms.stadiumTime.value,19);
     assert.equal(d.stadium.crowdUniforms.stadiumRoar.value,1);
     const version=d.stadium.playerParts.instanceMatrix.version;d.animate(19,0,200,camera);assert.equal(d.stadium.playerParts.instanceMatrix.version,version);
@@ -109,7 +108,7 @@ test('party fireworks launch above the stadium, pause, catch up, and disappear i
         const p=new T.Vector3().fromBufferAttribute(geometry.attributes.position,i);
         assert([p.x,p.y,p.z].every(Number.isFinite));
         assert(geometry.boundingSphere.containsPoint(p));
-        assert(s.bounds.containsPoint(p.clone().add(s.root.position)),'Culling includes the sky above the stadium');
+        assert(s.bounds.containsPoint(p.clone().multiply(s.root.scale).add(s.root.position)),'Culling includes the sky above the stadium');
       }
     }
     s.animate(10000);reference.animate(10000);

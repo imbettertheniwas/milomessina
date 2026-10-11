@@ -1,8 +1,8 @@
-import {islandFloorGeometry} from './village-island.js?v=170';
-import {villageQuality} from './village-quality.js?v=127';
-import {createGrassMaterial} from './village-grass.js?v=167';
-import {hash} from './village-district-layout.js?v=80';
-import {campusBounds} from './village-campus-bounds.js?v=167';
+import {islandFloorGeometry} from './village-island.js?v=180';
+import {villageQuality} from './village-quality.js?v=180';
+import {createGrassMaterial} from './village-grass.js?v=180';
+import {hash} from './village-district-layout.js?v=180';
+import {campusBounds} from './village-campus-bounds.js?v=180';
 // Insert road sections in the one opaque floor. UVs repeat the straight part
 // while the original end junction and the campus beyond it move outward.
 export function setStreetExtension(T,streets,extension=0,streetTotal=1) {
@@ -46,16 +46,9 @@ export function createStreetNetwork(T,theme=null){
       const fade=ctx.createRadialGradient(x,y,0,x,y,r);fade.addColorStop(0,i%4?'#45633024':'#b1a07035');fade.addColorStop(1,'#71875300');ctx.fillStyle=fade;ctx.fillRect(x-r,y-r,r*2,r*2);
     }
     lawnPaint=false;
-    // Desire paths, damp patches and leaves are paint on the same opaque floor.
+    // Leaf scatter stays on the lawn; connecting walks are modeled by each district.
     for(const ox of [-100,0,100])for(const oz of [-100,0,100])for(const side of [-1,1]){
-      line('#948e75',[[ox+side*10,oz+38],[ox+side*17,oz+32],[ox+side*24,oz+30]],.8);
       for(let i=0;i<45;i++){const a=hash(ox,oz,side,i)*Math.PI*2,r=hash(i,oz,'leaf')*3.8;circle(i%2?'#a79563':'#8e8056',ox+side*41+Math.cos(a)*r,oz+5+Math.sin(a)*r,.06+hash(i,ox)*.07);}
-    }
-    // North/south pedestrian campuses connect to a road around Greek Row.
-    for(const z of [-100,100]){
-      line('#c4c2b3',[[0,z+(z>0?-39:-7)],[0,z+40]],7.8);
-      line('#c4c2b3',[[-40,z+34],[40,z+34]],3);
-      if(z<0)line('#c4c2b3',[[-19,z],[19,z+27]],2.5);else line('#c4c2b3',[[-35,z-8],[35,z-8]],2.5);
     }
     // Paint all curbs first, then continuous asphalt so junction rings never
     // overwrite a through lane with a strip of sidewalk.
@@ -78,12 +71,8 @@ export function createStreetNetwork(T,theme=null){
       for(let i=0;i<8;i++){const z=-end+hash(ox,side,i,'patch')*end*2;rect('#566066',ox+side*2.4-.45,z,.9,1.2+hash(i)*1.8);}
     }
     for(const ox of [-100,100])for(const oz of [-100,0,100])for(const side of [-1,1]){
-      // Parallel parking bays outside the through lanes; matching the static cars.
-      rect('#626a6c',ox+(side>0?15.5:-44.5),oz-41.4,29,3);
-      for(let i=0;i<7;i++)rect('#9fa79e',ox+side*(15.5+i*4.8),oz-41.2,.08,2.6);
       for(let i=0;i<4;i++)rect('#485259',ox+side*5.7-.3,oz-29+i*18,.45,.7);
     }
-    for(const side of [-1,1])rect('#626a6c',side*45-4.5,-40.5,9,7);
     for(const x of [-100,100]){
       for(let z=-144;z<146;z+=8){if(Math.abs(Math.abs(z)-50)<13||Math.abs(z)>139)continue;rect('#c5bea5',x-.09,z,.18,2.6);}
       for(const side of [-1,1])line('#a5b4a4',[[x+side*4.65,-137],[x+side*4.65,-63]],.09);
@@ -104,35 +93,17 @@ export function createStreetNetwork(T,theme=null){
       circle('#586567',ox+3.2,z+5,.4);
       for(let i=0;i<4;i++)rect('#e3d1ad',ox+6.6,z+i*.4,.5,.07);
     }
-    if(!theme?.floating){
-      // Open a wider perimeter behind the house backyards. The old outer
-      // lanes end at the cross streets; the new lanes wrap both amenities.
-      for(const side of [-1,1]){
-        const old=side*100,x=side*150;
-        lawnPaint=true;rect('#718753',old-9.1,-41.7,18.2,83.4);
-        mask.fillStyle='#ffffff';mask.fillRect(old-9.1+150,150-41.7,18.2,83.4);
-        lawnPaint=false;
-        rect('#bfc0b5',x-9,-50,18,100);rect('#505a60',x-6,-50,12,100);
-        for(let z=-34;z<36;z+=8)rect('#c5bea5',x-.09,z,.18,2.6);
-        for(const z of [-50,50]){circle('#bfc0b5',x,z,13);circle('#505a60',x,z,11.5);rect('#505a60',x-14,z-5.5,28,11);}
-        rect('#505a60',x-6,-50,12,100);
-        for(let z=-34;z<36;z+=8)rect('#c5bea5',x-.09,z,.18,2.6);
-      }
-    }
     if(theme?.floating){
       // A short residential lane belongs to each island; no roads run over its edge.
       lawnPaint=true;rect('#718753',-150,-150,300,300);mask.fillStyle='#ffffff';mask.fillRect(0,0,300,300);lawnPaint=false;
-      const start=theme.island?.streetStart??-31,end=(theme.island?.streetEnd??43)-(theme.island?.extension??0);
       for(const ox of [-100,0,100]){
-        line('#bfc0b5',[[ox,start],[ox,end]],15);
-        line('#505a60',[[ox,start],[ox,end]],10);
-        for(let z=start+6;z<end-4;z+=9)rect('#c5bea5',ox-.09,z,.18,2.6);
+        line('#bfc0b5',[[ox,-31],[ox,43]],15);
+        line('#505a60',[[ox,-31],[ox,43]],10);
+        for(let z=-25;z<39;z+=9)rect('#c5bea5',ox-.09,z,.18,2.6);
       }
     }
     grassMask=new T.CanvasTexture(maskCanvas);grassMask.wrapS=grassMask.wrapT=T.RepeatWrapping;grassMask.anisotropy=8;
     map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;
-    // Island UVs already use the canvas north/south orientation.
-    if(theme?.floating){map.flipY=false;grassMask.flipY=false;}
   }
   const bounds=new T.Vector4(),material=createGrassMaterial(T,map,grassMask,bounds);material.userData.campusBounds=bounds;
   if(theme){

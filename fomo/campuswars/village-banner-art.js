@@ -1,5 +1,5 @@
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
-import {chapterGoalReached} from './village-rewards.js?v=55';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=180';
+import {chapterGoalReached} from './village-rewards.js?v=180';
 // Original chapter compositions informed by public fraternity brand references.
 // Color provenance and design notes: banner-references.md. These are not official flags.
 const identities={

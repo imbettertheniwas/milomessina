@@ -1,4 +1,4 @@
-import {schoolKey,customSchool} from './village-destinations.js?v=147';
+import {schoolKey,customSchool} from './village-destinations.js?v=180';
 
 export const SCHOOL_PROMPT_DELAY=6000;
 const searchIndex=new WeakMap();

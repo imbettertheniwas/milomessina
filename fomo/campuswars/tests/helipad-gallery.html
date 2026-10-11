@@ -28,14 +28,14 @@
   <div class="playback">
     <button id="pause">Play</button>
     <label for="timeline">Timeline</label>
-    <input id="timeline" type="range" min="0" max="95.95" step="0.05" value="27" aria-label="Arrival timeline in seconds">
+    <input id="timeline" type="range" min="0" max="133.95" step="0.05" value="27" aria-label="Arrival timeline in seconds">
     <output id="timestamp" for="timeline">27.0 / 96s</output>
   </div>
   <output id="stats" aria-live="off"></output>
 </footer>
 <script type="module">
 import * as T from '../vendor/three.module.min.js';
-import {createHelipad,HELIPAD_CYCLE} from '../village-helipad.js?v=realism-gallery-2';
+import {createHelipad,HELIPAD_CYCLE} from '../village-helipad.js?v=179';
 
 const viewport=document.getElementById('viewport');
 const renderer=new T.WebGLRenderer({antialias:true});

@@ -1,29 +1,25 @@
-import {isPartyNight} from './village-party-schedule.js?v=169';
-import {createNearbyIslands} from './village-nearby-islands.js?v=159';
-import {islandFootprint,islandOverview} from './village-island.js?v=170';
-import {backyardUnlocked} from './village-backyards.js?v=112';
-import {createVillagePopulation} from './village-population.js?v=167';
-import {createLiveArrivals} from './village-arrivals.js?v=167';
-import {createHelipad} from './village-helipad.js?v=169';
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=165';
-import {createFramePacer} from './village-frame-pacing.js?v=92';
-import {villageQuality,createResolutionBudget} from './village-quality.js?v=127';
-import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=53';
+import {isPartyNight} from './village-party-schedule.js?v=180';
+import {backyardUnlocked} from './village-backyards.js?v=180';
+import {createVillagePopulation} from './village-population.js?v=180';
+import {createLiveArrivals} from './village-arrivals.js?v=180';
+import {createHelipad} from './village-helipad.js?v=180';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=180';
+import {createFramePacer} from './village-frame-pacing.js?v=180';
+import {villageQuality,createResolutionBudget} from './village-quality.js?v=180';
+import {createStreetNavigation,streetStops,streetStep} from './village-street-navigation.js?v=180';
 import * as THREE from './vendor/three.module.min.js';
-import {createVillageRendererAsync} from './village-renderer.js?v=170';
-import {chapterSceneKey} from './village-startup.js?v=128';
-import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
-import {createDistricts} from './village-districts.js?v=169';
-import {clampCampusTarget} from './village-campus-bounds.js?v=167';
-import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=169';
-import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=167';
-import {prewarmVillage} from './village-prewarm.js?v=169';
-import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=153';
-import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=167';
+import {createVillageRendererAsync} from './village-renderer.js?v=180';
+import {chapterSceneKey} from './village-startup.js?v=180';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=180';
+import {createDistricts} from './village-districts.js?v=180';
+import {clampCampusTarget} from './village-campus-bounds.js?v=180';
+import {INTRO_DURATION,openingView,introViewAt,introCaptionAt} from './village-intro.js?v=180';
+import {createMoneyRain,MONEY_END} from './village-money-rain.js?v=180';
+import {prewarmVillage} from './village-prewarm.js?v=180';
+import {createFomoBlimp,DISCORD_INVITE} from './village-blimp.js?v=180';
+import {createPointerHover,releasedMouseDrag} from './village-pointer-hover.js?v=180';
 
-import {destinationChapters,schoolDestinations,loadSchoolCatalog,routeFromHash,resolveDestination,destinationHash} from './village-destinations.js?v=147';
-import {schoolTheme,createSchoolDistricts} from './village-school-theme.js?v=170';
-import {createSchoolFlight,SCHOOL_FLIGHT_DURATION,schoolFlightCaption} from './village-school-flight.js?v=156';
+import {destinationChapters,routeFromHash,destinationHash} from './village-destinations.js?v=180';
 const shell=document.getElementById('village');
 const viewport=document.getElementById('village-viewport');
 const loading=document.getElementById('village-loading');
@@ -39,7 +35,7 @@ try{renderer=new THREE.WebGLRenderer({antialias:quality.antialias,alpha:false,po
   loading.textContent='This device can’t open the 3D village. Open Chapters to see progress, or join Greek Wars.';
   shell.classList.add('village-unavailable');
 }
-if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Refresh the page or join Greek Wars using the link above.';shell.classList.add('village-unavailable');});
+if(renderer)startVillage().catch(error=>{console.error('Unable to start Greek village:',error);loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';shell.classList.add('village-unavailable');});
 async function startVillage(){
   const pedestrianSpacing=createPedestrianSpacing(),arrivals=createLiveArrivals();
   arrivals.enqueue(JSON.parse(document.getElementById('chapters-data').textContent).arrivals);
@@ -47,55 +43,48 @@ async function startVillage(){
   const queueChapterUpdate=event=>{arrivals.enqueue(event.detail.arrivals);pendingChapterUpdate=event;};
   document.addEventListener('chapters:update',queueChapterUpdate);
   const flightKeys=new Set();
-  const catalog=await loadSchoolCatalog().catch(()=>[]);
   allChapters=JSON.parse(document.getElementById('chapters-data').textContent).chapters;
-  let activeSchool=resolveDestination(routeFromHash(location.hash),schoolDestinations(allChapters,catalog));
-  let travelling=false,schoolPickerOpen=false,pendingDestination=null,destinationInFlight=null;
-  chapters=destinationChapters(allChapters,activeSchool);
-  function makeDistricts(school,extension,streets){return school?createSchoolDistricts(THREE,school,extension,chapters):createDistricts(THREE,extension,streets,{incremental:quality.mobile});}
+  chapters=destinationChapters(allChapters);
+  function makeDistricts(extension,streets){return createDistricts(THREE,extension,streets,{incremental:quality.mobile});}
   const resolutionBudget=createResolutionBudget(quality,devicePixelRatio);
   let renderScale=resolutionBudget.ratio;
   renderer.setPixelRatio(renderScale);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
-  viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Use W A S D to fly the viewpoint forward, left, backward and right. Drag or use arrow keys to rotate, shift-drag to pan, or select a house. Scroll, pinch, or use plus and minus to zoom around the viewpoint. Click the FOMO blimp to join Discord, or use the Discord link in the village controls. Use Street view to click along the block. In Street view, W and S or up and down move, A and D or left and right look around. Escape resets the view.');
+  viewport.prepend(renderer.domElement);const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D Greek village. Use W A S D to fly the viewpoint forward, left, backward and right. Drag or use arrow keys to rotate, shift-drag to pan, or select a house. Scroll, pinch, or use plus and minus to zoom around the viewpoint. Click the helicopter, stadium or leaderboard phone to select it. Click the FOMO blimp to join Discord. Use Street view to click along the block. In Street view, W and S or up and down move, A and D or left and right look around. Escape resets the view.');
   const scene=new THREE.Scene();scene.background=new THREE.Color(0xb6cfdf);scene.fog=new THREE.FogExp2(0xb6cfdf,.0019);
   const camera=new THREE.PerspectiveCamera(48,1,1,650);
   const ambient=new THREE.HemisphereLight(0xe0edff,0x877a61,1.55);scene.add(ambient);
   const sun=new THREE.DirectionalLight(0xffe5c6,2.6);sun.position.set(-35,55,30);sun.castShadow=true;sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);sun.shadow.radius=1.4;Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.05;sun.shadow.bias=-.00015;scene.add(sun);scene.add(sun.target);
   const fill=new THREE.DirectionalLight(0xb7d2f5,.6);fill.position.set(30,15,-25);scene.add(fill);
-  let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals,metric:'members',theme:schoolTheme(activeSchool)});scene.add(village.world);
+  let village=await createVillageRendererAsync(THREE,chapters,{aspect:viewport.clientWidth/viewport.clientHeight,attachStreet:true,arrivals,metric:'members'});scene.add(village.world);
   const populationSource=document.getElementById('chapters-data');
   const populationSnapshot=JSON.parse(populationSource.textContent);
   const population=createVillagePopulation(THREE,populationSnapshot.chapters,{live:populationSource.dataset.feedLive==='true',updatedAt:populationSource.dataset.feedUpdatedAt||populationSnapshot.updatedAt});scene.add(population.root);
   const blimp=createFomoBlimp(THREE);scene.add(blimp.root);
-  function emptyHelipad(){return {root:new THREE.Group(),restart(){},setNight(){},relocate(){},update(){},dispose(){}};}
-  let helipad=activeSchool?emptyHelipad():createHelipad(THREE,village.extension,village.streetTotal);scene.add(helipad.root);helipad.restart(0,reduced);
-  const nearby=createNearbyIslands(THREE,{host:shell,documentRef:document,onFocus:()=>takeControl(),onTravel:school=>document.dispatchEvent(new CustomEvent('destination:request',{detail:{school,instant:true}}))});scene.add(nearby.root);
-  const pointerHover=createPointerHover(THREE,canvas,camera,blimp,{schoolPickables:()=>scenePickables()});
-  const openDiscord=()=>globalThis.open(DISCORD_INVITE,'_blank','noopener,noreferrer');
+  let helipad=createHelipad(THREE,village.extension);scene.add(helipad.root);helipad.restart(0,reduced);
+  const pointerHover=createPointerHover(THREE,canvas,camera,blimp,{schoolPickables:scenePickables});
   const moneyRain=createMoneyRain(THREE,chapters,village.renderAnchors||village.anchors);scene.add(moneyRain.root);
   let openingRainTime=0;
   let streetNav=createStreetNavigation(THREE,village.extension);scene.add(streetNav.root);
   let streetMode=false,streetZ=28.5,streetWantedZ=28.5;
   const streetButton=document.getElementById('village-street'),streetControls=document.getElementById('street-controls');
-  let districts=makeDistricts(activeSchool,village.extension,village.streetTotal);scene.add(districts.root);
-  let schoolFlight=null;
+  let districts=makeDistricts(village.extension,village.streetTotal);scene.add(districts.root);
   const dusk={sky:new THREE.Color(0x25233f),ambient:new THREE.Color(0x9a9fdc),ground:new THREE.Color(0x453649),sun:new THREE.Color(0xc49ab1),fill:new THREE.Color(0x858dff)};
   let litAtNight=false,scheduledNight=isPartyNight();
   function applyLighting(amount){
-    scene.background.set(schoolTheme(activeSchool)?.sky??0xb6cfdf).lerp(dusk.sky,amount);scene.fog.color.copy(scene.background);scene.fog.density=activeSchool?.00045+amount*.00075:.0019+amount*.0013;
+    scene.background.set(0xb6cfdf).lerp(dusk.sky,amount);scene.fog.color.copy(scene.background);scene.fog.density=.0019+amount*.0013;
     // Lift dusk's indirect light so brickwork and people retain detail at
     // street level, using the existing lights and the same daylight exposure.
     ambient.color.set(0xe0edff).lerp(dusk.ambient,amount);ambient.groundColor.set(0x877a61).lerp(dusk.ground,amount);ambient.intensity=1.55-amount*.72;
     sun.color.set(0xffe5c6).lerp(dusk.sun,amount);sun.intensity=2.6-amount*2.18;
     fill.color.set(0xb7d2f5).lerp(dusk.fill,amount);fill.intensity=.6-amount*.17;
-    const night=amount>.45;shell.classList.toggle('village-night',night);
-    if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);helipad.setNight(night);nearby.setNight(night);}
+    const night=amount>.45;
+    if(night!==litAtNight){litAtNight=night;village.nightLife.setNight(night);districts.setNight(night);helipad.setNight(night);}
   }
   const intro=document.getElementById('village-intro');
   let autoOrbit=!reduced,entrancePending=true,entranceActive=false,entrancePaused=false,entranceTime=0,captionIndex=-1;
   function paintIntro(){
-    const caption=activeSchool?schoolFlightCaption(entranceTime,activeSchool):introCaptionAt(entranceTime);
+    const caption=introCaptionAt(entranceTime);
     if(captionIndex!==caption.index){
       captionIndex=caption.index;
       document.getElementById('intro-title').textContent=caption.title;
@@ -107,9 +96,11 @@ async function startVillage(){
     intro.style.setProperty('--copy-lift',`${reduced||entrancePaused?0:caption.lift}px`);
     intro.style.setProperty('--copy-scale',reduced||entrancePaused?1:caption.scale);
   }
+  function syncPartySchedule(){const next=isPartyNight();if(next===scheduledNight)return;scheduledNight=next;applyLighting(Number(next));viewDirty=true;wake();}
+  const partyScheduleTimer=setInterval(syncPartySchedule,30000);
+  addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(partyScheduleTimer);});
   let introRoll=0,introNight=0;
   function applyIntroView(){
-    if(activeSchool)return;
     const view=introViewAt(reduced?INTRO_DURATION:entranceTime,camera.aspect);
     target.set(...view.target);theta=view.theta;phi=view.phi;radius=view.radius;
     wantedTarget.copy(target);wantedTheta=theta;wantedPhi=phi;wantedRadius=radius;
@@ -121,7 +112,7 @@ async function startVillage(){
     const wasPlaying=entranceActive||entrancePending;
     entrancePending=false;entranceActive=false;intro.hidden=true;shell.classList.remove('intro-playing','school-flight');
     shell.dataset.introComplete='true';
-    schoolFlight?.finish();introRoll=0;camera.near=1;camera.far=activeSchool?Math.max(nearby.farDistance,1000,islandOverview(islandFootprint(chapters),camera.aspect).radius*3):650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
+    introRoll=0;camera.near=1;camera.far=650;camera.fov=streetMode?camera.fov:48;camera.updateProjectionMatrix();
     applyLighting(Number(scheduledNight));
     if(['intro-skip','intro-pause','intro-join'].some(id=>document.activeElement===document.getElementById(id)))canvas.focus({preventScroll:true});
     if(ready)arrivals.start(chapters,partyTime,reduced);
@@ -130,22 +121,18 @@ async function startVillage(){
   function beginIntro(){
     if(!ready)return;
     flightKeys.clear();
-    if(activeSchool&&reduced){finishIntro();resetView();return;}
-    if(activeSchool)(schoolFlight??=createSchoolFlight(THREE,scene)).begin({anchor:village.anchors.find(a=>a.id===selected)||village.anchors[0],extension:village.extension,aspect:camera.aspect,overview:islandOverview(islandFootprint(chapters),camera.aspect)});
     if(village.streaming&&!village.residentIndices.has(0)){village.focus(village.anchors[0].id,beginIntro);wake();return;}
     leaveStreet();
-    nearby.update(camera,viewportWidth,viewportHeight,false);
     shell.dataset.introComplete='false';
     entrancePending=false;entranceActive=true;entrancePaused=false;entranceTime=0;captionIndex=-1;lastTime=0;
     document.getElementById('intro-pause').textContent='Pause intro';
     document.getElementById('intro-pause').setAttribute('aria-pressed','false');
-    autoOrbit=!reduced;intro.hidden=false;shell.classList.add('intro-playing');shell.classList.toggle('school-flight',Boolean(activeSchool));
+    autoOrbit=!reduced;intro.hidden=false;shell.classList.add('intro-playing');
     document.dispatchEvent(new CustomEvent('village:introstart'));
     applyIntroView();paintIntro();wake();
   }
   function takeControl(){
-    stadiumView=false;
-    helipadView=false;
+    delete shell.dataset.selectedLandmark;
     if(leaderboardView&&village.beacon)village.beacon.root.visible=true;leaderboardView=false;
     village.cancelFocus?.();
     autoOrbit=false;
@@ -160,10 +147,10 @@ async function startVillage(){
   });
   document.addEventListener('village:replay',beginIntro);
   document.addEventListener('village:artwork',()=>{viewDirty=true;wake();});
-  let selected='sigma-chi-sdsu',paused=reduced,visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,stadiumView=false,helipadView=false,leaderboardView=false;
+  let selected='sigma-chi-sdsu',paused=reduced,visible=false,drag=null,dragDistance=0,raf=0,lastTime=0,partyTime=0,lastRender=0,viewDirty=true,shadowX=NaN,shadowZ=NaN,leaderboardView=false;
   function describePopulation(){const data=population.root.userData;canvas.setAttribute('aria-description',`${data.members.toLocaleString('en-US')} members joined across ${data.chapters} chapters. ${data.status.toLowerCase()}.`);}
   describePopulation();
-  document.addEventListener('chapters:update',event=>{if(!activeSchool)population.setChapters(event.detail.chapters);describePopulation();viewDirty=true;wake();});
+  document.addEventListener('chapters:update',event=>{population.setChapters(event.detail.chapters);describePopulation();viewDirty=true;wake();});
   document.addEventListener('chapters:status',event=>{population.setStatus(event.detail);describePopulation();viewDirty=true;wake();});
   // Check freshness even while activity is paused; this does not animate or
   // rebuild the sign, and the texture changes only when its wording changes.
@@ -172,26 +159,18 @@ async function startVillage(){
   const target=new THREE.Vector3(...openingView.target),wantedTarget=target.clone(),streetPosition=new THREE.Vector3(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   let {theta,phi,radius}=openingView;let wantedTheta=theta,wantedPhi=phi,wantedRadius=radius;
   if(!reduced)applyIntroView();
-  function syncPartySchedule(){
-    const next=isPartyNight();if(next===scheduledNight)return;
-    scheduledNight=next;applyLighting(Number(next));viewDirty=true;wake();
-  }
-  applyLighting(Number(scheduledNight));
-  const partyScheduleTimer=setInterval(syncPartySchedule,30000);
-  addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(partyScheduleTimer);});
+
   function snapLongJump(){if(target.distanceTo(wantedTarget)>180){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=activeSchool?islandOverview(islandFootprint(chapters),camera.aspect):introViewAt(INTRO_DURATION,camera.aspect);wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;camera.far=Math.max(nearby.farDistance,650,home.radius*3);camera.updateProjectionMatrix();snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
+  function resetView(){flightKeys.clear();leaveStreet();const aim=()=>{const home=introViewAt(INTRO_DURATION,camera.aspect);wantedTarget.set(...home.target);wantedRadius=home.radius;wantedPhi=home.phi;wantedTheta=home.theta;camera.far=Math.max(650,home.radius*3);camera.updateProjectionMatrix();snapLongJump();viewDirty=true;wake();};if(village.focus&&Math.abs(target.x)>180)village.focus(village.anchors[0].id,aim);else aim();wake();}
   function choose(id,focus=false,emit=true,instant=false){
     const anchor=village.anchors.find(a=>a.id===id);if(!anchor)return;selected=id;viewDirty=true;
     // Frame the house from its own street's centre line, whichever street that is.
     // On phones the chapter sheet takes the bottom of the screen, so stand back and aim low: the whole house fits above it.
     if(focus){takeControl();leaveStreet();const aim=()=>{if(selected!==id)return;const ox=anchor.lot.originX||0,side=anchor.lot.x-ox,phone=viewport.clientWidth<650,far=Math.abs(target.x-anchor.lot.x)>180;wantedTarget.set(ox+side*.69,phone?-.5:2,anchor.lot.z);wantedRadius=phone?46:30;wantedPhi=.67;wantedTheta=side<0?1.08:-1.08;if(far||instant){target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;camera.position.set(target.x+Math.sin(theta)*Math.cos(phi)*radius,target.y+Math.sin(phi)*radius,target.z+Math.cos(theta)*Math.cos(phi)*radius);camera.lookAt(target);camera.updateMatrixWorld();}viewDirty=true;wake();};if(village.focus)village.focus(id,aim);else aim();}
-    if(emit)document.dispatchEvent(new CustomEvent('village:select',{detail:{id,interactive:focus&&!instant,writeHash:!travelling}}));wake();
+    if(emit)document.dispatchEvent(new CustomEvent('village:select',{detail:{id,interactive:focus&&!instant,writeHash:true}}));wake();
   }
   document.addEventListener('chapter:select',e=>{
     if(village.anchors.some(a=>a.id===e.detail.id)){choose(e.detail.id,Boolean(e.detail.focus));return;}
-    const school=schoolDestinations(allChapters,catalog).find(s=>s.chapters.some(c=>c.id===e.detail.id));
-    if(school)navigate({school:school.id,chapter:e.detail.id});
   });
   document.addEventListener('chapter:backyard',event=>{
     const id=event.detail.id,chapter=chapters.find(c=>c.id===id),anchor=village.anchors.find(a=>a.id===id);
@@ -208,31 +187,25 @@ async function startVillage(){
   });
   let chapterBuildRevision=0;
   function announceDestination(){
-    nearby.setSchool(activeSchool,schoolDestinations(allChapters,catalog),islandFootprint(chapters));nearby.setNight(litAtNight);
-    camera.far=Math.max(camera.far,nearby.farDistance);camera.updateProjectionMatrix();
-    population.root.visible=!activeSchool;helipad.root.visible=!activeSchool;blimp.root.visible=!activeSchool;
     shell.dataset.renderedChapters=String(chapters.length);shell.dataset.renderedStreets=String(village.streetTotal);
-    document.dispatchEvent(new CustomEvent('destination:changed',{detail:{school:activeSchool,chapters}}));
+    document.dispatchEvent(new CustomEvent('destination:changed',{detail:{school:null,chapters}}));
   }
-  async function updateChapters(event,options={}){
+  async function updateChapters(event){
     const buildRevision=++chapterBuildRevision,previous=village;
     allChapters=event.detail.chapters;
-    const schools=schoolDestinations(allChapters,catalog);
-    const school=Object.hasOwn(options,'school')?options.school:schools.find(s=>s.id===activeSchool?.id)||(activeSchool?.custom?activeSchool:null);
-    const nextChapters=destinationChapters(allChapters,school),changedSchool=(school?.id||'')!==(activeSchool?.id||'');
-    if(!changedSchool&&chapterSceneKey(nextChapters)===chapterSceneKey(chapters)){
-      activeSchool=school;announceDestination();
+    const nextChapters=destinationChapters(allChapters);
+    if(chapterSceneKey(nextChapters)===chapterSceneKey(chapters)){
+      announceDestination();
       arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);
       if(event.detail.selectedId)choose(event.detail.selectedId,false);return true;
     }
-    const next=await createVillageRendererAsync(THREE,nextChapters,{houseFinishes:previous.houseFinishes,aspect:camera.aspect,attachStreet:true,metric:'members',theme:schoolTheme(school),arrivals});
+    const next=await createVillageRendererAsync(THREE,nextChapters,{houseFinishes:previous.houseFinishes,aspect:camera.aspect,attachStreet:true,metric:'members',arrivals});
     if(buildRevision!==chapterBuildRevision){next.dispose();return false;}
-    chapters=nextChapters;activeSchool=school;
-    if(changedSchool){scene.remove(helipad.root);helipad.dispose();helipad=school?emptyHelipad():createHelipad(THREE,next.extension,next.streetTotal);scene.add(helipad.root);helipad.restart(partyTime,reduced||paused);}
+    chapters=nextChapters;
     arrivals.start(chapters,partyTime,reduced,!ready||entrancePending||entranceActive);
     scene.remove(previous.world);scene.add(next.world);village=next;if(leaderboardView&&village.beacon)village.beacon.root.visible=false;previous.dispose();
-    if(school||changedSchool||previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=makeDistricts(school,next.extension,next.streetTotal);scene.add(districts.root);}
-    if(previous.extension!==next.extension){helipad.relocate(next.extension,next.streetTotal);scene.remove(streetNav.root);streetNav.dispose();streetNav=createStreetNavigation(THREE,next.extension);scene.add(streetNav.root);streetNav.root.visible=streetMode;}
+    if(previous.extension!==next.extension||previous.streetTotal!==next.streetTotal){scene.remove(districts.root);districts.dispose();districts=makeDistricts(next.extension,next.streetTotal);scene.add(districts.root);}
+    if(previous.extension!==next.extension){helipad.relocate(next.extension);scene.remove(streetNav.root);streetNav.dispose();streetNav=createStreetNavigation(THREE,next.extension);scene.add(streetNav.root);streetNav.root.visible=streetMode;}
     moneyRain.setChapters(chapters,village.renderAnchors||village.anchors);village.nightLife.setNight(litAtNight);districts.setNight(litAtNight);
     village.animateCrowd(partyTime);village.animateEffects(partyTime);
     announceDestination();
@@ -241,65 +214,39 @@ async function startVillage(){
     applyLighting(Number(scheduledNight));
     renderer.shadowMap.needsUpdate=true;viewDirty=true;wake();return true;
   }
-  async function navigate(route,{historyMode='push'}={}){
-    // A double tap while loading must not queue the same arrival a second time.
-    if(travelling&&route.school===destinationInFlight?.school&&route.chapter===destinationInFlight?.chapter&&Boolean(route.instant)===Boolean(destinationInFlight?.instant))return;
-    if(!ready||travelling){pendingDestination={route,historyMode};return;}
-    const schools=schoolDestinations(allChapters,catalog),school=resolveDestination(route,schools);
-    if(route.school&&!school){document.dispatchEvent(new Event('destination:error'));return;}
-    if(school&&!route.instant&&entranceActive&&school.id===activeSchool?.id)return;
-    if(route.instant&&school&&school.id===activeSchool?.id){
-      takeControl();if(route.chapter)choose(route.chapter,true,true,true);else {resetView();target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}
-      if(historyMode!=='none')history[historyMode==='push'?'pushState':'replaceState'](null,'',location.pathname+location.search+destinationHash(school?.id,route.chapter,school?.custom?school.name:undefined));
-      canvas.focus({preventScroll:true});wake();return;
-    }
-    travelling=true;destinationInFlight=route;takeControl();leaveStreet();nearby.update(camera,viewportWidth,viewportHeight,false);loading.hidden=false;loading.textContent=school?'Opening your campus…':'Opening the village…';
-    try{
-      await updateChapters({detail:{chapters:allChapters,selectedId:route.chapter}},{school});
-      while(districts.building){await yieldVillageBuild();districts.update(0,0);}
-      scene.updateMatrixWorld(true);await renderer.compileAsync(scene,camera);
-      if(historyMode!=='none')history[historyMode==='push'?'pushState':'replaceState'](null,'',location.pathname+location.search+destinationHash(school?.id,route.chapter,school?.custom?school.name:undefined));
-      selected=chapters.some(c=>c.id===route.chapter)?route.chapter:chapters[0]?.id||'empty';
-      resetView();travelling=false;loading.hidden=true;lastTime=0;autoOrbit=false;openingRainTime=0;
-      if(school&&!route.instant)beginIntro();else {finishIntro();if(school&&route.chapter)choose(selected,true,true,true);else {resetView();target.copy(wantedTarget);radius=wantedRadius;phi=wantedPhi;theta=wantedTheta;}}
-      document.dispatchEvent(new CustomEvent('destination:arrived',{detail:{school}}));
-      canvas.focus({preventScroll:true});wake();
-    }catch(error){travelling=false;loading.hidden=true;console.error('Destination load failed',error);document.dispatchEvent(new Event('destination:error'));wake();}
-    destinationInFlight=null;
-    if(pendingDestination){const next=pendingDestination;pendingDestination=null;await navigate(next.route,{historyMode:next.historyMode});}
-    else if(pendingChapterUpdate){const event=pendingChapterUpdate;pendingChapterUpdate=null;await updateChapters(event);}
+  function followChapterLink(){
+    const requested=routeFromHash(location.hash).chapter;
+    const id=chapters.some(c=>c.id===requested)?requested:'';
+    history.replaceState(null,'',location.pathname+location.search+destinationHash('',id));
+    if(ready&&id)choose(id,true,true,true);
+    else if(ready)resetView();
   }
-  document.addEventListener('destination:request',e=>navigate(e.detail));
-  addEventListener('popstate',()=>navigate(routeFromHash(location.hash),{historyMode:'none'}));
-  document.addEventListener('school:visibility',e=>{schoolPickerOpen=e.detail.open;if(schoolPickerOpen)nearby.update(camera,viewportWidth,viewportHeight,false);flightKeys.clear();lastTime=0;if(!schoolPickerOpen)wake();});
+  addEventListener('popstate',followChapterLink);
   document.removeEventListener('chapters:update',queueChapterUpdate);
   document.addEventListener('chapters:update',event=>{
     arrivals.enqueue(event.detail.arrivals);
     // Do not dispose materials while their asynchronous compilation is pending.
-    if(!ready||travelling){pendingChapterUpdate=event;return;}
+    if(!ready){pendingChapterUpdate=event;return;}
     updateChapters(event).catch(showLoadingError);
   });
   document.addEventListener('party:pause',e=>{paused=e.detail.paused;wake();});
   document.getElementById('village-overview').addEventListener('click',()=>{takeControl();resetView();});
-  const stadiumDistance=()=>136/Math.min(1,camera.aspect);
-  const helipadDistance=()=>34/Math.min(1,camera.aspect);
-  const leaderboardDistance=()=>Math.max(16,7/(Math.tan(camera.fov*Math.PI/360)*camera.aspect));
-  function visitHelipad(){
-    takeControl();leaveStreet();wantedTarget.copy(helipad.root.position).add(new THREE.Vector3(-4,1.6,3).applyAxisAngle(new THREE.Vector3(0,1,0),helipad.root.rotation.y));
-    helipadView=true;wantedTheta=-.78+helipad.root.rotation.y;wantedPhi=.38;wantedRadius=helipadDistance();
-    helipad.restart(partyTime,paused||reduced);snapLongJump();viewDirty=true;wake();
+  const leaderboardDistance=()=>Math.max(19,9.8/Math.tan(camera.fov*Math.PI/360),4.2/(Math.tan(camera.fov*Math.PI/360)*camera.aspect));
+  function focusLandmark(action){
+    if(!['leaderboard','helipad','stadium'].includes(action))return false;
+    takeControl();leaveStreet();shell.dataset.selectedLandmark=action;
+    if(action==='leaderboard'){
+      const board=village.competition.board;leaderboardView=true;if(village.beacon)village.beacon.root.visible=false;
+      wantedTarget.set(board.position.x,board.userData.focusHeight||7.8,board.position.z);wantedTheta=board.rotation.y+.19;wantedPhi=.055;village.competition.restart(partyTime);wantedRadius=leaderboardDistance();
+    }else if(action==='helipad'){
+      wantedTarget.copy(helipad.root.position).add(new THREE.Vector3(-3,1.6,3));wantedTheta=-.78;wantedPhi=.48;wantedRadius=42/Math.min(1,camera.aspect);
+    }else{
+      wantedTarget.copy(districts.stadium.root.position);wantedTarget.y=2;wantedTheta=-2.42;wantedPhi=.7;wantedRadius=75/Math.min(1,camera.aspect);
+    }
+    viewDirty=true;wake();return true;
   }
-  function visitStadium(){
-    takeControl();leaveStreet();wantedTarget.copy(districts.stadium.root.position);wantedTarget.y=2;
-    stadiumView=true;wantedTheta=-2.42;wantedPhi=.6;wantedRadius=stadiumDistance();snapLongJump();viewDirty=true;wake();
-  }
-  document.getElementById('village-leaderboard').addEventListener('click',()=>{
-    takeControl();leaveStreet();const board=village.competition.board;
-    leaderboardView=true;if(village.beacon)village.beacon.root.visible=false;
-    wantedTarget.set(board.position.x,5,board.position.z);
-    wantedTheta=board.rotation.y;wantedPhi=.08;
-    wantedRadius=leaderboardDistance();wake();
-  });
+  document.addEventListener('chapter:profileclose',()=>{village.competition.setPaused(false,partyTime);wake();});
+  document.getElementById('village-leaderboard').addEventListener('click',()=>focusLandmark('leaderboard'));
   function leaveStreet(){
     if(!streetMode)return;
     streetMode=false;streetNav.root.visible=false;streetControls.hidden=true;streetButton.setAttribute('aria-pressed','false');streetButton.textContent='Street view';
@@ -346,13 +293,18 @@ async function startVillage(){
   const expand=document.getElementById('village-expand');expand.hidden=!shell.requestFullscreen;
   expand.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await shell.requestFullscreen();}catch{expand.disabled=true;expand.title='Full screen is unavailable in this browser.';}});
   document.addEventListener('fullscreenchange',()=>{expand.textContent=document.fullscreenElement?'Exit full screen ↙':'Full screen ↗';resize();});
-  function scenePickables(){const rock=activeSchool?districts.root.getObjectByName('island-rock-undercut'):null;return [...(blimp.root.visible?blimp.pickables:[]),...village.pickables,...(!activeSchool?[...(districts.stadium.pickables||[]),...(helipad.pickables||[])]:[]),...nearby.pickables,...(rock?[rock]:[])];}
+  const landmarkMeshes=new WeakMap();
+  function landmarkPickables(root,action){
+    if(!landmarkMeshes.has(root)){const meshes=[];root.traverse(object=>{if(object.isMesh&&!object.name.includes('shadow')){object.userData.action=action;meshes.push(object);}});landmarkMeshes.set(root,meshes);}
+    return landmarkMeshes.get(root);
+  }
+  function scenePickables(){return [...blimp.pickables,...village.pickables,...landmarkPickables(village.competition.board,'leaderboard'),...landmarkPickables(helipad.root,'helipad'),...landmarkPickables(districts.stadium.root,'stadium')];}
   canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;
     pointerHover.clear();
     if(e.pointerType==='touch'){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);if(touchPoints.size>1){takeControl();pinchDistance=touchDistance();drag=null;dragDistance=9;return;}}
     takeControl();canvas.focus({preventScroll:true});rayAt(e);
     const hit=raycaster.intersectObjects(scenePickables(),false)[0];
-    drag={id:e.pointerId,x:e.clientX,y:e.clientY,pan:e.shiftKey,blimp:hit?.object.userData.action==='discord'};dragDistance=0;canvas.setPointerCapture(e.pointerId);});
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY,pan:e.shiftKey,phoneChapter:hit?.object.name==='leaderboard-scrolling-rows'?village.competition.chapterAtUV(hit.uv):null,blimp:hit?.object.userData.action==='discord',landmark:['helipad','stadium','leaderboard'].includes(hit?.object.userData.action)?hit.object.userData.action:''};dragDistance=0;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{
     if(drag&&releasedMouseDrag(e)){drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);}
     if(touchPoints.has(e.pointerId)){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size>1){const distance=touchDistance();if(pinchDistance>0&&distance>0)zoomView(pinchDistance/distance);pinchDistance=distance;return;}}
@@ -361,19 +313,19 @@ async function startVillage(){
   function rayAt(e){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(pointer,camera);}
   canvas.addEventListener('pointerup',e=>{
     if(endTouch(e))return;
-    if(!drag||drag.id!==e.pointerId)return;const startedOnBlimp=drag.blimp;drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
+    if(!drag||drag.id!==e.pointerId)return;const startedOnBlimp=drag.blimp,startedOnLandmark=drag.landmark,phoneChapter=drag.phoneChapter;drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
     if(dragDistance>8)return;
     // The canvas keeps the pointer for the whole gesture, so a tap that started
     // beside a control and drifted onto it would still pick the house behind it.
     if(document.elementFromPoint(e.clientX,e.clientY)!==canvas)return;
     rayAt(e);
     // Remember a blimp press so its gentle motion cannot outrun a touch tap.
-    if(startedOnBlimp){openDiscord();return;}
+    if(phoneChapter){village.competition.setPaused(true,partyTime);document.dispatchEvent(new CustomEvent('chapter:profile',{detail:{id:phoneChapter.id,rank:phoneChapter.rank}}));wake();return;}
+    if(startedOnLandmark){focusLandmark(startedOnLandmark);return;}
+    if(startedOnBlimp){window.open(DISCORD_INVITE,'_blank','noopener,noreferrer');return;}
     const hit=raycaster.intersectObjects(scenePickables(),false)[0];
-    if(hit?.object.userData.action==='discord'){openDiscord();return;}
-    if(hit?.object.userData.action==='stadium'){visitStadium();return;}
-    if(hit?.object.userData.action==='helipad'){visitHelipad();return;}
-    if(hit?.object.userData.action==='school'){document.dispatchEvent(new CustomEvent('destination:request',{detail:{school:hit.object.userData.school,instant:true}}));return;}
+    if(hit?.object.userData.action==='discord'){window.open(DISCORD_INVITE,'_blank','noopener,noreferrer');return;}
+    if(focusLandmark(hit?.object.userData.action))return;
     if(streetMode){const step=raycaster.intersectObjects(streetNav.pickables.filter(o=>o.parent.visible),false)[0];if(step){moveStreet(step.object.userData.streetZ);return;}}
     if(hit){if(hit.object.userData.action==='register'){document.getElementById('panel-claim').click();return;}choose(hit.object.userData.chapter,!streetMode);return;}
   });
@@ -424,7 +376,7 @@ async function startVillage(){
       if(!w||!h||(w===viewportWidth&&h===viewportHeight))return;
       viewportWidth=w;viewportHeight=h;viewDirty=true;
       renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
-      if(stadiumView)wantedRadius=stadiumDistance();if(helipadView)wantedRadius=helipadDistance();if(leaderboardView)wantedRadius=leaderboardDistance();wake();
+      if(leaderboardView)wantedRadius=leaderboardDistance();wake();
     });
   }
   new ResizeObserver(resize).observe(viewport);
@@ -440,7 +392,7 @@ async function startVillage(){
   function wake(){if(ready&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
   function frame(now){
     raf=0;
-    if(!visible||document.hidden||schoolPickerOpen||travelling){lastTime=0;return;}
+    if(!visible||document.hidden){lastTime=0;return;}
     const activityPaused=paused||overlayOpen;
     // Bound GPU and animation work on high-refresh phones as well as 60 Hz displays.
     if(!framePacer.due(now)){wake();return;}
@@ -461,9 +413,9 @@ async function startVillage(){
       target.x+=dx;target.z+=dz;wantedTarget.x+=dx;wantedTarget.z+=dz;
     }
     if(entranceActive){
-      if(visible&&!document.hidden&&!entrancePaused)entranceTime=Math.min(activeSchool?SCHOOL_FLIGHT_DURATION:INTRO_DURATION,entranceTime+(activeSchool?elapsed:Math.min(elapsed,.1)));
+      if(visible&&!document.hidden&&!entrancePaused)entranceTime=Math.min(INTRO_DURATION,entranceTime+Math.min(elapsed,.1));
       applyIntroView();paintIntro();
-      if(!activeSchool&&entranceTime>=INTRO_DURATION)finishIntro();
+      if(entranceTime>=INTRO_DURATION)finishIntro();
     }else{
       clampCampusTarget(wantedTarget,village.streetTotal,village.extension);
       clampCampusTarget(target,village.streetTotal,village.extension);
@@ -479,14 +431,13 @@ async function startVillage(){
       document.getElementById('street-back').disabled=streetStep(streetWantedZ,-direction,village.extension)===streetWantedZ;
     }else camera.position.set(target.x+Math.sin(theta)*Math.cos(phi)*radius,target.y+Math.sin(phi)*radius,target.z+Math.cos(theta)*Math.cos(phi)*radius);
     camera.lookAt(target);if(introRoll)camera.rotateZ(introRoll);camera.updateMatrixWorld();
-    if(entranceActive&&activeSchool&&!reduced){const pose=schoolFlight.update(entranceTime,camera);target.set(...pose.target);wantedTarget.copy(target);theta=wantedTheta=pose.theta;phi=wantedPhi=pose.phi;radius=wantedRadius=pose.radius;if(entranceTime>=SCHOOL_FLIGHT_DURATION)finishIntro();}
     const housesChanged=village.updateView?.(camera)||false;
     if(housesChanged){moneyRain.setChapters(chapters,village.renderAnchors||village.anchors);renderer.shadowMap.needsUpdate=true;viewDirty=true;}
     // Use visible playback time, independent of the camera intro: skipping or
-    // finishing a school arrival must not cut the eight-second rain short.
-    if(!reduced&&openingRainTime<MONEY_END&&!(entranceActive&&activeSchool)){
+    // finishing the intro must not cut the eight-second rain short.
+    if(!reduced&&openingRainTime<MONEY_END){
       if(!activityPaused&&!(entranceActive&&entrancePaused))openingRainTime=Math.min(MONEY_END,openingRainTime+elapsed);
-      moneyRain.update(openingRainTime,entranceActive&&!activeSchool?introNight:(litAtNight?1:0));
+      moneyRain.update(openingRainTime,entranceActive?introNight:(litAtNight?1:0));
     }
     // Keep nearby rank labels from covering an entire house when the camera approaches.
     const badgeScale=2*Math.tan(camera.fov*Math.PI/360)*112/Math.max(1,viewportHeight);
@@ -509,13 +460,12 @@ async function startVillage(){
     // Refresh newly visible crowds even while activity is paused; their pose
     // must match the frozen clock when the user turns or moves the camera.
     arrivals.advance(partyTime);
-    scene.fog.density=activeSchool?.0019:Math.min(.0019,.55/Math.max(radius,1));
     helipad.update(partyTime);
+    districts.traffic.setObstacles(helipad.car.visible?[{x:helipad.root.position.x+helipad.state.carX*helipad.root.scale.x,z:helipad.root.position.z+helipad.state.carZ*helipad.root.scale.z,length:6*helipad.root.scale.z}]:[]);
     const pedestrianPoses=pedestrianSpacing.update(partyTime,[...village.pedestrians,...districts.pedestrians]);
     village.animateCrowd(partyTime,camera,pedestrianPoses);
     districts.animate(partyTime,target.x,target.z,camera,pedestrianPoses);
     village.competition.animate?.(partyTime,reduced);
-    nearby.update(camera,viewportWidth,viewportHeight,!entranceActive&&!schoolPickerOpen&&!travelling);
     renderer.render(scene,camera);lastRender=now;
     const nextScale=resolutionBudget.sample(now,performance.now()-frameStarted,frameGap,{busy:entranceActive||activityPaused||Boolean(drag)||village.building||districts.building});
     if(nextScale!==renderScale){renderScale=nextScale;renderer.setPixelRatio(renderScale);}
@@ -556,10 +506,10 @@ async function startVillage(){
     applyLighting(Number(scheduledNight));
     loading.hidden=true;shell.classList.remove('village-unavailable');shell.classList.add('village-ready');
     if(entranceActive)shell.classList.add('intro-playing');
-    if(visible&&entrancePending){if(overlayOpen||activeSchool){finishIntro();resetView();}else beginIntro();}
+    if(visible&&entrancePending){if(overlayOpen){finishIntro();resetView();}else beginIntro();}
     if(!entrancePending&&!entranceActive)arrivals.start(chapters,partyTime,reduced);
     wake();
-    if(pendingDestination){const next=pendingDestination;pendingDestination=null;navigate(next.route,{historyMode:next.historyMode});}
+    followChapterLink();
     // A response that arrived during GPU compilation is a normal live refresh.
     // Present the complete, warmed village now and keep it usable while the
     // updated houses build, instead of restarting the entire loading sequence.
@@ -570,9 +520,8 @@ async function startVillage(){
   });}
   function showLoadingError(error){
     console.error('Unable to prepare Greek village:',error);
-    loading.textContent='The village couldn’t load. Refresh the page or join Greek Wars using the link above.';
+    loading.textContent='The village couldn’t load. Open Chapters to browse progress or join Greek Wars.';
     loading.hidden=false;shell.classList.add('village-unavailable');
   }
-  addEventListener('pagehide',event=>{if(!event.persisted)nearby.dispose();});
   prepare().catch(showLoadingError);
 }

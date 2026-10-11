@@ -1,5 +1,5 @@
 // A single source of truth for destinations, member standings and deep links.
-export const HOME_LIMIT=19;
+export const HOME_MIN_MEMBERS=30;
 export const schoolName=value=>String(value||'').split(' · ')[0].trim();
 export const schoolKey=value=>schoolName(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/^the /,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 export function memberOrder(chapters){return [...chapters].sort((a,b)=>b.joined-a.joined||a.id.localeCompare(b.id));}
@@ -10,7 +10,7 @@ export function schoolStandings(chapters,catalog=[]){
   const schools=[...groups.values()].sort((a,b)=>b.members-a.members||a.name.localeCompare(b.name));
   schools.forEach((s,i)=>{s.rank=i&&s.members===schools[i-1].members?schools[i-1].rank:i+1;s.chapters=memberOrder(s.chapters);});return schools;
 }
-export function destinationChapters(chapters,school=null){return school?memberOrder(school.chapters):memberOrder(chapters).slice(0,HOME_LIMIT);}
+export function destinationChapters(chapters){return memberOrder(chapters.filter(chapter=>chapter.joined>HOME_MIN_MEMBERS));}
 // Keep standings limited to registered chapters, but let every catalog campus
 // be a destination. An empty campus uses the world's existing claimable lot.
 export function schoolDestinations(chapters,catalog=[]){

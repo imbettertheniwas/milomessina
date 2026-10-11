@@ -1,4 +1,4 @@
-import {createVehicleLogoTexture} from './village-floor-logo.js?v=153';
+import {createVehicleLogoTexture} from './village-floor-logo.js?v=180';
 
 export const FOMO_VEHICLE_COLOR=0x516af6;
 
@@ -149,7 +149,7 @@ export function createVehicleKit(T){
         batch.records.forEach((r,i)=>{
           const p=positions[r.index];pose.position.set(p.x,0,p.z);pose.rotation.set(0,p.angle,0);pose.updateMatrix();
           let local=r.local;
-          if(r.wheel){spin.position.copy(r.position);spin.rotation.order='YXZ';spin.rotation.set(time*cars[r.index].speed/.345,r.position.z>0?(p.steer||0):0,0);spin.updateMatrix();local=spin.matrix;}
+          if(r.wheel){spin.position.copy(r.position);spin.rotation.order='YXZ';spin.rotation.set((p.distance??time*cars[r.index].speed)/.345,r.position.z>0?(p.steer||0):0,0);spin.updateMatrix();local=spin.matrix;}
           world.multiplyMatrices(pose.matrix,local);batch.mesh.setMatrixAt(i,world);
         });
         batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.computeBoundingSphere();

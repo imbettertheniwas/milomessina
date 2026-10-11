@@ -9,10 +9,11 @@ import {schoolTheme,createSchoolDistricts} from '../village-school-theme.js';
 import {createSchoolDrop,SCHOOL_DROP_DURATION} from '../village-school-drop.js';
 const catalog=JSON.parse(readFileSync(new URL('../data/schools.json',import.meta.url))).schools;
 const rows=Array.from({length:201},(_,i)=>({id:'c'+i,name:'Sigma Chi',letters:'ΣΧ',school:i%2?'Rutgers University':'Arizona State University',shortSchool:'Campus',joined:i%31,active:100,registered:'2026-10-04'}));
-test('national world contains exactly the top nineteen; no extra chapter streets are created',async()=>{
- const chapters=destinationChapters(rows);assert.equal(chapters.length,19);assert.equal(chapters[0].joined,30);const outside=rows.filter(c=>!chapters.some(a=>a.id===c.id));assert(Math.min(...chapters.map(c=>c.joined))>=Math.max(...outside.map(c=>c.joined)));
- const village=await createVillageRendererAsync(T,chapters,{attachStreet:true,metric:'members'});
- try{assert.equal(village.streetTotal,1);assert.equal(village.anchors.filter(a=>a.id!=='empty').length,19);assert(village.lots.every(l=>l.originX===0));}finally{village.dispose();}
+test('the home world includes every chapter over thirty members, without a rank cap',()=>{
+ const sample=rows.map((c,i)=>({...c,joined:i%61})),chapters=destinationChapters(sample);
+ assert.equal(chapters.length,sample.filter(c=>c.joined>30).length);assert(chapters.length>19);assert(chapters.every(c=>c.joined>30));assert(chapters.some(c=>c.joined===31));
+ assert.deepEqual(destinationChapters([{...rows[0],joined:30}]),[]);
+ for(let i=1;i<chapters.length;i++)assert(chapters[i-1].joined>=chapters[i].joined);
 });
 test('school grouping merges organization suffixes and institutional aliases without losing chapters or counts',()=>{
  const sample=[{...rows[0],id:'a',school:'Arizona State University · Student organization / club',joined:10},{...rows[1],id:'b',school:'Arizona State University',joined:30},{...rows[2],id:'c',school:'Arizona State University Campus Immersion',joined:20}];
@@ -23,7 +24,7 @@ test('member totals, not roster percentages, determine size and equal totals hav
  for(const field of ['footprint','roofline','depthScale']){assert(sizes.get('big')[field]>sizes.get('small')[field]);assert.equal(sizes.get('big')[field],sizes.get('tie')[field]);}
 });
 test('school destinations contain only that campus and chapter deep links resolve to the school',()=>{
- const schools=schoolStandings(rows,catalog),school=schools[0],chapter=school.chapters[0];assert(destinationChapters(rows,school).every(c=>c.school===chapter.school));
+ const schools=schoolStandings(rows,catalog),school=schools[0],chapter=school.chapters[0];assert(school.chapters.every(c=>c.school===chapter.school));
  assert.equal(resolveDestination(routeFromHash(destinationHash(school.id,chapter.id)),schools).id,school.id);assert.equal(resolveDestination({chapter:chapter.id},schools).id,school.id);assert.equal(resolveDestination({},schools),null);
 });
 test('unknown schools stay searchable without invented coordinates and tied schools have stable ranks',()=>{

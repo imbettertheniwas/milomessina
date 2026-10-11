@@ -1,19 +1,17 @@
-import {createCampusCommons,addCampusEdgeDetails} from './village-campus-commons.js?v=169';
-import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=165';
-import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=167';
-import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=80';
-import {createCampusKit} from './village-campus-kit.js?v=153';
-import {buildSkylineBuilding} from './village-skyline.js?v=101';
-import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=167';
-import {dressNeighborhood} from './village-places.js?v=80';
-import {createStadium,STADIUM_SITE} from './village-stadium.js?v=168';
-import {HELIPAD_SITE,landmarkX,landmarkZ} from './village-landmarks.js?v=168';
-import {campusDistrictExists} from './village-campus-bounds.js?v=167';
+import {createPedestrianSpacing} from './village-pedestrian-spacing.js?v=180';
+import {createCampusHill,isCampusHill,CAMPUS_HILL_HEIGHT} from './village-campus-hill.js?v=180';
+import {BLOCK,districtSpecs,districtAt,districtKind,greekColumn,mod,hash,pick} from './village-district-layout.js?v=180';
+import {createCampusKit} from './village-campus-kit.js?v=180';
+import {buildSkylineBuilding} from './village-skyline.js?v=180';
+import {createCampusPeople,createCampusTraffic} from './village-campus-life.js?v=180';
+import {dressNeighborhood} from './village-places.js?v=180';
+import {createStadium,STADIUM_SITE} from './village-stadium.js?v=180';
+import {HELIPAD_SITE} from './village-helipad.js?v=180';
+import {campusDistrictExists} from './village-campus-bounds.js?v=180';
 
 export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const root=new T.Group(),chunks=new Map(),kit=createCampusKit(T);let night=false;
-  const stadium=createStadium(T,extension,streets);root.add(stadium.root);
-  const west=-Math.floor((streets-1)/2)-1,east=Math.ceil((streets-1)/2)+1;
+  const stadium=createStadium(T,extension);root.add(stadium.root);
   const {box,mesh,cylinder,bar,tree:plantTree,bench,lamp,table,path,sign}=kit;
   // The court straddles two district blocks. Keep landscaping from either
   // block outside its footprint, including when those blocks stream again.
@@ -58,15 +56,45 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     box(court,-42,.2,10,18,.24,28,0x718888);
     for(const x of [-50,-34])box(court,x,.335,10,.09,.025,25,0xe8e0cd);
     for(const z of [-2.5,10,22.5])box(court,-42,.335,z,16,.025,.09,0xe8e0cd);
-    for(const z of [-1.5,21.5]){cylinder(court,-42,1.8,z,.07,3.2,0x8a9590);box(court,-42,3.35,z,1.55,1,.1,0xe4dfcb);const hoop=mesh(court,'wheel',-42,3.05,z+(z<0?.5:-.5),1.15,1.15,1.15,0xb37350);hoop.rotation.x=Math.PI/2;}
+    for(const z of [-1.5,21.5]){cylinder(court,-42,1.8,z,.07,3.2,0x8a9590);box(court,-42,3.35,z,1.55,1,.1,0xe4dfcb);const hoop=mesh(court,'wheel',-42,3.05,z+(z<0?.5:-.5),1.15,1.15,1.15,0xb37350);hoop.rotation.x=Math.PI/2;
+      const net=new T.Group();net.name='basketball-hoop-net';net.position.copy(hoop.position);court.add(net);
+      const knots=12,rows=5,point=(row,k)=>{const angle=(k+(row%2)*.5)/knots*Math.PI*2,radius=.39-row*.042;return [Math.cos(angle)*radius,-row*.16,Math.sin(angle)*radius];};
+      for(let row=0;row<rows-1;row++)for(let k=0;k<knots;k++){
+        const a=point(row,k);for(const next of [k,k+(row%2?1:-1)])bar(net,a,point(row+1,next),.012,0xf2eee2);
+      }
+      for(let k=0;k<knots;k++)bar(net,point(rows-1,k),point(rows-1,k+1),.012,0xf2eee2);
+    }
     bench(p,-41.4,7,Math.PI/2);bench(p,-41.4,14,Math.PI/2);
     for(const side of [-1,1]){
       // The whole path is authored at its final length, so an extended row
       // cannot leave a disconnected middle section or move it into a yard.
       path(p,[side*39.5,-39],[side*39.5,39+extension],2.6);
-      path(p,[side*7,38+extension],[side*45,38+extension],2.2);
+      path(p,[side*7,38+extension],[side*39.5,38+extension],2.2);
       path(p,[side*7,-39],[side*39.5,-39],2.2);
       for(const [x,z] of [[43,-34],[55,-33],[55,37+extension]])tree(p,side*x,z,mod(x+z,9),.9);
+    }
+    // Small student hangouts along the extended lawn, clear of both footpaths.
+    if(extension>=76){
+      const accents=new T.Group();accents.name='campus-lawn-accents';p.add(accents);
+      for(const [x,z] of [[47,48],[53,54],[47,111]]){table(accents,x,z,true);box(accents,x,.9,z,.4,.06,.3,0x7062a8);cylinder(accents,x+.3,.98,z,.07,.2,0xd6b576);}
+      for(const z of [68,120]){
+        for(const x of [45,55])tree(accents,x,z+5,Math.round(x+z),.7);
+        bench(accents,46,z,Math.PI/2);bench(accents,54,z,-Math.PI/2);
+      }
+      // Sagging striped hammocks on low timber posts.
+      for(const [x,z,color] of [[47,88,0x7665b5],[54,94,0xc59b65]]){
+        for(const dz of [-3,3])bar(accents,[x,0,z+dz],[x,2.3,z+dz],.1,0x98734c);
+        for(let i=0;i<12;i++){const t=(i+.5)/12,zz=z-2.6+t*5.2,y=1.1+Math.pow(t-.5,2)*3.4;box(accents,x,y,zz,1.3,.055,.47,i%3?color:0xe6ddcb);}
+        bar(accents,[x,2.1,z-3],[x,1.95,z-2.6],.025,0xd7c8a7);bar(accents,[x,1.95,z+2.6],[x,2.1,z+3],.025,0xd7c8a7);
+      }
+      // Two pairs of cornhole boards and colorful beanbags on the lawn.
+      for(const x of [47,53])for(const z of [132,139]){
+        const board=box(accents,x,.3,z,1,.1,1.65,0xc29d66);board.rotation.x=z===132?-.16:.16;
+        cylinder(accents,x,.47,z+(z===132?.45:-.45),.13,.012,0x343443);
+        box(accents,x+.26,.4,z-.24,.19,.06,.19,x===47?0x7862b3:0x7c9b74);
+      }
+      bikeRack(accents,46,151);
+      for(const z of [59,107,147]){lamp(accents,57,z);kit.bins(accents,57,z+2);}
     }
     path(p,[39.5,-15],[44,-15],2.2);
   }
@@ -76,7 +104,12 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     if(kind==='greek'){corePlaces(p);return;}
     if(['town','green','residential'].includes(kind))return;
     if(spine){
-      path(p,[0,kind==='athletics'?-39:-7],[0,41],5);path(p,[-38,34],[38,34],2.5);if(kind!=='athletics')path(p,[-19,0],[19,27],2.2);else path(p,[-35,-8],[35,-8],2.2);
+      path(p,[0,kind==='athletics'?-41:-10.5],[0,42],5);
+      if(kind==='athletics'){
+        path(p,[0,5],[-23,5],2.6);path(p,[0,9],[26,9],2.6);path(p,[0,-10],[-12,-10],2.2);
+      }else{
+        path(p,[0,5],[-16.5,5],2.6);path(p,[0,-7],[19.5,-7],2.6);
+      }
       for(const side of [-1,1]){bench(p,side*12,36);for(const z of [8,24,39])tree(p,side*(22+(z%3)*3),z,seed+mod(z,8),1.15);}
       for(let i=0;i<4;i++){box(p,(kind==='athletics'?13:-20)+i*2.1,.16,(kind==='athletics'?-21:15)+(i%2)*2,1.8,.025,1.3,[0xad8769,0x78899a,0xd0c4a5,0x8f9586][i]);}
       if(kind==='athletics'){
@@ -86,7 +119,7 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
       }
     }else{
       for(const side of [-1,1]){
-        path(p,[side*7,38],[side*42,38],2.3);bench(p,side*29,38);
+        bench(p,side*29,38);
         for(const z of [-39,5,39])tree(p,side*(40+(z%3)),z,seed+mod(z,8),.95+seed%3*.1);
         bikeRack(p,side>0?11:-16,30);
       }
@@ -133,11 +166,11 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
     const p=new T.Group();p.name='permanent-campus-horizon';
     for(let i=0;i<65;i++){
       const a=hash(i,'sky-angle')*Math.PI*2,r=225+hash(i,'sky-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r,w=7+hash(i,'sky-width')*17,h=6+hash(i,'sky-height')*19;
-      if(Math.abs(x-STADIUM_SITE.x)<STADIUM_SITE.width/2+w&&Math.abs(z-landmarkZ(STADIUM_SITE,extension))<STADIUM_SITE.depth/2+18)continue;
-      if(Math.abs(x-HELIPAD_SITE.x)<36+w&&Math.abs(z-landmarkZ(HELIPAD_SITE,extension))<55)continue;
+      if(Math.abs(x-STADIUM_SITE.x)<STADIUM_SITE.width*STADIUM_SITE.scale/2+w&&Math.abs(z-STADIUM_SITE.z)<STADIUM_SITE.depth*STADIUM_SITE.scale/2+18)continue;
+      if(Math.abs(x-HELIPAD_SITE.x)<36+w&&Math.abs(z-HELIPAD_SITE.z)<55)continue;
       buildSkylineBuilding(T,kit,p,{x,z,width:w,depth:8+hash(i,'sky-depth')*9,height:h,seed:i});
     }
-    for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;if(Math.abs(x-100)<38&&Math.abs(z-200)<56)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
+    for(let i=0;i<80;i++){const a=hash(i,'distant-tree')*Math.PI*2,r=205+hash(i,'tree-radius')*130,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)<50&&Math.abs(z-STADIUM_SITE.z)<50)continue;if(Math.abs(x-HELIPAD_SITE.x)<38&&Math.abs(z-HELIPAD_SITE.z)<56)continue;mesh(p,'leaf',x,3.5,z,5+hash(i)*6,5+hash(i,1)*5,4+hash(i,2)*6,pick([0x7d907b,0x718978,0x8c9b82],i));}
     // Water tower, bell tower and stadium floodlights break the dormitory skyline.
     for(const x of [233,241])for(const z of [181,189])bar(p,[x,0,z],[x,24,z],.20,0x8c9f9d);
     cylinder(p,237,26,185,6,6,0xaebdb5);mesh(p,'dome',237,29,185,6,2,6,0xaebdb5);
@@ -149,27 +182,6 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
   const horizon=distantCampus();root.add(horizon);
   function makeChunk(cx,cz){
     const p=new T.Group();p.position.set(cx*BLOCK,0,cz*BLOCK);root.add(p);
-    // Reserve this entire outlying block for the permanent stadium. No campus
-    // buildings, through-path crowds or trees may be streamed into its bowl.
-    if((cx===west||cx===east)&&(cz===0||cz===1)){
-      const side=cx===west?-1:1,kind=side<0?'stadium':'commons';
-      if(cz===0){
-        const sz=landmarkZ(STADIUM_SITE,extension);
-        if(side>0)createCampusCommons(T,kit,p,extension);
-        addCampusEdgeDetails(T,kit,p,side,extension);
-        path(p,[side*39,-38],[side*39,38+extension],2.4);
-        if(side<0)path(p,[side*39,sz],[landmarkX(STADIUM_SITE,streets)-cx*BLOCK,sz],3);
-        for(const z of [-29,25+extension]){
-          if(side<0&&Math.hypot(cx*BLOCK+side*31-landmarkX(HELIPAD_SITE,streets),z-landmarkZ(HELIPAD_SITE,extension))<HELIPAD_SITE.radius+6)continue;
-          tree(p,side*31,z,112+z,.85);bench(p,side*35,z,side*Math.PI/2);lamp(p,side*39,z);
-        }
-      }else p.position.z+=extension;
-      kit.batch(p);
-      const lights=new Set();p.traverse(o=>{if(o.material?.userData.placeLight)lights.add(o.material);});
-      const setNight=enabled=>{for(const light of lights)light.emissiveIntensity=enabled?2.3:.04;};setNight(night);
-      p.updateMatrixWorld(true);p.traverse(o=>o.matrixAutoUpdate=false);
-      return {group:p,kind,specs:[],people:[],activityBounds:stadium.bounds.clone(),setNight,animate(){},dispose(){kit.disposeChunk(p);}};
-    }
     const kind=districtKind(cx,cz,streets),specs=districtSpecs(cx,cz,streets);p.userData.specs=specs;
     for(const spec of specs){const building=kit.building(p,spec,cx*BLOCK,cz*BLOCK);if(isCampusHill(cx,cz))building.position.y=CAMPUS_HILL_HEIGHT;}
     if(isCampusHill(cx,cz))createCampusHill(T,kit,p);
@@ -211,8 +223,8 @@ export function createDistricts(T,extension=0,streets=1,{incremental=false}={}){
         const distance=([,c])=>Math.hypot(c.group.position.x-x,c.group.position.z-z);
         return distance(b)-distance(a);
       });
-      let detailed=[...chunks.values()].filter(c=>c.kind!=='stadium').length+missing.filter(c=>!(c.a===west&&(c.b===0||c.b===1))).length;
-      while(detailed>9&&evict.length){const [id,chunk]=evict.shift();chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);detailed--;changed=true;}
+      let detailed=[...chunks.values()].filter(c=>c.kind!=='stadium').length+missing.filter(c=>!(c.a===0&&c.b===2)).length;
+      while(detailed>11&&evict.length){const [id,chunk]=evict.shift();chunk.group.removeFromParent();chunk.dispose();chunks.delete(id);detailed--;changed=true;}
     }
     const count=incremental?Math.min(1,pending.length):pending.length;
     for(let i=0;i<count;i++){const {a,b,id}=pending.shift();chunks.set(id,makeChunk(a,b));changed=true;}

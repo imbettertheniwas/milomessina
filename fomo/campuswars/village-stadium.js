@@ -1,13 +1,12 @@
-import {paintFomoWordmark} from './village-brand.js?v=153';
-import {hash} from './village-district-layout.js?v=80';
-import {footballState,footballPlayer,footballBall} from './village-football.js?v=88';
-import {createStadiumFireworks} from './village-stadium-fireworks.js?v=1';
-import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=153';
+import {paintFomoWordmark} from './village-brand.js?v=180';
+import {hash} from './village-district-layout.js?v=180';
+import {footballState,footballPlayer,footballBall} from './village-football.js?v=180';
+import {createStadiumFireworks} from './village-stadium-fireworks.js?v=180';
+import {FOMO_MARK_PATHS} from './village-floor-logo.js?v=180';
 
-import {STADIUM_SITE,landmarkX,landmarkZ,landmarkTarget} from './village-landmarks.js?v=168';
-export {STADIUM_SITE} from './village-landmarks.js?v=168';
-export function createStadium(T,extension=0,streets=1){
-  const root=new T.Group();root.name='Greek Village Memorial Stadium';root.position.set(landmarkX(STADIUM_SITE,streets),0,landmarkZ(STADIUM_SITE,extension));
+export const STADIUM_SITE={x:-67,z:79,width:82,depth:84,scale:.55};
+export function createStadium(T,extension=0){
+  const root=new T.Group();root.name='Greek Village Memorial Stadium';root.position.set(STADIUM_SITE.x,0,STADIUM_SITE.z);root.scale.setScalar(STADIUM_SITE.scale);
   const resources=new Set(),batches=new Map(),materials=new Map(),dummy=new T.Object3D(),color=new T.Color();
   const own=r=>(resources.add(r),r);
   const awayBlack=0x111111;
@@ -45,7 +44,7 @@ export function createStadium(T,extension=0,streets=1){
     mesh.position.set(x,y,z);mesh.rotation.y=rotation;root.add(mesh);return mesh;
   }
   // One opaque forecourt masks the underlying campus paths. The stadium stays
-  // behind the west houses, inside the expanded outer road.
+  // inside its reserved block, clear of the roads immediately beyond Greek Row.
   box(0,.16,0,82,.22,84,0xb2afa3);
   box(0,.30,0,72,.18,77,0x525d60);
   box(0,.41,0,30,.15,63,0xd0d0bf);
@@ -72,6 +71,15 @@ export function createStadium(T,extension=0,streets=1){
   field.rotation.x=-Math.PI/2;field.position.y=.505;field.receiveShadow=true;field.name='100-yard-field-with-end-zones';root.add(field);
 
   // Continuous tiered concrete bowl: lower seating, concourse, upper seating.
+  // Sample the original brand artwork into the seating grid. The logo is
+  // made entirely from shirts; aisles and individual cheering remain intact.
+  const shirtMasks=new Map();
+  if(typeof document!=='undefined')for(const side of [-1,1]){
+    const c=document.createElement('canvas');c.width=780;c.height=240;const ctx=c.getContext('2d');
+    if(side>0)paintFomoWordmark(ctx,40,10,700,220,'#ffffff');
+    else drawFomoEyes(ctx,390,120,216);
+    shirtMasks.set(side,ctx.getImageData(0,0,780,240).data);
+  }
   const fans=[];
   for(const side of [-1,1]){
     for(let row=0;row<16;row++){
@@ -80,7 +88,7 @@ export function createStadium(T,extension=0,streets=1){
       for(let seat=0;seat<78;seat++){
         if(seat%13===0||seat%13===12)continue;
         const z=(seat-38.5)*.8;
-        fans.push({x:side*depth,y:y+.08,z,angle:-side*Math.PI/2,team:side>0?0:1,row,section:seat/13|0});
+        fans.push({x:side*depth,y:y+.08,z,angle:-side*Math.PI/2,team:side>0?0:1,stand:side,seat,row,section:seat/13|0});
       }
     }
     for(let row=0;row<10;row++){
@@ -182,7 +190,9 @@ export function createStadium(T,extension=0,streets=1){
   const seatGeometry=merged([[cube,[0,.22,0],[.48,.07,.45],0xffffff],[cube,[0,.46,-.2],[.46,.43,.055],0xffffff]]);
   fans.forEach((f,i)=>{
     dummy.position.set(f.x,f.y,f.z);dummy.rotation.set(0,f.angle,0);dummy.scale.setScalar(.86+hash(i,'fan-height')*.22);dummy.updateMatrix();fanMesh.setMatrixAt(i,dummy.matrix);
-    color.setHex(hash(i,'fan-shirt')>.27?(f.team?awayBlack:0x516af6):hash(i,'white-shirt')>.4?0xece3cf:0xd9b35a);fanMesh.setColorAt(i,color);
+    const mask=shirtMasks.get(f.stand),px=Math.floor(((f.stand>0?f.seat:77-f.seat)+.5)*10),py=Math.floor((15-f.row+.5)*15);
+    const logo=mask&&mask[(py*780+px)*4+3]>110;
+    color.setHex(f.stand?(logo?0xeaedff:f.stand>0?0x516af6:awayBlack):(hash(i,'fan-shirt')>.27?(f.team?awayBlack:0x516af6):0xece3cf));fanMesh.setColorAt(i,color);
     phases[i*2]=hash(i,'cheer-phase')*Math.PI*2;phases[i*2+1]=hash(i,'cheer-speed')*2;
     part(seatGeometry,f.x,f.y,f.z,1,1,1,f.team?awayBlack:0x454da9,'seat',f.angle);
   });
@@ -232,7 +242,7 @@ export function createStadium(T,extension=0,streets=1){
     b.items.forEach((item,i)=>{mesh.setMatrixAt(i,item.matrix);mesh.setColorAt(i,item.color);});mesh.computeBoundingSphere();mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
   }
   const fireworks=createStadiumFireworks(T);root.add(fireworks.root);
-  const bounds=new T.Sphere(new T.Vector3(landmarkX(STADIUM_SITE,streets),8,landmarkZ(STADIUM_SITE,extension)),64);
+  const bounds=new T.Sphere(new T.Vector3(STADIUM_SITE.x,8*STADIUM_SITE.scale,STADIUM_SITE.z),64*STADIUM_SITE.scale);
   let lastTime=NaN,lastBoard='',night=false;
   function animate(time){
     if(time===lastTime)return;lastTime=time;const state=footballState(time);
@@ -259,8 +269,7 @@ export function createStadium(T,extension=0,streets=1){
     const b=footballBall(time);ball.position.set(b.x,.505+b.y,b.z);ball.rotation.set(time*5,0,Math.PI/5);ball.updateMatrix();
     const boardKey=`${state.play}:${state.phase}:${state.clock}`;if(boardKey!==lastBoard){lastBoard=boardKey;drawScoreboard(state);}
   }
-  function setNight(enabled){night=Boolean(enabled);flood.intensity=night?2.8:0;fireworks.setEnabled(night,Number.isFinite(lastTime)?lastTime:0);bounds.center.y=night?25:8;bounds.radius=night?82:64;for(const b of root.children)if(b.material?.emissive?.getHex()===0xffefd5)b.material.emissiveIntensity=night?3.5:.4;}
-  const pickables=[landmarkTarget(T,root,resources,'stadium',82,18,84)];
+  function setNight(enabled){night=Boolean(enabled);flood.intensity=night?2.8:0;fireworks.setEnabled(night,Number.isFinite(lastTime)?lastTime:0);bounds.center.y=(night?25:8)*STADIUM_SITE.scale;bounds.radius=(night?82:64)*STADIUM_SITE.scale;for(const b of root.children)if(b.material?.emissive?.getHex()===0xffefd5)b.material.emissiveIntensity=night?3.5:.4;}
   animate(0);root.updateMatrixWorld(true);
-  return {root,pickables,bounds,fanCount:fans.length,fanMesh,playerParts,helmets,ball,crowdUniforms,animate,setNight,get night(){return night;},dispose(){fireworks.dispose();for(const resource of resources)resource.dispose();root.removeFromParent();}};
+  return {root,bounds,fanCount:fans.length,fanMesh,playerParts,helmets,ball,crowdUniforms,animate,setNight,get night(){return night;},dispose(){fireworks.dispose();for(const resource of resources)resource.dispose();root.removeFromParent();}};
 }

@@ -1,12 +1,12 @@
-import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=112';
-import {villageQuality} from './village-quality.js?v=127';
-import {createVillage,buildVillageSteps} from './village-world.js?v=170';
-import {houseStandings} from './village-competition.js?v=167';
-import {rankedHouseSizes} from './village-house-sizing.js?v=167';
-import {assignHouseFinishes} from './village-house-colors.js?v=87';
-import {createLots,rowExtension,streetCount} from './village-layout.js?v=167';
-import {unoccludedHouses} from './village-occlusion.js?v=112';
-import {yieldVillageBuild} from './village-build-scheduler.js?v=128';
+import {hasChapterHouse,backyardUnlocked} from './village-backyards.js?v=180';
+import {villageQuality} from './village-quality.js?v=180';
+import {createVillage,buildVillageSteps} from './village-world.js?v=180';
+import {houseStandings} from './village-competition.js?v=180';
+import {rankedHouseSizes} from './village-house-sizing.js?v=180';
+import {assignHouseFinishes} from './village-house-colors.js?v=180';
+import {createLots,rowExtension,streetCount} from './village-layout.js?v=180';
+import {unoccludedHouses} from './village-occlusion.js?v=180';
+import {yieldVillageBuild} from './village-build-scheduler.js?v=180';
 
 export const STREAMING_THRESHOLD=80;
 export function villageRenderLayout(T,input,previousFinishes,metric='progress',theme=null){

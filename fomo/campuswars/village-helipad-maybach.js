@@ -1,4 +1,4 @@
-import {createMaybachWheels} from './village-maybach-wheels.js?v=1';
+import {createMaybachWheels} from './village-maybach-wheels.js?v=180';
 // A compact, articulated long-wheelbase sedan. +Z is the nose; the wheels
 // remain 0.39 units in radius so the arrival controller can roll them exactly.
 export function createMaybach(kit){
@@ -138,7 +138,7 @@ export function createMaybach(kit){
       oval(door,glazing,side*.179,1.148,-.347,.115,.05,.012);
       bar(door,white,[side*.28,1.15,-.09],[side*.285,1.15,-.26],.01);
     }
-    doors.push({root:door,side});
+    doors.push({root:door,side,isFront});
   }
 
   // A continuous curved bumper wraps into the fenders. Rounded grille corners
