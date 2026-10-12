@@ -1,4 +1,4 @@
-import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from './welcome-reveal.js?v=20261008-entry4';
+import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from './welcome-reveal.js?v=20261012-steps';
 import {approvedFomoTasks,experienceText} from './experience.js';
 import {newPasswordSalt,passwordProof} from './password.js';
 import {opportunityStatus,opportunityCounts} from './network.js';
@@ -87,13 +87,14 @@ document.querySelector('#reload-progress').addEventListener('click',async()=>{if
 document.querySelector('#referral-notes').addEventListener('input',event=>{if(!active)return;active.progress.referral={checks:[false],chapter:active.school.name,notes:event.target.value};shared.schedule();});
 document.querySelector('#chapter-referral').addEventListener('submit',async event=>{event.preventDefault();if(!active)return;active.progress.referral={checks:[true],chapter:active.school.name,notes:document.querySelector('#referral-notes').value};write();try{await shared.submit('referral');}catch(error){sharedMessage(error.message,true);}});
 document.querySelector('#copy-experience').addEventListener('click',async()=>{if(!authenticated||approvedFomoTasks(active)!==5)return;const text=experienceText(active.school.name);try{await navigator.clipboard.writeText(text);document.querySelector('#experience-message').textContent='Copied. Add your actual dates and adjust the details to match your work.';}catch{const field=document.querySelector('#experience-copy-fallback');field.hidden=false;field.value=text;field.select();document.querySelector('#experience-message').textContent='Select and copy your experience below.';}});
-// Validate the session before exposing any saved profile or task workspace.
+// A saved session opens as soon as the intro ends. The first request validates it in the background,
+// and an expired session raises campus-auth-required, which returns to sign-in.
 openProfile();
 const savedProfile=active?.account&&active.token?active:null;
 if(savedProfile)beginCampusWelcome(savedProfile);
 void loadSchools();
 void (async()=>{
- if(savedProfile){try{await taskRequest(savedProfile.token,'get');if(active!==savedProfile)return;authenticated=true;await enterWorkspace(savedProfile);}catch(e){cancelCampusWelcome();error.textContent=e.code==='AUTH_REQUIRED'?'Sign in to continue.':e.message;}}
+ if(savedProfile){authenticated=true;await enterWorkspace(savedProfile);}
  paintBoard();
 })();
-window.addEventListener('campus-auth-required',event=>{if(event.detail?.token!==active?.token)return;authenticated=false;openProfile();});
+window.addEventListener('campus-auth-required',event=>{if(event.detail?.token!==active?.token)return;authenticated=false;openProfile();error.textContent='Sign in to continue.';});

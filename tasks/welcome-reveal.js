@@ -27,22 +27,27 @@ export function beginCampusWelcome(profile){
  reveal.classList.remove('is-leaving');
  reveal.classList.toggle('is-reduced',reduced);
  const events=new AbortController();
+ // Hand off as soon as the exit ends; the dialog close event can lag (or stall in background tabs).
+ current.done=()=>{
+  if(current.isDone)return;
+  current.isDone=true;
+  clearTimeout(current.advanceTimer);clearTimeout(current.closeTimer);events.abort();
+  document.body.classList.remove('campus-arriving');
+  if(entry===current)entry=null;
+  if(reveal.open)reveal.close();
+  current.resolve(current.ready&&!current.cancelled);
+ };
  current.finish=()=>{
   current.entryRequested=true;
   if(!current.ready||current.leaving)return;
   current.leaving=true;clearTimeout(current.advanceTimer);
-  if(reduced){reveal.close();return;}
+  if(reduced){current.done();return;}
   reveal.classList.add('is-leaving');
-  current.closeTimer=setTimeout(()=>reveal.close(),220);
+  current.closeTimer=setTimeout(current.done,220);
  };
  reveal.querySelector('[data-arrival-enter]').addEventListener('click',current.finish,{signal:events.signal});
  reveal.addEventListener('cancel',event=>{event.preventDefault();current.finish();},{signal:events.signal});
- reveal.addEventListener('close',()=>{
-  clearTimeout(current.advanceTimer);clearTimeout(current.closeTimer);events.abort();
-  document.body.classList.remove('campus-arriving');
-  if(entry===current)entry=null;
-  current.resolve(current.ready&&!current.cancelled);
- },{once:true});
+ reveal.addEventListener('close',current.done,{once:true});
  document.body.classList.add('campus-arriving');
  reveal.showModal();
  if(!reduced)current.advanceTimer=setTimeout(current.finish,1800);
@@ -51,7 +56,7 @@ export function beginCampusWelcome(profile){
 export function cancelCampusWelcome(){
  if(!entry)return;
  entry.cancelled=true;
- entry.reveal.close();
+ entry.done();
 }
 // Authentication completes without restarting the intro or adding another wait.
 export function showCampusWelcome(profile){

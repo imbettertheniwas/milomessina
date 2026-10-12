@@ -64,11 +64,6 @@
         "title": "Choose an in-chapter filmer",
         "detail": "Find a chapter member who wants a paid role and has an eye for shareable party content: great moments, strong opening shots, and quick edits. Ask to see examples of their work.",
         "input": "Filmer’s name, chapter, contact, and examples of their work…"
-      },
-      {
-        "title": "Coordinate with the fomo monitor",
-        "detail": "Confirm that your filmer can work alongside the person fomo sends to monitor content.",
-        "input": "Availability and how the filmer will coordinate with the fomo monitor…"
       }
     ],
     "id": "filmer",
@@ -83,8 +78,7 @@
       ],
       "pitch": "Want to get paid to film our chapter’s parties? We’re finding an on-campus filmer from our chapter. You’d work alongside a person fomo sends to monitor the content.",
       "taskWins": [
-        "You get final cut of your chapter’s party footage.",
-        "You decide how fomo capital is spent on parties, with a fomo person on site to monitor content."
+        "You get final cut of your chapter’s party footage."
       ]
     },
     "companyId": "fomo"
@@ -104,7 +98,8 @@
       {
         "title": "Confirm they’re in",
         "detail": "Make sure they understand the role, the mic, payment for views, and the fomo Rewards link opportunity.",
-        "input": "Confirm they want the role and understand the mic, view payments, and rewards link…"
+        "input": "Confirm they want the role and understand the mic, view payments, and rewards link…",
+        "afterApproval": true
       }
     ],
     "id": "host",
@@ -140,7 +135,8 @@
       {
         "title": "Plan the campus visit",
         "detail": "Confirm which friends and school they’ll visit, proposed dates, and the content they’ll make. Submit the plan for fomo to review and arrange the flight.",
-        "input": "Friends’ school, proposed travel dates, and the content plan…"
+        "input": "Friends’ school, proposed travel dates, and the content plan…",
+        "afterApproval": true
       }
     ],
     "id": "travel",
