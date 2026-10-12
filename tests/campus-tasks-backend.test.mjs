@@ -72,3 +72,19 @@ test('host and travel second steps can be submitted only after step one is appro
  const out=admin('reviewstep',{memberId:id,taskId:'filmer',step:0,revision:1,decision:'approved'});
  assert.equal(out.tasks.find(t=>t.memberId===id&&t.taskId==='filmer').status,'approved');
 });
+
+test('both dinner execution steps require all three planning approvals and relock when plans change',()=>{
+ const {call,join,admin}=setup(),a=join(),memberId=a.out.member.id,taskId='dinner';
+ const send=(step,revision=0,notes='Evidence')=>call(a.token,'submitstep',{taskId,step,revision,draft:{notes,files:[]}});
+ const blocked=()=>{for(const step of [3,4]){const r=send(step);assert.equal(r.ok,false);assert.match(r.error,/approves steps 1, 2, 3/);}};
+ blocked();
+ for(const step of [2,0,1]){
+  assert(send(step).ok);blocked();
+  assert(admin('reviewstep',{memberId,taskId,step,revision:1,decision:'approved'}).ok);
+  if(step!==1)blocked();
+ }
+ // Both unlock together; posting does not wait for the dinner recap approval.
+ assert(send(4).ok);assert(send(3).ok);
+ assert(admin('reviewstep',{memberId,taskId,step:0,revision:2,decision:'changes_requested',feedback:'Update the guest list'}).ok);
+ for(const step of [3,4])assert.equal(send(step,1,'Updated evidence').ok,false);
+});

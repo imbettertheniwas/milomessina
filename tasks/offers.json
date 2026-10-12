@@ -24,12 +24,22 @@
       {
         "title": "Host the dinner",
         "detail": "Bring your 10 creators together. fomo will pay for the dinner.",
-        "input": "Dinner date, attendee list, photos, and a quick recap…"
+        "input": "Dinner date, attendee list, photos, and a quick recap…",
+        "afterApproval": [
+          0,
+          1,
+          2
+        ]
       },
       {
         "title": "Get Instagram Stories or TikToks",
         "detail": "Have creators post an Instagram Story showing the fomo menu or a “GRWM for a crypto dinner” TikTok. Collect links or Story screenshots for review.",
-        "input": "Instagram Story screenshots or links to the creators’ TikToks…"
+        "input": "Instagram Story screenshots or links to the creators’ TikToks…",
+        "afterApproval": [
+          0,
+          1,
+          2
+        ]
       }
     ],
     "id": "dinner",

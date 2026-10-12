@@ -2,7 +2,7 @@ import {beginCampusWelcome,cancelCampusWelcome,showCampusWelcome} from './welcom
 import {approvedFomoTasks,experienceText} from './experience.js';
 import {newPasswordSalt,passwordProof} from './password.js';
 import {opportunityStatus,opportunityCounts} from './network.js';
-import {createStepEditors} from './steps.js';
+import {createStepEditors} from './steps.js?v=20261012-dinner-approval';
 import {createSharedTasks,taskRequest} from './shared.js';
 import {createSchoolPicker} from './school-search.js';
 import {createCalendar} from './calendar.js';
