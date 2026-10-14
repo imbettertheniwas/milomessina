@@ -56,7 +56,7 @@ export function createClanHandler({env=process.env,load=loadCampus,read=readSave
    if(!configured)return res.status(503).json({error:'Clan storage is not configured.'});
    const previous=await read();const snapshot=buildSnapshot(body,await chapters(),previous,now());await write(snapshot,previous);return res.json({ok:true,updatedAt:snapshot.updatedAt,records:snapshot.records.length});
   }catch(error){
-   const invalid=/^(INVALID_|INCOMPLETE_|OLD_UPLOAD)/.test(error.message);console.error('Clan sync',invalid?error.message:'SOURCE_OR_STORAGE_UNAVAILABLE');return res.status(invalid?422:503).json({error:invalid?'Refresh incomplete or outdated. Previous results were retained.':'Clan data could not be saved or loaded. Previous results were retained.'});
+   const invalid=/^(INVALID_|INCOMPLETE_|OLD_UPLOAD)/.test(error.message);console.error('Clan sync',invalid?error.message:'SOURCE_OR_STORAGE_UNAVAILABLE',String(error.name||'Error').slice(0,80));return res.status(invalid?422:503).json({error:invalid?'Refresh incomplete or outdated. Previous results were retained.':'Clan data could not be saved or loaded. Previous results were retained.'});
   }
  };
 }
