@@ -36,3 +36,9 @@ test('profit retains signed USD and real zero while missing values stay unknown'
  assert.equal(cleanClan({...clan,pnlAllTimeUsd:-125.75}).pnlAllTimeUsd,-125.75);
  for(const pnl24hUsd of [Infinity,NaN,'12',1e16])assert.throws(()=>cleanClan({...clan,pnl24hUsd}));
 });
+
+test('snapshot writes use the storage version read before downloading its body',async()=>{
+ const {readSnapshot}=await import('../../api/clans.mjs');const order=[];
+ const value=await readSnapshot({metadata:async()=>{order.push('metadata');return {etag:'storage-version'};},download:async()=>{order.push('body');return {statusCode:200,blob:{etag:'download-representation'},stream:new Response(JSON.stringify({records:[]})).body};}});
+ assert.deepEqual(order,['metadata','body']);assert.equal(value._etag,'storage-version');
+});

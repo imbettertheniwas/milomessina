@@ -1,6 +1,6 @@
 import {createHmac,createHash,timingSafeEqual} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {get,put} from '@vercel/blob';
+import {get,head,put,BlobNotFoundError} from '@vercel/blob';
 import {parseChapterAdmin} from '../server/campuswars-source.mjs';
 import {makePlan,buildSnapshot} from '../server/clans/model.mjs';
 const PATH='eyes/clans/latest.json';
@@ -16,7 +16,14 @@ async function loadCampus(env){
  const response=await fetch('https://fomocampus.com/admin/',{headers:{authorization:'Basic '+Buffer.from((env.CAMPUSWARS_ADMIN_USERNAME||'village')+':'+env.CAMPUSWARS_ADMIN_PASSWORD).toString('base64')},redirect:'error',signal:AbortSignal.timeout(12000)});
  if(!response.ok)throw Error('CAMPUS_UNAVAILABLE');const html=await response.text();if(html.length>8*1024*1024)throw Error('CAMPUS_TOO_LARGE');return parseChapterAdmin(html);
 }
-async function readSaved(){const file=await get(PATH,{access:'private',useCache:false});if(!file)return null;if(file.statusCode!==200)throw Error('STORAGE_READ');return {...JSON.parse(await new Response(file.stream).text()),_etag:file.blob.etag};}
+export async function readSnapshot({metadata=head,download=get}={}){
+ // Read the storage version before the body. The download response ETag can
+ // describe its HTTP representation rather than the conditional-write version.
+ let version;try{version=await metadata(PATH);}catch(error){if(error instanceof BlobNotFoundError)return null;throw error;}
+ const file=await download(PATH,{access:'private',useCache:false});if(!file)return null;if(file.statusCode!==200||!version.etag)throw Error('STORAGE_READ');
+ return {...JSON.parse(await new Response(file.stream).text()),_etag:version.etag};
+}
+const readSaved=()=>readSnapshot();
 async function writeSaved(data,previous){await put(PATH,JSON.stringify(data),{access:'private',addRandomSuffix:false,allowOverwrite:!!previous,...(previous?._etag?{ifMatch:previous._etag}:{}),contentType:'application/json',cacheControlMaxAge:60});}
 const seedPromise=readFile(new URL('../server/clans/seed.json',import.meta.url),'utf8').then(JSON.parse);
 export function createClanHandler({env=process.env,load=loadCampus,read=readSaved,write=writeSaved,seed=()=>seedPromise,now=Date.now}={}){
