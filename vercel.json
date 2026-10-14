@@ -1,4 +1,5 @@
 {
+  "outputDirectory": ".",
   "functions": {
     "api/clans.mjs": { "maxDuration": 30 },
     "api/campuswars.mjs": {
