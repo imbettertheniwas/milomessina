@@ -21,3 +21,10 @@ test('public reads label audit and do not expose storage metadata',async()=>{con
 test('writes require helper header, session token and JSON',async()=>{let writes=0;const h=createClanHandler({env,read:async()=>null,write:async()=>writes++,now:()=>now});assert.equal((await request(h,{method:'POST',body:{}})).statusCode,403);assert.equal((await request(h,{method:'POST',headers:{'x-eyes-client':'browser-helper','content-type':'application/json'},body:{}})).statusCode,401);assert.equal(writes,0);});
 test('login token only issued for correct password',async()=>{const h=createClanHandler({env,now:()=>now});const args={method:'POST',url:'/api/clans?action=login',headers:{'x-eyes-client':'browser-helper','content-type':'application/json'}};assert.equal((await request(h,{...args,body:{password:'bad'}})).statusCode,401);const r=await request(h,{...args,body:{password:'test-password'}});assert.equal(validSession(r.body.token,'test-password',now),true);});
 test('incomplete upload preserves stored snapshot',async()=>{let writes=0;const h=createClanHandler({env,load:async()=>chapters,read:async()=>null,write:async()=>writes++,now:()=>now});const r=await request(h,{method:'POST',headers:{'x-eyes-client':'browser-helper','content-type':'application/json',authorization:'Bearer '+signSession('test-password',now)},body:{mode:'discovery',clans:[],searches:[],startedAt:new Date(now).toISOString()}});assert.equal(r.statusCode,422);assert.equal(writes,0);});
+
+test('discovery queries respect the live FOMO 30 character maximum',()=>{
+ const plan=makePlan([{school:'Florida International University',name:'Alpha Epsilon Pi',joined:20}],null);
+ assert.ok(plan.queries.includes('Florida International Universi'));
+ assert.ok(plan.queries.every(q=>q.length<=30));
+ assert.equal(new Set(plan.queries).size,plan.queries.length);
+});

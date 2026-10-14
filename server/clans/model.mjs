@@ -9,8 +9,11 @@ export function scopeOf(chapters){
 }
 export function makePlan(chapters,previous){
  const scope=scopeOf(chapters),queries=new Set();
- for(const {school} of scope.schools)for(const q of aliases(schoolAliases,school))queries.add(q);
- for(const {school,chapter} of scope.chapters){for(const q of aliases(chapterAliases,chapter))queries.add(q);queries.add(chapter+' '+(schoolAliases[school]?.split(';')[0].trim()||school));}
+ // FOMO rejects searchTerm values longer than 30 characters. Prefix searches
+ // retain school/chapter discovery; full result names still drive matching.
+ const addQuery=q=>queries.add(q.trim().slice(0,30));
+ for(const {school} of scope.schools)for(const q of aliases(schoolAliases,school))addQuery(q);
+ for(const {school,chapter} of scope.chapters){for(const q of aliases(chapterAliases,chapter))addQuery(q);addQuery(chapter+' '+(schoolAliases[school]?.split(';')[0].trim()||school));}
  if(queries.size>1500)throw Error('SCOPE_TOO_LARGE');
  const ids=[...new Set([...verified.filter(x=>scope.schools.some(s=>s.school===x[3])).map(x=>x[2]),...(previous?.records||[]).map(r=>r.id||r.url?.split('/').pop()).filter(Boolean)])];
  return {scope,queries:[...queries],ids,discoveryAt:previous?.discoveryAt||null};

@@ -15,7 +15,7 @@ async function fomo(tabId,path){
   const r=await fetch('https://prod-api.fomo.family'+path,{credentials:'include',headers:{'App-Language':'en'},signal:AbortSignal.timeout(15000),redirect:'error'});
   if([401,403,431].includes(r.status))return {error:'Sign in to FOMO again, then click Refresh.'};
   if(r.status===429)return {error:'FOMO rate limit reached. Wait before refreshing.'};
-  if(!r.ok)return {error:'FOMO is temporarily unavailable ('+r.status+').'};
+  if(!r.ok)return {error:'FOMO request failed ('+r.status+') for '+path+'.'};
   const data=await r.json();if(!data.success)return {error:'FOMO could not return clan data.'};
   const raw=path.startsWith('/v2/clans/search?')?data.responseObject?.leaderboard:[data.responseObject];
   if(!Array.isArray(raw))return {error:'FOMO changed its response format.'};
