@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@vercel/blob": "2.8.1"
+  },
+  "private": true,
+  "scripts": {
+    "build": "node --check api/clans.mjs",
+    "test:clans": "node --test server/clans/*.test.mjs"
+  }
+}

@@ -1,0 +1,15 @@
+# Browser-assisted clan synchronization
+
+`/eyes#clans` displays a saved audit until the first successful browser sync. It never labels seed data as live. A private Vercel Blob store keeps the latest successful snapshot across deployments and browser restarts.
+
+Install the downloadable unpacked Chrome/Edge extension in `fomo/pulse/clan-helper.zip`. Sign in to FOMO in the same browser, then enter the existing campus admin password in the extension popup. The extension authenticates with `/api/clans?action=login` and holds a scoped 24-hour HMAC token in browser session storage. No FOMO password, access token, cookie value, user profile, wallet or trading data is read/exported. Only read-only clan search/detail requests run in the signed-in tab. The extension uploads allowlisted clan identity/count fields to this site. Browser restart clears the sync token. Password rotation revokes tokens.
+
+Counts refresh every five minutes; discovery runs hourly and on Search again. The browser must stay running with a signed-in FOMO tab. Browser sleep, tab discarding, session expiry, API changes and rate limiting can interrupt refresh. Pause stops new requests; Disconnect clears the scoped token. A failed/partial run does not overwrite saved data. The page labels data older than ten minutes as a saved snapshot.
+
+The server independently reads the campus admin before constructing the plan and accepting a run. Schools qualify when the sum of their chapter rows is >10. Individual chapter rows qualify only when joined >10. Duplicate chapter records are represented by separate onboarding counts, never silently summed. Matching uses reviewed clan IDs plus conservative school/chapter aliases. A renamed verified clan needs review. New name-based matches are labeled Name match; broad/ambiguous abbreviations do not establish identity. Searches reaching ten results are explicitly flagged as possibly truncated. Search coverage is not a guarantee of exhaustive FOMO discovery.
+
+Required production environment: existing CAMPUSWARS_ADMIN_PASSWORD and optional CAMPUSWARS_ADMIN_USERNAME; BLOB_READ_WRITE_TOKEN from the private eyes-clans store. There is no FOMO API credential. Do not substitute a captured browser cookie. The server does not need a cron because collection requires the browser session. Blob conditional writes reject concurrent overwrites. Public endpoints expose aggregate results only; upload requires the scoped token. Login throttling is per warm function instance; platform-wide abuse protection can additionally be configured at the deployment firewall.
+
+Validation: `npm run test:clans`; `node --test fomo/pulse/tests/*.test.mjs`. Local panel: `node server/clans/preview.mjs`, then `http://127.0.0.1:4198/eyes#clans`. The local panel uses the manual audit and read-only public campus feed. Helper tests simulate extension APIs and upstream JSON; a real authenticated Chrome/Edge run is required after installation to verify FOMO's current cookie/session behavior.
+
+Repackage after changing extension files: from fomo/pulse/clan-helper, run `zip -q ../clan-helper.zip manifest.json background.js popup.html popup.js popup.css`.
