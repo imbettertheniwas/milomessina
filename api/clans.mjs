@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {get,head,put,BlobNotFoundError} from '@vercel/blob';
 import {parseChapterAdmin} from '../server/campuswars-source.mjs';
 import {makePlan,buildSnapshot} from '../server/clans/model.mjs';
+import {labelClan} from '../fomo/pulse/clan-status.mjs';
 const PATH='eyes/clans/latest.json';
 const digest=s=>createHash('sha256').update(String(s)).digest();
 export function validPassword(value,password){return !!password&&typeof value==='string'&&timingSafeEqual(digest(value),digest(password));}
@@ -45,7 +46,7 @@ export function createClanHandler({env=process.env,load=loadCampus,read=readSave
      if(!configured)return res.status(503).json({error:'Clan storage is not configured.'});
      return res.json(makePlan(await chapters(),saved));
     }
-    const snapshot=saved||await seed();const {_etag,...publicSnapshot}=snapshot;return res.json({...publicSnapshot,storageReady:configured,stale:!snapshot.updatedAt||now()-Date.parse(snapshot.updatedAt)>10*60000});
+    const snapshot=saved||await seed();const {_etag,...publicSnapshot}=snapshot;return res.json({...publicSnapshot,records:publicSnapshot.records.map(labelClan),storageReady:configured,stale:!snapshot.updatedAt||now()-Date.parse(snapshot.updatedAt)>10*60000});
    }
    // The extension sends a scoped, expiring token; FOMO cookies never leave its tab.
    if(req.headers?.['x-eyes-client']!=='browser-helper')return res.status(403).json({error:'Use the browser helper to sync.'});

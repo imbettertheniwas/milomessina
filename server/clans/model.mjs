@@ -1,4 +1,5 @@
 import {schoolAliases,chapterAliases,verified} from './catalog.mjs';
+import {labelClan} from '../../fomo/pulse/clan-status.mjs';
 export const normalize=s=>String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 const aliases=(map,name)=>[name,...(map[name]||'').split(';').map(s=>s.trim()).filter(Boolean)];
 const contains=(text,part)=>(' '+normalize(text)+' ').includes(' '+normalize(part)+' ');
@@ -42,7 +43,7 @@ export function matchClan(clan,scope){
  const s=scope.schools.find(s=>s.school===school),c=scope.chapters.find(c=>c.school===school&&c.chapter===chapter);
  if(!s)return null;
  if(chapter&&!c){status='School match only';note='School qualifies; this chapter has no current admin record above 10.';}
- return {...clan,school,chapter,status,note,onboarded:chapter?(c?.onboarded||null):[s.onboarded]};
+ return labelClan({...clan,school,chapter,status,note,onboarded:chapter?(c?.onboarded||null):[s.onboarded]});
 }
 export function buildSnapshot({clans,searches,mode,startedAt},chapters,previous,now=Date.now()){
  if(!['discovery','counts'].includes(mode)||!Array.isArray(clans)||clans.length>10000||!Array.isArray(searches)||searches.length>1500||!Number.isFinite(Date.parse(startedAt))||Date.parse(startedAt)>now+60000||now-Date.parse(startedAt)>3600000)throw Error('INVALID_UPLOAD');

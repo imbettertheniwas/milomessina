@@ -42,3 +42,23 @@ test('snapshot writes use the storage version read before downloading its body',
  const value=await readSnapshot({metadata:async()=>{order.push('metadata');return {etag:'storage-version'};},download:async()=>{order.push('body');return {statusCode:200,blob:{etag:'download-representation'},stream:new Response(JSON.stringify({records:[]})).body};}});
  assert.deepEqual(order,['metadata','body']);assert.equal(value._etag,'storage-version');
 });
+
+test('school-wide clans stay visible but never become chapter matches',async()=>{
+ const {schoolOnly,chapterMatch,matchGroup}=await import('../../fomo/pulse/clan-status.mjs');
+ const scoped=scopeOf([{school:'Purdue University',name:'Sigma Chi',joined:20}]);
+ for(const id of ['6187b958-81e8-46cd-9e13-28ed6f0470a5','00000000-0000-0000-0000-000000000001']){
+  const r=matchClan(cleanClan({id,name:'Purdue University',memberCount:15,pnl24hUsd:-4,pnlAllTimeUsd:12}),scoped);
+  assert.equal(r.status,'School only');assert.equal(schoolOnly(r),true);assert.equal(chapterMatch(r),false);assert.equal(matchGroup(r),'school');
+  assert.equal(r.members,15);assert.equal(r.pnl24hUsd,-4);assert.equal(r.pnlAllTimeUsd,12);
+ }
+ assert.equal(chapterMatch({chapter:'Alpha Epsilon Pi',status:'School match only'}),false);
+ assert.equal(matchGroup({chapter:'Alpha Epsilon Pi',status:'School match only'}),'review');
+ assert.equal(chapterMatch({chapter:'Sigma Chi',status:'Matched'}),true);
+});
+test('existing saved school clans are relabeled without changing the observation time or profits',async()=>{
+ const record={name:'Purdue University',school:'Purdue University',chapter:'',status:'Matched',members:15,pnl24hUsd:-4,pnlAllTimeUsd:12};
+ const saved={updatedAt:new Date(now-1000).toISOString(),records:[record]};
+ const h=createClanHandler({env,read:async()=>saved,now:()=>now});const response=await request(h);
+ assert.equal(response.body.records[0].status,'School only');assert.equal(response.body.records[0].pnlAllTimeUsd,12);
+ assert.equal(response.body.updatedAt,saved.updatedAt);assert.equal(saved.records[0].status,'Matched');
+});
