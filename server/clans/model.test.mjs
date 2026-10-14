@@ -28,3 +28,11 @@ test('discovery queries respect the live FOMO 30 character maximum',()=>{
  assert.ok(plan.queries.every(q=>q.length<=30));
  assert.equal(new Set(plan.queries).size,plan.queries.length);
 });
+
+test('profit retains signed USD and real zero while missing values stay unknown',()=>{
+ const clan={id:'00000000-0000-0000-0000-000000000001',name:'Example',memberCount:4};
+ assert.equal(cleanClan(clan).pnl24hUsd,null);
+ assert.equal(cleanClan({...clan,pnl24hUsd:0,pnlAllTimeUsd:-125.75}).pnl24hUsd,0);
+ assert.equal(cleanClan({...clan,pnlAllTimeUsd:-125.75}).pnlAllTimeUsd,-125.75);
+ for(const pnl24hUsd of [Infinity,NaN,'12',1e16])assert.throws(()=>cleanClan({...clan,pnl24hUsd}));
+});

@@ -20,7 +20,8 @@ export function makePlan(chapters,previous){
 }
 export function cleanClan(raw){
  if(!raw||!/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(raw.id)||typeof raw.name!=='string'||!raw.name.trim()||raw.name.length>250||!Number.isSafeInteger(raw.memberCount)||raw.memberCount<0||raw.memberCount>100000000)throw Error('INVALID_CLAN');
- return {id:raw.id,name:raw.name.trim(),members:raw.memberCount,url:'https://fomo.family/clans/'+raw.id};
+ const profits={};for(const key of ['pnl24hUsd','pnlAllTimeUsd']){if(raw[key]!=null&&(typeof raw[key]!=='number'||!Number.isFinite(raw[key])||Math.abs(raw[key])>1e15))throw Error('INVALID_PROFIT');profits[key]=raw[key]??null;}
+ return {...profits,id:raw.id,name:raw.name.trim(),members:raw.memberCount,url:'https://fomo.family/clans/'+raw.id};
 }
 export function matchClan(clan,scope){
  const known=verified.find(v=>v[2]===clan.id);

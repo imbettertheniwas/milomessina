@@ -8,10 +8,10 @@ async function eyes(action,body){
 }
 async function fomo(tabId,path){
  // Runs a read-only request in the existing FOMO tab. The browser sends its
- // cookies normally; no cookie, token, profile, wallet or trade data is read.
+ // cookies normally; no cookie, token, profile, wallet or individual trade data is read.
  const results=await chrome.scripting.executeScript({target:{tabId},world:'MAIN',func:async path=>{
   if(location.origin!=='https://fomo.family')throw Error('Open fomo.family first');
-  if(!/^\/v2\/clans\/(search\?searchTerm=|[a-f0-9-]{36}\?window=24h)/.test(path))throw Error('Invalid clan request');
+  if(!/^\/v2\/clans\/(search\?searchTerm=|[a-f0-9-]{36}\?window=(24h|all))/.test(path))throw Error('Invalid clan request');
   const r=await fetch('https://prod-api.fomo.family'+path,{credentials:'include',headers:{'App-Language':'en'},signal:AbortSignal.timeout(15000),redirect:'error'});
   if([401,403,431].includes(r.status))return {error:'Sign in to FOMO again, then click Refresh.'};
   if(r.status===429)return {error:'FOMO rate limit reached. Wait before refreshing.'};
@@ -19,7 +19,8 @@ async function fomo(tabId,path){
   const data=await r.json();if(!data.success)return {error:'FOMO could not return clan data.'};
   const raw=path.startsWith('/v2/clans/search?')?data.responseObject?.leaderboard:[data.responseObject];
   if(!Array.isArray(raw))return {error:'FOMO changed its response format.'};
-  return {clans:raw.map(c=>({id:c.id,name:c.name,memberCount:c.memberCount}))};
+  const profitField=path.endsWith('?window=all')?'pnlAllTimeUsd':'pnl24hUsd';
+  return {clans:raw.map(c=>({id:c.id,name:c.name,memberCount:c.memberCount,...(!path.startsWith('/v2/clans/search?')?{[profitField]:typeof c.pnl==='number'&&Number.isFinite(c.pnl)?c.pnl:null}:{})}))};
  },args:[path]});
  const result=results[0]?.result;if(!result||result.error)throw Error(result?.error||'FOMO tab closed or reloaded.');return result.clans;
 }
@@ -33,12 +34,12 @@ export async function sync(forceDiscovery=false){
   const mode=forceDiscovery||!plan.discoveryAt||Date.now()-Date.parse(plan.discoveryAt)>=3600000?'discovery':'counts';
   const startedAt=new Date().toISOString(),clans=new Map(),searches=[];
   // Verify known clan counts first. An auth failure stops after one request.
-  const work=[...plan.ids.map(id=>({id})),...(mode==='discovery'?plan.queries.map(query=>({query})):[])];
+  const work=[...plan.ids.flatMap(id=>[{id,window:'24h'},{id,window:'all'}]),...(mode==='discovery'?plan.queries.map(query=>({query})):[])];
   for(let i=0;i<work.length;i++){
    if(!(await chrome.storage.local.get('enabled')).enabled)throw Error('Sync paused. Previous data retained.');
    const item=work[i];await status(`${mode==='discovery'?'Searching clans':'Refreshing counts'}: ${i+1} / ${work.length}`);
-   const rows=await fomo(tab.id,item.id?`/v2/clans/${item.id}?window=24h`:`/v2/clans/search?searchTerm=${encodeURIComponent(item.query)}`);
-   for(const row of rows)clans.set(row.id,row);if(item.query)searches.push({query:item.query,count:rows.length});
+   const rows=await fomo(tab.id,item.id?`/v2/clans/${item.id}?window=${item.window}`:`/v2/clans/search?searchTerm=${encodeURIComponent(item.query)}`);
+   for(const row of rows)clans.set(row.id,{...clans.get(row.id),...row});if(item.query)searches.push({query:item.query,count:rows.length});
    await new Promise(resolve=>setTimeout(resolve,600));
   }
   const result=await eyes('',{mode,startedAt,clans:[...clans.values()],searches});
