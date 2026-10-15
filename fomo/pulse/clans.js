@@ -1,10 +1,10 @@
-import {labelClan,schoolOnly,chapterMatch,matchGroup} from './clan-status.mjs';
+import {labelClan,schoolOnly,chapterMatch,matchGroup,matchedMembers} from './clan-status.mjs';
 const $=id=>document.getElementById(id);let snapshot=null,busy=false;
 const profit=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',signDisplay:'exceptZero',maximumFractionDigits:2}).format(value):'—';
 function render(){
  if(!snapshot)return;const all=(snapshot.records||[]).map(labelClan),query=$('clan-search').value.toLowerCase(),filter=$('clan-filter').value;
  const rows=all.filter(r=>(r.name+' '+r.school+' '+r.chapter).toLowerCase().includes(query)&&(filter==='all'||matchGroup(r)===filter));
- $('clan-count').textContent=all.filter(chapterMatch).length.toLocaleString();$('clan-school-count').textContent=all.filter(schoolOnly).length.toLocaleString();$('clan-review').textContent=all.filter(r=>matchGroup(r)==='review').length.toLocaleString();
+ $('clan-count').textContent=all.filter(chapterMatch).length.toLocaleString();$('clan-members').textContent=matchedMembers(all).toLocaleString();$('clan-school-count').textContent=all.filter(schoolOnly).length.toLocaleString();$('clan-review').textContent=all.filter(r=>matchGroup(r)==='review').length.toLocaleString();
  $('clan-scope').textContent=`${snapshot.coverage.schools} schools · ${snapshot.coverage.chapters} distinct chapters above 10 onboarded`;
  $('clan-time').textContent=snapshot.updatedAt?`Last saved ${new Date(snapshot.updatedAt).toLocaleString()}`:`Manual audit · ${snapshot.observedDate}`;
  const age=snapshot.updatedAt?Date.now()-Date.parse(snapshot.updatedAt):Infinity;

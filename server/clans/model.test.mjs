@@ -44,7 +44,7 @@ test('snapshot writes use the storage version read before downloading its body',
 });
 
 test('school-wide clans stay visible but never become chapter matches',async()=>{
- const {schoolOnly,chapterMatch,matchGroup}=await import('../../fomo/pulse/clan-status.mjs');
+ const {schoolOnly,chapterMatch,matchGroup,matchedMembers}=await import('../../fomo/pulse/clan-status.mjs');
  const scoped=scopeOf([{school:'Purdue University',name:'Sigma Chi',joined:20}]);
  for(const id of ['6187b958-81e8-46cd-9e13-28ed6f0470a5','00000000-0000-0000-0000-000000000001']){
   const r=matchClan(cleanClan({id,name:'Purdue University',memberCount:15,pnl24hUsd:-4,pnlAllTimeUsd:12}),scoped);
@@ -54,6 +54,7 @@ test('school-wide clans stay visible but never become chapter matches',async()=>
  assert.equal(chapterMatch({chapter:'Alpha Epsilon Pi',status:'School match only'}),false);
  assert.equal(matchGroup({chapter:'Alpha Epsilon Pi',status:'School match only'}),'review');
  assert.equal(chapterMatch({chapter:'Sigma Chi',status:'Matched'}),true);
+ assert.equal(matchedMembers([{chapter:'Sigma Chi',status:'Matched',members:19},{chapter:'DKE',status:'Name match',members:10},{school:'Purdue University',chapter:'',status:'Matched',members:15},{chapter:'Pi Kappa Phi',status:'Needs review',members:9}]),29);
 });
 test('existing saved school clans are relabeled without changing the observation time or profits',async()=>{
  const record={name:'Purdue University',school:'Purdue University',chapter:'',status:'Matched',members:15,pnl24hUsd:-4,pnlAllTimeUsd:12};
