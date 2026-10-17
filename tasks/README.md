@@ -67,3 +67,7 @@ An idempotent tombstone in `campus_tasks_deleted` records the member ID, deletin
 - **Housekeeping.** `campusTasksMaintenance()` deletes expired sessions and rate-limit windows older than 15 minutes, keeping every live row unchanged. To run it daily, open the Apps Script editor and go to Triggers → Add trigger → `campusTasksMaintenance` → Day timer. Operators can also run it by posting the `maintenance` action.
 
 Website and Apps Script releases are independent. Until the Apps Script answers `version: 5` (the `/exec` health check also reports `campusTasksOperatorTools`), the console hides these controls and computes the paid total the old way. Saving in the Apps Script editor does not change what a deployment serves. Confirm the flag on the exact `/exec` URL that `/internal` calls.
+
+### Mobile layout
+
+The task heading gives its title full width on phones. Event date/time and sponsorship fields stack on the narrowest screens; editable fields use at least 16px type, controls have at least 44px tap targets, and saved-progress controls wrap within the page. Account dialogs follow the visual viewport to stay within the space above a mobile keyboard, with notch-safe spacing. Checked at 320, 375, 390, and 430px widths and in landscape using touch emulation.

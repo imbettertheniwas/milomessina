@@ -1,4 +1,4 @@
-import {createEventPlans} from './event-plans.js?v=20261017-sponsor';
+import {createEventPlans} from './event-plans.js?v=20261017-mobile';
 import {storeTaskFile,fileError,calendarReady} from './calendar.js';
 export function createStepEditors({getProfile,write,shared,onChange}) {
   const editors=[...document.querySelectorAll('[data-step-editor]')],timers=new Map(),busy=new Set(),eventEditors=new Map();
