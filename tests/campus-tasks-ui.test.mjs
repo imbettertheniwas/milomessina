@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../invoice/campus-tasks.js',import.meta.url),
 function ui(){
  const nodes=new Map(),events={},requests=[],confirmations=[];
  const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',classList:{toggle(){}},addEventListener(event,handler){this[event]=handler;},querySelectorAll(){return[];},replaceChildren(){this.innerHTML='';}});return nodes.get(id);};
- const member=(id,name,schoolName)=>({id,name,schoolName});
+ const member=(id,name,schoolName)=>({id,name,schoolName,fomoUsername:id==='one'?'campus_alex':''});
  const initial={ok:true,members:[member('one','Alex','Duke'),member('two','Sam','NYU')],tasks:[],steps:[],audit:[]};
  const state={confirm:true,fail:false,session:'admin'};
  const context=vm.createContext({stepTitles:{},downloadTaskFile(){},document:{body:{dataset:{consoleView:'tasks'}},getElementById:node},window:{FOMO_SHEET:{operator:()=>true,session:()=>state.session,endpoint:'/test'},addEventListener:(name,handler)=>events[name]=handler,confirm:text=>{confirmations.push(text);return state.confirm;}},AbortSignal,fetch:async(url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{json:async()=>body.action==='list'?structuredClone(initial):state.fail?{ok:false,error:'Service unavailable'}:{...initial,members:initial.members.filter(m=>m.id!==body.memberId)}};}});
@@ -22,4 +22,8 @@ test('delete confirmation cancellation sends no write; success refreshes member 
 });
 test('failed deletion keeps the selected member and displays the error',async()=>{
  const h=ui();await new Promise(setImmediate);h.state.fail=true;await h.click();assert.match(h.node('ct-detail').innerHTML,/Alex/);assert.match(h.node('ct-members').innerHTML,/Alex/);assert.equal(h.node('ct-message').textContent,'Service unavailable');
+});
+
+test('operators can see and search the signup FOMO username',async()=>{
+ const h=ui();await new Promise(setImmediate);assert.match(h.node('ct-detail').innerHTML,/FOMO username: <strong>@campus_alex<\/strong>/);h.node('ct-search').value='campus_alex';h.node('ct-search').input();assert.match(h.node('ct-members').innerHTML,/Alex/);assert.doesNotMatch(h.node('ct-members').innerHTML,/Sam/);
 });

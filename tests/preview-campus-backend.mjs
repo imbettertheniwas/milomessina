@@ -5,7 +5,7 @@ const endpoint=/https:\/\/script.google.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec/g;c
 http.createServer(async(req,res)=>{const pathname=new URL(req.url,'http://localhost').pathname;res.setHeader('Cache-Control','no-store');if(pathname==='/qa-member-preview'){
  const schoolId=new URL(req.url,'http://localhost').searchParams.get('school');
  const school=schools.find(s=>s.id===schoolId)||schools.find(s=>s.name==='San Diego State University')||schools[0];
- const out=h.ctx.campusTasksApi({action:'signup',email:crypto.randomUUID()+'@example.test',name:'Jordan Carter',schoolId:school.id,salt:'a'.repeat(32),proof:'b'.repeat(64)});
+ const out=h.ctx.campusTasksApi({action:'signup',email:crypto.randomUUID()+'@example.test',name:'Jordan Carter',fomoUsername:'campus_test',schoolId:school.id,salt:'a'.repeat(32),proof:'b'.repeat(64)});
  if(!out.ok){res.statusCode=500;return res.end(out.error);}
  const count=Math.max(0,Math.min(5,Number(new URL(req.url,'http://localhost').searchParams.get('approved'))||0));
  for(const taskId of ['dinner','filmer','host','travel','calendar'].slice(0,count))h.ctx.ctWrite('progress',h.ctx.CT_TASKS,{id:out.member.id+':'+taskId,memberId:out.member.id,taskId,status:'approved',revision:1,draft:JSON.stringify({checks:Array(h.ctx.CT_COUNTS[taskId]).fill(true),chapter:school.name,notes:'Synthetic local preview evidence'})});
