@@ -67,8 +67,8 @@
     "title": "Find your chapter filmer",
     "subtitle": "Your parties, captured properly.",
     "tag": "Paid filmer · In-chapter · On campus",
-    "intro": "Find someone in your chapter, on your campus, who can get paid to film parties. They’ll work alongside a person fomo sends to monitor the content.",
-    "evidence": "Share the filmer’s name, contact or profile, examples of their strongest work, and how they’ll coordinate with the fomo content monitor.",
+    "intro": "Find someone in your chapter, on your campus, who can get paid to film parties.",
+    "evidence": "Share the filmer’s name, contact or profile, and examples of their strongest work.",
     "tasks": [
       {
         "title": "Choose an in-chapter filmer",
@@ -80,13 +80,13 @@
     "perk": {
       "label": "FINAL CUT + PARTY FUNDING",
       "title": "Your parties. Your final cut.",
-      "description": "Build your camera team. Recruit a paid camera operator from your chapter to film your parties, with a fomo content monitor alongside them. You get final cut and decide how fomo capital is spent on parties. They join your campus team and get internship experience too.",
+      "description": "Build your camera team. Recruit a paid camera operator from your chapter to film your parties. You get final cut and decide how fomo capital is spent on parties. They join your campus team and get internship experience too.",
       "highlights": [
         "Your camera operator, your team",
         "You direct the party funding",
         "Paid work + internship experience"
       ],
-      "pitch": "Want to get paid to film our chapter’s parties? We’re finding an on-campus filmer from our chapter. You’d work alongside a person fomo sends to monitor the content.",
+      "pitch": "Want to get paid to film our chapter’s parties? We’re finding an on-campus filmer from our chapter.",
       "taskWins": [
         "You get final cut of your chapter’s party footage."
       ]
