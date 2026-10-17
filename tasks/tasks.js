@@ -1,10 +1,10 @@
-import {createTaskNavigation} from './task-navigation.js?v=20261017-task-motion';
-import './mobile-viewport.js?v=20261017-task-motion';
+import {createTaskNavigation} from './task-navigation.js?v=20261017-task-visuals';
+import './mobile-viewport.js?v=20261017-task-visuals';
 import {newPasswordSalt,passwordProof} from './password.js';
-import {createStepEditors} from './steps.js?v=20261017-task-motion';
-import {createSharedTasks,taskRequest} from './shared.js?v=20261017-task-motion';
+import {createStepEditors} from './steps.js?v=20261017-task-visuals';
+import {createSharedTasks,taskRequest} from './shared.js?v=20261017-task-visuals';
 import {createSchoolPicker} from './school-search.js';
-import {createCalendar} from './calendar.js?v=20261017-task-motion';
+import {createCalendar} from './calendar.js?v=20261017-task-visuals';
 import {PROFILE_KEY,normalizeName,loadProfiles,legacyProgress,readableAccent} from './profile.js';
 const cards=[...document.querySelectorAll('[data-task]')],saveStatus=document.querySelector('#save-status');
 const taskNavigation=createTaskNavigation();
