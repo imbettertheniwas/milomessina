@@ -2,7 +2,7 @@
 
 The /tasks page starts with only the social calendar task. The offer is $25 after fomo approval. There is one calendar upload, optional manual event entry and notes, and one submit button. Account access goes straight to the task, with no intro animation, task filters, LinkedIn preview, referral sidebar, or five-task bonus panel.
 
-The Event sponsorship & campus highlights section has been removed from the participant page. Previously saved requests and comments remain in the existing private review notes. Editing the ordinary calendar note preserves those saved sections without displaying them in the participant form.
+The optional sponsorship form has only three fields per event: event name, requested dollar amount, and what the money is for. Empty requests are ignored, and members can add another event if needed. Requests are sent with the calendar for review. The broader campus-highlights questions stay removed. Previously saved requests and comments remain in the private review notes.
 
 Edit template.html and run node tasks/build.mjs to regenerate index.html. The historical offers and admin review workflows remain available in their existing source files. Participant saves are scoped to calendar; older task records are preserved. Submissions still use the existing calendar step review API. The $25 is an offer communicated on the page; this change does not initiate transfers or add automatic payouts.
 

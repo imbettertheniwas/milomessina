@@ -43,29 +43,31 @@ export function createEventPlans(el,{getNotes,onChange}){
    error(){return eventPlansError(readEventPlans(getNotes()),false);}
   };
  }
- const list=panel.querySelector('[data-sponsorship-list]'),biggest=panel.querySelector('[data-biggest-events]'),notes=el.querySelector('[data-step-notes]'),add=panel.querySelector('[data-add-sponsorship]');
+ const list=panel.querySelector('[data-sponsorship-list]'),notes=el.querySelector('[data-step-notes]'),add=panel.querySelector('[data-add-sponsorship]');
  let plans=readEventPlans(getNotes()),disabled=false;
- function save(){onChange(writeEventPlans(plans));}
+ const blank=()=>({event:'',date:'',amount:'',comments:''});
+ const hasContent=r=>Boolean(r.event.trim()||r.amount||r.comments.trim()||r.date);
+ function save(){onChange(writeEventPlans({...plans,requests:plans.requests.filter(hasContent)}));}
  function draw(){
   list.replaceChildren();
-  plans.requests.forEach((r,i)=>{
+  const requests=plans.requests.length?plans.requests:[blank()];
+  requests.forEach((r,i)=>{
    const card=document.createElement('fieldset');card.className='sponsorship-request';card.disabled=disabled;
-   const legend=document.createElement('legend');legend.textContent=`Event ${i+1}`;card.append(legend);
-   for(const [field,label,type] of [['event','Event name','text'],['date','Date (if known)','date'],['amount','Amount requested ($)','number'],['comments','What would it cover? Why this event?','textarea']]){
+   const legend=document.createElement('legend');legend.textContent=`Event ${i+1}`;legend.className=requests.length===1?'sr-only':'';card.append(legend);
+   for(const [field,label,type] of [['event','Event name','text'],['amount','Amount ($)','number'],['comments','What is the money for?','textarea']]){
     const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement(type==='textarea'?'textarea':'input');input.dataset.requestField=field;
     input.setAttribute('aria-label',`${field==='event'?'Sponsorship event name':label} ${i+1}`);input.value=r[field]||'';
-    if(type==='textarea'){input.rows=3;input.maxLength=800;input.placeholder='e.g. DJ and production for our biggest homecoming party.';}else{input.type=type;if(field==='event'){input.maxLength=160;input.placeholder='e.g. Homecoming party';}if(field==='amount'){input.min='0.01';input.step='0.01';input.inputMode='decimal';input.placeholder='500';}}
-    input.addEventListener('input',()=>{r[field]=input.value;save();});wrap.append(input);card.append(wrap);
+    if(type==='textarea'){input.rows=2;input.maxLength=800;input.placeholder='e.g. $500 for a DJ at our homecoming party.';}else{input.type=type;if(field==='event'){input.maxLength=160;input.placeholder='e.g. Homecoming party';}if(field==='amount'){input.min='0.01';input.step='0.01';input.inputMode='decimal';input.placeholder='500';}}
+    input.addEventListener('input',()=>{r[field]=input.value;if(!plans.requests.includes(r))plans.requests.push(r);add.hidden=!plans.requests.some(hasContent);save();});wrap.append(input);card.append(wrap);
    }
-   const remove=document.createElement('button');remove.type='button';remove.className='quiet-button';remove.textContent='Remove request';remove.setAttribute('aria-label',`Remove sponsorship request ${i+1}`);remove.addEventListener('click',()=>{plans.requests.splice(i,1);draw();save();});card.append(remove);list.append(card);
+   const remove=document.createElement('button');remove.type='button';remove.className='quiet-button';remove.textContent='Clear request';remove.setAttribute('aria-label',`Remove sponsorship request ${i+1}`);remove.addEventListener('click',()=>{plans.requests=plans.requests.filter(item=>item!==r);draw();save();});card.append(remove);list.append(card);
   });
-  add.disabled=disabled||plans.requests.length>=5;
+  add.hidden=!plans.requests.some(hasContent);add.disabled=disabled||plans.requests.length>=5;
  }
- biggest.addEventListener('input',()=>{plans.biggestEvents=biggest.value;save();});
  notes.addEventListener('input',()=>{plans.notes=notes.value;save();});
- add.addEventListener('click',()=>{if(disabled||plans.requests.length>=5)return;plans.requests.push({event:'',date:'',amount:'',comments:''});draw();save();list.lastElementChild.querySelector('input').focus();});
+ add.addEventListener('click',()=>{if(disabled||plans.requests.length>=5)return;plans.requests.push(blank());draw();list.lastElementChild.querySelector('input').focus();});
  return{
-  restore(){plans=readEventPlans(getNotes());notes.value=plans.notes;biggest.value=plans.biggestEvents;draw();if(plans.requests.length||plans.biggestEvents)panel.open=true;const note=el.querySelector('.calendar-note');if(note&&plans.notes)note.open=true;},
+  restore(){plans=readEventPlans(getNotes());notes.value=plans.notes;draw();if(plans.requests.length)panel.open=true;const note=el.querySelector('.calendar-note');if(note&&plans.notes)note.open=true;},
   lock(value){disabled=value;panel.querySelectorAll('input,textarea,button,fieldset').forEach(input=>input.disabled=value);add.disabled=value||plans.requests.length>=5;},
   error(submit){return eventPlansError(readEventPlans(getNotes()),submit);}
  };
