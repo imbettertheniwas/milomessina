@@ -1,8 +1,8 @@
 import {newPasswordSalt,passwordProof} from './password.js';
-import {createStepEditors} from './steps.js?v=20261017-calendar';
-import {createSharedTasks,taskRequest} from './shared.js?v=20261017-calendar';
+import {createStepEditors} from './steps.js?v=20261017-events';
+import {createSharedTasks,taskRequest} from './shared.js?v=20261017-events';
 import {createSchoolPicker} from './school-search.js';
-import {createCalendar} from './calendar.js?v=20261017-calendar';
+import {createCalendar} from './calendar.js?v=20261017-events';
 import {PROFILE_KEY,normalizeName,loadProfiles,legacyProgress,readableAccent} from './profile.js';
 const cards=[...document.querySelectorAll('[data-task]')],saveStatus=document.querySelector('#save-status');
 const dialog=document.querySelector('#welcome'),form=document.querySelector('#welcome-form'),nameInput=document.querySelector('#member-name'),schoolInput=document.querySelector('#member-school'),error=document.querySelector('#welcome-error'),continueButton=document.querySelector('#welcome-continue'),cancelButton=document.querySelector('#welcome-cancel'),retryButton=document.querySelector('#retry-schools');

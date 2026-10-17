@@ -10,7 +10,7 @@ test('dinner editors and checkboxes unlock together only after every planning ap
   const fields=new Map(),check={};
   return {dataset:{taskId:'dinner',step:String(step),stepAfter:'0,1,2'},classList:{toggle(){}},
    closest:()=>({querySelector:()=>check}),check,
-   querySelector(selector){if(!fields.has(selector))fields.set(selector,{addEventListener(){},replaceChildren(){}});return fields.get(selector);}};
+   querySelector(selector){if(selector==='[data-event-plans]')return null;if(!fields.has(selector))fields.set(selector,{addEventListener(){},replaceChildren(){}});return fields.get(selector);}};
  });
  const original=globalThis.document;
  globalThis.document={querySelectorAll:()=>editors};
