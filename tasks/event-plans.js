@@ -30,7 +30,19 @@ export function eventPlansError(plans,submit=false){
  return '';
 }
 export function createEventPlans(el,{getNotes,onChange}){
- const panel=el.querySelector('[data-event-plans]');if(!panel)return null;
+ const panel=el.querySelector('[data-event-plans]');
+ // The event section was retired. Keep its saved data intact while editing
+ // only the ordinary calendar note; never expose the stored sections here.
+ if(!panel){
+  if(el.dataset.taskId!=='calendar')return null;
+  const notes=el.querySelector('[data-step-notes]');
+  notes.addEventListener('input',()=>onChange(writeEventPlans({...readEventPlans(getNotes()),notes:notes.value})));
+  return{
+   restore(){const saved=readEventPlans(getNotes());notes.value=saved.notes;const note=el.querySelector('.calendar-note');if(note&&saved.notes)note.open=true;},
+   lock(){},
+   error(){return eventPlansError(readEventPlans(getNotes()),false);}
+  };
+ }
  const list=panel.querySelector('[data-sponsorship-list]'),biggest=panel.querySelector('[data-biggest-events]'),notes=el.querySelector('[data-step-notes]'),add=panel.querySelector('[data-add-sponsorship]');
  let plans=readEventPlans(getNotes()),disabled=false;
  function save(){onChange(writeEventPlans(plans));}
