@@ -1,9 +1,9 @@
-import './mobile-viewport.js?v=20261017-event-layout';
+import './mobile-viewport.js?v=20261017-audit';
 import {newPasswordSalt,passwordProof} from './password.js';
-import {createStepEditors} from './steps.js?v=20261017-event-layout';
-import {createSharedTasks,taskRequest} from './shared.js?v=20261017-event-layout';
+import {createStepEditors} from './steps.js?v=20261017-audit';
+import {createSharedTasks,taskRequest} from './shared.js?v=20261017-audit';
 import {createSchoolPicker} from './school-search.js';
-import {createCalendar} from './calendar.js?v=20261017-event-layout';
+import {createCalendar} from './calendar.js?v=20261017-audit';
 import {PROFILE_KEY,normalizeName,loadProfiles,legacyProgress,readableAccent} from './profile.js';
 const cards=[...document.querySelectorAll('[data-task]')],saveStatus=document.querySelector('#save-status');
 const dialog=document.querySelector('#welcome'),form=document.querySelector('#welcome-form'),nameInput=document.querySelector('#member-name'),schoolInput=document.querySelector('#member-school'),error=document.querySelector('#welcome-error'),continueButton=document.querySelector('#welcome-continue'),cancelButton=document.querySelector('#welcome-cancel'),retryButton=document.querySelector('#retry-schools');
@@ -44,9 +44,9 @@ form.addEventListener('submit',async event=>{
 });
 dialog.addEventListener('cancel',event=>event.preventDefault());retryButton.addEventListener('click',()=>void loadSchools());
 document.querySelector('#change-profile').addEventListener('click',async()=>{
- if(authBusy||!active)return;authBusy=true;const button=document.querySelector('#change-profile');button.disabled=true;
- try{await taskRequest(active.token,'logout');profiles.profiles=profiles.profiles.filter(p=>p.id!==active.id);profiles.activeId=null;authenticated=false;active=null;write();emailInput.value='';nameInput.value='';passwordInput.value='';passwordConfirm.value='';openProfile();setAuthMode('signin');}
- catch(e){sharedMessage('Couldn’t sign out. Please try again.',true);}finally{authBusy=false;button.disabled=false;continueButton.disabled=authMode==='signup'&&!loaded;}
+ if(authBusy||!active)return;authBusy=true;const button=document.querySelector('#change-profile'),main=document.querySelector('main'),profile=active;button.disabled=true;button.textContent='Saving…';main.inert=true;
+ try{await steps.flush(profile);await shared.flush(profile);await taskRequest(profile.token,'logout');profiles.profiles=profiles.profiles.filter(p=>p.id!==active.id);profiles.activeId=null;authenticated=false;active=null;write();emailInput.value='';nameInput.value='';passwordInput.value='';passwordConfirm.value='';openProfile();setAuthMode('signin');}
+ catch(e){sharedMessage('You’re still signed in. '+(e.message||'Couldn’t save your latest changes. Please try again.'),true);}finally{authBusy=false;main.inert=false;button.disabled=false;button.textContent='Sign out';continueButton.disabled=authMode==='signup'&&!loaded;}
 });
 function paintShared(){if(!active)return;
  const task=active.cloud?.tasks?.find(t=>t.taskId==='calendar'),step=active.cloud?.steps?.find(t=>t.taskId==='calendar'&&Number(t.step)===0);
@@ -59,7 +59,7 @@ function paintShared(){if(!active)return;
  document.querySelector('#reward-note').textContent=locked?'Your calendar is approved. You’ve earned $25.':status==='submitted'?'Calendar received. You’ll earn $25 once fomo approves it.':'Once fomo approves your calendar, you earn $25.';
  document.querySelector('#reload-progress').hidden=!active.cloud;steps.paint();
 }
-function sharedMessage(text,bad=false){document.querySelector('#shared-message').textContent=text;document.querySelector('#shared-message').classList.toggle('error',bad);saveStatus.textContent=bad?'Draft kept in this browser. Shared save needs attention.':text;}
+function sharedMessage(text,bad=false){document.querySelector('#shared-message').textContent=text;document.querySelector('#shared-message').classList.toggle('error',bad);saveStatus.textContent=bad?text+' Your draft is kept in this browser.':text;}
 const calendar=createCalendar({getProfile:()=>authenticated?active:null,save:persist,onProgress:paintShared,downloadShared:id=>shared.download(id)});
 const shared=createSharedTasks({taskIds:['calendar'],getProfile:()=>authenticated?active:null,write,onState:paintShared,onRestore:()=>{render();paintShared();},onMessage:sharedMessage});
 const steps=createStepEditors({getProfile:()=>authenticated?active:null,write,shared,onChange:paintShared});
