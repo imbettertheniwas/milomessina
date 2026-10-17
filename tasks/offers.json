@@ -179,17 +179,17 @@
       }
     ],
     "perk": {
-      "label": "YOUR SOCIAL CALENDAR",
-      "title": "Put your events on fomo’s radar.",
-      "description": "Upload your chapter’s social calendar or add event dates manually. Keep your upcoming parties and events together in one place.",
+      "label": "$25 FOR YOUR SOCIAL CALENDAR",
+      "title": "Upload your social calendar. Get $25.",
+      "description": "Share your chapter’s upcoming parties and events. Once fomo approves your calendar, you earn $25.",
       "highlights": [
-        "Drop a calendar file",
-        "Or enter dates manually",
-        "Saved with your profile"
+        "Upload a file or add dates",
+        "Reviewed by fomo",
+        "$25 once approved"
       ],
       "pitch": "Here’s our chapter’s upcoming social calendar so fomo can see what we have planned.",
       "taskWins": [
-        "Keep your upcoming dates ready to share with fomo."
+        "Earn $25 when fomo approves your social calendar."
       ]
     },
     "companyId": "fomo"

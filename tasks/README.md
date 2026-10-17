@@ -1,3 +1,11 @@
+## Current participant experience (October 17, 2026)
+
+The /tasks page starts with only the social calendar task. The offer is $25 after fomo approval. There is one calendar upload, optional manual event entry and notes, and one submit button. Account access goes straight to the task, with no intro animation, task filters, LinkedIn preview, referral sidebar, or five-task bonus panel.
+
+Edit template.html and run node tasks/build.mjs to regenerate index.html. The historical offers and admin review workflows remain available in their existing source files. Participant saves are scoped to calendar; older task records are preserved. Submissions still use the existing calendar step review API. The $25 is an offer communicated on the page; this change does not initiate transfers or add automatic payouts.
+
+The documentation below describes the retained original workflows and backend.
+
 # Campus tasks
 
 Password-protected member workspace: `/tasks`. Operator view: `/internal#/tasks` (Milo and Arya).
