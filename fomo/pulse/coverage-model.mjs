@@ -12,3 +12,5 @@ export function compareCoverage(data,index,chapters){
  return {missing:data.schools.filter(s=>!represented.has(s[0])),represented:represented.size,unknown:[...unknown].sort(),outside:[...outside].sort()};
 }
 export function filterCoverage(rows,{query='',state='all',level='all'}={}){const q=query.trim().toLowerCase();return rows.filter(s=>(state==='all'||s[3]===state)&&(level==='all'||String(s[4])===level)&&(!q||`${s[1]} ${s[2]} ${s[3]}`.toLowerCase().includes(q)));}
+export function greekLifeEvidence(data,id){return (data.greekLife?.schools?.[id]||[]).filter(e=>data.greekLife?.sources?.[e.source]?.url);}
+export function greekLifeLabel(data,id){return greekLifeEvidence(data,id).length?'Greek life verified':'Greek life not yet verified';}

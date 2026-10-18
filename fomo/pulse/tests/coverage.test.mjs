@@ -8,3 +8,15 @@ test('ambiguous directory aliases are not silently assigned',()=>{const d={schoo
 test('new registrations remove a school and branch campuses stay distinct',()=>{const before=compareCoverage(data,index,[]),after=compareCoverage(data,index,[{school:'University of Washington'}]);assert.equal(before.missing.length-after.missing.length,1);assert(!after.missing.some(s=>s[0]==='236948'));assert(after.missing.some(s=>s[0]==='377555'));});
 test('state, type, and search filters compose',()=>{const result=filterCoverage(data.schools,{state:'CA',level:'1',query:'Berkeley'});assert(result.length>0);assert(result.every(s=>s[3]==='CA'&&s[4]===1&&`${s[1]} ${s[2]}`.includes('Berkeley')));});
 test('unavailable chapter data cannot become zero represented schools',()=>{assert.throws(()=>compareCoverage(data,index,null));});
+
+test('Greek-life classifications require a known school and a traceable official source',()=>{
+ const ids=new Set(data.schools.map(s=>s[0]));assert.equal(data.greekLife.verifiedAt,'2026-10-18');assert(Object.keys(data.greekLife.schools).length>600);
+ for(const [id,evidence] of Object.entries(data.greekLife.schools)){assert(ids.has(id),id);assert(evidence.length);for(const e of evidence){assert(e.listedName);assert(['thesororitylife.com','sigep.org'].includes(new URL(data.greekLife.sources[e.source].url).hostname));}}
+});
+test('unverified schools remain unknown, never classified as having no Greek life',async()=>{
+ const {greekLifeEvidence,greekLifeLabel}=await import('../coverage-model.mjs');assert.deepEqual(greekLifeEvidence({},'123'),[]);assert.equal(greekLifeLabel({},'123'),'Greek life not yet verified');assert.equal(greekLifeLabel(data,'110662'),'Greek life verified');
+});
+test('Greek-life evidence does not change FOMO chapter coverage or borrow another campus evidence',async()=>{
+ const {greekLifeEvidence}=await import('../coverage-model.mjs'),copy={...data,greekLife:{sources:{test:{url:'https://sigep.org/chapters/'}},schools:{'236948':[{source:'test'}]}}};
+ assert.equal(greekLifeEvidence(copy,'377555').length,0);assert.equal(compareCoverage(copy,index,[]).missing.length,5994);assert.equal(compareCoverage(copy,index,[{school:'University of Washington'}]).missing.length,5993);
+});
