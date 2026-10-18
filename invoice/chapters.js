@@ -268,6 +268,39 @@ function project(lon, lat){
   return [(x - P.x0) * P.k + P.pad, (y - P.y0) * P.k + P.pad];
 }
 
+/* Label the largest mainland polygon, so islands do not pull state names offshore.
+   The map paths contain only M/L/Z commands in the same projected coordinates. */
+var STATE_LABEL_POINTS = {};
+MAP.states.forEach(function(state){
+  var largest = 0;
+  state.d.split("Z").forEach(function(ring){
+    var points = ring.match(/-?\d+(?:\.\d+)?/g) || [];
+    var area = 0, x = 0, y = 0;
+    for (var i = 0; i < points.length; i += 2) {
+      var j = (i + 2) % points.length;
+      var cross = Number(points[i]) * Number(points[j+1]) - Number(points[j]) * Number(points[i+1]);
+      area += cross;
+      x += (Number(points[i]) + Number(points[j])) * cross;
+      y += (Number(points[i+1]) + Number(points[j+1])) * cross;
+    }
+    if (Math.abs(area) > largest) {
+      largest = Math.abs(area);
+      STATE_LABEL_POINTS[state.n] = [x / (3 * area), y / (3 * area)];
+    }
+  });
+});
+function emptyStateLabels(onStates){
+  var compact = ["VT","NH","MA","RI","CT","NJ","DE","MD","DC"];
+  return MAP.states.filter(function(state){return !onStates[ST_CODE[state.n]];}).map(function(state){
+    var point = STATE_LABEL_POINTS[state.n], code = ST_CODE[state.n];
+    if (!point) return "";
+    var lines = compact.indexOf(code) > -1 ? [code] : state.n.split(" ");
+    return '<text class="empty-state-label" x="' + point[0].toFixed(1) + '" y="' + point[1].toFixed(1) +
+      '" aria-label="' + esc(state.n + ' — no chapters yet') + '"><title>' + esc(state.n + ' — no chapters yet') + '</title>' +
+      lines.map(function(line,i){return '<tspan x="' + point[0].toFixed(1) + '" dy="' + (i ? 14 : -(lines.length-1)*7) + '">' + esc(line) + '</tspan>';}).join("") + '</text>';
+  }).join("");
+}
+
 /* ---------- reading the feed ----------
 
    A chapter is a name at a school. The feed is a list of
@@ -350,7 +383,7 @@ function markup(prefix){
   <div class="stats" id="${p}stats"></div>
   <div class="cx-command"><nav class="cx-tabs" aria-label="Chapter views" id="${p}views"><button type="button" data-view="explore" aria-pressed="true">◈ Explore</button><button type="button" data-view="directory" aria-pressed="false">☷ Directory</button><button type="button" data-view="insights" aria-pressed="false">↗ Insights</button></nav><span class="cx-sync">Connecting to FOMO Campus</span></div>
   <div class="tools cx-filters"><input type="search" id="${p}q" placeholder="Find a chapter, campus or state…" aria-label="Search houses" autocomplete="off"><select id="${p}state-filter" aria-label="Filter by state or province"><option value="">All states & provinces</option></select><select id="${p}type-filter" aria-label="Filter by chapter type"><option value="">All chapter types</option></select><button type="button" id="${p}clear">Reset filters</button><div class="seg" id="${p}seg" role="group" aria-label="Filter by progress"></div></div>
-  <section data-pane="explore" class="cx-explore"><div class="panel cx-map-panel"><div class="panel-h"><h2>The campus atlas</h2><span class="note" id="${p}map-note"></span><button type="button" id="${p}depth" aria-pressed="true">3D on</button></div><div class="cx-map-stage"><span class="cx-map-label">NORTH AMERICA · CAMPUS LOCATIONS</span><div class="mapwrap depth" id="${p}mapwrap"></div></div><div class="mapbar"><span class="zoom"><button type="button" id="${p}z-out" aria-label="Zoom out">−</button><button type="button" id="${p}z-in" aria-label="Zoom in">+</button><button type="button" id="${p}z-reset" aria-label="Reset the map">↺</button></span><span class="selchip" id="${p}selchip"><b id="${p}selchip-txt"></b><button type="button" id="${p}selchip-x" aria-label="Clear the selection">×</button></span><span class="maphint">Pick a chapter · drag to pan · zoom to explore</span></div><div class="maplegend"><span class="k"><i></i> Not started</span><span class="k"><i class="prog"></i> Joining</span><span class="k"><i class="goal"></i> At target</span><span class="k" id="${p}unmapped"></span></div></div><aside class="panel cx-inspector" id="${p}inspector" aria-live="polite"></aside></section>
+  <section data-pane="explore" class="cx-explore"><div class="panel cx-map-panel"><div class="panel-h"><h2>The campus atlas</h2><span class="note" id="${p}map-note"></span><button type="button" id="${p}depth" aria-pressed="true">3D on</button></div><div class="cx-map-stage"><span class="cx-map-label">NORTH AMERICA · CAMPUS LOCATIONS</span><div class="mapwrap depth" id="${p}mapwrap"></div></div><div class="mapbar"><span class="zoom"><button type="button" id="${p}z-out" aria-label="Zoom out">−</button><button type="button" id="${p}z-in" aria-label="Zoom in">+</button><button type="button" id="${p}z-reset" aria-label="Reset the map">↺</button></span><span class="selchip" id="${p}selchip"><b id="${p}selchip-txt"></b><button type="button" id="${p}selchip-x" aria-label="Clear the selection">×</button></span><span class="maphint">Pick a chapter · drag to pan · zoom to explore</span></div><div class="maplegend"><span class="k"><i></i> Not started</span><span class="k"><i class="prog"></i> Joining</span><span class="k"><i class="goal"></i> At target</span><span class="k">Labeled states have no chapters yet</span><span class="k" id="${p}unmapped"></span></div></div><aside class="panel cx-inspector" id="${p}inspector" aria-live="polite"></aside></section>
   <section data-pane="explore" class="cx-campus-section"><div class="cx-section-heading"><h2>Campus collection</h2><span id="${p}card-note"></span></div><div class="cx-cards" id="${p}cards"></div><div class="tbl-foot" id="${p}cards-more"></div></section>
   <section data-pane="directory" hidden class="panel"><div class="panel-h"><h2>Chapter directory</h2><span class="note" id="${p}tbl-note"></span></div><div class="tbl-scroll"><table class="houses"><thead><tr><th data-sort="name"><button type="button">Chapter</button></th><th data-sort="pct" class="prog-h"><button type="button">Progress</button></th><th data-sort="joined" class="r"><button type="button">Joined</button></th><th data-sort="size" class="r hide-s"><button type="button">Roster</button></th><th data-sort="age" class="r hide-s"><button type="button">Age</button></th><th class="flags hide-s"></th></tr></thead><tbody id="${p}tbody"></tbody></table></div><div class="empty" id="${p}tbl-empty" hidden>Loading chapters…</div><div class="tbl-foot" id="${p}tbl-foot"></div></section>
   <section data-pane="insights" hidden><div class="cx-section-heading"><h2>Network overview</h2><span>All chapters · filters apply to Explore & Directory</span></div><div class="calls" id="${p}findings"></div><div class="two"><div class="panel"><div class="panel-h"><h2>By organization</h2><span class="note" id="${p}frat-note"></span></div><div class="rank" id="${p}frats"></div></div><div class="panel"><div class="panel-h"><h2>By region & state</h2><span class="note" id="${p}state-note"></span></div><div class="rank" id="${p}states"></div></div></div><p class="cx-method">One chapter per organization and campus. Repeat registrations are grouped; the furthest-along registration supplies both joined and roster counts. Targets are 80% of that roster. Source records are preserved.</p></section>`;
@@ -444,7 +477,7 @@ function mount(opts){
     var stPaths = MAP.states.map(function(s){
       var code = ST_CODE[s.n] || "";
       return '<path class="st' + (onStates[code] ? " on" : "") + '" d="' + s.d + '"' +
-             (onStates[code] ? ' data-state="' + code + '"' : "") + '></path>';
+             (onStates[code] ? ' data-state="' + code + '"' : "") + '><title>' + esc(s.n + (onStates[code] ? "" : " — no chapters yet")) + '</title></path>';
     }).join("");
 
     var keys = Object.keys(bySchool).sort(function(a,b){ return bySchool[b].size - bySchool[a].size; });
@@ -482,7 +515,7 @@ function mount(opts){
 
     el("mapwrap").innerHTML = '<svg class="usmap" viewBox="0 0 ' + MAP.width + ' ' + MAP.height +
       '" role="group" aria-label="Interactive chapter map of the United States and southern Ontario">' +
-      '<g class="mapg"><g class="states">' + stPaths + '</g><g class="marks">' + marks + '</g></g></svg>';
+      '<g class="mapg"><g class="states">' + stPaths + '</g><g class="marks">' + marks + '</g><g class="empty-state-labels">' + emptyStateLabels(onStates) + '</g></g></svg>';
     bindMap();
     applySelection();
     var goalSchools = keys.filter(function(k){ return bySchool[k].atGoal; }).length;

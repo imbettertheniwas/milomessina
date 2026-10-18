@@ -286,6 +286,7 @@
 .chapters .cx-map-stage svg.usmap{display:block;width:100%;height:auto;max-height:410px;touch-action:pan-y}
 .chapters .cx-map-panel .st{fill:var(--atlas-land);stroke:var(--atlas-coast);stroke-width:1}
 .chapters .cx-map-panel .st.on{fill:var(--atlas-land-active)}
+.chapters .empty-state-label{fill:var(--atlas-muted);font:600 13px var(--sans, sans-serif);text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:var(--atlas-land);stroke-width:3px;stroke-linejoin:round;pointer-events:none;user-select:none}
 .chapters .cx-map-panel .dot{fill:var(--atlas-idle);stroke:#bec8df;stroke-width:1.4;animation:none}
 .chapters .cx-map-panel .dot.prog{fill:var(--atlas-progress);stroke:#e2d9ff}
 .chapters .cx-map-panel .dot.goal{fill:var(--atlas-goal);stroke:#d2ffec}
