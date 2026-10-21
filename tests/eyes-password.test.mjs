@@ -5,8 +5,15 @@ import middleware,{config,eyesAuthorized} from '../middleware.js';
 const basic=(user,pass)=>'Basic '+btoa(`${user}:${pass}`);
 const req=auth=>new Request('https://milomessina.com/eyes',{headers:auth?{authorization:auth}:{}});
 
-test('eyes gate covers the page route and its assets',()=>{
-  assert.deepEqual(config.matcher,['/eyes','/eyes/','/fomo/pulse/:path*']);
+// The matcher sends every path through middleware; the function decides what is gated.
+test('eyes gate covers the page route and its assets',async()=>{
+  assert.deepEqual(config.matcher,['/:path*']);
+  for(const path of ['/eyes','/eyes/','/EYES','/fomo/pulse','/fomo/pulse/','/fomo/pulse/eyes.js','/fomo/pulse/data/school-coverage.json','//fomo//pulse/calls.json']){
+    const res=await middleware(new Request('https://milomessina.com'+path));
+    assert.equal(res?.status,401,path);
+    assert.match(res.headers.get('www-authenticate'),/^Basic realm=/,path);
+  }
+  for(const path of ['/','/eyesore','/fomo/pulsed','/hqvisitform/'])assert.equal(await middleware(new Request('https://milomessina.com'+path)),undefined,path);
 });
 
 // The password itself is not committed; run with EYES_PASSWORD=... to check the accept path.
