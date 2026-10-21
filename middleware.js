@@ -3,7 +3,7 @@ const encoder = new TextEncoder();
 const COOKIE = '__Host-campuswars_access';
 const EYES_COOKIE = '__Host-eyes_feed_access';
 const SESSION_SECONDS = 8 * 60 * 60;
-const PRIVATE_HEADERS = {'Cache-Control':'private, no-store, max-age=0','CDN-Cache-Control':'no-store','Vercel-CDN-Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow, noarchive','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Cookie'};
+const PRIVATE_HEADERS = {'Cache-Control':'private, no-store, max-age=0','CDN-Cache-Control':'no-store','Vercel-CDN-Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow, noarchive','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Vary':'Cookie'};
 async function digest(value){return new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(value)));}
 async function passwordMatches(value,env=process.env){if(!env.CAMPUSWARS_ACCESS_PASSWORD||typeof value!=='string'||value.length>256)return false;const[a,b]=await Promise.all([digest(value),digest(env.CAMPUSWARS_ACCESS_PASSWORD)]);let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0;}
 async function key(env){if(!env.CAMPUSWARS_SESSION_SECRET||!env.CAMPUSWARS_ACCESS_PASSWORD)return null;return crypto.subtle.importKey('raw',encoder.encode(env.CAMPUSWARS_SESSION_SECRET+'\n'+env.CAMPUSWARS_ACCESS_PASSWORD),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}
@@ -26,7 +26,7 @@ if(path==='/eyes'||path==='/eyes/'||path==='/fomo/pulse'||path.startsWith('/fomo
 const page=path==='/fomo/campuswars'||path.startsWith('/fomo/campuswars/');const api=/^\/api\/campuswars(?:\/|\.|$)/.test(path);if(!page&&!api)return;
 if(!process.env.CAMPUSWARS_ACCESS_PASSWORD||!process.env.CAMPUSWARS_SESSION_SECRET)return new Response('Private access is temporarily unavailable.',{status:503,headers:PRIVATE_HEADERS});
 if(path==='/fomo/campuswars/_unlock'&&request.method==='POST'){
-const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)return new Response('Forbidden',{status:403,headers:PRIVATE_HEADERS});
+const origin=request.headers.get('origin');if(request.headers.get('sec-fetch-site')==='cross-site'||(origin&&origin!=='null'&&origin!==new URL(request.url).origin&&!['https://milomessina.com','https://www.milomessina.com'].includes(origin)))return new Response('Forbidden',{status:403,headers:PRIVATE_HEADERS});
 if(!request.headers.get('content-type')?.startsWith('application/x-www-form-urlencoded'))return new Response('Unsupported form',{status:415,headers:PRIVATE_HEADERS});
 if(Number(request.headers.get('content-length'))>1024)return new Response('Form too large',{status:413,headers:PRIVATE_HEADERS});const body=await request.text();if(body.length>1024)return new Response('Form too large',{status:413,headers:PRIVATE_HEADERS});
 if(!await passwordMatches(new URLSearchParams(body).get('passcode')))return locked('Incorrect passcode. Try again.');
