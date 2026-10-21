@@ -31,5 +31,8 @@ if(!request.headers.get('content-type')?.startsWith('application/x-www-form-urle
 if(Number(request.headers.get('content-length'))>1024)return new Response('Form too large',{status:413,headers:PRIVATE_HEADERS});const body=await request.text();if(body.length>1024)return new Response('Form too large',{status:413,headers:PRIVATE_HEADERS});
 if(!await passwordMatches(new URLSearchParams(body).get('passcode')))return locked('Incorrect passcode. Try again.');
 return new Response(null,{status:303,headers:{...PRIVATE_HEADERS,'Location':'/fomo/campuswars/','Set-Cookie':sessionCookie(await createSession())}});}
-const cookie=request.headers.get('cookie');if(api?await feedAuthorized(cookie):await sessionAuthorized(cookie))return new Response(null,{headers:{...PRIVATE_HEADERS,'x-middleware-next':'1'}});
+// Eyes imports these graphics modules before it can start its data feed.
+// Share only these exact assets with signed Eyes sessions, never the private page.
+const eyesAsset=['/fomo/campuswars/vendor/three.module.min.js','/fomo/campuswars/vendor/three.core.min.js','/fomo/campuswars/village-floor-logo.js','/fomo/campuswars/village-brand.js'].includes(path);
+const cookie=request.headers.get('cookie');if(api||eyesAsset?await feedAuthorized(cookie):await sessionAuthorized(cookie))return new Response(null,{headers:{...PRIVATE_HEADERS,'x-middleware-next':'1'}});
 if(api)return new Response('{"error":"Passcode required"}',{status:401,headers:{...PRIVATE_HEADERS,'Content-Type':'application/json'}});return locked();}
