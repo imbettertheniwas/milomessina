@@ -2,6 +2,10 @@ import {randomBytes} from 'node:crypto';
 import {uuid,digest,required,fail,text,moderate,newSession,limit,verifyAppleToken,exchangeCode,encrypted,revokeApple,safeEqual} from './security.mjs';
 import {courts,readAvailability,FRESH_MS,liveSources,laDate} from './availability.mjs';
 import {hasPlus,verifiedTransaction,syncTransaction,verifyNotification} from './billing.mjs';
+import {socialRoute} from './social.mjs';
+import {identityRoute} from './identity.mjs';
+import {eventsRoute} from './events.mjs';
+import {coachRoute,coachAvailable,generateCoaching} from './coach.mjs';
 
 const TERMS='2026-10-22';
 const profile=u=>({id:u.id,name:u.name,level:Number(u.level),area:u.area});
@@ -20,7 +24,7 @@ async function conversation(q,id,userID) {
 function checkWindow(body) {
   required(Number.isSafeInteger(body.start)&&Number.isSafeInteger(body.end)&&body.start>Date.now()&&body.start<Date.now()+31*86400000&&body.end-body.start>=1800000&&body.end-body.start<=4*3600000,400,'Choose a future playing window between 30 minutes and 4 hours, within the next month.');
 }
-export function application(db,{env=process.env,verifyIdentity=verifyAppleToken,exchange=exchangeCode,revoke=revokeApple,verifyPurchase=verifiedTransaction}={}) {
+export function application(db,{env=process.env,verifyIdentity=verifyAppleToken,exchange=exchangeCode,revoke=revokeApple,verifyPurchase=verifiedTransaction,generate=generateCoaching}={}) {
   const q=db.query;
   const configured=()=>!!(env.APPLE_SIGNIN_KEY_PATH&&env.APPLE_TEAM_ID&&env.APPLE_SIGNIN_KEY_ID&&env.APPLE_BUNDLE_ID&&env.TOKEN_ENCRYPTION_KEY);
   async function readBody(req) {
@@ -34,7 +38,7 @@ export function application(db,{env=process.env,verifyIdentity=verifyAppleToken,
     if(method==='GET'&&path==='/v1/config') {
       const recent=await q('SELECT court_id FROM snapshots WHERE state=$1 AND checked_at>$2',['live',Date.now()-FRESH_MS]);
       const monitored=[...new Set(recent.map(r=>r.court_id))].filter(id=>(env.LIVE_SOURCES||'').split(',').includes(id));
-      return {termsVersion:TERMS,signInAvailable:configured(),monitoredCourtIDs:monitored,salesEnabled:env.ENABLE_SALES==='true'&&configured()&&!!env.APPLE_ROOT_CERT_PATHS&&!!env.APPLE_APP_ID&&!!env.APNS_KEY_PATH&&!!env.APNS_KEY_ID&&monitored.length>0&&!!env.PRIVACY_URL&&!!env.TERMS_URL&&!!env.SUPPORT_EMAIL,privacyURL:env.PRIVACY_URL||null,termsURL:env.TERMS_URL||null,supportEmail:env.SUPPORT_EMAIL||null};
+      return {termsVersion:TERMS,signInAvailable:configured(),coachAvailable:coachAvailable(env),monitoredCourtIDs:monitored,salesEnabled:env.ENABLE_SALES==='true'&&configured()&&!!env.APPLE_ROOT_CERT_PATHS&&!!env.APPLE_APP_ID&&!!env.APNS_KEY_PATH&&!!env.APNS_KEY_ID&&coachAvailable(env)&&!!env.PRIVACY_URL&&!!env.TERMS_URL&&!!env.SUPPORT_EMAIL,privacyURL:env.PRIVACY_URL||null,termsURL:env.TERMS_URL||null,supportEmail:env.SUPPORT_EMAIL||null};
     }
     if(method==='GET'&&path==='/v1/courts')return courts;
     if(method==='GET'&&path==='/v1/availability')return readAvailability(q,url.searchParams.get('courtID'),url.searchParams.get('date'));
@@ -93,10 +97,13 @@ export function application(db,{env=process.env,verifyIdentity=verifyAppleToken,
     required(user,401,'Your session expired. Please sign in again.');
     const me=user.id;
     if(method!=='GET')await limit(q,`write:${me}`,40);
+    for(const handler of [identityRoute,eventsRoute,coachRoute]) { const result=await handler({db,user,path,method,body,url,blocked,event,env,generate});if(result!==undefined)return result; }
+    const social=await socialRoute({db,user,path,method,body,url,blocked,event});
+    if(social!==undefined)return social;
     if(path==='/v1/me'&&method==='GET')return {...profile(user),plus:await hasPlus(q,me)};
     if(path==='/v1/me'&&method==='PATCH') {
       const name=moderate(text(body.name,1,40,'Name')),area=text(body.area,1,40,'Area');
-      required(['Westside','Beverly Hills','Central LA','The Valley'].includes(area)&&Number.isFinite(body.level)&&body.level>=2&&body.level<=5.5,400,'Choose a valid area and playing level.');
+      required(Number.isFinite(body.level)&&body.level>=2&&body.level<=5.5,400,'Choose a valid area and playing level.');
       await q('UPDATE users SET name=$1,level=$2,area=$3 WHERE id=$4',[name,body.level,area,me]);return {...profile(user),name,level:body.level,area};
     }
     if(path==='/v1/me'&&method==='DELETE') {
@@ -197,6 +204,8 @@ export function application(db,{env=process.env,verifyIdentity=verifyAppleToken,
       return db.transaction(async tx=>{
         await tx('INSERT INTO blocks(user_id,blocked_id,created_at) VALUES($1,$2,$3) ON CONFLICT(user_id,blocked_id) DO NOTHING',[me,other.id,Date.now()]);
         await tx('UPDATE conversations SET active=0 WHERE (host_id=$1 AND guest_id=$2) OR (host_id=$2 AND guest_id=$1)',[me,other.id]);
+        await tx('DELETE FROM event_guests WHERE (user_id=$1 AND event_id IN (SELECT id FROM tennis_events WHERE host_id=$2)) OR (user_id=$2 AND event_id IN (SELECT id FROM tennis_events WHERE host_id=$1))',[me,other.id]);
+        await tx('DELETE FROM friendships WHERE (low_id=$1 AND high_id=$2) OR (low_id=$2 AND high_id=$1)',[me,other.id]);
         return {ok:true};
       });
     }

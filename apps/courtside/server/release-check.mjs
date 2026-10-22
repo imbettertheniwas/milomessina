@@ -18,6 +18,9 @@ export function releaseChecks(env=process.env) {
     add(name,readable);
   }
   add('LIVE_SOURCES configured',!!env.LIVE_SOURCES);
+  add('OPENAI_API_KEY configured',!!env.OPENAI_API_KEY);
+  add('OPENAI_MODEL selected',!!env.OPENAI_MODEL);
+  add('ENABLE_COACH tested and enabled',env.ENABLE_COACH==='true');
   return checks;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href) {
