@@ -16,6 +16,17 @@ test('eyes gate covers the page route and its assets',async()=>{
   for(const path of ['/','/eyesore','/fomo/pulsed','/hqvisitform/'])assert.equal(await middleware(new Request('https://milomessina.com'+path)),undefined,path);
 });
 
+// Campus wars is taken down: every page path is gone, whatever cookie is sent.
+test('campus wars page is not served',async()=>{
+  for(const path of ['/fomo/campuswars','/fomo/campuswars/','/fomo/campuswars/index.html','/FOMO/CampusWars/site.js','/fomo/campuswars/assets/aeonik-700.ttf']){
+    const res=await middleware(new Request('https://milomessina.com'+path,{headers:{cookie:'__Host-campuswars_access=x'}}));
+    assert.equal(res?.status,404,path);
+  }
+  const unlock=await middleware(new Request('https://milomessina.com/fomo/campuswars/_unlock',{method:'POST',body:'passcode=x',headers:{'content-type':'application/x-www-form-urlencoded'}}));
+  assert.equal(unlock.status,404);
+  assert.notEqual((await middleware(new Request('https://milomessina.com/fomo/campuswars/vendor/three.module.min.js')))?.status,404);
+});
+
 // The password itself is not committed; run with EYES_PASSWORD=... to check the accept path.
 const password=process.env.EYES_PASSWORD;
 test('eyes gate accepts the password with any username',{skip:!password&&'EYES_PASSWORD not set'},async()=>{
