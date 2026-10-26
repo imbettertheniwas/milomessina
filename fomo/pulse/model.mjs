@@ -28,7 +28,7 @@ export function startFeed({onData,onStatus,fetchImpl=fetch,documentRef=document,
  let previous=null,latest=0,timer,controller,running=false,stopped=false,failures=0;
  async function refresh(){
   if(stopped||running||documentRef.hidden)return;
-  cancel(timer);running=true;controller=new AbortController();const timeout=schedule(()=>controller.abort(),12000);
+  cancel(timer);running=true;controller=new AbortController();const timeout=schedule(()=>controller.abort(),28000);
   try{
    const r=await fetchImpl('/api/campuswars/',{signal:controller.signal});if(!r.ok)throw Error('Feed unavailable');
    const s=validate(await r.json());const at=Date.parse(s.updatedAt);

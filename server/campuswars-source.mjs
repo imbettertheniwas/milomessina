@@ -66,7 +66,7 @@ export function parseChapterAdmin(html) {
 
 // Bound decoded bytes too: Content-Length may be absent or describe compressed
 // bytes. Never buffer an unbounded admin export in a public request handler.
-export async function readChapterSource(response,maxBytes=8*1024*1024){
+export async function readChapterSource(response,maxBytes=32*1024*1024){
   const tooLarge=()=>new Error('Chapter source exceeds size limit');
   if(Number(response.headers?.get('content-length'))>maxBytes){await response.body?.cancel();throw tooLarge();}
   if(!response.body?.getReader){
@@ -88,9 +88,20 @@ export async function readChapterSource(response,maxBytes=8*1024*1024){
 
 export async function fetchChapterSnapshot({password, username='village', fetchImpl=fetch, now=()=>new Date()}={}) {
   if (!password) throw new Error('Chapter source is not configured');
+  const authorization = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+  // Both exports are independent, so read them together: a refresh costs the
+  // slower of the two, not their sum. The admin table is required; history is optional.
+  const history = (async () => {
+    const members=await fetchImpl('https://fomocampus.com/admin/members.csv',{
+      headers:{Authorization:authorization,Accept:'text/csv','Cache-Control':'no-cache'},
+      redirect:'error',signal:AbortSignal.timeout(15000),cache:'no-store'
+    });
+    if(!members.ok){await members.body?.cancel();throw Error('Member history unavailable');}
+    return parseMemberDaily(await readChapterSource(members),now().getTime());
+  })().catch(()=>({available:false}));/* Keep the live chapter feed usable if the optional history export fails. */
   const response = await fetchImpl('https://fomocampus.com/admin/', {
-    headers:{Authorization:`Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`, Accept:'text/html', 'Cache-Control':'no-cache'},
-    redirect:'error', signal:AbortSignal.timeout(8000), cache:'no-store'
+    headers:{Authorization:authorization, Accept:'text/html', 'Cache-Control':'no-cache'},
+    redirect:'error', signal:AbortSignal.timeout(20000), cache:'no-store'
   });
   if (!response.ok){
     await response.body?.cancel();
@@ -98,15 +109,7 @@ export async function fetchChapterSnapshot({password, username='village', fetchI
     throw new Error('Chapter source unavailable');
   }
   const chapters = parseChapterAdmin(await readChapterSource(response));
-  let memberHistory={available:false};
-  try{
-    const members=await fetchImpl('https://fomocampus.com/admin/members.csv',{
-      headers:{Authorization:`Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,Accept:'text/csv','Cache-Control':'no-cache'},
-      redirect:'error',signal:AbortSignal.timeout(3000),cache:'no-store'
-    });
-    if(!members.ok){await members.body?.cancel();throw Error('Member history unavailable');}
-    memberHistory=parseMemberDaily(await readChapterSource(members),now().getTime());
-  }catch{/* Keep the live chapter feed usable if the optional history export fails. */}
+  const memberHistory = await history;
   return {source:'Chapter registrations', live:true, updatedAt:now().toISOString(), chapters,memberHistory};
 }
 

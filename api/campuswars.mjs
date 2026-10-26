@@ -7,12 +7,13 @@ const FRESH_MS=30000, STALE_MS=300000, RETRY_MS=5000, MAX_RETRY_MS=60000;
 export function createChapterHandler({load=fetchChapterSnapshot,now=Date.now,env=process.env}={}){
  let latest=null,pending=null,retryAt=0,failures=0,lastCode='SOURCE_CONNECTION';
  function refresh(){
+  const started=now();
   pending ??= Promise.resolve().then(()=>load({password:env.CAMPUSWARS_ADMIN_PASSWORD,username:env.CAMPUSWARS_ADMIN_USERNAME||'village'})).then(snapshot=>{
    snapshot=recordArrivalHistory(snapshot,latest?.snapshot);
    const body=JSON.stringify(snapshot);
    latest={snapshot,body,etag:'W/"'+createHash('sha256').update(body).digest('base64url')+'"',at:now()};
-   failures=0;retryAt=0;
-  }).catch(error=>{lastCode=chapterSourceErrorCode(error);retryAt=now()+Math.min(MAX_RETRY_MS,RETRY_MS*2**Math.min(failures++,4));}).finally(()=>{pending=null;});
+   failures=0;retryAt=0;console.log('Chapter feed refreshed',now()-started+'ms',body.length+'B');
+  }).catch(error=>{lastCode=chapterSourceErrorCode(error);console.warn('Chapter feed refresh failed',lastCode,now()-started+'ms');retryAt=now()+Math.min(MAX_RETRY_MS,RETRY_MS*2**Math.min(failures++,4));}).finally(()=>{pending=null;});
   return pending;
  }
  return async function handler(req,res){

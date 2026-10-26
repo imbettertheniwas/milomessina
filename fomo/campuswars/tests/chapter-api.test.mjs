@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createChapterHandler} from '../../../api/campuswars.mjs';
-import {readChapterSource,chapterSourceErrorCode,parseChapterAdmin} from '../../../server/campuswars-source.mjs';
+import {readChapterSource,chapterSourceErrorCode,parseChapterAdmin,fetchChapterSnapshot} from '../../../server/campuswars-source.mjs';
 
 const env={CAMPUSWARS_ADMIN_PASSWORD:'test-only'};
 const snapshot=joined=>({live:true,source:'Chapter registrations',updatedAt:'2026-09-13T12:00:00Z',chapters:[{id:'test-chapter',joined}]});
@@ -82,4 +82,15 @@ test('a 1,000-school source preserves distinct identities and excludes private c
   const html=`<table><tr>${['Chapter','Who','Contact','Progress','Best','Registered','Link'].map(h=>`<th>${h}</th>`).join('')}</tr>${rows}</table>`;
   const chapters=parseChapterAdmin(html);assert.equal(chapters.length,1000);assert.equal(new Set(chapters.map(c=>c.id)).size,1000);
   assert.equal(chapters.reduce((sum,c)=>sum+c.joined,0),50000);assert(!JSON.stringify(chapters).includes('PRIVATE'));
+});
+
+test('a refresh requests the admin table and member history together; a failed history keeps the feed live',async()=>{
+  const html=`<table><tr>${['Chapter','Who','Contact','Progress','Registered','Link'].map(h=>`<th>${h}</th>`).join('')}</tr><tr><td><div class="ch">Alpha Beta</div><div class="sc">School · Fraternity</div></td><td>x</td><td>x</td><td><span class="prog">5 / 8</span>10 actives</td><td>Sep 13, 2026</td><td><button data-del="00000000-abcd-abcd-abcd-123456789012">Delete</button></td></tr></table>`;
+  const started=[];let release;const hold=new Promise(r=>release=r);
+  const fetchImpl=async url=>{started.push(url);if(url.endsWith('members.csv')){await hold;return new Response('',{status:500});}return new Response(html);};
+  const pending=fetchChapterSnapshot({password:'test-only',fetchImpl});
+  await new Promise(r=>setTimeout(r,0));
+  assert.deepEqual(started.sort(),['https://fomocampus.com/admin/','https://fomocampus.com/admin/members.csv']);
+  release();const result=await pending;
+  assert.equal(result.chapters.length,1);assert.deepEqual(result.memberHistory,{available:false});
 });
