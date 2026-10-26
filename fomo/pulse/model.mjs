@@ -8,7 +8,7 @@ export function validate(value){
     if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!['name','school','type','letters','registered'].every(k=>typeof c[k]==='string'&&c[k].length>0)||!/^\d{4}-\d{2}-\d{2}$/.test(c.registered)||!Number.isFinite(Date.parse(c.registered))||!Number.isSafeInteger(c.joined)||c.joined<0||!Number.isSafeInteger(c.active)||c.active<=0)throw Error('Invalid chapter');
     ids.add(c.id);return {id:c.id,name:c.name,school:c.school,shortSchool:c.shortSchool||c.school,type:c.type,letters:c.letters,registered:c.registered,joined:c.joined,active:c.active};
   });
-  return {chapters,updatedAt:value.updatedAt,stale:value.stale===true,memberHistory:validateMemberHistory(value.memberHistory)};
+  return {chapters,updatedAt:value.updatedAt,stale:value.stale===true,refreshing:value.refreshing===true,memberHistory:validateMemberHistory(value.memberHistory)};
 }
 export function summarize(chapters){
  const joined=chapters.reduce((s,c)=>s+c.joined,0),active=chapters.reduce((s,c)=>s+c.active,0);
@@ -25,10 +25,10 @@ export function arrivals(previous,next){
 }
 export function hash(str){let h=2166136261;for(const c of str){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
 export function startFeed({onData,onStatus,fetchImpl=fetch,documentRef=document,interval=30000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}){
- let previous=null,latest=0,timer,controller,running=false,stopped=false,failures=0;
+ let previous=null,latest=0,timer,controller,running=false,stopped=false,failures=0,soon=false;
  async function refresh(){
   if(stopped||running||documentRef.hidden)return;
-  cancel(timer);running=true;controller=new AbortController();const timeout=schedule(()=>controller.abort(),28000);
+  cancel(timer);running=true;soon=false;controller=new AbortController();const timeout=schedule(()=>controller.abort(),28000);
   try{
    const r=await fetchImpl('/api/campuswars/',{signal:controller.signal});if(!r.ok)throw Error('Feed unavailable');
    const s=validate(await r.json());const at=Date.parse(s.updatedAt);
@@ -37,9 +37,9 @@ export function startFeed({onData,onStatus,fetchImpl=fetch,documentRef=document,
    const live=!s.stale&&now()-at<=90000;
    const events=live?arrivals(previous,s.chapters):[];
    try{onData(s,events);}catch(error){console.error('PULSE rendering failed',error);throw error;}if(live)previous=s.chapters;
-   latest=at;failures=live?0:failures+1;onStatus({live,updatedAt:s.updatedAt});
+   latest=at;failures=live||s.refreshing?0:failures+1;soon=!live&&!!s.refreshing;onStatus({live,updatedAt:s.updatedAt});
   }catch{if(!stopped&&!documentRef.hidden){failures++;onStatus({live:false});}}
-  finally{cancel(timeout);running=false;if(!stopped&&!documentRef.hidden)timer=schedule(refresh,Math.min(300000,interval*2**Math.min(failures,3)));}
+  finally{cancel(timeout);running=false;if(!stopped&&!documentRef.hidden)timer=schedule(refresh,soon?10000:Math.min(300000,interval*2**Math.min(failures,3)));}
  }
  const visibility=()=>{cancel(timer);if(documentRef.hidden)controller?.abort();else refresh();};
  documentRef.addEventListener('visibilitychange',visibility);refresh();

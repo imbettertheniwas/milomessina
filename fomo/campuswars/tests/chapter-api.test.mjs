@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createChapterHandler} from '../../../api/campuswars.mjs';
+import {createSession} from '../../../server/campuswars-access.mjs';
 import {readChapterSource,chapterSourceErrorCode,parseChapterAdmin,fetchChapterSnapshot} from '../../../server/campuswars-source.mjs';
 
 const env={CAMPUSWARS_ADMIN_PASSWORD:'test-only'};
@@ -93,4 +94,19 @@ test('a refresh requests the admin table and member history together; a failed h
   assert.deepEqual(started.sort(),['https://fomocampus.com/admin/','https://fomocampus.com/admin/members.csv']);
   release();const result=await pending;
   assert.equal(result.chapters.length,1);assert.deepEqual(result.memberHistory,{available:false});
+});
+
+test('after one good read, viewers get the saved snapshot at once while the slow source refreshes behind them',async()=>{
+  const authEnv={...env,CAMPUSWARS_ACCESS_PASSWORD:'test-access',CAMPUSWARS_SESSION_SECRET:'test-secret'};
+  let time=Date.parse('2026-09-13T12:00:00Z'),joined=10,calls=0,release=()=>{};const background=[];
+  const handler=createChapterHandler({env:authEnv,now:()=>time,waitUntil:p=>background.push(p),load:async()=>{calls++;if(calls>1)await new Promise(r=>release=r);return {...snapshot(joined),updatedAt:new Date(time).toISOString()};}});
+  const cookie='__Host-eyes_feed_access='+await createSession(authEnv,Date.now(),'eyes');
+  const get=()=>request(handler,{cookie});
+  assert.equal((await get()).body.chapters[0].joined,10);assert.equal(calls,1);
+  time+=40000;joined=11;
+  const quick=await get();assert.equal(quick.code,200);assert.equal(quick.headers['X-Chapter-Cache'],'REVALIDATE');
+  assert.equal(quick.body.chapters[0].joined,10);assert.notEqual(quick.body.stale,true);assert.equal(calls,2);assert.equal(background.length,1);
+  await get();assert.equal(calls,2,'An in-flight refresh is shared');
+  release();await background[0];assert.equal((await get()).body.chapters[0].joined,11);
+  time+=100000;const old=await get();assert.equal(old.body.stale,true);assert.equal(old.body.refreshing,true);
 });

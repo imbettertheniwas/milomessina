@@ -1,10 +1,11 @@
 import {feedAuthorized,PRIVATE_HEADERS} from '../server/campuswars-access.mjs';
 import {recordArrivalHistory} from '../fomo/campuswars/chapter-arrival-history.js';
 import {createHash} from 'node:crypto';
+import {waitUntil as vercelWaitUntil} from '@vercel/functions';
 import {fetchChapterSnapshot,chapterSourceErrorCode} from '../server/campuswars-source.mjs';
-const FRESH_MS=30000, STALE_MS=300000, RETRY_MS=5000, MAX_RETRY_MS=60000;
+const FRESH_MS=30000, LIVE_MS=75000, STALE_MS=300000, RETRY_MS=5000, MAX_RETRY_MS=60000;
 // Warm instances share refreshes behind authentication; responses are never publicly cached.
-export function createChapterHandler({load=fetchChapterSnapshot,now=Date.now,env=process.env}={}){
+export function createChapterHandler({load=fetchChapterSnapshot,now=Date.now,env=process.env,waitUntil=vercelWaitUntil}={}){
  let latest=null,pending=null,retryAt=0,failures=0,lastCode='SOURCE_CONNECTION';
  function refresh(){
   const started=now();
@@ -26,10 +27,17 @@ export function createChapterHandler({load=fetchChapterSnapshot,now=Date.now,env
   function error(status,body){res.status(status);return req.method==='HEAD'?res.end():res.json(body);}
   if(!env.CAMPUSWARS_ADMIN_PASSWORD)return error(503,{error:'Live chapter updates are not configured'});
   const started=now();let cache='HIT';
-  if(!latest||now()-latest.at>=FRESH_MS){cache=pending?'COALESCED':now()<retryAt?'BACKOFF':'REFRESH';if(pending)await pending;else if(now()>=retryAt)await refresh();}
+  // The source takes ~8s to render. While the last read succeeded, answer from it
+  // at once and refresh after the response instead of making the viewer wait.
+  if(latest&&!failures&&now()-latest.at>=FRESH_MS&&now()-latest.at<STALE_MS){cache='REVALIDATE';if(!pending)waitUntil(refresh());}
+  else if(!latest||now()-latest.at>=FRESH_MS){cache=pending?'COALESCED':now()<retryAt?'BACKOFF':'REFRESH';if(pending)await pending;else if(now()>=retryAt)await refresh();}
   res.setHeader('Server-Timing','chapter;dur='+Math.max(0,now()-started)+';desc="'+cache+'"');
   const age=latest?now()-latest.at:Infinity;
-  if(age>=FRESH_MS){
+  if(cache==='REVALIDATE'&&age>=LIVE_MS){
+   // Too old for the page to treat as live; show it now and ask for a quick re-poll.
+   res.setHeader('X-Chapter-Cache',cache);res.status(200);return req.method==='HEAD'?res.end():res.json({...latest.snapshot,stale:true,refreshing:true});
+  }
+  if(age>=FRESH_MS&&cache!=='REVALIDATE'){
    res.setHeader('Retry-After',String(Math.max(1,Math.ceil((retryAt-now())/1000))));
    if(age>=STALE_MS)return error(502,{error:'Chapter updates are temporarily unavailable',code:lastCode});
    res.setHeader('X-Chapter-Cache','STALE');
