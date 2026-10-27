@@ -39,3 +39,12 @@ test('the eleven campuses flagged as unconfirmed on 2026-10-08 resolve to their 
  assert.equal(schoolLocation('Indiana University of Pennsylvania').state,'PA');assert.equal(schoolLocation('Indiana University').state,'IN');
  assert.equal(schoolLocation('Washington State University').state,'WA');assert.notEqual(schoolLocation('University of Washington').id,schoolLocation('Washington State University').id);
 });
+
+test('the 31 schools flagged as unconfirmed on 2026-10-27 resolve to their NCES states',()=>{
+ const locations=[["Alabama State University","AL"],["Babson College","MA"],["Baylor University","TX"],["Boise State University","ID"],["California Polytechnic State University, San Luis Obispo","CA"],["California State University, San Marcos","CA"],["Des Moines Area Community College","IA"],["Florida Atlantic University","FL"],["Fordham University","NY"],["Indiana Institute of Technology","IN"],["Iowa State University","IA"],["Kennesaw State University","GA"],["Louisiana State University","LA"],["Loyola Marymount University","CA"],["Monmouth University","NJ"],["Santa Clara University","CA"],["Skidmore College","NY"],["Southeastern Louisiana University","LA"],["The University of Texas at San Antonio","TX"],["University of Akron","OH"],["University of Arkansas - Fayetteville","AR"],["University of California, Riverside","CA"],["University of Connecticut","CT"],["University of Georgia","GA"],["University of Iowa","IA"],["University of Kentucky","KY"],["University of South Florida","FL"],["University of Texas at El Paso","TX"],["Vanderbilt University","TN"],["Washington University, Saint Louis","MO"],["Western Michigan University","MI"]];
+ for(const [name,state] of locations)assert.equal(schoolLocation(name)?.state,state,name);
+ const result=summarizeStates(locations.map(([name],i)=>c(String(i),name,1)));
+ assert.equal(result.other.length,0);assert.equal(result.regions.reduce((sum,s)=>sum+s.chapters,0),31);
+ assert.equal(schoolLocation('Washington University in St Louis').state,'MO');assert.equal(schoolLocation('University of Washington').state,'WA');
+ assert.equal(schoolLocation('Louisiana State University').state,'LA');assert.equal(schoolLocation('Southeastern Louisiana University').state,'LA');
+});

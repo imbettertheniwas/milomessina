@@ -1161,5 +1161,200 @@ export const schoolStates = [
     "aliases": [],
     "state": "MD",
     "source": "https://www.towson.edu/about/"
+  },
+  // Unconfirmed live-feed schools matched to NCES IPEDS HD2024 (data/school-coverage.json), 2026-10-27.
+  {
+    "id": "100724",
+    "name": "Alabama State University",
+    "aliases": [],
+    "state": "AL"
+  },
+  {
+    "id": "164580",
+    "name": "Babson College",
+    "aliases": [],
+    "state": "MA"
+  },
+  {
+    "id": "223232",
+    "name": "Baylor University",
+    "aliases": [],
+    "state": "TX"
+  },
+  {
+    "id": "142115",
+    "name": "Boise State University",
+    "aliases": [],
+    "state": "ID"
+  },
+  {
+    "id": "110422",
+    "name": "California Polytechnic State University, San Luis Obispo",
+    "aliases": [],
+    "state": "CA"
+  },
+  {
+    "id": "366711",
+    "name": "California State University, San Marcos",
+    "aliases": [],
+    "state": "CA"
+  },
+  {
+    "id": "153214",
+    "name": "Des Moines Area Community College",
+    "aliases": [],
+    "state": "IA"
+  },
+  {
+    "id": "133669",
+    "name": "Florida Atlantic University",
+    "aliases": [],
+    "state": "FL"
+  },
+  {
+    "id": "191241",
+    "name": "Fordham University",
+    "aliases": [],
+    "state": "NY"
+  },
+  {
+    "id": "151290",
+    "name": "Indiana Institute of Technology",
+    "aliases": [],
+    "state": "IN"
+  },
+  {
+    "id": "153603",
+    "name": "Iowa State University",
+    "aliases": [],
+    "state": "IA"
+  },
+  {
+    "id": "486840",
+    "name": "Kennesaw State University",
+    "aliases": [],
+    "state": "GA"
+  },
+  {
+    "id": "159391",
+    "name": "Louisiana State University",
+    "aliases": [
+      "Louisiana State University and Agricultural & Mechanical College"
+    ],
+    "state": "LA"
+  },
+  {
+    "id": "117946",
+    "name": "Loyola Marymount University",
+    "aliases": [],
+    "state": "CA"
+  },
+  {
+    "id": "185572",
+    "name": "Monmouth University",
+    "aliases": [],
+    "state": "NJ"
+  },
+  {
+    "id": "122931",
+    "name": "Santa Clara University",
+    "aliases": [],
+    "state": "CA"
+  },
+  {
+    "id": "195526",
+    "name": "Skidmore College",
+    "aliases": [],
+    "state": "NY"
+  },
+  {
+    "id": "160612",
+    "name": "Southeastern Louisiana University",
+    "aliases": [],
+    "state": "LA"
+  },
+  {
+    "id": "229027",
+    "name": "The University of Texas at San Antonio",
+    "aliases": [],
+    "state": "TX"
+  },
+  {
+    "id": "200800",
+    "name": "University of Akron",
+    "aliases": [
+      "University of Akron Main Campus"
+    ],
+    "state": "OH"
+  },
+  {
+    "id": "106397",
+    "name": "University of Arkansas - Fayetteville",
+    "aliases": [
+      "University of Arkansas"
+    ],
+    "state": "AR"
+  },
+  {
+    "id": "110671",
+    "name": "University of California, Riverside",
+    "aliases": [],
+    "state": "CA"
+  },
+  {
+    "id": "129020",
+    "name": "University of Connecticut",
+    "aliases": [],
+    "state": "CT"
+  },
+  {
+    "id": "139959",
+    "name": "University of Georgia",
+    "aliases": [],
+    "state": "GA"
+  },
+  {
+    "id": "153658",
+    "name": "University of Iowa",
+    "aliases": [],
+    "state": "IA"
+  },
+  {
+    "id": "157085",
+    "name": "University of Kentucky",
+    "aliases": [],
+    "state": "KY"
+  },
+  {
+    "id": "137351",
+    "name": "University of South Florida",
+    "aliases": [],
+    "state": "FL"
+  },
+  {
+    "id": "228796",
+    "name": "University of Texas at El Paso",
+    "aliases": [],
+    "state": "TX"
+  },
+  {
+    "id": "221999",
+    "name": "Vanderbilt University",
+    "aliases": [],
+    "state": "TN"
+  },
+  {
+    "id": "179867",
+    "name": "Washington University, Saint Louis",
+    "aliases": [
+      "Washington University in St Louis"
+    ],
+    "state": "MO"
+  },
+  {
+    "id": "172699",
+    "name": "Western Michigan University",
+    "aliases": [],
+    "state": "MI"
   }
 ];

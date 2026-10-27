@@ -20,3 +20,4 @@ test('Greek-life evidence does not change FOMO chapter coverage or borrow anothe
  const {greekLifeEvidence}=await import('../coverage-model.mjs'),copy={...data,greekLife:{sources:{test:{url:'https://sigep.org/chapters/'}},schools:{'236948':[{source:'test'}]}}};
  assert.equal(greekLifeEvidence(copy,'377555').length,0);assert.equal(compareCoverage(copy,index,[]).missing.length,5994);assert.equal(compareCoverage(copy,index,[{school:'University of Washington'}]).missing.length,5993);
 });
+test('every NCES-backed state catalog school resolves to the same directory school on the coverage map',async()=>{const {schoolStates}=await import('../school-states.mjs');const nces=schoolStates.filter(s=>/^\d+$/.test(s.id)&&data.schools.some(d=>d[0]===s.id));assert(nces.length>=31);for(const s of nces)assert.equal(index.resolve(s.name),s.id,s.name);});
