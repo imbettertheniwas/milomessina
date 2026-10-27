@@ -44,3 +44,43 @@ test('eyes gate rejects missing, malformed and wrong credentials',async()=>{
   assert.match(res.headers.get('www-authenticate'),/^Basic realm=/);
   assert.equal(res.headers.get('cache-control'),'no-store');
 });
+
+// One gate for page, graphics and feed: a signed session alone is enough, so a
+// browser that stops sending the password for subresources keeps a working page.
+test('a signed eyes session opens the page, its files and the graphics modules without the password',async()=>{
+  const {createSession}=await import('../server/campuswars-access.mjs');
+  const saved={...process.env};
+  Object.assign(process.env,{CAMPUSWARS_SESSION_SECRET:'test-secret',CAMPUSWARS_ACCESS_PASSWORD:'test-access'});
+  try{
+    const cookie='__Host-eyes_feed_access='+await createSession(process.env,Date.now(),'eyes');
+    const get=(path,headers={})=>middleware(new Request('https://milomessina.com'+path,{headers}));
+    for(const path of ['/eyes','/fomo/pulse/pulse.js','/fomo/pulse/data/school-coverage.json'])assert.equal(await get(path,{cookie}),undefined,path);
+    for(const path of ['/fomo/campuswars/vendor/three.module.min.js','/fomo/campuswars/vendor/three.core.min.js','/fomo/campuswars/village-floor-logo.js']){
+      const res=await get(path,{cookie});
+      assert.equal(res.headers.get('x-middleware-next'),'1',path);
+      assert.equal(res.headers.get('cache-control'),'private, max-age=86400',path);
+      assert.equal(res.headers.get('cdn-cache-control'),'no-store',path);
+      assert.equal(res.headers.get('set-cookie'),null,'A cookie alone never mints a new session');
+      assert.equal((await get(path)).status,404,path);
+    }
+    const feed=await get('/api/campuswars/',{cookie});assert.equal(feed.headers.get('x-middleware-next'),'1');assert.match(feed.headers.get('cache-control'),/no-store/);
+    assert.equal((await get('/api/campuswars/')).status,401);
+    const expired='__Host-eyes_feed_access='+await createSession(process.env,Date.now()-9*3600*1000,'eyes');
+    assert.equal((await get('/fomo/pulse/pulse.js',{cookie:expired})).status,401);
+    assert.equal((await get('/fomo/campuswars/vendor/three.module.min.js',{cookie:expired})).status,404);
+  }finally{process.env=saved;}
+});
+
+test('the password alone opens the graphics modules and the feed, and renews a lapsing session',{skip:!password&&'EYES_PASSWORD not set'},async()=>{
+  const {createSession}=await import('../server/campuswars-access.mjs');
+  const saved={...process.env};
+  Object.assign(process.env,{CAMPUSWARS_SESSION_SECRET:'test-secret',CAMPUSWARS_ACCESS_PASSWORD:'test-access'});
+  try{
+    const authorization=basic('',password),get=(path,headers={})=>middleware(new Request('https://milomessina.com'+path,{headers:{authorization,...headers}}));
+    for(const path of ['/eyes','/fomo/campuswars/vendor/three.module.min.js','/api/campuswars/'])assert.match((await get(path)).headers.get('set-cookie'),/^__Host-eyes_feed_access=eyes\./,path);
+    const fresh='__Host-eyes_feed_access='+await createSession(process.env,Date.now(),'eyes');
+    assert.equal(await get('/eyes',{cookie:fresh}),undefined,'A session with hours left is not reissued');
+    const lapsing='__Host-eyes_feed_access='+await createSession(process.env,Date.now()-5*3600*1000,'eyes');
+    assert.match((await get('/eyes',{cookie:lapsing})).headers.get('set-cookie'),/^__Host-eyes_feed_access=/);
+  }finally{process.env=saved;}
+});

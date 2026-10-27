@@ -14,6 +14,18 @@
   },
   "headers": [
     {
+      "source": "/eyes",
+      "headers": [{ "key": "Cache-Control", "value": "private, no-store" }]
+    },
+    {
+      "source": "/eyes/",
+      "headers": [{ "key": "Cache-Control", "value": "private, no-store" }]
+    },
+    {
+      "source": "/fomo/pulse/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "private, no-store" }]
+    },
+    {
       "source": "/tasks/:path*",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },

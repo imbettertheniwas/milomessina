@@ -110,3 +110,36 @@ test('after one good read, viewers get the saved snapshot at once while the slow
   release();await background[0];assert.equal((await get()).body.chapters[0].joined,11);
   time+=100000;const old=await get();assert.equal(old.body.stale,true);assert.equal(old.body.refreshing,true);
 });
+
+test('a cold instance answers from the saved snapshot at once, refreshes behind the viewer and saves the result',async()=>{
+  const authEnv={...env,CAMPUSWARS_ACCESS_PASSWORD:'test-access',CAMPUSWARS_SESSION_SECRET:'test-secret',BLOB_READ_WRITE_TOKEN:'test-token'};
+  const cookie='__Host-eyes_feed_access='+await createSession(authEnv,Date.now(),'eyes');
+  let time=Date.parse('2026-09-13T12:10:00Z'),calls=0,reads=0,release;const background=[],writes=[];
+  const saved={...snapshot(10),updatedAt:'2026-09-13T12:00:00Z',recentArrivals:[]};
+  const handler=createChapterHandler({env:authEnv,now:()=>time,waitUntil:p=>background.push(p),read:async()=>{reads++;return saved;},write:async body=>writes.push(JSON.parse(body)),
+    load:async()=>{calls++;await new Promise(r=>release=r);return {...snapshot(12),updatedAt:new Date(time).toISOString()};}});
+  const get=()=>request(handler,{cookie});
+  const first=await get();
+  assert.equal(first.code,200);assert.equal(first.headers['X-Chapter-Cache'],'REVALIDATE');
+  assert.equal(first.body.chapters[0].joined,10);assert.equal(first.body.stale,true);assert.equal(first.body.refreshing,true);
+  assert.equal(calls,1);assert.equal(background.length,1);
+  await get();assert.equal(reads,1,'Storage is read once per instance');assert.equal(calls,1);
+  release();await background[0];await Promise.all(background.slice(1));
+  const live=await get();assert.equal(live.body.chapters[0].joined,12);assert.equal(live.body.stale,undefined);
+  assert.equal(writes.length,1);assert.equal(writes[0].chapters[0].joined,12);
+});
+
+test('missing, failing, slow or day-old storage falls back to reading the source',async()=>{
+  const authEnv={...env,CAMPUSWARS_ACCESS_PASSWORD:'test-access',CAMPUSWARS_SESSION_SECRET:'test-secret'};
+  const cookie='__Host-eyes_feed_access='+await createSession(authEnv,Date.now(),'eyes');
+  const time=Date.parse('2026-09-15T12:00:00Z'),old={...snapshot(10),updatedAt:'2026-09-13T12:00:00Z'};
+  for(const read of [async()=>null,async()=>{throw Error('STORAGE');},async()=>old,async()=>({chapters:'x',updatedAt:'2026-09-15T11:59:00Z'}),()=>new Promise(()=>{})]){
+    let calls=0;
+    const handler=createChapterHandler({env:{...authEnv,BLOB_READ_WRITE_TOKEN:'t'},now:()=>time,read,write:async()=>{},load:async()=>{calls++;return {...snapshot(11),updatedAt:new Date(time).toISOString()};}});
+    const res=await request(handler,{cookie});
+    assert.equal(res.code,200);assert.equal(res.headers['X-Chapter-Cache'],'REFRESH');assert.equal(res.body.chapters[0].joined,11);assert.equal(calls,1);
+  }
+  let reads=0;
+  const unsaved=createChapterHandler({env:authEnv,read:async()=>{reads++;return null;},load:async()=>snapshot(11)});
+  assert.equal((await request(unsaved,{cookie})).code,200);assert.equal(reads,0,'No storage token, no storage read');
+});

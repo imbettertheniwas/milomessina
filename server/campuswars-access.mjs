@@ -42,6 +42,16 @@ export async function sessionAuthorized(cookie,env=process.env,now=Date.now(),au
 export function sessionCookie(token,audience='campuswars') {
   return (audience==='eyes'?EYES_COOKIE:COOKIE)+'='+token+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age='+SESSION_SECONDS;
 }
-export async function feedAuthorized(cookie,env=process.env) {
-  return await sessionAuthorized(cookie,env) || await sessionAuthorized(cookie,env,Date.now(),'eyes');
+// Same check as the inline copy in middleware.js: the Eyes browser password, with any username.
+const EYES_PASSWORD_SHA256 = '5688e8defef948980fed26a1cd56d5fe78fedf6e23b90709075ac1c0bc2d5486';
+export async function eyesPasswordAuthorized(header) {
+  const m=/^Basic\s+([A-Za-z0-9+/=]+)$/i.exec(header||''); if(!m) return false;
+  let decoded; try { decoded=atob(m[1]); } catch { return false; }
+  const i=decoded.indexOf(':'); if(i<0) return false;
+  const actual=hex(await digest(decoded.slice(i+1)));
+  let diff=0; for(let j=0;j<actual.length;j++) diff |= actual.charCodeAt(j)^EYES_PASSWORD_SHA256.charCodeAt(j); return diff===0;
+}
+// A viewer whose session lapsed while the browser still sends the password keeps the feed.
+export async function feedAuthorized(cookie,env=process.env,authorization) {
+  return await sessionAuthorized(cookie,env) || await sessionAuthorized(cookie,env,Date.now(),'eyes') || await eyesPasswordAuthorized(authorization);
 }
