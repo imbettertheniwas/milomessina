@@ -1,6 +1,6 @@
-import {WEEKDAYS,dailyJoins,calendar,rhythm,race,dotColumns,mosaic,progressStep} from './lenses.mjs';
+import {WEEKDAYS,dailyJoins,calendar,rhythm,race,dotColumns,mosaic,progressStep,spend,slicePath} from './lenses.mjs';
 import {localJoinDate,hourLabel} from './join-times.mjs';
-import {geographyCode,geographyName} from './geography.mjs';
+import {geographyCode,geographyName,schoolLocation} from './geography.mjs';
 const $=id=>document.getElementById(id),fmt=n=>n.toLocaleString('en-US'),pct=v=>Math.round(v*100)+'%';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const dateLabel=(date,year=false)=>new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{weekday:year?undefined:'short',month:'short',day:'numeric',year:year?'numeric':undefined,timeZone:'UTC'});
@@ -74,7 +74,24 @@ function mosaicLens(chapters){
  };
 }
 
-const LENSES={calendar:calendarLens,rhythm:rhythmLens,race:raceLens,mosaic:mosaicLens};
+const usd=n=>n.toLocaleString('en-US',{style:'currency',currency:'USD'});
+const schoolOf=c=>{const s=schoolLocation(c.school);return s?{key:s.id,name:s.name}:{key:c.school.toLowerCase(),name:c.school};};
+function spendLens(chapters){
+ const s=spend(chapters,schoolOf);if(!s.members)return null;
+ const r=150,cx=160,cy=160;let at=0;
+ const slices=s.pie.map(p=>{const from=at;at+=p.share;const tip=`${p.name}\n${usd(p.spend)} · ${(p.share*100).toFixed(1)}% of spend\n${plural(p.members,'member')} × ${usd(s.perMember)}${p.slot==='other'?'':` · ${plural(p.chapters,'chapter')}`}`;
+  return `<path class="lens-slice slice-${p.slot}" d="${slicePath(cx,cy,r,from,at)}" data-tip="${esc(tip)}"/>`;}).join('');
+ const top=s.pie[0];
+ return {
+  caption:`Each slice is one school's share of what we've spent: every member who joined costs ${usd(s.perMember)}, so a school's spend is its members times ${usd(s.perMember)}. Chapters at the same school are combined; the smallest schools are grouped as Other.`,
+  stats:[['Total spent',usd(s.total),`${plural(s.members,'member')} × ${usd(s.perMember)}`],['Biggest school',usd(top.spend),`${top.name} · ${pct(top.share)} of spend`],['Schools paid for',fmt(s.paid),`Average ${usd(s.total/s.paid)} per school`]],
+  plot:`<div class="lens-spend"><svg class="lens-svg lens-pie" viewBox="0 0 320 320" role="img" aria-label="Pie chart of spend by school, ${usd(s.total)} total">${slices}</svg><ol class="lens-spend-key">${s.pie.map(p=>`<li><i class="lens-slice-key slice-${p.slot}"></i><span>${esc(p.name)}</span><b>${usd(p.spend)}</b><small>${(p.share*100).toFixed(1)}%</small></li>`).join('')}</ol></div>`,
+  legend:`<small>${usd(s.perMember)} per member joined · open the table for every school</small>`,
+  table:table(['School','Spend','Share','Members','Chapters'],s.schools.map(x=>[x.name,usd(x.spend),(x.share*100).toFixed(1)+'%',fmt(x.members),fmt(x.chapters)]))
+ };
+}
+
+const LENSES={calendar:calendarLens,rhythm:rhythmLens,race:raceLens,mosaic:mosaicLens,spend:spendLens};
 export function createLenses({onSelect}){
  let chapters=[],history=null,at=null,key=null,lens='calendar';
  try{const saved=localStorage.getItem('fomo:pulse:lens');if(LENSES[saved])lens=saved;}catch{}
@@ -90,7 +107,7 @@ export function createLenses({onSelect}){
   plot.innerHTML=view.plot;$('lens-legend').innerHTML=view.legend;$('lens-table').innerHTML=view.table;
   // On narrow screens the calendar scrolls; open it on the most recent weeks.
   plot.scrollLeft=lens==='calendar'?plot.scrollWidth:0;
-  $('lens-detail').textContent=lens==='race'||lens==='mosaic'?'Hover for exact counts · click a chapter to open it in the inspector.':'Hover any mark for its exact count.';
+  $('lens-detail').textContent=lens==='spend'?'Hover a slice for its exact spend and member count.':lens==='race'||lens==='mosaic'?'Hover for exact counts · click a chapter to open it in the inspector.':'Hover any mark for its exact count.';
  }
  const mark=e=>e.target.closest?.('[data-tip]');
  plot.addEventListener('pointermove',e=>{const m=mark(e);if(!m){tip.hidden=true;return;}tip.textContent=m.dataset.tip;tip.hidden=false;const box=$('lens-stage').getBoundingClientRect(),w=tip.offsetWidth;tip.style.left=Math.min(box.width-w-4,Math.max(4,e.clientX-box.left-w/2))+'px';tip.style.top=Math.max(4,e.clientY-box.top-tip.offsetHeight-14)+'px';});

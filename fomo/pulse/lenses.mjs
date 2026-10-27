@@ -90,3 +90,25 @@ export function mosaic(chapters,regionOf,width,height,inset=16){
  })};
 }
 export const progressStep=p=>p>=1?4:p>=.75?3:p>=.5?2:p>=.25?1:0;
+
+// Spend is members joined times the flat per-member cost, summed per school.
+// Known aliases share one school; the largest schools get slices, the rest fold into Other.
+export const COST_PER_MEMBER=6.25;
+export function spend(chapters,schoolOf,{perMember=COST_PER_MEMBER,slices=7}={}){
+ const groups=new Map();
+ for(const c of chapters){const s=schoolOf(c);if(!groups.has(s.key))groups.set(s.key,{key:s.key,name:s.name,members:0,chapters:0});const g=groups.get(s.key);g.members+=c.joined;g.chapters++;}
+ const members=[...groups.values()].reduce((n,g)=>n+g.members,0),total=members*perMember;
+ const schools=[...groups.values()].map(g=>({...g,spend:g.members*perMember,share:members?g.members/members:0})).sort((a,b)=>b.members-a.members||a.name.localeCompare(b.name));
+ const paid=schools.filter(s=>s.members>0),top=paid.length>slices+1?paid.slice(0,slices):paid,rest=paid.slice(top.length);
+ const restMembers=rest.reduce((n,s)=>n+s.members,0);
+ const pie=[...top.map((s,i)=>({...s,slot:i})),...(rest.length?[{key:'other',name:`${rest.length} other schools`,members:restMembers,chapters:rest.reduce((n,s)=>n+s.chapters,0),spend:restMembers*perMember,share:restMembers/members,slot:'other',schools:rest.length}]:[])];
+ return {total,members,perMember,schools,paid:paid.length,pie};
+}
+
+// SVG path for one pie slice; angles are fractions of a turn starting at 12 o'clock.
+export function slicePath(cx,cy,r,from,to){
+ if(to-from>=1)return `M${cx} ${cy-r}A${r} ${r} 0 1 1 ${cx} ${cy+r}A${r} ${r} 0 1 1 ${cx} ${cy-r}Z`;
+ const pt=f=>[(cx+r*Math.sin(f*2*Math.PI)).toFixed(2),(cy-r*Math.cos(f*2*Math.PI)).toFixed(2)];
+ const [x1,y1]=pt(from),[x2,y2]=pt(to);
+ return `M${cx} ${cy}L${x1} ${y1}A${r} ${r} 0 ${to-from>.5?1:0} 1 ${x2} ${y2}Z`;
+}

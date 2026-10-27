@@ -98,3 +98,7 @@ Four switchable views of the same live feed, below the hourly section (`lenses.j
 Every lens has hover tooltips and a "View as table" fallback. The chosen lens persists locally. History lenses show an unavailable message when the member export fails; race and mosaic keep using chapter totals.
 
 `node --test fomo/pulse/tests/lenses.test.mjs`
+
+## Spend by school
+
+The fifth lens is a pie chart of spend per school. Each member joined counts as $6.25 (`COST_PER_MEMBER` in `lenses.mjs`), so a school's spend is its joined members times $6.25, from the same live chapter totals. Chapters at the same school are combined, and known aliases share one school through the `school-states.mjs` catalog. The seven biggest schools get their own slice; the rest fold into one gray Other slice. Schools with no members cost nothing and appear only in the table. Slice colors are a fixed 7-hue categorical palette with separate light and dark steps. The key beside the pie and the full table carry every value as text, so color is never the only label.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {dailyJoins,stepper,calendar,rhythm,race,dotColumns,squarify,mosaic,goalOf,progressStep} from '../lenses.mjs';
+import {dailyJoins,stepper,calendar,rhythm,race,dotColumns,squarify,mosaic,goalOf,progressStep,spend,slicePath} from '../lenses.mjs';
 
 const hours=(at,n)=>{const counts=Array(24).fill(0);counts[at]=n;return counts;};
 
@@ -59,4 +59,18 @@ test('mosaic groups chapters by region, leaves empty chapters out and keeps tile
   for(const r of m.regions)for(const t of r.tiles)assert(t.x>=r.x-1e-6&&t.y>=r.y-1e-6&&t.x+t.w<=r.x+r.w+1e-6&&t.y+t.h<=r.y+r.h+1e-6);
   assert.equal(m.regions.find(r=>r.code==='TX').tiles[0].progress,60/40);
   assert.deepEqual([0,.25,.5,.75,1,2].map(progressStep),[0,1,2,3,4,4]);
+});
+
+test('spend is members times $6.25 per school, merging chapters and folding small schools into Other',()=>{
+  const ch=(school,joined)=>({id:school+joined,school,joined,active:10});
+  const schoolOf=c=>({key:c.school.replace(' alias',''),name:c.school.replace(' alias','')});
+  const s=spend([ch('A',10),ch('A alias',6),ch('B',8),ch('C',2),ch('D',1),ch('E',0)],schoolOf,{slices:2});
+  assert.equal(s.members,27);assert.equal(s.total,168.75);assert.equal(s.paid,4,'Schools with no members cost nothing');
+  assert.deepEqual(s.schools.map(x=>[x.name,x.spend,x.chapters]),[['A',100,2],['B',50,1],['C',12.5,1],['D',6.25,1],['E',0,1]]);
+  assert.deepEqual(s.pie.map(p=>[p.name,p.spend,p.slot]),[['A',100,0],['B',50,1],['2 other schools',18.75,'other']]);
+  assert.equal(s.pie.reduce((n,p)=>n+p.share,0),1);
+  assert.equal(spend([ch('A',1),ch('B',1),ch('C',1)],schoolOf,{slices:2}).pie.length,3,'One leftover school keeps its own slice');
+  assert.equal(spend([ch('A',0)],schoolOf).members,0);
+  assert.match(slicePath(10,10,10,0,1),/A10 10 0 1 1/,'A whole pie is drawn as a circle');
+  assert.equal(slicePath(10,10,10,0,.25),'M10 10L10.00 0.00A10 10 0 0 1 20.00 10.00Z');
 });
