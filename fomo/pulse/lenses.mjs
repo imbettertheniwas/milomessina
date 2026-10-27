@@ -92,17 +92,17 @@ export function mosaic(chapters,regionOf,width,height,inset=16){
 export const progressStep=p=>p>=1?4:p>=.75?3:p>=.5?2:p>=.25?1:0;
 
 // Spend is members joined times the flat per-member cost, summed per school.
-// Known aliases share one school; the 21 largest get slices (seven hues in three tints), the rest fold into Other.
+// Known aliases share one school; every school past the spend floor gets a slice, the rest fold into Other.
 export const COST_PER_MEMBER=6.25;
-export function spend(chapters,schoolOf,{perMember=COST_PER_MEMBER,slices=21}={}){
+export function spend(chapters,schoolOf,{perMember=COST_PER_MEMBER,minSpend=250}={}){
  const groups=new Map();
  for(const c of chapters){const s=schoolOf(c);if(!groups.has(s.key))groups.set(s.key,{key:s.key,name:s.name,members:0,chapters:0});const g=groups.get(s.key);g.members+=c.joined;g.chapters++;}
  const members=[...groups.values()].reduce((n,g)=>n+g.members,0),total=members*perMember;
  const schools=[...groups.values()].map(g=>({...g,spend:g.members*perMember,share:members?g.members/members:0})).sort((a,b)=>b.members-a.members||a.name.localeCompare(b.name));
- const paid=schools.filter(s=>s.members>0),top=paid.length>slices+1?paid.slice(0,slices):paid,rest=paid.slice(top.length);
+ const paid=schools.filter(s=>s.members>0),top=paid.filter(s=>s.spend>minSpend),rest=paid.slice(top.length);
  const restMembers=rest.reduce((n,s)=>n+s.members,0);
- const pie=[...top.map((s,i)=>({...s,slot:i})),...(rest.length?[{key:'other',name:`${rest.length} other schools`,members:restMembers,chapters:rest.reduce((n,s)=>n+s.chapters,0),spend:restMembers*perMember,share:restMembers/members,slot:'other',schools:rest.length}]:[])];
- return {total,members,perMember,schools,paid:paid.length,pie};
+ const pie=[...top.map((s,i)=>({...s,slot:i})),...(rest.length?[{key:'other',name:`${rest.length} other school${rest.length===1?'':'s'}`,members:restMembers,chapters:rest.reduce((n,s)=>n+s.chapters,0),spend:restMembers*perMember,share:restMembers/members,slot:'other',schools:rest.length}]:[])];
+ return {total,members,perMember,minSpend,schools,paid:paid.length,pie};
 }
 
 // SVG path for one pie slice; angles are fractions of a turn starting at 12 o'clock.
