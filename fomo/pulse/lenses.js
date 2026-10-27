@@ -76,16 +76,18 @@ function mosaicLens(chapters){
 
 const usd=n=>n.toLocaleString('en-US',{style:'currency',currency:'USD'});
 const schoolOf=c=>{const s=schoolLocation(c.school);return s?{key:s.id,name:s.name}:{key:c.school.toLowerCase(),name:c.school};};
+// Slices reuse the seven hues in three tints, so neighbors always differ in hue.
+const sliceClass=slot=>slot==='other'?'slice-other':`slice-h${slot%7} slice-r${Math.floor(slot/7)}`;
 function spendLens(chapters){
  const s=spend(chapters,schoolOf);if(!s.members)return null;
  const r=150,cx=160,cy=160;let at=0;
  const slices=s.pie.map(p=>{const from=at;at+=p.share;const tip=`${p.name}\n${usd(p.spend)} · ${(p.share*100).toFixed(1)}% of spend\n${plural(p.members,'member')} × ${usd(s.perMember)}${p.slot==='other'?'':` · ${plural(p.chapters,'chapter')}`}`;
-  return `<path class="lens-slice slice-${p.slot}" d="${slicePath(cx,cy,r,from,at)}" data-tip="${esc(tip)}"/>`;}).join('');
+  return `<path class="lens-slice ${sliceClass(p.slot)}" d="${slicePath(cx,cy,r,from,at)}" data-tip="${esc(tip)}"/>`;}).join('');
  const top=s.pie[0];
  return {
-  caption:`Each slice is one school's share of what we've spent: every member who joined costs ${usd(s.perMember)}, so a school's spend is its members times ${usd(s.perMember)}. Chapters at the same school are combined; the smallest schools are grouped as Other.`,
+  caption:`Each slice is one school's share of what we've spent: every member who joined costs ${usd(s.perMember)}, so a school's spend is its members times ${usd(s.perMember)}. Chapters at the same school are combined. The ${s.pie.length-(s.pie.at(-1).slot==='other'?1:0)} biggest schools get their own slice; the rest are grouped as Other.`,
   stats:[['Total spent',usd(s.total),`${plural(s.members,'member')} × ${usd(s.perMember)}`],['Biggest school',usd(top.spend),`${top.name} · ${pct(top.share)} of spend`],['Schools paid for',fmt(s.paid),`Average ${usd(s.total/s.paid)} per school`]],
-  plot:`<div class="lens-spend"><svg class="lens-svg lens-pie" viewBox="0 0 320 320" role="img" aria-label="Pie chart of spend by school, ${usd(s.total)} total">${slices}</svg><ol class="lens-spend-key">${s.pie.map(p=>`<li><i class="lens-slice-key slice-${p.slot}"></i><span>${esc(p.name)}</span><b>${usd(p.spend)}</b><small>${(p.share*100).toFixed(1)}%</small></li>`).join('')}</ol></div>`,
+  plot:`<div class="lens-spend"><svg class="lens-svg lens-pie" viewBox="0 0 320 320" role="img" aria-label="Pie chart of spend by school, ${usd(s.total)} total">${slices}</svg><ol class="lens-spend-key">${s.pie.map(p=>`<li><i class="lens-slice-key ${sliceClass(p.slot)}"></i><span>${esc(p.name)}</span><b>${usd(p.spend)}</b><small>${(p.share*100).toFixed(1)}%</small></li>`).join('')}</ol></div>`,
   legend:`<small>${usd(s.perMember)} per member joined · open the table for every school</small>`,
   table:table(['School','Spend','Share','Members','Chapters'],s.schools.map(x=>[x.name,usd(x.spend),(x.share*100).toFixed(1)+'%',fmt(x.members),fmt(x.chapters)]))
  };

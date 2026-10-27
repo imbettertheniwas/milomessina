@@ -92,9 +92,9 @@ export function mosaic(chapters,regionOf,width,height,inset=16){
 export const progressStep=p=>p>=1?4:p>=.75?3:p>=.5?2:p>=.25?1:0;
 
 // Spend is members joined times the flat per-member cost, summed per school.
-// Known aliases share one school; the largest schools get slices, the rest fold into Other.
+// Known aliases share one school; the 21 largest get slices (seven hues in three tints), the rest fold into Other.
 export const COST_PER_MEMBER=6.25;
-export function spend(chapters,schoolOf,{perMember=COST_PER_MEMBER,slices=7}={}){
+export function spend(chapters,schoolOf,{perMember=COST_PER_MEMBER,slices=21}={}){
  const groups=new Map();
  for(const c of chapters){const s=schoolOf(c);if(!groups.has(s.key))groups.set(s.key,{key:s.key,name:s.name,members:0,chapters:0});const g=groups.get(s.key);g.members+=c.joined;g.chapters++;}
  const members=[...groups.values()].reduce((n,g)=>n+g.members,0),total=members*perMember;
