@@ -85,3 +85,16 @@ Data sources: https://nces.ed.gov/ipeds/datacenter/data/HD2024.zip, https://gith
 Green, slightly larger dots mark institutions with Greek-life evidence; purple dots mean **not yet verified**, never “no Greek life.” Legend counts follow the current filters. School details, list rows, and downloaded results include the status; selected schools link to the supporting directory. Both color themes use distinct green/purple values, and text conveys the same information without depending on color.
 
 The `greekLife` reference in `data/school-coverage.json` was checked on 2026-10-18 against the official NPC college-only locator at https://thesororitylife.com/panhellenic-map/ (650 collegiate entries; alumnae entries excluded) and the active SigEp chapter directory at https://sigep.org/chapters/ (188 entries). Campus names and locations were reconciled to NCES IDs; former names and campus variants were manually reviewed. Evidence is retained as source identifiers and listed institution names for 622 unique directory schools. Out-of-country, ambiguous, misspelled-location, and unmapped branch entries remain unassigned. Multiple councils at one institution are consolidated. These directories are not exhaustive, do not establish university recognition, and may lag campus changes. No student or officer contact details are stored. Refresh this reference and its checked date when rechecking sources; it is separate from the live FOMO coverage feed.
+
+## Lenses
+
+Four switchable views of the same live feed, below the hourly section (`lenses.js`, layout math in `lenses.mjs`):
+
+- Join calendar: one square per Eastern-time day of member joins over the last year. Shades split the year's non-zero days into quartiles. Stats: current streak (counted through yesterday because today is partial), best day, last 7 days against the 7 before.
+- Weekly rhythm: weekday × Eastern hour, summed across all member history. Dot size and shade both encode joins; each weekday's total is on the right.
+- Race to goal: a binned dot plot of chapters by joined ÷ goal (rounded-up 80% of active roster), 2.5% columns, capped at 125%. Chapters with no members are counted, not drawn; a column taller than 12 dots shows +N. Clicking a dot opens the chapter in the inspector.
+- Member mosaic: a squarified treemap where area is members joined, grouped by state (`geography.mjs`), shaded by progress toward goal. Chapters with no members have no area.
+
+Every lens has hover tooltips and a "View as table" fallback. The chosen lens persists locally. History lenses show an unavailable message when the member export fails; race and mosaic keep using chapter totals.
+
+`node --test fomo/pulse/tests/lenses.test.mjs`
